@@ -5,6 +5,8 @@
 //					So, this allows you to redefine the path
 #define SHADER_FOLDER TEXT("..\\Shaders\\")
 
+
+
 // Metallicafan212:	TODO! Matrix definition??
 //					Look at this more https://www.rastertek.com/dx11tut04.html
 struct FMatrixDef
