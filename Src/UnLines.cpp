@@ -44,6 +44,16 @@ void UD3D11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 		//					I may want to make alpha'd lines in the future
 		Color.W = 1.0f - Color.W;
 
+		// Metallicafan212:	Make sure wireframe doesn't get set on lines
+		DWORD OldFlags = ExtraRasterFlags;
+
+		if (ExtraRasterFlags & DXRS_Wireframe)
+			ExtraRasterFlags = 0;
+
+		SetRasterState(DXRS_Normal);
+
+		ExtraRasterFlags = OldFlags;
+
 		// Metallicafan212:	Selection testing
 		if (m_HitData != nullptr)
 			Color = CurrentHitColor;
@@ -60,9 +70,6 @@ void UD3D11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 		}
 
 		SetBlend(PF_Highlighted | PF_Occlude);
-
-		// Metallicafan212:	Raster state
-		SetRasterState(DXRS_Normal);
 
 		// Metallicafan212:	TODO! Line specific shader for making the lines thiccc
 		FLineShader->Bind();
@@ -104,6 +111,16 @@ void UD3D11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 	
 	SetBlend(PF_Highlighted | PF_Occlude);
 
+	// Metallicafan212:	Make sure wireframe doesn't get set on lines
+	DWORD OldFlags = ExtraRasterFlags;
+
+	if (ExtraRasterFlags & DXRS_Wireframe)
+		ExtraRasterFlags = 0;
+
+	SetRasterState(DXRS_Normal);
+
+	ExtraRasterFlags = OldFlags;
+
 	if (LineFlags & LINE_DrawOver || Viewport->Actor->ShowFlags & SHOW_Lines)
 	{
 		SetProjectionStateNoCheck(true);
@@ -115,9 +132,6 @@ void UD3D11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 
 	// Metallicafan212:	TODO! Line specific shader
 	FLineShader->Bind();
-
-	// Metallicafan212:	Raster state
-	SetRasterState(DXRS_Normal);
 
 	LockVertexBuffer(2 * sizeof(FD3DVert));
 
@@ -179,8 +193,15 @@ void UD3D11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD Line
 	// Metallicafan212:	TODO! Point/line shader
 	SetBlend(PF_Highlighted | PF_Occlude);
 
-	// Metallicafan212:	Raster state
+	// Metallicafan212:	Make sure wireframe doesn't get set on lines
+	DWORD OldFlags = ExtraRasterFlags;
+
+	if (ExtraRasterFlags & DXRS_Wireframe)
+		ExtraRasterFlags = 0;
+
 	SetRasterState(DXRS_Normal);
+
+	ExtraRasterFlags = OldFlags;
 
 	if (LineFlags & LINE_DrawOver || Viewport->Actor->ShowFlags & SHOW_Lines)
 	{
