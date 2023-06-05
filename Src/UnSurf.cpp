@@ -108,6 +108,9 @@ void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Sur
 
 	SetTexture(3, Surface.FogMap, 0);
 
+	// Metallicafan212:	TODO! Support detail textures!!!
+	SetTexture(4, Surface.DetailTexture, 0);
+
 	// Metallicafan212:	TODO! Maybe embedd this instead of doing it in the shader?
 	//					It would allow us to buffer surfaces
 	SurfCoords = Facet.MapCoords;

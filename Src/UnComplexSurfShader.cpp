@@ -4,7 +4,7 @@ struct FSurfMatrixDef : FMatrixDef
 {
 	FPlane	XAxis, YAxis;
 	//FPlane LPanScale, MPanScale, FPanScale;
-	FPlane	PanScale[4];
+	FPlane	PanScale[5];
 	FPlane	LightScale;
 	FLOAT	SurfAlpha;
 
@@ -83,7 +83,7 @@ void FD3DSurfShader::WriteConstantBuffer(void* InMem)
 
 
 	// Metallicafan212:	Now the pan info
-	for (INT i = 0; i < 4; i++)
+	for (INT i = 0; i < 5; i++)
 	{
 		// Metallicafan212:	Copy the pan and scale info
 		if (ParentDevice->BoundTextures[i].TexInfo != nullptr)

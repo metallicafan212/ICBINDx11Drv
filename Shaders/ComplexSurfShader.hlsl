@@ -10,12 +10,12 @@ shared cbuffer CommonBuffer : register (b0)
 	float4 	XAxis 		: packoffset(c12);
 	float4 	YAxis 		: packoffset(c13);
 	
-	float4 	PanScale[4]	: packoffset(c14);
+	float4 	PanScale[5]	: packoffset(c14);
 	
 	// Metallicafan212:	We need the original values passed in for the lightmap scale...
-	float4 	LightScale 	: packoffset(c18);
-	float 	SurfAlpha	: packoffset(c19.x);
-	float3	Pad3		: packoffset(c19.y);
+	float4 	LightScale 	: packoffset(c19);
+	float 	SurfAlpha	: packoffset(c20.x);
+	float3	Pad3		: packoffset(c20.y);
 };
 
 // Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling
@@ -28,14 +28,17 @@ Texture2D Diffuse 		: register(t0);
 Texture2D Light			: register(t1);
 Texture2D Macro			: register(t2);
 Texture2D Fogmap		: register(t3);
+Texture2D Detail		: register(t4);
 
-SamplerState DiffState : register(s0);
+SamplerState DiffState 		: register(s0);
 
-SamplerState LightState : register(s1);
+SamplerState LightState 	: register(s1);
 
-SamplerState MacroState : register(s2);
+SamplerState MacroState 	: register(s2);
 
-SamplerState FogState : register(s3);
+SamplerState FogState 		: register(s3);
+
+SamplerState DetailState	: register(s4);
 
 struct VSInput 
 { 
@@ -111,6 +114,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	// Metallicafan212:	Set our alpha for lumos
 	DiffColor.w *= SurfAlpha;
 	
+	// Metallicafan212:	Diffuse texture
 	if(bTexturesBound[0].x != 0)
 	{
 		float4 Diff  	= Diffuse.SampleBias(DiffState, input.uv, 0.0f);
@@ -134,6 +138,12 @@ float4 PxShader(PSInput input) : SV_TARGET
 	{
 		// Metallicafan212:	Fog map
 		DiffColor.xyz += Fogmap.SampleBias(FogState, input.fUV, 0.0f).xyz;
+	}
+	
+	// Metallicafan212:	Detail texture, TODO!!!!
+	if(bTexturesBound[1].x)
+	{
+		
 	}
 		
 	CLIP_PIXEL(DiffColor);
