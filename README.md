@@ -50,13 +50,16 @@ For this purpose, I have placed this under the MIT license, so that people can c
 
 For other games, I would like to use a standard set of defines. These may be subject to change, but they need to be kept standardized to make building for other games easy.
 Let me know here or on discord if these should be changed/added to.
-UT99: DX11_UT_99
-Old Unreal UT99: DX11_UT_469
-Old Unreal 227: DX11_UNREAL_227
-HP1: DX11_HP1
-Rune: DX11_RUNE
-Deus Ex: DX11_DX
-HP2: All of these undefined, aka: the default state.
+
+| Game | Define |
+| ---- | ------ |
+| UT99 | DX11_UT_99 |
+| Old Unreal UT99 | DX11_UT_469 |
+| Old Unreal 227 | DX11_UNREAL_227 |
+| HP1 | DX11_HP1 |
+| Rune | DX11_RUNE |
+| Deus Ex | DX11_DX |
+| HP2 |All undefined, aka: the default state |
 
 
 ## Donations? DONATIONS?!?!?!?!?!?
