@@ -37,6 +37,8 @@ Theoretically, the code can work just fine as long as the Gouraud triangles are 
 ```
 Currently, this will NOT be able to be built. It’s written for the HP2 new engine, and none of those headers/libs are included. In the future, when more games are supported, it will be buildable as long as you have the SDK for those games and define the right preprocessor macro.
 
+Shaders are currently configured to point to ..\Shades, next to Sounds, Textures, etc. I did this because I want to eventually support user created HLSL code for HP2, but for ports, this might be annoying. So, in the shader header (UnD3DShader.h), the path can be quickly changed the macro SHADER_FOLDER.
+
 ## Contributing
 Contributing is welcomed! If you wish to port this to other UE1 games, fork it, make the modifications in your fork, and submit a merge request. I will review and edit as needed.
 
