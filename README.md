@@ -1,5 +1,5 @@
 # D3D11Drv
-Metallicafan212’s Farm-Raised DirectX 11 Renderer
+Metallicafan212’s Farm-Raised DirectX 11 Renderer.
 “It ain’t much, but it’s honest work”
 
 This repository contains a working (albeit unoptimized and a bit messy) DX11 renderer for HP2 New Engine, and in the future, for more UE1 games as well.
