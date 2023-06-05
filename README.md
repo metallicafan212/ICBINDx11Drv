@@ -10,6 +10,7 @@ Eventually, I will be recoding the projection setup so that it uses the standard
 ## Current state
 This renderer works great, but it's about 10% slower than DX9 in the most optimal of scenes, and up to 50% slower than DX9 in the least optimal scenes (tons of actors, for example).
 I plan on improving performance in the future, but for games other than HP2, I don't anticipate it running better than DX9 unless the god of FPS bestows onto me some crack-brain scheme.
+Additionally: the additional textures for BSP surfaces (detail texture, macro texture, etc.) aren't supported right now, but will be in the future.
 
 ## What this renderer does
 Everything the DX9 renderer does in HP2 (RT textures, distance fog, all standard rendering, on-screen fast string drawing using D2D, etc.).
