@@ -1,6 +1,7 @@
 # D3D11Drv
 Metallicafan212’s Farm-Raised DirectX 11 Renderer.
-![image](https://github.com/metallicafan212/D3D11Drv/assets/5996243/8726b428-3c15-4ce8-aea5-0c1468ae7481)
+![image](https://github.com/metallicafan212/D3D11Drv/assets/5996243/787208bd-fe10-4f51-a7e6-675cc8a5fc3c)
+
 
 This repository contains a working (albeit unoptimized and a bit messy) DX11 renderer for HP2 New Engine, and in the future, for more UE1 games as well.
 Currently in an alpha stage, as I need to implement more user configurables, more features, add a custom MSAA resolve to fix blurry tile rendering, etc.
