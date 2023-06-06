@@ -828,7 +828,7 @@ class UD3D11RenderDevice : public URenderDevice
 	}
 
 	inline void FindAndSetBlend(QWORD PolyFlag, D3D11_BLEND SrcBlend, D3D11_BLEND DstBlend, 
-		D3D11_COLOR_WRITE_ENABLE RTWrite = D3D11_COLOR_WRITE_ENABLE_ALL, BOOL bEnableBlending = 1, D3D11_BLEND_OP BldOp = D3D11_BLEND_OP_ADD, D3D11_BLEND_OP BldOpAlh = D3D11_BLEND_OP_ADD,
+		D3D11_COLOR_WRITE_ENABLE RTWrite = D3D11_COLOR_WRITE_ENABLE_ALL, BOOL bEnableBlending = 1, BOOL bAlphaToCov = 0, D3D11_BLEND_OP BldOp = D3D11_BLEND_OP_ADD, D3D11_BLEND_OP BldOpAlh = D3D11_BLEND_OP_ADD,
 		D3D11_BLEND SrcBlendAlpha = D3D11_BLEND_ONE, D3D11_BLEND DstBlendAlpha = D3D11_BLEND_ZERO)
 	{
 		ID3D11BlendState* bState = BlendMap.FindRef(PolyFlag);
@@ -848,6 +848,9 @@ class UD3D11RenderDevice : public URenderDevice
 			Desc.RenderTarget[0].SrcBlend				= SrcBlend;
 			Desc.RenderTarget[0].DestBlend				= DstBlend;
 			Desc.RenderTarget[0].RenderTargetWriteMask	= D3D11_COLOR_WRITE_ENABLE_ALL;
+
+			// Metallicafan212:	Also add in alpha to coverage support
+			Desc.AlphaToCoverageEnable					= bAlphaToCov;
 
 			// Metallicafan212:	Now make it
 			HRESULT hr = m_D3DDevice->CreateBlendState(&Desc, &bState);

@@ -21,6 +21,12 @@ void UD3D11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, QWORD PolyFl
 		return;
 	}
 
+	// Metallicafan212:	TODO! HP2 specific (old hack!!!!)
+#if DX11_HP2
+	if (Info->Texture != nullptr && Info->Texture->bAlphaToCoverage)
+		PolyFlags |= PF_AlphaToCoverage;
+#endif
+
 	// Metallicafan212:	Adjust the cache ID to fix masking issues (per the DX9 driver)
 	//					Like said before, this was disabled because it slots ALL textures into the first bucket
 	QWORD CacheID = Info->CacheID;
@@ -460,10 +466,10 @@ void UD3D11RenderDevice::SetBlend(QWORD PolyFlags)
 	}
 
 	// Metallicafan212:	Check if the input blend flags are relevant
-#ifdef DX11_HP1
-	DWORD blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_RenderFog);
-#else
+#if DX11_HP2
 	QWORD blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage);
+#else
+	QWORD blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_RenderFog);
 #endif
 
 	if (blendFlags != CurrentPolyFlags)
@@ -475,10 +481,10 @@ void UD3D11RenderDevice::SetBlend(QWORD PolyFlags)
 		CurrentPolyFlags = blendFlags;
 
 		// Metallicafan212:	Again, the DX9 driver saves the day
-#ifdef DX11_HP1
-		const DWORD RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_Invisible;
-#else
+#if DX11_HP2
 		const QWORD RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_Invisible | PF_AlphaBlend | PF_AlphaToCoverage | PF_Masked | PF_ColorMask;
+#else
+		const QWORD RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_Invisible;
 #endif
 		EndBuffering();
 
@@ -512,7 +518,7 @@ void UD3D11RenderDevice::SetBlend(QWORD PolyFlags)
 				{
 					FindAndSetBlend(PF_Modulated, D3D11_BLEND_DEST_COLOR, D3D11_BLEND_SRC_COLOR);
 				}
-#ifndef DX11_HP1
+#if DX11_HP2
 				// Metallicafan212:	New engine QWORD lumos
 				else if (blendFlags & PF_LumosAffected)
 				{
@@ -522,7 +528,7 @@ void UD3D11RenderDevice::SetBlend(QWORD PolyFlags)
 #endif
 				else if (blendFlags & PF_Highlighted)
 				{
-#ifndef DX11_HP1
+#if DX11_HP2
 					if (blendFlags & PF_AlphaBlend)
 					{
 						FindAndSetBlend(PF_Highlighted | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
@@ -533,7 +539,13 @@ void UD3D11RenderDevice::SetBlend(QWORD PolyFlags)
 						FindAndSetBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
 					}
 				}
-#ifndef DX11_HP1
+#if DX11_HP2
+				// Metallicafan212:	Alpha to coverage is considered alpha blend, since that's what it's usually used for
+				//					TODO! Maybe re-evaluate this????
+				else if (blendFlags & PF_AlphaToCoverage)
+				{
+					FindAndSetBlend(PF_AlphaBlend | PF_AlphaToCoverage, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
+				}
 				else if (blendFlags & PF_AlphaBlend)
 				{
 					FindAndSetBlend(PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
