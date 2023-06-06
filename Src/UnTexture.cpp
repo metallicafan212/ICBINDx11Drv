@@ -170,13 +170,17 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, U
 	DaTex->MaskedColor			= Info.MaskedColor.Plane();
 	DaTex->MaskedGranularity	= Info.GranularityColor.Plane();
 
-	DaTex->Format		= Info.Format;
-	DaTex->TexFormat	= DXGI_FORMAT_B8G8R8A8_UNORM;
+	// Metallicafan212:	This was stupid to leave here lmao
+	//DaTex->Format		= Info.Format;
+	//DaTex->TexFormat	= DXGI_FORMAT_B8G8R8A8_UNORM;
 
 	// Metallicafan212:	If this is a RT texture, we need to not do any of this!!!!
+	//					I know I should be using IsA, but this is quicker (for now)
 	if (Info.Texture != nullptr && Info.Texture->GetClass() == UDX11RenderTargetTexture::StaticClass())
 	{
-		DaTex->bIsRT = 1;
+		DaTex->bIsRT		= 1;
+		DaTex->Format		= TEXF_RGBA8;
+		DaTex->TexFormat	= DXGI_FORMAT_B8G8R8A8_UNORM;
 
 		return;
 	}
