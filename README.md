@@ -38,7 +38,7 @@ Theoretically, the code can work just fine as long as the Gouraud triangles are 
 ```
 Currently, this will NOT be able to be built. It’s written for the HP2 new engine, and none of those headers/libs are included. In the future, when more games are supported, it will be buildable as long as you have the SDK for those games and define the right preprocessor macro.
 
-Shaders are currently configured to point to ..\Shades, next to Sounds, Textures, etc. I did this because I want to eventually support user created HLSL code for HP2, but for ports, this might be annoying. So, in the shader header (UnD3DShader.h), the path can be quickly changed the macro SHADER_FOLDER.
+Shaders are currently configured to point to ..\Shaders, next to Sounds, Textures, etc. I did this because I want to eventually support user created HLSL code for HP2, but for ports, this might be annoying. So, in the shader header (UnD3DShader.h), the path can be quickly changed the macro SHADER_FOLDER.
 
 ## Contributing
 Contributing is welcomed! If you wish to port this to other UE1 games, fork it, make the modifications in your fork, and submit a merge request. I will review and edit as needed.
@@ -50,7 +50,8 @@ If you're adding a new rendering function (such as DrawGouraudTriangle), add a n
 For this purpose, I have placed this under the MIT license, so that people can come, fork, or even make new versions. I wouldn’t be here today without the excellent open source projects for Unreal, so I want to give back as much as possible.
 
 For other games, I would like to use a standard set of defines. These may be subject to change, but they need to be kept standardized to make building for other games easy.
-Let me know here or on discord if these should be changed/added to.
+Let me know here or on discord if these should be changed/added to. 
+My discord username is Metallicafan212#6307 and I'm in the Old Unreal discord server (https://discord.gg/thURucxzs6) and in the HP Modding server (https://discord.com/invite/KWwBevF). For HP specific questions/problems, it would best to contact me in the HP modding server, otherwise I can take questiosn here or in the Old Unreal server.
 
 | Game | Define |
 | ---- | ------ |
@@ -60,7 +61,7 @@ Let me know here or on discord if these should be changed/added to.
 | HP1 | DX11_HP1 |
 | Rune | DX11_RUNE |
 | Deus Ex | DX11_DX |
-| HP2 |All undefined, aka: the default state |
+| HP2 | All undefined, aka: the default state. <br />A macro has been made to make explcit testing this possible <br />DX11_HP2 |
 
 
 ## Donations? DONATIONS?!?!?!?!?!?
