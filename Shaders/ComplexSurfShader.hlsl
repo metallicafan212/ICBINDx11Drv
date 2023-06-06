@@ -23,21 +23,22 @@ shared cbuffer CommonBuffer : register (b0)
 #define DO_FINAL_COLOR
 #include "ShaderGlobals.h"
 
-// Metallicafan212:	Standard texture sampler
-Texture2D Diffuse 		: register(t0);
-Texture2D Light			: register(t1);
-Texture2D Macro			: register(t2);
-Texture2D Fogmap		: register(t3);
-Texture2D Detail		: register(t4);
+// Metallicafan212:	Possible texture inputs for this shader
+//					This has hard inputs, but it checks what's actually bound before using them
+//					Otherwise, it's bound to a blank texture.
+//					It's a massive hack, but it seems to be better than using effects (at least on the FPS)
+//					The order here isn't the order executed below, it's just the order uploaded to the GPU
+Texture2D Diffuse 			: register(t0);
+Texture2D Light				: register(t1);
+Texture2D Macro				: register(t2);
+Texture2D Fogmap			: register(t3);
+Texture2D Detail			: register(t4);
 
+// Metallicafan212:	Samplers for each texture
 SamplerState DiffState 		: register(s0);
-
 SamplerState LightState 	: register(s1);
-
 SamplerState MacroState 	: register(s2);
-
 SamplerState FogState 		: register(s3);
-
 SamplerState DetailState	: register(s4);
 
 struct VSInput 
@@ -46,9 +47,6 @@ struct VSInput
 	float4 uv		: TEXCOORD0;
 	float4 color	: COLOR0;
 	float4 fog		: COLOR1;
-	
-	// Metallicafan212:	Reinterpret the last part of the vertex definition as the origin of the coords
-	//float4 origin	: POSIITON1;
 };
 
 struct PSInput 
@@ -58,9 +56,11 @@ struct PSInput
 	float2 lUV		: TEXCOORD1;
 	float2 mUV		: TEXCOORD2;
 	float2 fUV		: TEXCOORD3;
+	float4 dUV		: TEXCOORD4;
 	float4 color	: COLOR0; 
 	float4 fog		: COLOR1;
 	float  distFog	: COLOR2;
+	float2 detVars	: COLOR3;
 };
 
 
@@ -100,6 +100,13 @@ PSInput VertShader(VSInput input)
 	output.fUV.x	= (U - PanScale[3].x) * PanScale[3].z;
 	output.fUV.y	= (V - PanScale[3].y) * PanScale[3].w;
 	
+	// Metallicafan212:	Detail texture
+	output.dUV.x	= (U - PanScale[4].x) * PanScale[4].z;
+	output.dUV.y	= (V - PanScale[4].y) * PanScale[4].w;
+	
+	// Metallicafan212:	Pass out the original Z
+	output.dUV.z	= input.pos.z;
+	
 	// Metallicafan212:	Do the final fog value
 	output.distFog	= DoDistanceFog(output.pos);
 	
@@ -121,31 +128,51 @@ float4 PxShader(PSInput input) : SV_TARGET
 		DiffColor.xyz  *= Diff.xyz;
 		DiffColor.w	   *= Diff.w;
 	}
-		
-	if(bTexturesBound[0].y != 0)
+	
+	// Metallicafan212:	Detail texture
+	//					We're applying this now so that when detail textures fade in, they don't reduce the lightmap as much
+	//					TODO! Using the vars from DX7. Allow the user to specify this!!!!
+	if(bTexturesBound[1].x && input.dUV.z < 380.0f)
 	{
-		// Metallicafan212:	Light texture
-		DiffColor.xyz *= (Light.SampleBias(LightState, input.lUV, 0.0f) * 2).xyz;
-	}
+		// Metallicafan212:	Sample it
+		float3 Det = Detail.SampleBias(DetailState, input.dUV.xy, 0.0f).xyz;
 		
+		// Metallicafan212:	Now lerp it
+		float alpha = input.dUV.z / 380.0f;
+		Det = lerp(alpha, float3(1.0f, 1.0f, 1.0f), Det);
+		
+		// Metallicafan212:	Average the color
+		//					TODO! Should we actually be doing this???
+		Det.xyz = (Det.x + Det.y + Det.z) / 3.0f;
+		
+		// Metallicafan212:	Now add it to the image
+		//					When there's no detail texture, this operation effectively returns nothing
+		DiffColor.xyz = (DiffColor.xyz * Det);
+		DiffColor.xyz += DiffColor.xyz;
+		DiffColor.xyz /= 2.0f;
+	}
+	
+	// Metallicafan212:	Macro texture
+	//					This just modulates the color, like the lightmap
 	if(bTexturesBound[0].z)
 	{
-		// Metallicafan212:	Macro texture
-		
+		DiffColor.xyz *= (Macro.SampleBias(MacroState, input.mUV, 0.0f)).xyz;
 	}
-		
+	
+	// Metallicafan212:	Lightmap
+	//					TODO! Allow the user to specify the lightmap multiplication (some people like one-x scaling)
+	if(bTexturesBound[0].y != 0)
+	{
+		DiffColor.xyz *= (Light.SampleBias(LightState, input.lUV, 0.0f) * 2).xyz;
+	}
+	
+	// Metallicafan212:	Fog map
 	if(bTexturesBound[0].w)
 	{
-		// Metallicafan212:	Fog map
 		DiffColor.xyz += Fogmap.SampleBias(FogState, input.fUV, 0.0f).xyz;
 	}
 	
-	// Metallicafan212:	Detail texture, TODO!!!!
-	if(bTexturesBound[1].x)
-	{
-		
-	}
-		
+	// Metallicafan212:	TODO! This also sets the selection color for the editor! This should be re-evaluated
 	CLIP_PIXEL(DiffColor);
 
 	
