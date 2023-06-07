@@ -7,14 +7,9 @@ shared cbuffer CommonBuffer : register (b0)
 	COMMON_VARS;
 	
 	// Metallicafan212:	The info we use for this specific shader
-	//float4 	XAxis 		: packoffset(c11);
-	//float4 	YAxis 		: packoffset(c12);
-	//float4	ZAxis		: packoffset(c13);
-	//float4x4	Coords	: packoffset(c11);
 	float4		XAxis	: packoffset(c12);
 	float4		YAxis	: packoffset(c13);
 	float4		ZAxis	: packoffset(c14);
-	//float4		Origin	: packoffset(c14);
 	int			bDoRot	: packoffset(c15.x);
 	float3		Pad3	: packoffset(c15.y);
 };
@@ -44,6 +39,7 @@ struct PSInput
 	float4 color	: COLOR0; 
 	float4 fog		: COLOR1;
 	float  distFog	: COLOR2;
+	bool   bRejectBW: COLOR3;
 };
 
 PSInput VertShader(VSInput input)
@@ -57,41 +53,37 @@ PSInput VertShader(VSInput input)
 	}
 	
 	// Metallicafan212:	Set the W to 1 so matrix math works
-	input.pos.w 	= 1.0f;
-	
-	// Metallicafan212:	According to the DX10 driver we have to swap y?????
-	//output.pos.y =  -output.pos.y;
+	input.pos.w 		= 1.0f;
 	
 	// Metallicafan212:	Transform it out
-	output.pos 		= mul(input.pos, Proj);
-	//output.pos		= input.pos;
-	//output.pos.z	= mul(float4(1, 1, input.pos.z, 1), Proj).z;
-	output.color	= input.color;
-	//output.fog.xyzw = 0.0f;
-	output.uv.xy	= input.uv.xy;
+	output.pos 			= mul(input.pos, Proj);
+	output.color		= input.color;
+	output.uv.xy		= input.uv.xy;
 	
 	// Metallicafan212:	Do the final fog value
-	output.distFog	= DoDistanceFog(output.pos);
+	output.distFog		= DoDistanceFog(output.pos);
+	
+	// Metallicafan212:	TODO! If this is a UI tile, don't do the HP2 specific black and white effect
+	output.bRejectBW	= input.pos.z <= 0.5f;
 	
 	return output;
 }
 
 float4 PxShader(PSInput input) : SV_TARGET
 {
-	// Metallicafan212:	TODO! Texturing
-	//input.color.a = 1.0f;
-	//input.color.xyz = 1.0f;
-	
-	// Metallicafan212:	TODO! Use it so the register stay the same...
-	//input.pos = input.pos * 2.0f;
-	
-	//return input.color + input.fog;
-	//return input.color;
 	float4 DiffColor = Diffuse.SampleBias(DiffState, input.uv, 0.0f) * input.color;
 	
+	// Metallicafan212:	Do alpha rejecting
+	//					TODO! This also sets the global selection color for the editor!
+	//					Reevaluate how we do this!!!!
 	CLIP_PIXEL(DiffColor);
 	
 	DiffColor = DoPixelFog(input.distFog, DiffColor);
 	
-	return DoFinalColor(DiffColor);
+	if(bDoSelection || !input.bRejectBW)
+	{
+		DiffColor = DoFinalColor(DiffColor);
+	}
+
+	return DiffColor;
 }

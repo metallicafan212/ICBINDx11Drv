@@ -1,6 +1,6 @@
 #include "D3D11Drv.h"
 
-struct FTileMatrixDef : FMatrixDef
+struct FTileMatrixDef : FShaderVarCommon
 {
 	FPlane	XAxis;
 	FPlane	YAxis;

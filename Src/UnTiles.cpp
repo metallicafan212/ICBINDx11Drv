@@ -33,14 +33,14 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	PolyFlags &= ~PF_Memorized;
 
 
-#ifndef DX11_HP1
+#if DX11_HP2
 	if (Info.Palette && !(PolyFlags & PF_Translucent | PF_AlphaBlend))
 	{
 		PolyFlags |= PF_Highlighted | PF_Occlude;
 	}
 #endif
 
-#ifndef DX11_HP1
+#if DX11_HP2
 	// Metallicafan212:	Adjust the polyflags if we're using alpha
 	if (Color.W != 0.0f)
 	{
@@ -116,7 +116,7 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	}
 
 	// Metallicafan212:	Tile Alpha is reversed to account for the engine always fucking sending 0 for things that are 100% visible
-#ifndef DX11_HP1
+#if DX11_HP2
 	Color.W = 1.0f - Color.W;
 #else
 	Color.W = 1.0f;

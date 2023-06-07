@@ -1,6 +1,6 @@
 #include "D3D11Drv.h"
 
-struct FSurfMatrixDef : FMatrixDef
+struct FSurfMatrixDef : FShaderVarCommon
 {
 	FPlane	XAxis, YAxis;
 	//FPlane LPanScale, MPanScale, FPanScale;

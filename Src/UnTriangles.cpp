@@ -34,17 +34,13 @@ FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, QWORD PolyFlags, UBO
 		}
 		else if (bDoFog)
 		{
-			m_Vert->Color = P->Light;
-			m_Vert->Fog = P->Fog;
+			m_Vert->Color	= P->Light;
+			m_Vert->Fog		= P->Fog;
 		}
 		else
 		{
-#ifdef UTGLR_RUNE_BUILD
-			destVertexColor.color = FPlaneTo_BGR_Aub(&P->Light, alpha);
-#else
-			m_Vert->Color = P->Light;
-			m_Vert->Fog = FPlane(0, 0, 0, 0);
-#endif
+			m_Vert->Color	= P->Light;
+			m_Vert->Fog		= FPlane(0, 0, 0, 0);
 		}
 
 		// Set selection stuff
@@ -56,6 +52,7 @@ FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, QWORD PolyFlags, UBO
 }
 
 // Metallicafan212:	Functions relating to mesh/particle drawing
+//					TODO! Add in a config option to turn off and on "corrected fog", where it can completely fog actor verts!
 void UD3D11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, INT NumPts, _WORD* Indices, INT NumIndices, QWORD PolyFlags, FSpanBuffer* Span)
 {
 	guard(UD3D11RenderDevice::DrawTriangles);
@@ -68,7 +65,12 @@ void UD3D11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FT
 	// Metallicafan212:	Set the texture
 	SetTexture(0, &Info, PolyFlags);
 
-	if (1 && (GUglyHackFlags & HF_Weapon))
+	// Metallicafan212:	In HP2, I got tired of seeing the random numbers everywhere, so I made a definition for the flags, and then updated them engine-wide
+#if DX11_HP2
+	if ((GUglyHackFlags & HF_Weapon))
+#else
+	if((GUglyHackFlags & 0x1))
+#endif
 	{
 		SetProjectionStateNoCheck(true);
 	}

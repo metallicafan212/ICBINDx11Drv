@@ -1,6 +1,6 @@
 #include "D3D11Drv.h"
 
-struct FLineMatrixDef : FMatrixDef
+struct FLineMatrixDef : FShaderVarCommon
 {
 	// Metallicafan212:	Viewport X and Y
 	FLOAT	View[2];

@@ -5,6 +5,7 @@
 // Metallicafan212:	EXPLICIT HP2 new engine check
 //					Modify this to add in more game macros
 //					This is (currently) ONLY used to turn off specific code blocks, not to redefine the functions
+//					TODO!!!! Block more code behind this!!!!!!
 #define DX11_HP2 (!defined(DX11_UT_99) && !defined(DX11_UT_469) && !defined(DX11_UNREAL_227) && !defined(DX11_HP1) && !defined(DX11_RUNE) && !defined(DX11_DX))
 
 // Metallicafan212:	Maybe?
@@ -13,7 +14,7 @@
 
 #define USE_COMPUTE_SHADER 0
 
-#define D3D_DRIVER_VERSION TEXT("0.3 Alpha")
+#define D3D_DRIVER_VERSION TEXT("0.35 Alpha")
 
 // Metallicafan212:	Compile time
 #define COMPILED_AT			*FString::Printf(TEXT("%s @ %s"), appFromAnsi(__DATE__), appFromAnsi(__TIME__))
@@ -47,9 +48,6 @@ enum ERasterFlags
 	DXRS_NoAA		= 0x02,
 	DXRS_MAX		= 0xFF,
 };
-
-// Metallicafan212:	TODO! Union hack for automatically clma
-
 
 class UD3D11RenderDevice;
 
@@ -339,7 +337,6 @@ class UD3D11RenderDevice : public URenderDevice
 	ID3D11Device*				m_D3DDevice;
 
 	IDXGISwapChain1*			m_D3DSwapChain;
-	//IDXGISwapChain*			m_D3DSwapChain;
 	ID3D11DeviceContext*		m_D3DDeviceContext;
 
 	ID3D11Query*				m_D3DQuery;
@@ -368,9 +365,6 @@ class UD3D11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	Default state with no z writing
 	ID3D11DepthStencilState*	m_DefaultNoZState;
-
-	// Metallicafan212:	Default raster state with backfaces enabled
-	//ID3D11RasterizerState*		m_DefaultRasterState;
 
 	// Metallicafan212:	Raster states
 	TMap<DWORD, ID3D11RasterizerState*> RasterMap;

@@ -40,6 +40,7 @@ void UD3D11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 	}
 	else
 	{
+#if DX11_HP2
 		// Metallicafan212:	Make the alpha reversed as well
 		//					I may want to make alpha'd lines in the future
 		Color.W = 1.0f - Color.W;
@@ -54,17 +55,27 @@ void UD3D11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 
 		ExtraRasterFlags = OldFlags;
 
+		FPlane LineThick(GExtraLineSize * ThreeDeeLineThickness, 0.0f, 0.0f, 0.0f);
+#else
+		Color.W = 1.0f;
+
+		SetRasterState(DXRS_Normal);
+
+		FPlane LineThick(ThreeDeeLineThickness, 0.0f, 0.0f, 0.0f);
+#endif
+
 		// Metallicafan212:	Selection testing
 		if (m_HitData != nullptr)
 			Color = CurrentHitColor;
 
-		FPlane LineThick(GExtraLineSize * ThreeDeeLineThickness, 0.0f, 0.0f, 0.0f);
-
+		// Metallicafan212:	TODO! Other games don't have the flags I added... So we need to make it possible to project lines above everything (maybe a config option???)
+#if DX11_HP2
 		if (LineFlags & LINE_DrawOver || Viewport->Actor->ShowFlags & SHOW_Lines)
 		{
 			SetProjectionStateNoCheck(true);
 		}
 		else
+#endif
 		{
 			SetProjectionStateNoCheck(false);
 		}
@@ -111,6 +122,11 @@ void UD3D11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 	
 	SetBlend(PF_Highlighted | PF_Occlude);
 
+#if DX11_HP2
+	// Metallicafan212:	Make the alpha reversed as well
+	//					I may want to make alpha'd lines in the future
+	Color.W = 1.0f - Color.W;
+
 	// Metallicafan212:	Make sure wireframe doesn't get set on lines
 	DWORD OldFlags = ExtraRasterFlags;
 
@@ -121,11 +137,24 @@ void UD3D11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 
 	ExtraRasterFlags = OldFlags;
 
+	FPlane LineThick(GExtraLineSize * OrthoLineThickness, 0.0f, 0.0f, 0.0f);
+#else
+	Color.W = 1.0f;
+
+	SetRasterState(DXRS_Normal);
+
+	FPlane LineThick(OrthoLineThickness, 0.0f, 0.0f, 0.0f);
+
+#endif
+
+	// Metallicafan212:	TODO! Same as above, HP2 has a button on the viewport to toggle on line hack projection
+#if DX11_HP2
 	if (LineFlags & LINE_DrawOver || Viewport->Actor->ShowFlags & SHOW_Lines)
 	{
 		SetProjectionStateNoCheck(true);
 	}
 	else
+#endif
 	{
 		SetProjectionStateNoCheck(false);
 	}
@@ -144,15 +173,9 @@ void UD3D11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 	FLOAT X2Pos = m_RFX2 * (P2.X - Frame->FX2);
 	FLOAT Y2Pos = m_RFY2 * (P2.Y - Frame->FY2);
 
-	// Metallicafan212:	Make the alpha reversed as well
-	//					I may want to make alpha'd lines in the future
-	Color.W = 1.0f - Color.W;
-
 	// Metallicafan212:	Selection testing
 	if (m_HitData != nullptr)
 		Color = CurrentHitColor;
-
-	FPlane LineThick(GExtraLineSize * OrthoLineThickness, 0.0f, 0.0f, 0.0f);
 
 	if (!Frame->Viewport->IsOrtho())
 	{
@@ -190,8 +213,10 @@ void UD3D11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD Line
 {
 	guard(UD3D11RenderDevice::Draw2DPoint);
 
-	// Metallicafan212:	TODO! Point/line shader
-	SetBlend(PF_Highlighted | PF_Occlude);
+#if DX11_HP2
+	// Metallicafan212:	Make the alpha reversed as well
+	//					I may want to make alpha'd lines in the future
+	Color.W = 1.0f - Color.W;
 
 	// Metallicafan212:	Make sure wireframe doesn't get set on lines
 	DWORD OldFlags = ExtraRasterFlags;
@@ -202,6 +227,15 @@ void UD3D11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD Line
 	SetRasterState(DXRS_Normal);
 
 	ExtraRasterFlags = OldFlags;
+#else
+	Color.W = 1.0f;
+
+	SetRasterState(DXRS_Normal);
+#endif
+
+	// Metallicafan212:	TODO! Point/line shader
+	SetBlend(PF_Highlighted | PF_Occlude);
+
 
 	if (LineFlags & LINE_DrawOver || Viewport->Actor->ShowFlags & SHOW_Lines)
 	{
@@ -211,18 +245,14 @@ void UD3D11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD Line
 	{
 		SetProjectionStateNoCheck(false);
 	}
-	FGenShader->Bind();
 
+	FGenShader->Bind();
 
 	LockVertexBuffer(sizeof(FD3DVert) * 6);
 
 
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Points);
-
-	// Metallicafan212:	Make the alpha reversed as well
-	//					I may want to make alpha'd lines in the future
-	Color.W = 1.0f - Color.W;
 
 	// Metallicafan212:	Selection testing
 	if (m_HitData != nullptr)

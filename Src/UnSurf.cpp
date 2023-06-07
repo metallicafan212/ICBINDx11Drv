@@ -57,7 +57,7 @@ void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Sur
 	// Metallicafan212:	TODO! Do indexed buffering
 	EndBuffering();
 
-#ifndef DX11_HP1
+#if DX11_HP2
 	// Metallicafan212:	Editor shit, so we can see lumos
 	if (GIsEditor && (PolyFlags & PF_LumosAffected))
 	{
@@ -67,6 +67,7 @@ void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Sur
 	}
 #endif
 
+#if DX11_HP2
 	// Metallicafan212:	Copy over the surface alpha
 	FSurfShader->SurfAlpha = cAlpha / 255.0f;
 
@@ -82,7 +83,10 @@ void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Sur
 			PolyFlags |= PF_Occlude;
 		}
 	}
-
+#else
+	// Metallicafan212:	TODO! Other games might use a surface alpha (like Rune iirc?). Reevaluate this later
+	FSurfShader->SurfAlpha = 1.0f;
+#endif
 
 	SetBlend(PolyFlags);
 
@@ -108,7 +112,7 @@ void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Sur
 
 	SetTexture(3, Surface.FogMap, 0);
 
-	// Metallicafan212:	TODO! Support detail textures!!!
+	// Metallicafan212:	Also bind the detail texture lmao
 	SetTexture(4, Surface.DetailTexture, 0);
 
 	// Metallicafan212:	TODO! Maybe embedd this instead of doing it in the shader?
@@ -148,42 +152,12 @@ void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Sur
 		if (NumPts < 3)
 			continue;
 
-		//Lock vertexColor and texCoord0 buffers
-		//LockVertexColorBuffer();
-		//LockTexCoordBuffer(0);
-
-		//FGLTexCoord* pTexCoordArray = m_pTexCoordArray[0];
-		//FGLVertexColor* pVertexColorArray = m_pVertexColorArray;
-
 		SIZE_T j = 1;
 		
 		// Metallicafan212:	Set the base
-		/*
-		m_VertexBuff[V].X		= Poly->Pts[0]->Point.X;
-		m_VertexBuff[V].Y		= Poly->Pts[0]->Point.Y;
-		m_VertexBuff[V].Z		= Poly->Pts[0]->Point.Z;
-		m_VertexBuff[V].Color	= TestColor;
-		*/
 
 		for (SIZE_T i = V; i < (NumPts + V); i)
 		{
-			/*
-			pTexCoordArray[i].u = 0.5f;
-			pTexCoordArray[i].v = 0.5f;
-
-			pVertexColorArray[i].x = Poly->Pts[i]->Point.X;
-			pVertexColorArray[i].y = Poly->Pts[i]->Point.Y;
-			pVertexColorArray[i].z = Poly->Pts[i]->Point.Z;
-			pVertexColorArray[i].color = polyColor;
-			*/
-
-			/*
-			m_VertexBuff[i].X		= Poly->Pts[i]->Point.X;
-			m_VertexBuff[i].Y		= Poly->Pts[i]->Point.Y;
-			m_VertexBuff[i].Z		= Poly->Pts[i]->Point.Z;
-			m_VertexBuff[i].Color	= TestColor;
-			*/
-
 			// Metallicafan212:	Assemble each triangle
 			//					Each triangle needs to be the base first, then the next two?
 			m_VertexBuff[i].X		= Poly->Pts[0]->Point.X;
@@ -202,25 +176,7 @@ void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Sur
 			m_VertexBuff[i++].Color	= TestColor;
 		}
 
-		V += NumPts;
-
-		//UnlockVertexBuffer();
-
-		//Unlock vertexColor and texCoord0 buffers
-		//UnlockVertexColorBuffer();
-		//UnlockTexCoordBuffer(0);
-
-		//Draw the triangle fan
-		//m_d3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, m_curVertexBufferPos, NumPts - 2);
-		//DO_DRAW(m_d3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, m_curVertexBufferPos, NumPts - 2));
-
-		//Advance vertex buffer position
-		//m_curVertexBufferPos += NumPts;
-
-		// Metallicafan212:	Now draw
-		//m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-		//m_D3DDeviceContext->Draw(NumPts, m_DrawnVerts);
-		//AdvanceVertPos(NumPts);		
+		V += NumPts;	
 	}
 
 	UnlockVertexBuffer();
@@ -253,8 +209,9 @@ void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Sur
 
 #endif
 
-	// Metallicafan212:	TODO! Support selection
-	// UnrealEd selection.
+	// Metallicafan212:	TODO! Make selection a part of the shader???
+	//					I tried it before, but it just looked wrong since it had to compete with the underlying texture color
+	//					For now, just layer on top to preserve the same look as the other renderers
 	if ((GIsEditor && (PolyFlags & PF_Selected)) || (PolyFlags & PF_FlatShaded))
 	{
 		// Metallicafan212:	We have to draw the previous indexed surface first!!!!
@@ -271,10 +228,11 @@ void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Sur
 		SetTexture(1, nullptr, 0);
 		SetTexture(2, nullptr, 0);
 		SetTexture(3, nullptr, 0);
+		SetTexture(4, nullptr, 0);
 
 		// Metallicafan212:	Rebind the shader....
 
-#ifndef DX11_HP1
+#if	DX11_HP2
 		SetBlend(PF_AlphaBlend);
 #else
 		SetBlend(PF_Highlighted | PF_Translucent);

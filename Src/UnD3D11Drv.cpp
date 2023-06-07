@@ -662,9 +662,6 @@ void UD3D11RenderDevice::SetupResources()
 		// Metallicafan212:	Make it stop messing with the window itself
 		dxgiFactory->MakeWindowAssociation((HWND)Viewport->GetWindow(), DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER);
 
-		// Metallicafan212:	Remove alt+enter since Unreal already does that
-		//dxgiFactory->MakeWindowAssociation((HWND)Viewport->GetWindow(), DXGI_MWA_NO_ALT_ENTER);
-
 		// Metallicafan212:	Release all the pointers
 		dxgiFactory->Release();
 		dxgiAdapter->Release();
@@ -1000,7 +997,6 @@ void UD3D11RenderDevice::Exit()
 
 	SAFE_RELEASE(m_TextParams);
 
-	//SAFE_RELEASE(m_DefaultRasterState);
 	FlushRasterStates();
 
 
@@ -1078,7 +1074,7 @@ UBOOL UD3D11RenderDevice::Exec(const TCHAR* Cmd, FOutputDevice& Ar)
 		{
 			Str += FString::Printf(TEXT("%ix%i "), (INT)Relevant(i).X, (INT)Relevant(i).Y);
 		}
-		// Metallicafan212:	This causes the HP2 UC to not add on 1920x1080
+		// Metallicafan212:	This causes the HP2 UC to not add on 1920x1080 (aka the desktop res)
 		Ar.Log(*Str);//.LeftChop(1));
 		return 1;
 	}
@@ -1106,6 +1102,7 @@ void UD3D11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane Scr
 		}
 	}
 
+#if DX11_HP2
 	// Metallicafan212:	Check for wireframe
 	if (Viewport->IsWire())
 	{
@@ -1115,6 +1112,7 @@ void UD3D11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane Scr
 	{
 		ExtraRasterFlags = 0;
 	}
+#endif
 
 	// Metallicafan212:	Only clear if we're in the editor
 	if (GIsEditor || (RenderLockFlags & LOCKR_ClearScreen))
@@ -1148,14 +1146,6 @@ void UD3D11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane Scr
 		// Metallicafan212:	Tell unreal there was no hits (so far)
 		*m_HitSize		= 0;
 	}
-
-	// Metallicafan212:	TODO! Don't set this each lock???
-	/*
-	m_D3DDeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
-	UINT Stride = sizeof(FD3DVert);
-	UINT Offset = 0;
-	m_D3DDeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
-	*/
 
 	// Metallicafan212:	Setup the buffers
 	LockVertexBuffer(0, 0);
@@ -1381,7 +1371,11 @@ void UD3D11RenderDevice::SetSceneNode(FSceneNode* Frame)
 	m_Aspect	= Frame->FY * rcpFrameFX;
 
 	// Metallicafan212:	This is HP2 specific! Since I have a viewport FOV that is calcuated to be a hor+ FOV, so 90 @ 16x9 is 109
+#if DX11_HP2
 	m_RProjZ	= appTan(Viewport->FOVAngle * PI / 360.0);//Viewport->Actor->FovAngle * PI / 360.0);
+#else
+	m_RProjZ	= appTan(Viewport->Actor->FovAngle * PI / 360.0);
+#endif
 	m_RFX2		= 2.0f * m_RProjZ * rcpFrameFX;
 	m_RFY2		= 2.0f * m_RProjZ * rcpFrameFX;
 
@@ -1428,7 +1422,11 @@ void UD3D11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRangeHac
 	zNear	= 1.0f		* zNearVal;
 
 	//Set zFar
+#if DX11_HP2 || DX11_UNREAL_227
 	zFar = 49152.0f;
+#else
+	zFar = 32768.0f;
+#endif
 
 	if (bRequestingNearRangeHack)
 	{

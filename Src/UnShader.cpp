@@ -159,7 +159,7 @@ void FD3DShader::SetupConstantBuffer()
 
 	// Metallicafan212:	Matrix layout
 	//					TODO! Ask the child shader for this?
-	D3D11_BUFFER_DESC MatrixDesc = { sizeof(FMatrixDef), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+	D3D11_BUFFER_DESC MatrixDesc = { sizeof(FShaderVarCommon), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
 
 	HRESULT hr = ParentDevice->m_D3DDevice->CreateBuffer(&MatrixDesc, nullptr, &ShaderConstantsBuffer);
 
@@ -174,7 +174,7 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 	guard(FD3DShader::WriteConstantBuffer);
 
 	// Metallicafan212:	Copy over
-	FMatrixDef* MDef			= ((FMatrixDef*)InMem);
+	FShaderVarCommon* MDef			= ((FShaderVarCommon*)InMem);
 	MDef->Proj					= ParentDevice->Proj;
 	/*
 	MDef->ViewX					= ParentDevice->m_sceneNodeX;
