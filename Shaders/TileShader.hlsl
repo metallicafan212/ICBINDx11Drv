@@ -64,6 +64,7 @@ PSInput VertShader(VSInput input)
 	output.distFog		= DoDistanceFog(output.pos);
 	
 	// Metallicafan212:	TODO! If this is a UI tile, don't do the HP2 specific black and white effect
+	//					Should make this configurable....
 	output.bRejectBW	= input.pos.z <= 0.5f;
 	
 	return output;

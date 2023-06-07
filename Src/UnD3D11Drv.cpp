@@ -355,6 +355,7 @@ void UD3D11RenderDevice::SetRasterState(DWORD State)
 				Desc.FillMode = D3D11_FILL_SOLID;
 			}
 
+			// Metallicafan212:	TODO!!!! This does NOTHING in real DX11 modes!!!
 			if (State & DXRS_NoAA)
 			{
 				Desc.AntialiasedLineEnable	= FALSE;
@@ -464,8 +465,10 @@ UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT Ne
 
 	RegisterTextureFormat(TEXF_RGBA7, DXGI_FORMAT_B8G8R8A8_UNORM, 1, 4, &FD3DTexType::RawPitch, nullptr, RGBA7To8);
 	
-	// Metallicafan212:	Raw ARGB texture
-#if DX11_UT_469
+	// Metallicafan212:	I have standardized the TEXF enum between UT469 and HP2 (since BC6H is currently unused and RGBA8 was already called ARGB in the editor/implemented as BGRA8)
+
+	// Metallicafan212:	Raw BGRA texture
+#if DX11_UT_469 || DX11_HP2
 	RegisterTextureFormat(TEXF_BGRA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 4, &FD3DTexType::RawPitch);
 #else
 	RegisterTextureFormat(TEXF_RGBA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 4, &FD3DTexType::RawPitch);
@@ -483,10 +486,13 @@ UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT Ne
 
 	RegisterTextureFormat(TEXF_BC5, DXGI_FORMAT_BC5_UNORM, 0, 16, &FD3DTexType::BlockCompressionPitch);
 
-#if DX11_UT_469
+	// Metallicafan212:	I'll take whatever need to be done for BC6, as it's currently unimplemented in HP2
+	//					So, if the format needs to be changed, just change it and I'll make it match when I finally finish implementing it
+	//					AMD compressonator wasn't producing this correctly (which is why I disabled it)
+#if DX11_UT_469 || DX11_HP2
 	RegisterTextureFormat(TEXF_BC6H, DXGI_FORMAT_BC6H_UF16, 0, 16, &FD3DTexType::BlockCompressionPitch);
-#else
-	RegisterTextureFormat(TEXF_BC6, DXGI_FORMAT_BC6H_UF16, 0, 16, &FD3DTexType::BlockCompressionPitch);
+//#else
+//	RegisterTextureFormat(TEXF_BC6H, DXGI_FORMAT_BC6H_UF16, 0, 16, &FD3DTexType::BlockCompressionPitch);
 #endif
 
 	RegisterTextureFormat(TEXF_BC7, DXGI_FORMAT_BC7_UNORM, 0, 16, &FD3DTexType::BlockCompressionPitch);

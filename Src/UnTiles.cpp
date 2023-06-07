@@ -18,6 +18,20 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	SetRasterState(DXRS_Normal | DXRS_NoAA);
 	*/
 
+	/*
+	// Metallicafan212:	TEST!!!! Floor the values to see if the NV tile rendering bug goes away
+	X	= appFloor(X);
+	Y	= appFloor(Y);
+	XL	= appFloor(XL);
+	YL	= appFloor(YL);
+	U	= appFloor(U);
+	V	= appFloor(V);
+	UL	= appFloor(UL);
+	VL	= appFloor(VL);
+	*/
+
+	// Metallicafan212:	The check for memorized really only need to be done in HP2, since I use it to mark a tile as rotated
+#if DX11_HP2
 	// Metallicafan212:	Make sure wireframe doesn't get set on tiles!
 	DWORD OldFlags = ExtraRasterFlags;
 
@@ -35,6 +49,11 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 		FTileShader->bDoTileRotation = 0;
 
 	PolyFlags &= ~PF_Memorized;
+#else
+	SetRasterState(DXRS_Normal);
+
+	SetProjectionStateNoCheck(false);
+#endif
 
 
 #if DX11_HP2
@@ -64,7 +83,7 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 #endif
 
 
-	// Metallicafan212:	Copied from the DX9 deiver
+	// Metallicafan212:	Setup blending
 	SetBlend(PolyFlags);
 
 	//if (SceneNodeHack) //&& !bUsingRT) 
@@ -138,10 +157,10 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	FLOAT TexInfoUMult = BoundTextures[0].TexInfo->UMult;
 	FLOAT TexInfoVMult = BoundTextures[0].TexInfo->VMult;
 
-	FLOAT SU1 = U * TexInfoUMult;
-	FLOAT SU2 = (U + UL) * TexInfoUMult;
-	FLOAT SV1 = V * TexInfoVMult;
-	FLOAT SV2 = (V + VL) * TexInfoVMult;
+	FLOAT SU1			= U * TexInfoUMult;
+	FLOAT SU2			= (U + UL) * TexInfoUMult;
+	FLOAT SV1			= V * TexInfoVMult;
+	FLOAT SV2			= (V + VL) * TexInfoVMult;
 
 	// Buffer the tiles
 	m_VertexBuff[0].Color	= Color;

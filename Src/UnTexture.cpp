@@ -227,7 +227,7 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, U
 	if (Info.Texture != nullptr && Info.Texture->GetClass() == UDX11RenderTargetTexture::StaticClass())
 	{
 		DaTex->bIsRT		= 1;
-#if DX11_UT_469
+#if DX11_UT_469 || DX11_HP2
 		DaTex->Format		= TEXF_BGRA8;
 #else
 		DaTex->Format		= TEXF_RGBA8;
@@ -417,7 +417,7 @@ void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void
 
 void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip)
 {
-	guard(P8ToRGBA);
+	guard(RGBA7To8);
 
 	DWORD* pTex = (DWORD*)ConversionMem;
 
@@ -567,7 +567,11 @@ void UD3D11RenderDevice::SetBlend(QWORD PolyFlags)
 				{
 					FindAndSetBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
 				}
+#if DX11_HP2
 				else if (blendFlags & PF_Translucent && (blendFlags & PF_Highlighted || blendFlags & PF_AlphaBlend))
+#else
+				else if (blendFlags & PF_Translucent && (blendFlags & PF_Highlighted))
+#endif
 				{
 					FindAndSetBlend(PF_Translucent | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
 				}
@@ -611,11 +615,11 @@ void UD3D11RenderDevice::SetBlend(QWORD PolyFlags)
 				{
 					FindAndSetBlend(PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
 				}
-#endif
 				else if (blendFlags & PF_ColorMask)
 				{
 					FindAndSetBlend(PF_ColorMask, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
 				}
+#endif
 				else if (blendFlags & PF_Masked)
 				{
 					FindAndSetBlend(PF_Masked, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
