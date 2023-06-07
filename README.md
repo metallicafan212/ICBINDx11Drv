@@ -1,4 +1,4 @@
-# D3D11Drv
+# D3D11Drv (name change pending)
 Metallicafan212’s Farm-Raised DirectX 11 Renderer.
 ![image](https://github.com/metallicafan212/D3D11Drv/assets/5996243/787208bd-fe10-4f51-a7e6-675cc8a5fc3c)
 
