@@ -140,6 +140,11 @@ static UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*
 	}
 	DataPtr = Mip->DataPtr;
 	Size    = Mip->DataArray.Num();
+
+	// Metallicafan212:	The compiler hates if we reference the pointer directly, so we have to use a variable....
+	//					Doing (Type->*GetTexturePitch)() should work, but MSVC is being a stickler for some reason....
+	FD3DTexType::GetPitch P = Type->GetTexturePitch;
+
 	SourcePitch = (Type->*P)(Mip->USize);
 #elif DX11_UT_469
 	UBOOL Compressed = FIsCompressedFormat(Info.Format);

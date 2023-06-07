@@ -1,13 +1,13 @@
 #pragma once
 // Metallicafan212:	TODO!
 #include "UnBuild.h"
-#include "UnObjVer.h"
 
 // Metallicafan212:	EXPLICIT HP2 new engine check
 //					Modify this to add in more game macros
 //					This is (currently) ONLY used to turn off specific code blocks, not to redefine the functions
 //					TODO!!!! Block more code behind this!!!!!!
 #define DX11_HP2 (!defined(DX11_UT_99) && !defined(DX11_UT_469) && !defined(DX11_UNREAL_227) && !defined(DX11_HP1) && !defined(DX11_RUNE) && !defined(DX11_DX))
+
 
 #if UNREAL_TOURNAMENT_OLDUNREAL
 # define DX11_UT_469 1
@@ -27,6 +27,11 @@
 # define HF_Weapon HACKFLAGS_PostRender
 // Misc
 # define GExtraLineSize 1
+#endif
+
+// Metallicafan212:	This breaks HP2 building (and I'm too lazy to actually fix the header), so I ifdef'd it
+#if !DX11_HP2
+#include "UnObjVer.h"
 #endif
 
 
