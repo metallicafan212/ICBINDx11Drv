@@ -204,10 +204,17 @@ int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& Dr
 		if (FString(*tempFontName).Caps().InStr(TEXT(" BOLD")) != INDEX_NONE)
 			fontWeight = DWRITE_FONT_WEIGHT_BOLD;
 
+		// Metallicafan212:	In order for DWrite to use custom fonts, we have to provide a collection here...
+		//					This is initialized globally in the windowing subsystem, and the separate shared factory here can access it just fine
+#if DX11_HP2
+		IDWriteFontCollection* FC = (IDWriteFontCollection*)GDWriteFontCollection;
+#else
+		IDWriteFontCollection* FC = nullptr;
+#endif
 		// Metallicafan212:	Create it
 		hr = m_D2DWriteFact->CreateTextFormat(
 			*Font->FontName,
-			NULL,
+			FC,
 			fontWeight,
 			DWRITE_FONT_STYLE_NORMAL,
 			DWRITE_FONT_STRETCH_NORMAL,
