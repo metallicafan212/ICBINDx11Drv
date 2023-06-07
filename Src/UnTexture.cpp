@@ -129,7 +129,7 @@ void UD3D11RenderDevice::MakeTextureSampler(FD3DTexture* Bind, QWORD PolyFlags)
 	unguard;
 }
 
-static UBOOL GetMipDataAndSize(FTextureInfo& Info, INT MipNum, BYTE*& DataPtr, INT& Size)
+static UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch)
 {
 #if DX11_HP2
 	FMipmap* Mip = Info.Mips[MipNum];
@@ -140,20 +140,24 @@ static UBOOL GetMipDataAndSize(FTextureInfo& Info, INT MipNum, BYTE*& DataPtr, I
 	}
 	DataPtr = Mip->DataPtr;
 	Size    = Mip->DataArray.Num();
+	SourcePitch = (Type->*P)(Mip->USize);
 #elif DX11_UT_469
-	FMipmap* Mip = Info.Texture ? &Info.Texture->Mips(MipNum) : nullptr;
+	UBOOL Compressed = FIsCompressedFormat(Info.Format);
+	FMipmap* Mip = Info.Texture ? (Compressed ? &Info.Texture->CompMips(MipNum) : &Info.Texture->Mips(MipNum)) : nullptr;
 	if (Mip)
 	{
 		Mip->LoadMip();
 		DataPtr = Mip->DataPtr;
 		Size    = Mip->DataArray.Num();
+		SourcePitch = FTextureBlockBytes(Info.Format) * FTextureBlockAlignedWidth(Info.Format, Mip->USize) / FTextureBlockWidth(Info.Format);
 	}	
 	else
 	{	
-		// probably a light or fog map
+		// probably a light or fog map	
 		FMipmapBase* MipBase = Info.Mips[MipNum];
 		DataPtr = MipBase->DataPtr;
-		Size    = FTextureBytes(Info.Format, Info.USize, Info.VSize);
+		Size    = FTextureBytes(Info.Format, MipBase->USize, MipBase->VSize);
+		SourcePitch = FTextureBlockBytes(Info.Format) * FTextureBlockAlignedWidth(Info.Format, MipBase->USize) / FTextureBlockWidth(Info.Format);
 	}
 #else
 #error "Implement Me!"
@@ -237,7 +241,7 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, U
 
 	FD3DTexType::GetPitch P = Type->GetTexturePitch;
 	BYTE* MipData = nullptr;
-	INT MipSize = 0;
+	INT MipSize = 0, MipPitch = 0;
 
 	// Metallicafan212:	Check if we need to make it
 	if (DaTex->m_Tex == nullptr)
@@ -330,14 +334,14 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, U
 		CopyTexture:
 			// Metallicafan212:	We need to copy each mip
 			for (INT i = 0; i < Info.NumMips; i++)
-			{
-				if (GetMipDataAndSize(Info, i, MipData, MipSize))
-					Type->TexUploadFunc(MipData, MipSize, (Type->*P)(Info.Mips[i]->USize), ConversionMemory, DaTex, m_D3DDeviceContext, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
+			{	
+				if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch))
+					Type->TexUploadFunc(MipData, MipSize, MipPitch, ConversionMemory, DaTex, m_D3DDeviceContext, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
 			}
 		}
 		else
 		{
-		ConvertTexture:
+		ConvertTexture:	
 			// Metallicafan212:	We need to convert each mip!!!! TODO!
 			UBOOL bMaskedHack = (Info.Format == TEXF_P8 && PolyFlags & PF_Masked);
 
@@ -349,7 +353,7 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, U
 
 			for (INT i = 0; i < Info.NumMips; i++)
 			{
-				if (GetMipDataAndSize(Info, i, MipData, MipSize))
+				if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch))
 				{
 					// Metallicafan212:	Sigh.... We need to map dynamic memory to do this!!!!!
 					// Metallicafan212:	Do the conversion over
