@@ -51,7 +51,7 @@ void UD3D11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, QWORD PolyFl
 	// Metallicafan212:	Check if we need to upload it to the GPU
 	UBOOL bUpload			= DaTex == nullptr || Info->bRealtimeChanged /* || Info->bRealtime || Info->bParametric*/ || (PolyFlags & PF_Masked) != (DaTex->PolyFlags & PF_Masked);
 
-	UBOOL bDoSampUpdate		= (PolyFlags & (PF_NoSmooth | PF_ClampUVs)) != (DaTex->PolyFlags & (PF_NoSmooth | PF_ClampUVs));
+	UBOOL bDoSampUpdate;
 
 	if(bUpload)
 	{
@@ -62,6 +62,10 @@ void UD3D11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, QWORD PolyFl
 
 		// Metallicafan212:	Already did the sample update
 		bDoSampUpdate = 0;
+	}
+	else if (DaTex)
+	{
+		bDoSampUpdate = (PolyFlags & (PF_NoSmooth | PF_ClampUVs)) != (DaTex->PolyFlags & (PF_NoSmooth | PF_ClampUVs));
 	}
 
 	BoundTextures[TexNum].TexInfo	= DaTex;
@@ -125,6 +129,43 @@ void UD3D11RenderDevice::MakeTextureSampler(FD3DTexture* Bind, QWORD PolyFlags)
 	unguard;
 }
 
+static UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch)
+{
+#if DX11_HP2
+	FMipmap* Mip = Info.Mips[MipNum];
+	if (Mip->DataPtr == nullptr)
+	{
+		Mip->DataArray.Load();
+		Mip->DataPtr = static_cast<BYTE*>(Mip->DataArray.GetData());
+	}
+	DataPtr = Mip->DataPtr;
+	Size    = Mip->DataArray.Num();
+	SourcePitch = (Type->*P)(Mip->USize);
+#elif DX11_UT_469
+	UBOOL Compressed = FIsCompressedFormat(Info.Format);
+	FMipmap* Mip = Info.Texture ? (Compressed ? &Info.Texture->CompMips(MipNum) : &Info.Texture->Mips(MipNum)) : nullptr;
+	if (Mip)
+	{
+		Mip->LoadMip();
+		DataPtr = Mip->DataPtr;
+		Size    = Mip->DataArray.Num();
+		SourcePitch = FTextureBlockBytes(Info.Format) * FTextureBlockAlignedWidth(Info.Format, Mip->USize) / FTextureBlockWidth(Info.Format);
+	}	
+	else
+	{	
+		// probably a light or fog map	
+		FMipmapBase* MipBase = Info.Mips[MipNum];
+		DataPtr = MipBase->DataPtr;
+		Size    = FTextureBytes(Info.Format, MipBase->USize, MipBase->VSize);
+		SourcePitch = FTextureBlockBytes(Info.Format) * FTextureBlockAlignedWidth(Info.Format, MipBase->USize) / FTextureBlockWidth(Info.Format);
+	}
+#else
+#error "Implement Me!"
+#endif
+
+	return TRUE;
+}
+
 void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, UBOOL bJustSampler)
 {
 	guard(UD3D11RenderDevice::CacheTextureInfo);
@@ -167,8 +208,10 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, U
 	DaTex->CacheID		= CacheID;
 
 	// Metallicafan212:	More texture information
+#if DX11_HP2
 	DaTex->MaskedColor			= Info.MaskedColor.Plane();
 	DaTex->MaskedGranularity	= Info.GranularityColor.Plane();
+#endif
 
 	// Metallicafan212:	This was stupid to leave here lmao
 	//DaTex->Format		= Info.Format;
@@ -179,7 +222,11 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, U
 	if (Info.Texture != nullptr && Info.Texture->GetClass() == UDX11RenderTargetTexture::StaticClass())
 	{
 		DaTex->bIsRT		= 1;
+#if DX11_UT_469
+		DaTex->Format		= TEXF_BGRA8;
+#else
 		DaTex->Format		= TEXF_RGBA8;
+#endif
 		DaTex->TexFormat	= DXGI_FORMAT_B8G8R8A8_UNORM;
 
 		return;
@@ -193,6 +240,8 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, U
 	FD3DTexType* Type = SupportedTextures.Find(Info.Format);
 
 	FD3DTexType::GetPitch P = Type->GetTexturePitch;
+	BYTE* MipData = nullptr;
+	INT MipSize = 0, MipPitch = 0;
 
 	// Metallicafan212:	Check if we need to make it
 	if (DaTex->m_Tex == nullptr)
@@ -285,18 +334,14 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, U
 		CopyTexture:
 			// Metallicafan212:	We need to copy each mip
 			for (INT i = 0; i < Info.NumMips; i++)
-			{
-				if (Info.Mips[i]->DataPtr == nullptr)
-				{
-					Info.Mips[i]->DataArray.Load();
-					Info.Mips[i]->DataPtr = Info.Mips[i]->DataArray.GetData();
-				}
-				Type->TexUploadFunc(Info.Mips[i]->DataPtr, Info.Mips[i]->DataArray.Num(), (Type->*P)(Info.Mips[i]->USize), ConversionMemory, DaTex, m_D3DDeviceContext, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
+			{	
+				if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch))
+					Type->TexUploadFunc(MipData, MipSize, MipPitch, ConversionMemory, DaTex, m_D3DDeviceContext, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
 			}
 		}
 		else
 		{
-		ConvertTexture:
+		ConvertTexture:	
 			// Metallicafan212:	We need to convert each mip!!!! TODO!
 			UBOOL bMaskedHack = (Info.Format == TEXF_P8 && PolyFlags & PF_Masked);
 
@@ -308,16 +353,15 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, U
 
 			for (INT i = 0; i < Info.NumMips; i++)
 			{
-				// Metallicafan212:	Sigh.... We need to map dynamic memory to do this!!!!!
-				// Metallicafan212:	Do the conversion over
-				SIZE_T Size = (Info.Mips[i]->DataArray.Num() == 0 ? 4 * Info.Mips[i]->USize * Info.Mips[i]->VSize : Info.Mips[i]->DataArray.Num());
-
-				if (Info.Mips[i]->DataPtr == nullptr)
+				if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch))
 				{
-					Info.Mips[i]->DataArray.Load();
-					Info.Mips[i]->DataPtr = Info.Mips[i]->DataArray.GetData();
+					// Metallicafan212:	Sigh.... We need to map dynamic memory to do this!!!!!
+					// Metallicafan212:	Do the conversion over
+					SIZE_T Size = (MipSize == 0 ? 4 * Info.Mips[i]->USize * Info.Mips[i]->VSize : MipSize);
+					checkSlow(Size <= 4 * Info.USize * Info.VSize);
+
+					Type->TexConvFunc(Info.Palette, MipData, Size, (Type->*P)(Info.Mips[i]->USize), ConversionMemory, DaTex, m_D3DDeviceContext, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
 				}
-				Type->TexConvFunc(Info.Palette, Info.Mips[i]->DataPtr, Size, (Type->*P)(Info.Mips[i]->USize), ConversionMemory, DaTex, m_D3DDeviceContext, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
 
 			}
 
@@ -435,7 +479,15 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 	//					There might be a quicker way to do this, but this was the easiest to write lmao
 	while (Read < SourceLength)
 	{
+#if DX11_HP2
 		(*(DWORD*)DBytes) = Palette[Bytes[Read]].Int4;
+#else
+		const FColor& Color = Palette[Bytes[Read]];
+		DBytes[0] = Color.R;
+		DBytes[1] = Color.G;
+		DBytes[2] = Color.B;
+		DBytes[3] = Color.A;
+#endif
 
 		Read	+= 1;
 		DBytes	+= 4;
@@ -641,3 +693,30 @@ void UD3D11RenderDevice::SetBlend(QWORD PolyFlags)
 
 	unguard;
 }
+
+#if DX11_UT_469
+UBOOL UD3D11RenderDevice::SupportsTextureFormat(ETextureFormat Format)
+{
+	switch (Format)
+	{
+		case TEXF_P8:
+		case TEXF_RGBA7:
+		case TEXF_RGB8:
+		case TEXF_BGRA8:
+			return true;
+		case TEXF_BC1:
+		case TEXF_BC2:
+		case TEXF_BC3:
+		case TEXF_BC4:
+		case TEXF_BC4_S:
+		case TEXF_BC5:
+		case TEXF_BC5_S:
+		case TEXF_BC6H_S:
+		case TEXF_BC6H:
+		case TEXF_BC7:
+			return SupportsTC;
+		default:
+			return false;
+	}
+}
+#endif

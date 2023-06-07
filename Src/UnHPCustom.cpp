@@ -10,13 +10,20 @@ void UDX11RenderTargetTexture::Lock(FTextureInfo& Info, FTime InTime, INT LOD, U
 	guard(UDX11RenderTargetTexture::Lock);
 
 	// Metallicafan212:	Copy HP2 specific info
+#if DX11_HP2
 	Info.MaskedColor		= MaskedColor;
 	Info.GranularityColor	= MaskedGranularity;
+#endif
 
 	// Metallicafan212:	Setup the common vars
 	Info.Texture			= this;
+#if DX11_HP2
 	Info.UScale				= DrawScale;
 	Info.VScale				= DrawScale;
+#else
+	Info.UScale				= 1.f;
+	Info.VScale				= 1.f;
+#endif
 
 	// Metallicafan212:	TODO! Probably don't need any of these
 	/*
@@ -35,7 +42,11 @@ void UDX11RenderTargetTexture::Lock(FTextureInfo& Info, FTime InTime, INT LOD, U
 	Info.NumMips			= 0;
 
 	// Metallicafan212:	Matches the GPU side
+#if DX11_UT_469
+	Info.Format				= TEXF_BGRA8;
+#else
 	Info.Format				= TEXF_RGBA8;
+#endif
 
 	// Metallicafan212:	TODO! Cache ID is probably not needed!
 	//Info.CacheID			= MakeCacheID((ECacheIDBase)(CID_RenderTexture), this);
@@ -52,11 +63,19 @@ void UDX11RenderTargetTexture::Lock(FTextureInfo& Info, FTime InTime, INT LOD, U
 
 	// Metallicafan212:	TODO! Should we even update???
 	if (InTime != 0.f)
+	{
+#if DX11_HP2
 		Update(InTime, RenDev != nullptr ? RenDev->Viewport : nullptr);
+#else
+		Update(InTime);
+#endif
+	}
 
 	// Metallicafan212:	Give it the bits
+#if DX11_HP2
 	Info.UBits				= UBits;
 	Info.VBits				= VBits;
+#endif
 
 	// Success.
 	unguardobj;
@@ -112,6 +131,7 @@ void ReplaceInText(FString& In, const TCHAR* Match, const TCHAR* With)
 	unguard;
 }
 
+#if DX11_HP2
 int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, FLOAT Scale, FLOAT SpriteScaleX, FLOAT SpriteScaleY)
 {
 	guard(UD3D11RenderDevice::DrawString);
@@ -313,6 +333,7 @@ int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& Dr
 
 	unguard;
 }
+#endif
 
 // Metallicafan212:	Viewer-based zone fog
 void UD3D11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FPlane Color, FLOAT FadeRate)
@@ -450,14 +471,20 @@ UTexture* UD3D11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL bCre
 	guard(UD3D11RenderDevice::CreateRenderTargetTexture);
 
 	// Metallicafan212:	Create the texture
+#if DX11_HP2
 	UDX11RenderTargetTexture* Tex = ConstructObject<UDX11RenderTargetTexture>(GetTransientPackage(), NAME_None, RF_Transient);
+#else
+	UDX11RenderTargetTexture* Tex = ConstructObject<UDX11RenderTargetTexture>(UDX11RenderTargetTexture::StaticClass(), GetTransientPackage(), NAME_None, RF_Transient);
+#endif
 
 	if (Tex != nullptr)
 	{
 		// Metallicafan212:	Set the vars
 		Tex->USize		= Tex->UClamp = W;
 		Tex->VSize		= Tex->VClamp = H;
+#if DX11_HP2
 		Tex->DrawScale	= 1.0f;
+#endif
 
 		Tex->D3DDev		= this;
 

@@ -1,12 +1,34 @@
 #pragma once
 // Metallicafan212:	TODO!
 #include "UnBuild.h"
+#include "UnObjVer.h"
 
 // Metallicafan212:	EXPLICIT HP2 new engine check
 //					Modify this to add in more game macros
 //					This is (currently) ONLY used to turn off specific code blocks, not to redefine the functions
 //					TODO!!!! Block more code behind this!!!!!!
 #define DX11_HP2 (!defined(DX11_UT_99) && !defined(DX11_UT_469) && !defined(DX11_UNREAL_227) && !defined(DX11_HP1) && !defined(DX11_RUNE) && !defined(DX11_DX))
+
+#if UNREAL_TOURNAMENT_OLDUNREAL
+# define DX11_UT_469 1
+# undef DX11_HP2
+// Unsupported PolyFlags
+# define PF_ClampUVs 0
+# define PF_LumosAffected 0
+# define PF_ForceZWrite 0
+# define PF_ForceFog 0
+# define PF_ColorMask 0
+// Unsupported LineFlags
+# define LINE_PreTransformed 0
+# define LINE_DrawOver 0
+// Unsupported ShowFlags
+# define SHOW_Lines 0
+// Differently named HackFlags
+# define HF_Weapon HACKFLAGS_PostRender
+// Misc
+# define GExtraLineSize 1
+#endif
+
 
 // Metallicafan212:	Maybe?
 //					TODO! Fix the projection code so that I can use intrinsics again!
@@ -318,9 +340,15 @@ extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
 #include "UnD3DShader.h"
 
 // Metallicafan212:	Define an exported renderer
+#if DX11_UT_469
+class UD3D11RenderDevice : public URenderDeviceOldUnreal469
+{
+	DECLARE_CLASS(UD3D11RenderDevice, URenderDeviceOldUnreal469, CLASS_Config, D3D11Drv);
+#else
 class UD3D11RenderDevice : public URenderDevice
 {
 	DECLARE_CLASS(UD3D11RenderDevice, URenderDevice, CLASS_Config, D3D11Drv);
+#endif
 
 	// Metallicafan212:	User options
 	INT							NumAASamples;
@@ -484,7 +512,7 @@ class UD3D11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	Dynamic memory, equal to sizeof(PixelFormat) * USize * VSize;
 	//					For most, it's just going to be = 4bpp (to keep it simple)
-	void*								ConversionMemory;
+	BYTE*								ConversionMemory;
 
 	// Metallicafan212:	Texturing support
 	//					TODO! Query for this limitation and put the number in a ifdef!
@@ -902,16 +930,31 @@ class UD3D11RenderDevice : public URenderDevice
 
 	virtual void Unlock(UBOOL Blit);
 
-	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet, QWORD PolyFlags, BYTE cAlpha);
-
 	// Metallicafan212:	TODO! More particle related code
 	virtual INT MaxVertices() { return 256; };
 
 	virtual void DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, INT NumPts, _WORD* Indices, INT NumIndices, QWORD PolyFlags, FSpanBuffer* Span);
 
-	virtual void DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, class FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, QWORD PolyFlags);
+#if DX11_HP2
+	virtual void DrawComplexSurface(FSceneNode * Frame, FSurfaceInfo & Surface, FSurfaceFacet & Facet, QWORD PolyFlags, BYTE cAlpha);
+	
+	virtual void DrawTile(FSceneNode * Frame, FTextureInfo & Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, class FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, QWORD PolyFlags);
 
 	virtual void DrawRotatedTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, class FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, QWORD PolyFlags, FCoords InCoords = GMath.UnitCoords);
+
+	virtual int DrawString(QWORD Flags, UFont * Font, INT & DrawX, INT & DrawY, const TCHAR * Text, const FPlane & Color, FLOAT Scale = 1.0f, FLOAT SpriteScaleX = 1.0f, FLOAT SpriteScaleY = 1.0f);
+#elif DX11_UT_469
+
+	virtual void DrawTile(FSceneNode * Frame, FTextureInfo & Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer * Span, FLOAT Z, FPlane Color, FPlane Fog, DWORD PolyFlags);
+	
+	virtual void DrawComplexSurface(FSceneNode * Frame, FSurfaceInfo & Surface, FSurfaceFacet & Facet);
+	
+	virtual void DrawGouraudPolygon(FSceneNode * Frame, FTextureInfo & Info, FTransTexture * *Pts, int NumPts, DWORD PolyFlags, FSpanBuffer * Span);
+	
+	virtual UBOOL SupportsTextureFormat(ETextureFormat Format);
+	
+	virtual void DrawGouraudTriangles(const FSceneNode * Frame, const FTextureInfo & Info, FTransTexture* const Pts, INT NumPts, DWORD PolyFlags, DWORD DataFlags, FSpanBuffer * Span);
+#endif
 
 	virtual void Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD LineFlags, FVector OrigP, FVector OrigQ);
 
@@ -936,8 +979,6 @@ class UD3D11RenderDevice : public URenderDevice
 	virtual void SetSceneNode(FSceneNode* Frame);
 
 	virtual void PrecacheTexture(FTextureInfo& Info, QWORD PolyFlags);
-
-	virtual int DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, FLOAT Scale = 1.0f, FLOAT SpriteScaleX = 1.0f, FLOAT SpriteScaleY = 1.0f);
 
 	// Metallicafan212:	Viewer-based zone fog
 	virtual void SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FPlane Color, FLOAT FadeRate);
@@ -976,7 +1017,7 @@ class UD3D11RenderDevice : public URenderDevice
 
 		for (INT i = 0; i < Temp.Num(); i++)
 		{
-			UDX11RenderTargetTexture* RT = Temp[i];
+			UDX11RenderTargetTexture* RT = Temp(i);
 
 			if (RT != nullptr)
 			{

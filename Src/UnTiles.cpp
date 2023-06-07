@@ -1,7 +1,11 @@
 #include "D3D11Drv.h"
 
 // Metallicafan212:	Definitions for tile-related functions
+#if DX11_HP2
 void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, QWORD PolyFlags)
+#else
+void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, DWORD PolyFlags)
+#endif
 {
 	guard(UD3D11RenderDevice::DrawTile);
 
@@ -193,6 +197,7 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	unguard;
 }
 
+#if DX11_HP2
 void UD3D11RenderDevice::DrawRotatedTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, QWORD PolyFlags, FCoords InCoords)
 {
 	// Metallicafan212: We call the original version, but tell it to not reset the coord or bool state
@@ -203,3 +208,4 @@ void UD3D11RenderDevice::DrawRotatedTile(FSceneNode* Frame, FTextureInfo& Info, 
 	FTileShader->TileCoords			= InCoords;
 	DrawTile(Frame, Info, X, Y, XL, YL, U, V, UL, VL, Span, Z, Color, Fog, PolyFlags | PF_Memorized);
 }
+#endif

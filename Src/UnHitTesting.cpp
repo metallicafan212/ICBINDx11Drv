@@ -16,7 +16,11 @@ void UD3D11RenderDevice::PushHit(const BYTE* Data, INT Count)
 	HHitProxy* Hit = (HHitProxy*)Data;
 
 	// Metallicafan212:	Ask it for the priority, brushes and gizmos have higher priority
+#if DX11_HP2
 	Info.Priority = Hit->GetPriority();
+#else
+	Info.Priority = 1;
+#endif
 
 	if (PixelTopIndex != -1)
 	{
@@ -31,7 +35,7 @@ void UD3D11RenderDevice::PushHit(const BYTE* Data, INT Count)
 
 	// Metallicafan212:	Keep this hit info in the hit
 	Info.HitData.Add(Count);
-	appMemcpy(&Info.HitData[0], Data, Count);
+	appMemcpy(&Info.HitData(0), Data, Count);
 
 	// Metallicafan212:	Now push it onto our local stack
 	PixelHitInfo.AddItem(Info);
@@ -49,7 +53,7 @@ void UD3D11RenderDevice::PopHit(INT Count, UBOOL bForce)
 
 	EndBuffering();
 
-	FPixHitInfo* Info = &PixelHitInfo[PixelTopIndex];
+	FPixHitInfo* Info = &PixelHitInfo(PixelTopIndex);
 
 	if (Info->Prev != -1)
 	{
@@ -240,7 +244,7 @@ void UD3D11RenderDevice::DetectPixelHit()
 				}
 
 				// Metallicafan212:	Priority is done when the hit is pushed
-				HitAppear.Set(Temp.Int4, *Val + PixelHitInfo[Temp.Int4].Priority);
+				HitAppear.Set(Temp.Int4, *Val + PixelHitInfo(Temp.Int4).Priority);
 			}
 		}
 	}
@@ -280,27 +284,27 @@ void UD3D11RenderDevice::DetectPixelHit()
 		// Metallicafan212:	Unwind the hit info, from the top
 		TArray<FPixHitInfo*> Parents;
 
-		FPixHitInfo* Top = &PixelHitInfo[BiggestHit];
+		FPixHitInfo* Top = &PixelHitInfo(BiggestHit);
 
 		// Metallicafan212:	Go until we hit the topmost parent
 		while (Top != nullptr)
 		{
 			Parents.Insert(0);
-			Parents[0] = Top;
+			Parents(0) = Top;
 
 			// Metallicafan212:	Break out if the parent is invalid
 			if (Top->Prev == -1)
 				Top = nullptr;
 			else
-				Top = &PixelHitInfo[Top->Prev];
+				Top = &PixelHitInfo(Top->Prev);
 		}
 
 		// Metallicafan212:	Copy in order to preserve heiarchy
 		for (INT i = 0; i < Parents.Num(); i++)
 		{
-			appMemcpy(Data, &(Parents[i]->HitData[0]), Parents[i]->HitData.Num());
-			Data += Parents[i]->HitData.Num();
-			m_HitCount += Parents[i]->HitData.Num();
+			appMemcpy(Data, &(Parents(i)->HitData(0)), Parents(i)->HitData.Num());
+			Data += Parents(i)->HitData.Num();
+			m_HitCount += Parents(i)->HitData.Num();
 		}
 	}
 
