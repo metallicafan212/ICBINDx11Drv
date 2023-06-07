@@ -45,6 +45,7 @@ void UD3D11RenderDevice::StaticConstructor()
 	PrefersDeferredLoad = 0;
 	SupportsTC			= 1;
 
+#if DX11_HP2
 	bSupportsTwoSided	= 0;
 
 	// Metallicafan212:	HP2 Rendertarget textures
@@ -52,6 +53,7 @@ void UD3D11RenderDevice::StaticConstructor()
 
 	// Metallicafan212:	HP2 native wireframe
 	bSupportsNativeWireframe = 1;
+#endif
 
 	if (!GConfig->GetBool(ClsName, TEXT("DetailTextures"), (UBOOL&)DetailTextures))
 	{
@@ -174,7 +176,7 @@ void UD3D11RenderDevice::ClampUserOptions()
 	}
 
 	// Metallicafan212:	We have the final clamp
-	NumAASamples = Clamp(NumAASamples, 1, SampleCount);
+	NumAASamples = Clamp(NumAASamples, 1, static_cast<INT>(SampleCount));
 
 	// Metallicafan212:	Now make sure it's the lower of the request (if it's odd)
 	//					TODO! Rewrite this, if the user specifies 6, we return 8 due to the mod 2 not working since 6 isn't odd

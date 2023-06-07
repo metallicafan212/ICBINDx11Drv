@@ -128,3 +128,71 @@ void UD3D11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FT
 
 	unguard;
 }
+
+#if !DX11_HP2
+void UD3D11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, int NumPts, DWORD PolyFlags, FSpanBuffer* Span)
+{
+	// TODO: Implement!
+}
+#endif
+
+#if DX11_UT_469
+void UD3D11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const FTextureInfo& Info, FTransTexture* const Pts, INT NumPts, DWORD PolyFlags, DWORD DataFlags, FSpanBuffer* Span)
+{
+	guard(UD3D11RenderDevice::DrawTriangles);
+
+	SetBlend(PolyFlags);
+
+	// Metallicafan212:	Request normal raster state
+	SetRasterState(DXRS_Normal);
+
+	// Metallicafan212:	Set the texture
+	SetTexture(0, const_cast<FTextureInfo*>(&Info), PolyFlags);
+
+	// Metallicafan212:	In HP2, I got tired of seeing the random numbers everywhere, so I made a definition for the flags, and then updated them engine-wide
+	if ((GUglyHackFlags & HACKFLAGS_PostRender))
+	{
+		SetProjectionStateNoCheck(true);
+	}
+	else
+	{
+		SetProjectionStateNoCheck(false);
+	}
+
+	// Metallicafan212:	TODO!
+	FMeshShader->Bind();
+
+	LockVertexBuffer(NumPts * sizeof(FD3DVert));
+
+	if (bIndexedBuffered)
+	{
+		EndBuffering();
+	}
+
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_Triangles);
+
+	// Metallicafan212:	Added in distance fog
+	//					All calculations have to be done ourselfs, but at least it's doable
+	UBOOL drawFog = (((PolyFlags & (PF_RenderFog | PF_Translucent | PF_Modulated)) == PF_RenderFog));
+
+	// Metallicafan212:	Allow for opacity to draw fog
+	drawFog = drawFog || ((PolyFlags & PF_ForceFog) && (PolyFlags & PF_RenderFog));
+
+	FD3DVert* Mshy = (FD3DVert*)m_VertexBuff;
+
+	for (INT i = 0; i < NumPts; i++)
+	{
+		DoVert(&Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].TexInfo->UMult, BoundTextures[0].TexInfo->VMult, m_HitData != nullptr, CurrentHitColor);
+	}
+
+	UnlockVertexBuffer();
+
+	// Metallicafan212:	Now copy the indices
+	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	AdvanceVertPos(NumPts, sizeof(FD3DVert), 0);
+
+	unguard;
+}
+#endif

@@ -147,7 +147,7 @@ MAKE_DEVICE:
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Log the feature level
-	TCHAR* FLStr = nullptr;
+	const TCHAR* FLStr = nullptr;
 
 	switch (m_FeatureLevel)
 	{
@@ -241,7 +241,7 @@ MAKE_DEVICE:
 			// TODO: Add more message IDs here as needed.
 		};
 		D3D11_INFO_QUEUE_FILTER filter = {};
-		filter.DenyList.NumIDs = static_cast<UINT>(std::size(hide));
+		filter.DenyList.NumIDs = static_cast<UINT>(ARRAYSIZE(hide));
 		filter.DenyList.pIDList = hide;
 		m_D3DQueue->AddStorageFilterEntries(&filter);
 	}
@@ -465,7 +465,11 @@ UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT Ne
 	RegisterTextureFormat(TEXF_RGBA7, DXGI_FORMAT_B8G8R8A8_UNORM, 1, 4, &FD3DTexType::RawPitch, nullptr, RGBA7To8);
 	
 	// Metallicafan212:	Raw ARGB texture
+#if DX11_UT_469
+	RegisterTextureFormat(TEXF_BGRA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 4, &FD3DTexType::RawPitch);
+#else
 	RegisterTextureFormat(TEXF_RGBA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 4, &FD3DTexType::RawPitch);
+#endif
 
 	// Metallicafan212:	These are all supported by DX11.1
 	//					In the future, I will query for support (or use the DX feature level???)
@@ -479,7 +483,11 @@ UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT Ne
 
 	RegisterTextureFormat(TEXF_BC5, DXGI_FORMAT_BC5_UNORM, 0, 16, &FD3DTexType::BlockCompressionPitch);
 
+#if DX11_UT_469
+	RegisterTextureFormat(TEXF_BC6H, DXGI_FORMAT_BC6H_UF16, 0, 16, &FD3DTexType::BlockCompressionPitch);
+#else
 	RegisterTextureFormat(TEXF_BC6, DXGI_FORMAT_BC6H_UF16, 0, 16, &FD3DTexType::BlockCompressionPitch);
+#endif
 
 	RegisterTextureFormat(TEXF_BC7, DXGI_FORMAT_BC7_UNORM, 0, 16, &FD3DTexType::BlockCompressionPitch);
 
@@ -588,7 +596,11 @@ void UD3D11RenderDevice::SetupResources()
 		// Metallicafan212:	If to use the new Windows 10 modes. I only test if we're actually running on 10
 		//					!GIsEditor is here because using the tearing mode does something fucky in DWM, changing the window in such a way that normal non-DX11 renderers can't draw to it
 		//					I need to analyse and see what exactly it's modifying about the window and reverse that change
-		bAllowTearing = (!GIsEditor && GWin10);
+		bAllowTearing = (!GIsEditor
+#if DX11_HP2
+			&& GWin10
+#endif
+			);
 
 		if (bAllowTearing)
 		{
@@ -918,7 +930,7 @@ UBOOL UD3D11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOOL Fu
 	}
 
 	// Metallicafan212:	Set the viewport now
-	D3D11_VIEWPORT viewport = {0.0f, 0.0f, SizeX, SizeY, 0.f, 1.f };
+	D3D11_VIEWPORT viewport = {0.0f, 0.0f, static_cast<FLOAT>(SizeX), static_cast<FLOAT>(SizeY), 0.f, 1.f };
 	m_D3DDeviceContext->RSSetViewports(1, &viewport);
 
 	// Metallicafan212:	Resetup resources that need to be sized
@@ -1358,7 +1370,7 @@ void UD3D11RenderDevice::SetSceneNode(FSceneNode* Frame)
 	EndBuffering();
 
 	// Set the viewport.
-	D3D11_VIEWPORT viewport = {Frame->XB, Frame->YB, 
+	D3D11_VIEWPORT viewport = {static_cast<FLOAT>(Frame->XB), static_cast<FLOAT>(Frame->YB), 
 		Frame->FX, Frame->FY, 0.f, 1.f };
 	m_D3DDeviceContext->RSSetViewports(1, &viewport);
 
