@@ -201,19 +201,36 @@ int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& Dr
 		}
 
 		// Metallicafan212:	If the font name has BOLD in it, then mark it as bold
-		if (FString(*tempFontName).Caps().InStr(TEXT(" BOLD")) != INDEX_NONE)
+		FString RealCopy	= *tempFontName;
+		FString Copy		= RealCopy.Caps();
+		INT Bold			= Copy.InStr(TEXT(" BOLD"));
+
+		if (Bold != INDEX_NONE)
+		{
 			fontWeight = DWRITE_FONT_WEIGHT_BOLD;
+
+			RealCopy = RealCopy.Left(Bold);
+		}
 
 		// Metallicafan212:	In order for DWrite to use custom fonts, we have to provide a collection here...
 		//					This is initialized globally in the windowing subsystem, and the separate shared factory here can access it just fine
 #if DX11_HP2
 		IDWriteFontCollection* FC = (IDWriteFontCollection*)GDWriteFontCollection;
+
+		// Metallicafan212:	Test for the family name!!!!
+		UINT Test = 0;
+		BOOL Exists = 0;
+
+		if (FC != nullptr && (FAILED(FC->FindFamilyName(*RealCopy, &Test, &Exists)) || Test == UINT_MAX))
+		{
+			FC = nullptr;
+		}
 #else
 		IDWriteFontCollection* FC = nullptr;
 #endif
 		// Metallicafan212:	Create it
 		hr = m_D2DWriteFact->CreateTextFormat(
-			*Font->FontName,
+			*RealCopy,
 			FC,
 			fontWeight,
 			DWRITE_FONT_STYLE_NORMAL,
@@ -225,7 +242,8 @@ int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& Dr
 
 		if (SUCCEEDED(hr))
 		{
-			FontMap.Set(*Font->FontName, DaFont);
+			FontMap.Set(*FontKey, DaFont);
+			//FontMap.Set(*RealCopy, DaFont);
 		}
 	}
 
