@@ -37,14 +37,18 @@ Theoretically, the code can work just fine as long as the Gouraud triangles are 
  |---|---|---|---|---|    |==|==|    |  |
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ```
+This will require the Windows 10 SDK for building, but should run under Windows 7 SP1 (with the platform update).
+
+Tools I used: Visual Studio 2022 (for the C++ code), Notepad++ for HLSL. Any syntax errors in the HLSL code is an instant crash in this driver right now, be warned. In the future, I'll handle errors more gracefully.
+
 Currently, this will NOT be able to be built. It’s written for the HP2 new engine, and none of those headers/libs are included. In the future, when more games are supported, it will be buildable as long as you have the SDK for those games and define the right preprocessor macro.
 
-Shaders are currently configured to point to ..\Shaders, next to Sounds, Textures, etc. I did this because I want to eventually support user created HLSL code for HP2, but for ports, this might be annoying. So, in the shader header (UnD3DShader.h), the path can be quickly changed the macro SHADER_FOLDER.
+Shaders are currently configured to point to ..\Shaders, next to Sounds, Textures, etc. I did this because I want to eventually support user created HLSL code for HP2, but for ports, this might be annoying. So, in the shader header (UnD3DShader.h), the path can be quickly changed by modifying the macro SHADER_FOLDER.
 
 ## Contributing
 Contributing is welcomed! If you wish to port this to other UE1 games, fork it, make the modifications in your fork, and submit a merge request. I will review and edit as needed.
 
-My only requirement: if you make code comments, please attach your github username to them (like I have for mine). It makes it easier to identify where the code came from to identify a person to ask/”blame” for it (including myself (: ). If this is a problem for people, I can discuss it, I just want to keep it clean, readable, and able to be maintained, as this won’t be a fork, but the main code in the HP2 version.
+My only requirement: if you make code comments, please attach your github username to them (like I have for mine). It makes it easier to identify where the code came from to identify a person to ask/”blame” for it (including myself 😃). If this is a problem for people, I can discuss it, I just want to keep it clean, readable, and able to be maintained, as this won’t be a fork, but the main code in the HP2 version. That means: anything that breaks HP2 will be removed, reviewed, or put behind a preprocessor macro by myself.
 
 If you're adding a new rendering function (such as DrawGouraudTriangle), add a new CPP file with the changes. This way, the whole file can be ignored if it's not relevant to the game. Rune, for example, has fog surface drawing.
 
@@ -52,7 +56,6 @@ For this purpose, I have placed this under the MIT license, so that people can c
 
 For other games, I would like to use a standard set of defines. These may be subject to change, but they need to be kept standardized to make building for other games easy.
 Let me know here or on discord if these should be changed/added to. 
-My discord username is Metallicafan212#6307 and I'm in the Old Unreal discord server (https://discord.gg/thURucxzs6) and in the HP Modding server (https://discord.com/invite/KWwBevF). For HP specific questions/problems, it would best to contact me in the HP modding server, otherwise I can take questiosn here or in the Old Unreal server.
 
 | Game | Define |
 | ---- | ------ |
@@ -64,6 +67,8 @@ My discord username is Metallicafan212#6307 and I'm in the Old Unreal discord se
 | Deus Ex | DX11_DX |
 | HP2 | All undefined, aka: the default state. <br />A macro has been made to make explcit testing this possible <br />DX11_HP2 |
 
+## Contact Me
+My discord username is Metallicafan212#6307 and I'm in the Old Unreal discord server (https://discord.gg/thURucxzs6) and in the HP Modding server (https://discord.com/invite/KWwBevF). For HP specific questions/problems, it would best to contact me in the HP modding server, otherwise I can take questiosn here or in the Old Unreal server.
 
 ## Donations? DONATIONS?!?!?!?!?!?
 No, this isn't required, nor expected. Nowhere will you see me shilling for a Patreon or a Paypal in the code. If you do, then it’s a scam. I’m very against thrusting donation/payment links against the user, especially overwriting the clipboard contents. This is the only place I will be placing a Paypal link since some people have requested it.
