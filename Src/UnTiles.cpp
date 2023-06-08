@@ -119,8 +119,8 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 		if ((Z >= 0.5f) && (Z < 8.0f))
 		{
 			// Metallicafan212:	TODO! There's been some glitchyness due to actor triangles drawing through hud elements, so forcing 0.5 might be needed, or maybe requesting near z range instead
-			//Z = 0.5f;
-			SetProjectionStateNoCheck(false);
+			Z = 0.5f;
+			//SetProjectionStateNoCheck(false);
 			//Z = (((Z - 0.5f) / 7.5f) * 2.0f) + 2.0f; 
 		}
 	}
