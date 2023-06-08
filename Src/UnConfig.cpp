@@ -55,7 +55,8 @@ void UD3D11RenderDevice::StaticConstructor()
 	bSupportsNativeWireframe = 1;
 #endif
 
-	// Metallicafan212:	TEST!!!
+	// Metallicafan212:	TODO! Eventually implement this?
+	//					Then fonts hopefully should look better
 #if DX11_UT_469
 	NeedsMaskedFonts = 0;
 #endif

@@ -497,10 +497,11 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 		//					Even though I turned off blending, it still preserves alpha, so this is a hack for now...
 		//					HP2 doesn't seem to have this issue
 		//					TODO! Reevaluate this and find a better solution
-		if (bIsMasked && c == 0)
+		//					Nevermind... This doesn't work....
+		//if (bIsMasked && c == 0)
 			DBytes[3] = Color.A;
-		else
-			DBytes[3] = 255;
+		//else
+		//	DBytes[3] = 255;
 #endif
 
 		Read	+= 1;
