@@ -476,7 +476,12 @@ UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT Ne
 
 	// Metallicafan212:	These are all supported by DX11.1
 	//					In the future, I will query for support (or use the DX feature level???)
+#if DX11_UT_469
 	RegisterTextureFormat(TEXF_DXT1, DXGI_FORMAT_BC1_UNORM_SRGB, 0, 8, &FD3DTexType::BlockCompressionPitch);
+#else
+	// Metallicafan212:	HP2 uses non-SRGB DXT1, so we need to break that off, otherwise the color will be half'd
+	RegisterTextureFormat(TEXF_DXT1, DXGI_FORMAT_BC1_UNORM, 0, 8, &FD3DTexType::BlockCompressionPitch);
+#endif
 
 	RegisterTextureFormat(TEXF_DXT3, DXGI_FORMAT_BC2_UNORM, 0, 16, &FD3DTexType::BlockCompressionPitch);
 

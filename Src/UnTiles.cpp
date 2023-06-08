@@ -30,6 +30,17 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	VL	= appFloor(VL);
 	*/
 
+	/*
+	X	= appRound(X);
+	Y	= appRound(Y);
+	XL	= appRound(XL);
+	YL	= appRound(YL);
+	U	= appRound(U);
+	V	= appRound(V);
+	UL	= appRound(UL);
+	VL	= appRound(VL);
+	*/
+
 	// Metallicafan212:	The check for memorized really only need to be done in HP2, since I use it to mark a tile as rotated
 #if DX11_HP2
 	// Metallicafan212:	Make sure wireframe doesn't get set on tiles!
@@ -98,9 +109,6 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 
 	SetTexture(0, &Info, PolyFlags);
 
-	// Metallicafan212:	Bind the tile shader
-	FTileShader->Bind();
-
 	//Adjust Z coordinate if Z range hack is active
 	//if (1)//(m_useZRangeHack)
 	if(1)
@@ -109,10 +117,14 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 		if ((Z >= 0.5f) && (Z < 8.0f))
 		{
 			// Metallicafan212:	TODO! There's been some glitchyness due to actor triangles drawing through hud elements, so forcing 0.5 might be needed, or maybe requesting near z range instead
-			Z = 0.5f;
+			//Z = 0.5f;
+			SetProjectionStateNoCheck(false);
 			//Z = (((Z - 0.5f) / 7.5f) * 2.0f) + 2.0f; 
 		}
 	}
+
+	// Metallicafan212:	Bind the tile shader
+	FTileShader->Bind();
 
 	FLOAT PX1 = X - Frame->FX2;
 	FLOAT PX2 = PX1 + XL;
