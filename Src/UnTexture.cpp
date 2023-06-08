@@ -218,10 +218,6 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, U
 	DaTex->MaskedGranularity	= Info.GranularityColor.Plane();
 #endif
 
-	// Metallicafan212:	This was stupid to leave here lmao
-	//DaTex->Format		= Info.Format;
-	//DaTex->TexFormat	= DXGI_FORMAT_B8G8R8A8_UNORM;
-
 	// Metallicafan212:	If this is a RT texture, we need to not do any of this!!!!
 	//					I know I should be using IsA, but this is quicker (for now)
 	if (Info.Texture != nullptr && Info.Texture->GetClass() == UDX11RenderTargetTexture::StaticClass())
@@ -244,6 +240,9 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, U
 	//					DO THIS FROM THE INFO!!!! THE MAPPED VERSION IS NULL
 	FD3DTexType* Type = SupportedTextures.Find(Info.Format);
 
+	if (Type == nullptr)
+		appErrorf(TEXT("Metallicafan212 you idiot, you forgot to add a descriptor for %d"), DaTex->Format);
+
 	FD3DTexType::GetPitch P = Type->GetTexturePitch;
 	BYTE* MipData = nullptr;
 	INT MipSize = 0, MipPitch = 0;
@@ -254,9 +253,6 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, U
 		// Metallicafan212:	Check for the info
 		DaTex->Format		= Info.Format;
 		DaTex->TexFormat	= Type->DXFormat;
-
-		if (Type == nullptr)
-			appErrorf(TEXT("Metallicafan212 you idiot, you forgot to add a descriptor for %d"), DaTex->Format);
 
 		// Metallicafan212:	Create the texture
 		D3D11_TEXTURE2D_DESC Desc;
@@ -365,7 +361,7 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, U
 					SIZE_T Size = (MipSize == 0 ? 4 * Info.Mips[i]->USize * Info.Mips[i]->VSize : MipSize);
 					checkSlow(Size <= 4 * Info.USize * Info.VSize);
 
-					Type->TexConvFunc(Info.Palette, MipData, Size, (Type->*P)(Info.Mips[i]->USize), ConversionMemory, DaTex, m_D3DDeviceContext, Info.Mips[i]->USize, Info.Mips[i]->VSize, i, (PolyFlags & PF_Masked));
+					Type->TexConvFunc(Info.Palette, MipData, Size, (Type->*P)(Info.Mips[i]->USize), ConversionMemory, DaTex, m_D3DDeviceContext, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
 				}
 
 			}
@@ -415,7 +411,7 @@ void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void
 	unguard;
 }
 
-void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip, UBOOL bIsMasked)
+void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip)
 {
 	guard(RGBA7To8);
 
@@ -471,7 +467,7 @@ void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 	unguard;
 }
 
-void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip, UBOOL bIsMasked)
+void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip)
 {
 	guard(P8ToRGBA);
 
@@ -487,21 +483,11 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 #if DX11_HP2
 		(*(DWORD*)DBytes) = Palette[Bytes[Read]].Int4;
 #else
-		BYTE c = Bytes[Read];
-		const FColor& Color = Palette[c];
+		const FColor& Color = Palette[Bytes[Read]];
 		DBytes[0] = Color.R;
 		DBytes[1] = Color.G;
 		DBytes[2] = Color.B;
-
-		// Metallicafan212:	There's at least 1 texture in UT where it has 0 alpha on every color....
-		//					Even though I turned off blending, it still preserves alpha, so this is a hack for now...
-		//					HP2 doesn't seem to have this issue
-		//					TODO! Reevaluate this and find a better solution
-		//					Nevermind... This doesn't work....
-		//if (bIsMasked && c == 0)
-			DBytes[3] = Color.A;
-		//else
-		//	DBytes[3] = 255;
+		DBytes[3] = Color.A;
 #endif
 
 		Read	+= 1;
@@ -565,9 +551,12 @@ void UD3D11RenderDevice::SetBlend(FPLAG PolyFlags)
 			if (!(blendFlags & (RELEVANT_BLEND_FLAGS)))
 			{
 				FindAndSetBlend(0, D3D11_BLEND_ONE, D3D11_BLEND_ZERO, D3D11_COLOR_WRITE_ENABLE_ALL, 0);
+				GlobalShaderVars.bAlphaEnabled = 0;
 			}
 			else
 			{
+				GlobalShaderVars.bAlphaEnabled = 1;
+
 				// Metallicafan212:	DX9 allows you to completely turn off color drawing. We achieve the same effect here by using a 0 source blend and a 1 dest blend (since it will keep the dst color)
 				if (blendFlags & PF_Invisible)
 				{
@@ -677,24 +666,28 @@ void UD3D11RenderDevice::SetBlend(FPLAG PolyFlags)
 			{
 				GlobalShaderVars.AlphaReject = 1e-6f;
 				GlobalShaderVars.bColorMasked = 0;
+				GlobalShaderVars.bAlphaEnabled = 1;
 			}
 #if DX11_HP2
 			else if (blendFlags & PF_ColorMask)
 			{
 				GlobalShaderVars.AlphaReject = 0.8f;
 				GlobalShaderVars.bColorMasked = 1;
+				GlobalShaderVars.bAlphaEnabled = 1;
 			}
 #endif
 			else if (blendFlags & PF_Masked)
 			{
 				GlobalShaderVars.AlphaReject = 0.8f;
 				GlobalShaderVars.bColorMasked = 0;
+				GlobalShaderVars.bAlphaEnabled = 1;
 			}
 #if DX11_HP2
 			else if (blendFlags & PF_LumosAffected)
 			{
 				GlobalShaderVars.AlphaReject = 1e-6f;
 				GlobalShaderVars.bColorMasked = 0;
+				GlobalShaderVars.bAlphaEnabled = 1;
 			}
 #endif
 			else

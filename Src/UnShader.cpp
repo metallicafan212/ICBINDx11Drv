@@ -193,6 +193,7 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 
 	// Metallicafan212:	Automatically tell the shader that it's doing selection testing
 	MDef->bSelection			= (ParentDevice->m_HitData != nullptr);
+	MDef->bAlphaEnabled			= ParentDevice->GlobalShaderVars.bAlphaEnabled;
 
 	// Metallicafan212:	Loop and tell the shader how many textures are bound
 	for (INT i = 0; i < MAX_TEXTURES; i++)

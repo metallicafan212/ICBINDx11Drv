@@ -32,7 +32,8 @@ int		bDoDistanceFog							: packoffset(c4.y); \
 int		bDoSelection							: packoffset(c4.z);	\
 float	AlphaReject								: packoffset(c4.w); \
 float	BWPercent								: packoffset(c5.x);	\
-float3	Pad										: packoffset(c5.y);	\
+int		bAlphaEnabled							: packoffset(c5.y); \
+float2	Pad										: packoffset(c5.z);	\
 float4	DistanceFogColor						: packoffset(c6);	\
 float4	DistanceFogSettings						: packoffset(c7);	\
 int4	bTexturesBound[4]						: packoffset(c8);
@@ -70,7 +71,7 @@ static float4 SelectionColor;
 // Metallicafan212:	Color masking is currently unimplemented and may not be reimplemented
 
 // Metallicafan212:	Do masked rejection
-#define CLIP_PIXEL(ColorIn) SelectionColor = input.color; clip(ColorIn.w - AlphaReject);
+#define CLIP_PIXEL(ColorIn) if(!bAlphaEnabled) ColorIn.w = 1.0f; SelectionColor = input.color; clip(ColorIn.w - AlphaReject);
 
 float4 DoPixelFog(float DistFog, float4 Color)
 {

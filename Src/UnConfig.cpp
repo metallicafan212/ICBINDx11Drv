@@ -55,10 +55,9 @@ void UD3D11RenderDevice::StaticConstructor()
 	bSupportsNativeWireframe = 1;
 #endif
 
-	// Metallicafan212:	TODO! Eventually implement this?
-	//					Then fonts hopefully should look better
+	// Metallicafan212:	This makes fonts look better, but we still need a MSAA resolve to make it not blurry
 #if DX11_UT_469
-	NeedsMaskedFonts = 0;
+	NeedsMaskedFonts = 1;
 #endif
 
 	if (!GConfig->GetBool(ClsName, TEXT("DetailTextures"), (UBOOL&)DetailTextures))

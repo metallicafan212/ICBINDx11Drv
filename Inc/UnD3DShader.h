@@ -27,8 +27,12 @@ struct FShaderVarCommon
 	FLOAT	AlphaReject;
 	FLOAT	BWPercent;
 
+	// Metallicafan212:	If alpha is currently enabled
+	UBOOL	bAlphaEnabled;
+
 	// Metallicafan212:	Pad it!!!!
-	FLOAT	Pad[3];
+	FLOAT	Pad[2];
+	//FLOAT	Pad[3];
 
 	// Metallicafan212:	Now fog settings
 	FPlane	DistanceFogColor;

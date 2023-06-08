@@ -169,6 +169,8 @@ struct FGlobalShaderVars
 	FLOAT				AlphaReject;
 	FLOAT				BWPercent;
 
+	UBOOL				bAlphaEnabled;
+
 	// Metallicafan212:	Distance fog related stuff
 	//					These are the values that get sent to the shader immediately
 	FPlane				DistanceFogColor;
@@ -305,7 +307,7 @@ struct FD3DBoundTex
 struct FD3DTexType
 {
 	typedef void (*UploadFunc)(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
-	typedef void (*ConversionFunc)(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip, UBOOL bIsMasked);
+	typedef void (*ConversionFunc)(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
 	typedef SIZE_T (FD3DTexType::* GetPitch)(INT USize);
 
 	// Metallicafan212:	The UE format
@@ -343,8 +345,8 @@ struct FD3DTexType
 
 // Metallicafan212:	TODO! Work on this more
 void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
-void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip, UBOOL bIsMasked);
-void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip, UBOOL bIsMasked);
+void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
+void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
 
 // Metallicafan212:	Base layout declaration
 extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
