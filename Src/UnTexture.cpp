@@ -1,7 +1,7 @@
 #include "D3D11Drv.h"
 
 // Metallicafan212:	Texturing related functions (since there's going to be quite a bit)
-void UD3D11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, QWORD PolyFlags)
+void UD3D11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG PolyFlags)
 {
 	guard(UD3D11RenderDevice::SetTexture);
 
@@ -113,7 +113,7 @@ void UD3D11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, QWORD PolyFl
 
 // Metallicafan212:	TODO! Since I've redone the way samplers are made, this is pretty redundant now
 //					The only check is for UV clamp
-void UD3D11RenderDevice::MakeTextureSampler(FD3DTexture* Bind, QWORD PolyFlags)
+void UD3D11RenderDevice::MakeTextureSampler(FD3DTexture* Bind, FPLAG PolyFlags)
 {
 	guard(UD3D11RenderDevice::MakeTextureSampler);
 
@@ -171,7 +171,7 @@ static UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*
 	return TRUE;
 }
 
-void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, UBOOL bJustSampler)
+void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, UBOOL bJustSampler)
 {
 	guard(UD3D11RenderDevice::CacheTextureInfo);
 
@@ -347,7 +347,7 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, U
 		else
 		{
 		ConvertTexture:	
-			// Metallicafan212:	We need to convert each mip!!!! TODO!
+			// Metallicafan212:	Convert the mip (could be P8 or RGBA7)
 			UBOOL bMaskedHack = (Info.Format == TEXF_P8 && PolyFlags & PF_Masked);
 
 			// Metallicafan212:	TODO! Mask hack it!!
@@ -365,7 +365,7 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, U
 					SIZE_T Size = (MipSize == 0 ? 4 * Info.Mips[i]->USize * Info.Mips[i]->VSize : MipSize);
 					checkSlow(Size <= 4 * Info.USize * Info.VSize);
 
-					Type->TexConvFunc(Info.Palette, MipData, Size, (Type->*P)(Info.Mips[i]->USize), ConversionMemory, DaTex, m_D3DDeviceContext, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
+					Type->TexConvFunc(Info.Palette, MipData, Size, (Type->*P)(Info.Mips[i]->USize), ConversionMemory, DaTex, m_D3DDeviceContext, Info.Mips[i]->USize, Info.Mips[i]->VSize, i, (PolyFlags & PF_Masked));
 				}
 
 			}
@@ -415,7 +415,7 @@ void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void
 	unguard;
 }
 
-void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip)
+void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip, UBOOL bIsMasked)
 {
 	guard(RGBA7To8);
 
@@ -471,7 +471,7 @@ void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 	unguard;
 }
 
-void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip)
+void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip, UBOOL bIsMasked)
 {
 	guard(P8ToRGBA);
 
@@ -487,11 +487,20 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 #if DX11_HP2
 		(*(DWORD*)DBytes) = Palette[Bytes[Read]].Int4;
 #else
-		const FColor& Color = Palette[Bytes[Read]];
+		BYTE c = Bytes[Read];
+		const FColor& Color = Palette[c];
 		DBytes[0] = Color.R;
 		DBytes[1] = Color.G;
 		DBytes[2] = Color.B;
-		DBytes[3] = Color.A;
+
+		// Metallicafan212:	There's at least 1 texture in UT where it has 0 alpha on every color....
+		//					Even though I turned off blending, it still preserves alpha, so this is a hack for now...
+		//					HP2 doesn't seem to have this issue
+		//					TODO! Reevaluate this and find a better solution
+		if (bIsMasked && c == 0)
+			DBytes[3] = Color.A;
+		else
+			DBytes[3] = 255;
 #endif
 
 		Read	+= 1;
@@ -506,7 +515,7 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 }
 
 // Metallicafan212:	Based on the DX9 version, but HEAVILY modified
-void UD3D11RenderDevice::SetBlend(QWORD PolyFlags)
+void UD3D11RenderDevice::SetBlend(FPLAG PolyFlags)
 {
 	guard(UD3D11RenderDevice::SetBlend);
 
@@ -528,24 +537,24 @@ void UD3D11RenderDevice::SetBlend(QWORD PolyFlags)
 
 	// Metallicafan212:	Check if the input blend flags are relevant
 #if DX11_HP2
-	QWORD blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage);
+	FPLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage);
 #else
-	QWORD blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_RenderFog | PF_AlphaBlend);
+	FPLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_RenderFog | PF_AlphaBlend);
 #endif
 
 	if (blendFlags != CurrentPolyFlags)
 	{
 		// Metallicafan212:	Check for changes
-		QWORD Xor = CurrentPolyFlags ^ blendFlags;
+		FPLAG Xor = CurrentPolyFlags ^ blendFlags;
 
 		// Metallicafan212:	Save the blend flags now
 		CurrentPolyFlags = blendFlags;
 
 		// Metallicafan212:	Again, the DX9 driver saves the day
 #if DX11_HP2
-		const QWORD RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_Invisible | PF_AlphaBlend | PF_AlphaToCoverage | PF_Masked | PF_ColorMask;
+		const FPLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_Invisible | PF_AlphaBlend | PF_AlphaToCoverage | PF_Masked | PF_ColorMask;
 #else
-		const QWORD RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_Invisible;
+		const FPLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_Invisible;
 #endif
 		EndBuffering();
 
@@ -625,13 +634,15 @@ void UD3D11RenderDevice::SetBlend(QWORD PolyFlags)
 					FindAndSetBlend(PF_Masked, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
 				}
 			}
-		}		
+		}
+
+#if DX11_HP2
 		// Metallicafan212:	Set the correct fake fog values
 		//					Reset fog if the XOR was Translucent or Modulated
 		//					TODO! This can be a bit glitchy in the editor, where it turns all fog into modulated fog
 		if ((GlobalShaderVars.bDoDistanceFog || GlobalShaderVars.bFadeFogValues) && (Xor & (PF_Translucent | PF_Modulated | PF_AlphaBlend | PF_Highlighted)))
 		{
-			QWORD Flags = (blendFlags & RELEVANT_BLEND_FLAGS);
+			FPLAG Flags = (blendFlags & RELEVANT_BLEND_FLAGS);
 
 			// Metallicafan212:	Translucent gets combined with a few other flags to set a specific hack
 			//					Sigh.... If only they just added a alpha flag instead of reusing flags, it makes it extremely annoying
@@ -648,37 +659,43 @@ void UD3D11RenderDevice::SetBlend(QWORD PolyFlags)
 				GlobalShaderVars.DistanceFogColor = GlobalShaderVars.DistanceFogFinal;
 			}
 		}
+#endif
 
 		// Metallicafan212:	TODO! Allow the user to specify the alpha reject values
 		if (Xor & (PF_Masked | PF_AlphaBlend | PF_LumosAffected | PF_ColorMask))
 		{
+#if DX11_HP2
 			if (!(blendFlags & PF_ColorMask))
 			{
 				// Metallicafan212:	Disable masked
 				GlobalShaderVars.bColorMasked = 0;
 			}
+#endif
 
 			if (blendFlags & PF_AlphaBlend)
 			{
 				GlobalShaderVars.AlphaReject = 1e-6f;
 				GlobalShaderVars.bColorMasked = 0;
 			}
+#if DX11_HP2
 			else if (blendFlags & PF_ColorMask)
 			{
 				GlobalShaderVars.AlphaReject = 0.8f;
 				GlobalShaderVars.bColorMasked = 1;
 			}
+#endif
 			else if (blendFlags & PF_Masked)
 			{
 				GlobalShaderVars.AlphaReject = 0.8f;
 				GlobalShaderVars.bColorMasked = 0;
 			}
+#if DX11_HP2
 			else if (blendFlags & PF_LumosAffected)
 			{
 				GlobalShaderVars.AlphaReject = 1e-6f;
 				GlobalShaderVars.bColorMasked = 0;
-
 			}
+#endif
 			else
 			{
 				GlobalShaderVars.AlphaReject = 1e-6f;

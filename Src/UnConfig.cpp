@@ -55,6 +55,11 @@ void UD3D11RenderDevice::StaticConstructor()
 	bSupportsNativeWireframe = 1;
 #endif
 
+	// Metallicafan212:	TEST!!!
+#if DX11_UT_469
+	NeedsMaskedFonts = 0;
+#endif
+
 	if (!GConfig->GetBool(ClsName, TEXT("DetailTextures"), (UBOOL&)DetailTextures))
 	{
 		GConfig->SetBool(ClsName, TEXT("DetailTextures"), 1);

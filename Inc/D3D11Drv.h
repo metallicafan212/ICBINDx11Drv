@@ -33,6 +33,14 @@
 # define GExtraLineSize 1.0f
 #endif
 
+// Metallicafan212:	Define the Polyflags datatype...
+//					I made polyflags a QWORD in HP2, all other UE1 games are DWORD
+#if DX11_HP2
+#define PFLAG QWORD
+#else
+#define FPLAG DWORD
+#endif
+
 
 
 // Metallicafan212:	Maybe?
@@ -245,7 +253,7 @@ struct FD3DTexture
 
 	// Metallicafan212:	Flags this was uploaded as
 	//					This only matters if Masked is toggled on or off
-	QWORD			PolyFlags;
+	FPLAG			PolyFlags;
 
 	// Metallicafan212:	If this texture should have UVs clamped (UClamp == USize && VClamp == VSize)
 	UBOOL			bShouldUVClamp;
@@ -297,7 +305,7 @@ struct FD3DBoundTex
 struct FD3DTexType
 {
 	typedef void (*UploadFunc)(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
-	typedef void (*ConversionFunc)(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
+	typedef void (*ConversionFunc)(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip, UBOOL bIsMasked);
 	typedef SIZE_T (FD3DTexType::* GetPitch)(INT USize);
 
 	// Metallicafan212:	The UE format
@@ -335,8 +343,8 @@ struct FD3DTexType
 
 // Metallicafan212:	TODO! Work on this more
 void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
-void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
-void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
+void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip, UBOOL bIsMasked);
+void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip, UBOOL bIsMasked);
 
 // Metallicafan212:	Base layout declaration
 extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
@@ -460,14 +468,14 @@ class UD3D11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	Blending map
 	//					We have to keep around blend objects (rather than setting render states directly) so they're mapped to the polyflag that it represents
-	TMap<QWORD, ID3D11BlendState*>		BlendMap;
+	TMap<FPLAG, ID3D11BlendState*>		BlendMap;
 
 	// Metallicafan212:	Sampler map
 	//					This is required since you can't just on the fly update sampler objects....
 	//					Sucks, but it is what it is
-	TMap<QWORD, ID3D11SamplerState*>	SampMap;
+	TMap<FPLAG, ID3D11SamplerState*>	SampMap;
 
-	QWORD								CurrentPolyFlags;
+	FPLAG								CurrentPolyFlags;
 
 	// Metallicafan212:	If we're using a Freesync/GSync mode
 	UBOOL								bAllowTearing;
@@ -792,15 +800,15 @@ class UD3D11RenderDevice : public URenderDevice
 	void RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, INT ByteOrBlockSize = 4, FD3DTexType::GetPitch PitchFunc = &FD3DTexType::RawPitch, FD3DTexType::UploadFunc UFunc = MemcpyTexUpload, FD3DTexType::ConversionFunc UConv = nullptr);
 
 	// Metallicafan212:	Texture setting code
-	void SetTexture(INT TexNum, FTextureInfo* Info, QWORD PolyFlags);
+	void SetTexture(INT TexNum, FTextureInfo* Info, FPLAG PolyFlags);
 
-	void CacheTextureInfo(FTextureInfo& Info, QWORD PolyFlags, UBOOL bJustSampler = 0);
+	void CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, UBOOL bJustSampler = 0);
 
-	void MakeTextureSampler(FD3DTexture* Bind, QWORD PolyFlags);
+	void MakeTextureSampler(FD3DTexture* Bind, FPLAG PolyFlags);
 
 	inline void FlushTextureSamplers()
 	{
-		for (TMap<QWORD, ID3D11SamplerState*>::TIterator It(SampMap); It; ++It)
+		for (TMap<FPLAG, ID3D11SamplerState*>::TIterator It(SampMap); It; ++It)
 		{
 			It.Value()->Release();
 		}
@@ -819,7 +827,7 @@ class UD3D11RenderDevice : public URenderDevice
 
 	void SetRasterState(DWORD State);
 
-	inline ID3D11SamplerState* GetSamplerState(QWORD PolyFlags)
+	inline ID3D11SamplerState* GetSamplerState(FPLAG PolyFlags)
 	{
 		guard(UD3D11RenderDevice::GetSamplerState);
 
@@ -856,8 +864,8 @@ class UD3D11RenderDevice : public URenderDevice
 		unguard;
 	}
 
-	inline void FindAndSetBlend(QWORD PolyFlag, D3D11_BLEND SrcBlend, D3D11_BLEND DstBlend, 
-		D3D11_COLOR_WRITE_ENABLE RTWrite = D3D11_COLOR_WRITE_ENABLE_ALL, BOOL bEnableBlending = 1, BOOL bAlphaToCov = 0, D3D11_BLEND_OP BldOp = D3D11_BLEND_OP_ADD, D3D11_BLEND_OP BldOpAlh = D3D11_BLEND_OP_ADD,
+	inline void FindAndSetBlend(FPLAG PolyFlag, D3D11_BLEND SrcBlend, D3D11_BLEND DstBlend,
+		UINT8 RTWrite = D3D11_COLOR_WRITE_ENABLE_ALL, BOOL bEnableBlending = 1, BOOL bAlphaToCov = 0, D3D11_BLEND_OP BldOp = D3D11_BLEND_OP_ADD, D3D11_BLEND_OP BldOpAlh = D3D11_BLEND_OP_ADD,
 		D3D11_BLEND SrcBlendAlpha = D3D11_BLEND_ONE, D3D11_BLEND DstBlendAlpha = D3D11_BLEND_ZERO)
 	{
 		ID3D11BlendState* bState = BlendMap.FindRef(PolyFlag);
@@ -895,7 +903,7 @@ class UD3D11RenderDevice : public URenderDevice
 	}
 
 	// Metallicafan212:	Blend state
-	void SetBlend(QWORD PolyFlags);
+	void SetBlend(FPLAG PolyFlags);
 
 	// Metallicafan212:	For detecting the hit after the scene is rendered
 	void DetectPixelHit();
@@ -985,7 +993,7 @@ class UD3D11RenderDevice : public URenderDevice
 
 	virtual void SetSceneNode(FSceneNode* Frame);
 
-	virtual void PrecacheTexture(FTextureInfo& Info, QWORD PolyFlags);
+	virtual void PrecacheTexture(FTextureInfo& Info, FPLAG PolyFlags);
 
 	// Metallicafan212:	Viewer-based zone fog
 	virtual void SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FPlane Color, FLOAT FadeRate);

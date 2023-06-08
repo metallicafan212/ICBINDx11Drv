@@ -1,6 +1,6 @@
 #include "D3D11Drv.h"
 
-FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, QWORD PolyFlags, UBOOL bDoFog, FLOAT UMult, FLOAT VMult, UBOOL bDoSelection, FPlane SelectionColor)
+FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, FPLAG PolyFlags, UBOOL bDoFog, FLOAT UMult, FLOAT VMult, UBOOL bDoSelection, FPlane SelectionColor)
 {
 	m_Vert->X	= P->Point.X;
 	m_Vert->Y	= P->Point.Y;

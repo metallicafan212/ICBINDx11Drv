@@ -19,7 +19,7 @@ void UD3D11RenderDevice::SetupDevice()
 	Flush(0);
 
 	// Metallicafan212:	Cleanup the blend states
-	for (TMap<QWORD, ID3D11BlendState*>::TIterator It(BlendMap); It; ++It)
+	for (TMap<FPLAG, ID3D11BlendState*>::TIterator It(BlendMap); It; ++It)
 	{
 		It.Value()->Release();
 	}
@@ -986,7 +986,7 @@ void UD3D11RenderDevice::Exit()
 	FontMap.Empty();
 
 	// Metallicafan212:	Cleanup the blend states
-	for (TMap<QWORD, ID3D11BlendState*>::TIterator It(BlendMap); It; ++It)
+	for (TMap<FPLAG, ID3D11BlendState*>::TIterator It(BlendMap); It; ++It)
 	{
 		It.Value()->Release();
 	}
@@ -1517,7 +1517,7 @@ void UD3D11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRangeHac
 	appMemcpy(&Proj.m[0][0], &Temp[0][0], sizeof(FLOAT[4][4]));
 }
 
-void UD3D11RenderDevice::PrecacheTexture(FTextureInfo& Info, QWORD PolyFlags) 
+void UD3D11RenderDevice::PrecacheTexture(FTextureInfo& Info, FPLAG PolyFlags)
 {
 	guard(UD3D11RenderDevice::PrecacheTexture);
 

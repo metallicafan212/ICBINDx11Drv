@@ -50,7 +50,7 @@ void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Sur
 #else
 void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet)
 {
-	DWORD PolyFlags = Surface.PolyFlags;
+	FPLAG PolyFlags = Surface.PolyFlags;
 #endif
 	guard(UD3D11RenderDevice::DrawComplexSurface);
 
