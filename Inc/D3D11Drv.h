@@ -14,7 +14,10 @@
 # define DX11_UT_469 1
 # undef DX11_HP2
 // Unsupported PolyFlags
-# define PF_ClampUVs 0
+
+// Metallicafan212:	HACK! So we render tiles right, we need to clamp UVs so it doesn't cause looping when using AF
+# define PF_ClampUVs PF_Memorized
+
 # define PF_LumosAffected 0
 # define PF_ForceZWrite 0
 # define PF_ForceFog 0
@@ -27,8 +30,9 @@
 // Differently named HackFlags
 # define HF_Weapon HACKFLAGS_PostRender
 // Misc
-# define GExtraLineSize 1
+# define GExtraLineSize 1.0f
 #endif
+
 
 
 // Metallicafan212:	Maybe?
@@ -57,6 +61,8 @@
 #include <Windows.h>
 #include <wrl/client.h>
 #undef clock
+
+#include "Core.h"
 
 #include "Engine.h"
 #include "UnRender.h"

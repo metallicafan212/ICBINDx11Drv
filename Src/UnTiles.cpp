@@ -80,6 +80,7 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	{
 		PolyFlags |= PF_AlphaBlend;
 	}
+#endif
 
 	// Metallicafan212:	Needed for tiles
 	//					Basically, non-looping tiles have AF issues, so I auto clamp to reduce these issues
@@ -89,6 +90,7 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	else
 		PolyFlags &= ~PF_ClampUVs;
 
+#if DX11_HP2
 	if (PolyFlags & PF_AlphaBlend)
 		PolyFlags &= ~(PF_ForceZWrite | PF_Occlude);
 #endif

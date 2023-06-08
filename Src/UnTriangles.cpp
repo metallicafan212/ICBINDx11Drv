@@ -68,6 +68,8 @@ void UD3D11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FT
 	// Metallicafan212:	In HP2, I got tired of seeing the random numbers everywhere, so I made a definition for the flags, and then updated them engine-wide
 #if DX11_HP2
 	if ((GUglyHackFlags & HF_Weapon))
+#elif DX11_UT_469
+	if((GUglyHackFlags & HACKFLAGS_PostRender))
 #else
 	if((GUglyHackFlags & 0x1))
 #endif
@@ -149,7 +151,7 @@ void UD3D11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const FTe
 	// Metallicafan212:	Set the texture
 	SetTexture(0, const_cast<FTextureInfo*>(&Info), PolyFlags);
 
-	// Metallicafan212:	In HP2, I got tired of seeing the random numbers everywhere, so I made a definition for the flags, and then updated them engine-wide
+	// Metallicafan212:	HP2 is HF_Weapon, UT 469 is HACKFLAGS_PostRender
 	if ((GUglyHackFlags & HACKFLAGS_PostRender))
 	{
 		SetProjectionStateNoCheck(true);
@@ -176,13 +178,17 @@ void UD3D11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const FTe
 	//					All calculations have to be done ourselfs, but at least it's doable
 	UBOOL drawFog = (((PolyFlags & (PF_RenderFog | PF_Translucent | PF_Modulated)) == PF_RenderFog));
 
-	// Metallicafan212:	Allow for opacity to draw fog
-	drawFog = drawFog || ((PolyFlags & PF_ForceFog) && (PolyFlags & PF_RenderFog));
+	// Metallicafan212:	Turn off Light A if we're missing the required flags for opacity
+	UBOOL bNoOpacity = ((PolyFlags & (PF_Highlighted | PF_Translucent)) != (PF_Highlighted | PF_Translucent));
 
 	FD3DVert* Mshy = (FD3DVert*)m_VertexBuff;
 
 	for (INT i = 0; i < NumPts; i++)
 	{
+		// Metallicafan212:	TODO! This should be done in the shader, not here!
+		if (bNoOpacity)
+			Pts[i].Light.W = 1.0f;
+
 		DoVert(&Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].TexInfo->UMult, BoundTextures[0].TexInfo->VMult, m_HitData != nullptr, CurrentHitColor);
 	}
 

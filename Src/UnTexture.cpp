@@ -530,7 +530,7 @@ void UD3D11RenderDevice::SetBlend(QWORD PolyFlags)
 #if DX11_HP2
 	QWORD blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage);
 #else
-	QWORD blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_RenderFog);
+	QWORD blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_RenderFog | PF_AlphaBlend);
 #endif
 
 	if (blendFlags != CurrentPolyFlags)

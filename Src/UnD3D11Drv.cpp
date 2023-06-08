@@ -1254,6 +1254,7 @@ void UD3D11RenderDevice::ClearZ(FSceneNode* Frame)
 	guard(UD3D11RenderDevice::ClearZ);
 
 	EndBuffering();
+
 	m_D3DDeviceContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	unguard;
@@ -1263,27 +1264,37 @@ void UD3D11RenderDevice::EndFlash()
 {
 	guard(UD3D11RenderDevice::EndFlash);
 
+#if DX11_HP2
 	// Metallicafan212:	Test for a very small, but not 0 float, since the code seems to keep running for some reason
 	if ((1.0f - Min(FlashScale.W * 2.0f, 1.0f)) <= 0.0001f)
 	{
 		return;
 	}
+#endif
 
 	// Metallicafan212:	Draw it as a tile, but using the generic shader
+#if DX11_HP2
 	if ((FlashScale != FPlane(0.5f, 0.5f, 0.5f, 0.5f)) || (FlashFog != FPlane(0.0f, 0.0f, 0.0f, 0.0f)))
+#else
+	if ((FlashScale != FPlane(0.5f, 0.5f, 0.5f, 0.0f)) || (FlashFog != FPlane(0.0f, 0.0f, 0.0f, 0.0f)))
+#endif
 	{
 		EndBuffering();
 
 		// Metallicafan212:	Order of operations, make sure the alpha rejection is set
 		SetBlend(PF_Highlighted);
 
-		FGenShader->Bind();
-		
 		SetTexture(0, nullptr, 0);
 
-		FPlane Color = FPlane(FlashFog.X, FlashFog.Y, FlashFog.Z, 1.0f - Min(FlashScale.W * 2.0f, 1.0f));
+		FGenShader->Bind();
 
-		FLOAT Z		= 0.5f;
+#if DX11_HP2
+		FPlane Color = FPlane(FlashFog.X, FlashFog.Y, FlashFog.Z, 1.0f - Min(FlashScale.W * 2.0f, 1.0f));
+#else
+		FPlane Color = FPlane(FlashFog.X, FlashFog.Y, FlashFog.Z, 1.0f - Min(FlashScale.X * 2.0f, 1.0f));
+#endif
+
+		FLOAT Z		= 1.0f;
 		FLOAT X		= 0.0f;
 		FLOAT Y		= 0.0f;
 		FLOAT XL	= m_sceneNodeX;
