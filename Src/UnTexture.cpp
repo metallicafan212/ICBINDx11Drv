@@ -519,7 +519,7 @@ void UD3D11RenderDevice::SetBlend(FPLAG PolyFlags)
 	// Metallicafan212:	Pixel based selection requires that we have alpha blending and nothing else
 	if (GIsEditor && m_HitData != nullptr)
 	{
-		PolyFlags = (PolyFlags & ~(PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected)) | PF_AlphaBlend;
+		PolyFlags = (PolyFlags & ~(PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected));//| PF_AlphaBlend;
 	}
 
 	// Metallicafan212:	Check if the input blend flags are relevant

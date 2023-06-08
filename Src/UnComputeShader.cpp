@@ -66,10 +66,6 @@ struct FActorLightCommon
 	INT				Pad[2];
 };
 
-#if DX11_HP2
-static Sizer<sizeof(FLightingData)> DaSize;
-#endif
-
 FTransTexture* UD3D11RenderDevice::InitMeshComputeShader(INT VertCount)
 {
 	guard(UD3D11RenderDevice::InitMeshComputeShader);
