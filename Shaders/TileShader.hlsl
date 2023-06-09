@@ -74,13 +74,17 @@ float4 PxShader(PSInput input) : SV_TARGET
 {
 	float4 DiffColor;
 	
+	// Metallicafan212:	NVIDIA SPECIFIC HACK!!!!
+	//					TODO! Figure out how to get around this when uploading the verts to the GPU, so we don't have to have vendor special code....
 	if(bNVTileHack)
 	{
 		float USize, VSize, Levels;
 		
+		// Metallicafan212:	Get the dimensions, since .Load uses the actual pixel locations, not 0.0-1.0 UV coords
 		Diffuse.GetDimensions(0, USize, VSize, Levels);
 		
-		DiffColor = Diffuse.Load(float3(input.uv.x * USize, input.uv.y * VSize, 0.0f), 0) * input.color;
+		// Metallicafan212:	Round the coordinates to get around the NVidia UV issues
+		DiffColor = Diffuse.Load(float3(round(input.uv.x * USize), round(input.uv.y * VSize), 0.0f), 0) * input.color;
 	}
 	else
 	{
