@@ -95,6 +95,8 @@ void UD3D11RenderDevice::StaticConstructor()
 	AddFloatProp(TEXT("3DLineThickness"), ThreeDeeLineThickness, CPP_PROPERTY(ThreeDeeLineThickness), 1.5f);
 	AddFloatProp(CPP_PROP(OrthoLineThickness), 1.2f);
 
+	AddBoolProp(CPP_PROP(bDebugSelection), 0);
+
 	unguard;
 }
 

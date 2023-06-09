@@ -31,12 +31,16 @@
 # define HF_Weapon HACKFLAGS_PostRender
 // Misc
 # define GExtraLineSize 1.0f
+
+// Metallicafan212:	32bit check
+#define UNREAL32 !BUILD_64
+
 #endif
 
 // Metallicafan212:	Define the Polyflags datatype...
 //					I made polyflags a QWORD in HP2, all other UE1 games are DWORD
 #if DX11_HP2
-#define PFLAG QWORD
+#define FPLAG QWORD
 #else
 #define FPLAG DWORD
 #endif
@@ -170,6 +174,7 @@ struct FGlobalShaderVars
 	FLOAT				BWPercent;
 
 	UBOOL				bAlphaEnabled;
+	UBOOL				bNVTileHack;
 
 	// Metallicafan212:	Distance fog related stuff
 	//					These are the values that get sent to the shader immediately
@@ -372,10 +377,16 @@ class UD3D11RenderDevice : public URenderDevice
 	INT							NumAFSamples;
 	FLOAT						ThreeDeeLineThickness;
 	FLOAT						OrthoLineThickness;
+	UBOOL						bDebugSelection;
 
 	// Metallicafan212:	Versions to check on lock if they changed
 	INT							LastAASamples;
 	INT							LastAFSamples;
+
+	// Metallicafan212:	If the GPU is AMD/ATI, Intel, or NVidia
+	UBOOL						bIsNV;
+	UBOOL						bIsAMD;
+	UBOOL						bIsIntel;
 
 
 	// Metallicafan212:	TODO! Generalized D3D variables
@@ -839,18 +850,20 @@ class UD3D11RenderDevice : public URenderDevice
 		if (S == nullptr)
 		{
 			// Metallicafan212:	Create it
-			D3D11_SAMPLER_DESC SDesc;
-			appMemzero(&SDesc, sizeof(SDesc));
-
+			CD3D11_SAMPLER_DESC SDesc = CD3D11_SAMPLER_DESC(D3D11_DEFAULT);
+			
 			// Metallicafan212:	TODO! Make more of these user definable options!
+			//					D3D11_FILTER_MIN_MAG_MIP_POINT
+			//					D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR
+			//
 			SDesc.Filter			= (PolyFlags & PF_NoSmooth ? D3D11_FILTER_MIN_MAG_MIP_POINT : D3D11_FILTER_ANISOTROPIC);
 			SDesc.AddressU			= (PolyFlags & PF_ClampUVs ? D3D11_TEXTURE_ADDRESS_CLAMP : D3D11_TEXTURE_ADDRESS_WRAP);
 			SDesc.AddressV			= SDesc.AddressU;
-			SDesc.AddressW			= SDesc.AddressU;
-			SDesc.MinLOD			= 0.0f;
+			SDesc.AddressW			= D3D11_TEXTURE_ADDRESS_WRAP;//SDesc.AddressU;
+			SDesc.MinLOD			= -D3D11_FLOAT32_MAX;
 			SDesc.MaxLOD			= D3D11_FLOAT32_MAX;
 			SDesc.MipLODBias		= 0.0f;
-			SDesc.MaxAnisotropy		= PolyFlags & PF_NoSmooth ? 0 : NumAFSamples;//16;//16;
+			SDesc.MaxAnisotropy		= PolyFlags & PF_NoSmooth ? 1 : NumAFSamples;//16;//16;
 			SDesc.ComparisonFunc	= D3D11_COMPARISON_NEVER;
 
 			HRESULT hr = m_D3DDevice->CreateSamplerState(&SDesc, &S);

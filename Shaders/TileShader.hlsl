@@ -34,12 +34,12 @@ struct VSInput
 
 struct PSInput 
 {
-	float4 pos 		: SV_POSITION0; 
-	float2 uv		: TEXCOORD0;
-	float4 color	: COLOR0; 
-	float4 fog		: COLOR1;
-	float  distFog	: COLOR2;
-	bool   bRejectBW: COLOR3;
+	float4 pos 				: SV_POSITION0; 
+	centroid float2 uv		: TEXCOORD0;
+	float4 color			: COLOR0; 
+	float4 fog				: COLOR1;
+	float  distFog			: COLOR2;
+	bool   bRejectBW		: COLOR3;
 };
 
 PSInput VertShader(VSInput input)
@@ -72,7 +72,20 @@ PSInput VertShader(VSInput input)
 
 float4 PxShader(PSInput input) : SV_TARGET
 {
-	float4 DiffColor = Diffuse.SampleBias(DiffState, input.uv, 0.0f) * input.color;
+	float4 DiffColor;
+	
+	if(bNVTileHack)
+	{
+		float USize, VSize, Levels;
+		
+		Diffuse.GetDimensions(0, USize, VSize, Levels);
+		
+		DiffColor = Diffuse.Load(float3(input.uv.x * USize, input.uv.y * VSize, 0.0f), 0) * input.color;
+	}
+	else
+	{
+		DiffColor = Diffuse.SampleBias(DiffState, input.uv, 0.0f) * input.color;
+	}
 	
 	// Metallicafan212:	Do alpha rejecting
 	//					TODO! This also sets the global selection color for the editor!

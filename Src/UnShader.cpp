@@ -195,6 +195,10 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 	MDef->bSelection			= (ParentDevice->m_HitData != nullptr);
 	MDef->bAlphaEnabled			= ParentDevice->GlobalShaderVars.bAlphaEnabled;
 
+	// Metallicafan212:	Sample a texture using Texture.Load instead of .Sample to get around a NV specific issue with point filtering...
+	//					TODO! Find out the actual reason this happens!!!
+	MDef->bNVTileHack			= ParentDevice->GlobalShaderVars.bNVTileHack;
+
 	// Metallicafan212:	Loop and tell the shader how many textures are bound
 	for (INT i = 0; i < MAX_TEXTURES; i++)
 	{

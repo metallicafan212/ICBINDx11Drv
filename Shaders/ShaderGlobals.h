@@ -33,7 +33,8 @@ int		bDoSelection							: packoffset(c4.z);	\
 float	AlphaReject								: packoffset(c4.w); \
 float	BWPercent								: packoffset(c5.x);	\
 int		bAlphaEnabled							: packoffset(c5.y); \
-float2	Pad										: packoffset(c5.z);	\
+int		bNVTileHack								: packoffset(c5.z);	\
+float	Pad										: packoffset(c5.w);	\
 float4	DistanceFogColor						: packoffset(c6);	\
 float4	DistanceFogSettings						: packoffset(c7);	\
 int4	bTexturesBound[4]						: packoffset(c8);

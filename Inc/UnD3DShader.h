@@ -30,8 +30,12 @@ struct FShaderVarCommon
 	// Metallicafan212:	If alpha is currently enabled
 	UBOOL	bAlphaEnabled;
 
+	// Metallicafan212:	If a texture is PF_NoSmooth AND have 1 mip level!!!
+	UBOOL	bNVTileHack;
+
 	// Metallicafan212:	Pad it!!!!
-	FLOAT	Pad[2];
+	FLOAT	Pad;
+	//FLOAT	Pad[2];
 	//FLOAT	Pad[3];
 
 	// Metallicafan212:	Now fog settings

@@ -599,10 +599,34 @@ void UD3D11RenderDevice::SetupResources()
 		debugf(TEXT("Compiled                : %s"),	COMPILED_AT);
 		//debugf(TEXT("D3D adapter driver      : %s"), appFromAnsi(ident.Driver));
 		debugf(TEXT("D3D adapter description : %s"),	AdDesc.Description);
+		// Metallicafan212:	TODO! In 32bit mode, use %lu instead
+#if UNREAL32
+		debugf(TEXT("D3D adapter VRam        : %dGB (%luMB)"), appRound((AdDesc.DedicatedVideoMemory / 1073741824.0)), (AdDesc.DedicatedVideoMemory / 1048576));
+#else
 		debugf(TEXT("D3D adapter VRam        : %dGB (%lluMB)"), appRound((AdDesc.DedicatedVideoMemory / 1073741824.0)), (AdDesc.DedicatedVideoMemory / 1048576));
+#endif
 		//debugf(TEXT("D3D adapter name        : %s"), appFromAnsi(ident.DeviceName));
 		//debugf(TEXT("D3D adapter id          : 0x%04X:0x%04X"), ident.VendorId, ident.DeviceId);
 
+		// Metallicafan212:	Check and log what vendor it is
+		if (AdDesc.VendorId == 0x1002 || AdDesc.VendorId == 0x1022)
+		{
+			bIsAMD = 1;
+			debugf(TEXT("D3D adapter vendor      : AMD"));
+		}
+		else if (AdDesc.VendorId == 0x10DE)
+		{
+			debugf(TEXT("D3D adapter vendor      : NVidia"));
+			bIsNV = 1;
+		}
+		// Metallicafan212:	Intel
+		else if (AdDesc.VendorId == 0x163C || AdDesc.VendorId == 0x8086 || AdDesc.VendorId == 0x8087)
+		{
+			debugf(TEXT("D3D adapter vendor      : Intel"));
+			bIsIntel = true;
+		}
+
+		
 
 		// Metallicafan212:	If to use the new Windows 10 modes. I only test if we're actually running on 10
 		//					!GIsEditor is here because using the tearing mode does something fucky in DWM, changing the window in such a way that normal non-DX11 renderers can't draw to it
@@ -1205,7 +1229,8 @@ void UD3D11RenderDevice::Unlock(UBOOL Blit)
 		*m_HitSize = m_HitCount;
 
 		// Metallicafan212:	TODO! Add this as a debug option
-		//Blit = 1;
+		if(bDebugSelection)
+			Blit = 1;
 	}
 
 	// Metallicafan212:	TODO! Sample code
@@ -1241,10 +1266,10 @@ void UD3D11RenderDevice::Unlock(UBOOL Blit)
 		}
 	}
 
-	//if (m_HitData != nullptr)
-	//{
-	//	appSleep(1.0f);
-	//}
+	if (bDebugSelection && m_HitData != nullptr)
+	{
+		appSleep(1.0f);
+	}
 
 	unguard;
 }
