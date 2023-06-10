@@ -99,8 +99,8 @@ void UD3D11RenderDevice::StaticConstructor()
 	//AddBoolProp(CPP_PROP(bUseD3D11On12), 0);
 
 	// Metallicafan212:	TODO! Go in game to determine what these values should be
-	//AddFloatProp(CPP_PROP(TileAAUVMove), -0.2f);
-	TileAAUVMove = 0.1f;
+	//AddFloatProp(CPP_PROP(TileAAUVMove), 0.1f);
+	//TileAAUVMove = 0.1f;
 
 	// Metallicafan212:	TODO! MSAA resolve related vars
 	AddFloatProp(CPP_PROP(MSAAFilterSize), 1.0f);
@@ -206,6 +206,34 @@ void UD3D11RenderDevice::ClampUserOptions()
 	}
 
 	GLog->Logf(TEXT("DX11: Requesting %d AA samples"), NumAASamples);
+
+	// Metallicafan212:	TODO! Hard-coded offsets to make tiles not look like ass....
+	switch (NumAASamples)
+	{
+		case 1:
+		{
+			TileAAUVMove = 0.1f;
+			break;
+		}
+
+		case 2:
+		{
+			TileAAUVMove = 0.45f;
+			break;
+		}
+
+		case 4:
+		{
+			TileAAUVMove = 0.5f;
+			break;
+		}
+
+		case 8:
+		{
+			TileAAUVMove = 0.2f;
+			break;
+		}
+	}
 
 	unguard;
 }
