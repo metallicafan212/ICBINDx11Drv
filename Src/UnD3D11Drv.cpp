@@ -8,12 +8,14 @@ void UD3D11RenderDevice::SetupDevice()
 {
 	guard(UD3D11RenderDevice::SetupDevice);
 
+#if DX11_HP2
 	// Metallicafan212:	Release all the fonts
 	for (TMap<FString, IDWriteTextFormat*>::TIterator It(FontMap); It; ++It)
 	{
 		It.Value()->Release();
 	}
 	FontMap.Empty();
+#endif
 
 	// Metallicafan212:	Cleanout the texture cache
 	Flush(0);
@@ -40,6 +42,8 @@ void UD3D11RenderDevice::SetupDevice()
 
 #if DX11_HP2
 	// Metallicafan212:	HP2 specific
+	
+
 	SAFE_RELEASE(m_D2DRT);
 	SAFE_RELEASE(m_D2DFact);
 	SAFE_RELEASE(m_D2DWriteFact);
