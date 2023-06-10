@@ -28,6 +28,7 @@ void UD3D11RenderDevice::SetupDevice()
 	// Metallicafan212:	Cleanup the sampler map
 	FlushTextureSamplers();
 
+	ClearRTTextures();
 
 	SAFE_RELEASE(m_D3DQuery);
 	SAFE_RELEASE(m_D3DDebug);
@@ -36,60 +37,52 @@ void UD3D11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_D3DSwapChain);
 	SAFE_RELEASE(VertexBuffer);
 	SAFE_RELEASE(IndexBuffer);
+
+#if DX11_HP2
+	// Metallicafan212:	HP2 specific
 	SAFE_RELEASE(m_D2DRT);
 	SAFE_RELEASE(m_D2DFact);
 	SAFE_RELEASE(m_D2DWriteFact);
 	SAFE_RELEASE(m_DXGISurf);
+	SAFE_RELEASE(m_TextParams);
+#endif
+
+	// Metallicafan212:	No bind texture/sampler
 	SAFE_RELEASE(BlankTexture);
 	SAFE_RELEASE(BlankResourceView);
 	SAFE_RELEASE(BlankSampler);
+
+	// Metallicafan212:	Depth states for PF_Occlude
 	SAFE_RELEASE(m_DefaultZState);
 	SAFE_RELEASE(m_DefaultNoZState);
-	//SAFE_RELEASE(m_DefaultRasterState);
+
 	FlushRasterStates();
 
-	CurrentRasterState = DXRS_MAX;
+	// Metallicafan212:	Render target and back buffer texture
+	SAFE_RELEASE(m_BackBuffTex);
+	SAFE_RELEASE(m_ScreenBuffTex);
+	SAFE_RELEASE(m_D3DScreenRTV);
+	SAFE_RELEASE(m_ScreenRTSRV);
+
+	// Metallicafan212:	Depth stencil target
+	SAFE_RELEASE(m_ScreenDSTex);
+	SAFE_RELEASE(m_D3DScreenDSV);
+	SAFE_RELEASE(m_ScreenDTSRV);
 
 
 	// Metallicafan212:	TODO! Do we need to make shaders each time?
-	if (FTileShader != nullptr)
-	{
-		delete FTileShader;
-		FTileShader = nullptr;
-	}
-
-	// Metallicafan212:	Same here
-	if (FGenShader != nullptr)
-	{
-		delete FGenShader;
-		FGenShader = nullptr;
-	}
-
-	if (FMeshShader != nullptr)
-	{
-		delete FMeshShader;
-		FMeshShader = nullptr;
-	}
-
-	if (FSurfShader != nullptr)
-	{
-		delete FSurfShader;
-		FSurfShader = nullptr;
-	}
-
-	if (FLineShader != nullptr)
-	{
-		delete FLineShader;
-		FLineShader = nullptr;
-	}
+	SAFE_DELETE(FTileShader);
+	SAFE_DELETE(FGenShader);
+	SAFE_DELETE(FMeshShader);
+	SAFE_DELETE(FSurfShader);
+	SAFE_DELETE(FLineShader);
 
 #if USE_COMPUTE_SHADER
-	if (FMshLghtCompShader != nullptr)
-	{
-		delete FMshLghtCompShader;
-		FMshLghtCompShader = nullptr;
-	}
+	SAFE_DELETE(FMshLghtCompShader);
 #endif
+
+	// Metallicafan212:	Set the raster state to an invalid value
+	CurrentRasterState = DXRS_MAX;
 
 	// Metallicafan212:	Init DX11
 	//					We want to use feature level 11_1 for compute shaders
@@ -266,6 +259,7 @@ MAKE_DEVICE:
 
 	ThrowIfFailed(hr);
 
+#if DX11_HP2
 	GLog->Logf(TEXT("DX11: Creating D2D1 factory1"));
 
 	// Metallicafan212:	D2D manager
@@ -279,27 +273,25 @@ MAKE_DEVICE:
 	hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory1),  (IUnknown**)&m_D2DWriteFact);
 
 	ThrowIfFailed(hr);
+#endif
 
-	// Metallicafan212:	This has been changed to a map, so we can change the raster flags on the fly
-	//					Since we can't just change individual functions, we have to use flags to choose the right raster...
-	/*
-	// Metallicafan212:	Make the default raster state (don't cull backfaces)
-	D3D11_RASTERIZER_DESC RSDesc;
-	appMemzero(&RSDesc, sizeof(RSDesc));
+	// Metallicafan212:	Query for a supported depth stencil format
+	UINT bSupportsFormat = 0;
+	hr = m_D3DDevice->CheckFormatSupport(DXGI_FORMAT_D32_FLOAT_S8X24_UINT, &bSupportsFormat);
 
-	RSDesc.CullMode					= D3D11_CULL_NONE;
-	RSDesc.DepthBias				= 0.0f;
-	RSDesc.FillMode					= D3D11_FILL_SOLID;
-	RSDesc.DepthClipEnable			= TRUE;
-	RSDesc.AntialiasedLineEnable	= TRUE;
-	RSDesc.MultisampleEnable		= TRUE;
+	if (FAILED(hr) || !bSupportsFormat)
+	{
+		GLog->Logf(TEXT("DX11: Using D24_S8 as the depth stencil format"));
+		DSTFormat		= DXGI_FORMAT_D24_UNORM_S8_UINT;
+		DSTSTVFormat	= DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	}
+	else
+	{
+		GLog->Logf(TEXT("DX11: Using D32_FLOAT_S8X24 as the depth stencil format"));
+		DSTFormat		= DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		DSTSTVFormat	= DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
 
-	GLog->Logf(TEXT("DX11: Creating default raster state"));
-
-	hr = m_D3DDevice->CreateRasterizerState(&RSDesc, &m_DefaultRasterState);
-
-	ThrowIfFailed(hr);
-	*/
+	}
 
 	SetRasterState(DXRS_Normal);
 
@@ -391,33 +383,47 @@ UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT Ne
 	guard(UD3D11RenderDevice::Init);
 
 	// Metallicafan212:	Init pointers
+	m_D3DDevice			= nullptr;
+	m_D3DSwapChain		= nullptr;
+	m_D3DDebug			= nullptr;
+	m_D3DQueue			= nullptr;
+
+	// Metallicafan212:	Render target stuff
+	m_ScreenBuffTex		= nullptr;
+	m_D3DScreenRTV		= nullptr;
+	m_ScreenRTSRV		= nullptr;
+
+	// Metallicafan212:	Depth stencil target stuff
+	m_ScreenDSTex		= nullptr;
+	m_ScreenDTSRV		= nullptr;
+	m_D3DScreenDSV		= nullptr;
+
+#if DX11_HP2
+	// Metallicafan212:	HP2 specific on-screen string drawing
+	m_D2DRT				= nullptr;
+	m_D2DFact			= nullptr;
+	m_DXGISurf			= nullptr;
+	m_TextParams		= nullptr;
+#endif
+
+	// Metallicafan212:	Shader pointers
+	FMeshShader			= nullptr;
+	FSurfShader			= nullptr;
+	FLineShader			= nullptr;
 	FTileShader			= nullptr;
 	FGenShader			= nullptr;
 #if USE_COMPUTE_SHADER
 	FMshLghtCompShader	= nullptr;
 #endif
-	m_D3DDevice			= nullptr;
-	m_D3DSwapChain		= nullptr;
-	m_D3DDebug			= nullptr;
-	m_D3DQueue			= nullptr;
-	m_D3DScreenRTV		= nullptr;
-	m_D3DScreenDSV		= nullptr;
-	depthStencil		= nullptr;
-	m_D2DRT				= nullptr;
-	m_D2DFact			= nullptr;
-	m_DXGISurf			= nullptr;
-	FMeshShader			= nullptr;
-	FSurfShader			= nullptr;
-	FLineShader			= nullptr;
 
+	// Metallicafan212:	Blank tex, resource, and samplers for defaults
 	BlankTexture		= nullptr;
 	BlankResourceView	= nullptr;
 	BlankSampler		= nullptr;
+
+	// Metallicafan212:	Raster states for turning on and off occlusion
 	m_DefaultZState		= nullptr;
 	m_DefaultNoZState	= nullptr;
-
-	m_TextParams		= nullptr;
-	//m_DefaultRasterState= nullptr;
 
 	CurrentRasterState	= DXRS_MAX;
 
@@ -524,11 +530,11 @@ void UD3D11RenderDevice::SetupResources()
 		m_D3DDeviceContext->PSSetSamplers(i, 0, nullptr);
 	}
 
-	// Metallicafan212:	Clear the RT textures
-	ClearRTTextures();
-
 	// Metallicafan212:	CATCH RT TEXTURES!!!!
 	RestoreRenderTarget();
+
+	// Metallicafan212:	Clear the RT textures
+	ClearRTTextures();
 
 	// Metallicafan212:	Clear any set RT/DC
 	m_D3DDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
@@ -542,21 +548,32 @@ void UD3D11RenderDevice::SetupResources()
 	//m_D3DDeviceContext->RSSetState(m_DefaultRasterState);
 	SetRasterState(0);
 
-	// Metallicafan212:	Reset the views we have now
+	// Metallicafan212:	Render target and back buffer texture
 	SAFE_RELEASE(m_BackBuffTex);
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
+	SAFE_RELEASE(m_ScreenRTSRV);
+
+	// Metallicafan212:	Depth stencil target
+	SAFE_RELEASE(m_ScreenDSTex);
 	SAFE_RELEASE(m_D3DScreenDSV);
-	SAFE_RELEASE(depthStencil);
+	SAFE_RELEASE(m_ScreenDTSRV);
+
+#if DX11_HP2
+	// Metallicafan212:	TODO! HP2 specific
 	SAFE_RELEASE(m_D2DRT);
 	SAFE_RELEASE(m_DXGISurf);
+	SAFE_RELEASE(m_TextParams);
+#endif
+
+	// Metallicafan212:	No bind texture/sampler
 	SAFE_RELEASE(BlankTexture);
 	SAFE_RELEASE(BlankResourceView);
 	SAFE_RELEASE(BlankSampler);
+
+	// Metallicafan212:	Depth stencil states
 	SAFE_RELEASE(m_DefaultZState);
 	SAFE_RELEASE(m_DefaultNoZState);
-
-	SAFE_RELEASE(m_TextParams);
 
 	// Metallicafan212:	Recreate the texture samplers
 	FlushTextureSamplers();
@@ -778,7 +795,7 @@ void UD3D11RenderDevice::SetupResources()
 	// Metallicafan212:	Make the depth and stencil buffer
 	//					TODO! Possibly use a higher quality format????
 	CD3D11_TEXTURE2D_DESC depthStencilDesc = CD3D11_TEXTURE2D_DESC();
-	depthStencilDesc.Format				= DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilDesc.Format				= DSTFormat;//DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthStencilDesc.ArraySize			= 1;
 	depthStencilDesc.Width				= SizeX;
 	depthStencilDesc.Height				= SizeY;
@@ -788,14 +805,15 @@ void UD3D11RenderDevice::SetupResources()
 	depthStencilDesc.BindFlags			= D3D11_BIND_DEPTH_STENCIL;
 
 	
-	hr = m_D3DDevice->CreateTexture2D(&depthStencilDesc, nullptr, &depthStencil);
+	hr = m_D3DDevice->CreateTexture2D(&depthStencilDesc, nullptr, &m_ScreenDSTex);
 
 	ThrowIfFailed(hr);
 
-	hr = m_D3DDevice->CreateDepthStencilView(depthStencil, nullptr, &m_D3DScreenDSV);
+	hr = m_D3DDevice->CreateDepthStencilView(m_ScreenDSTex, nullptr, &m_D3DScreenDSV);
 
 	ThrowIfFailed(hr);
 
+#if DX11_HP2
 	// Metallicafan212:	Get the D2D render target
 	hr = m_ScreenBuffTex->QueryInterface(IID_PPV_ARGS(&m_DXGISurf));//m_D3DSwapChain->GetBuffer(0, IID_PPV_ARGS(&m_DXGISurf));
 
@@ -839,6 +857,7 @@ void UD3D11RenderDevice::SetupResources()
 		m_D2DRT->SetTextRenderingParams(m_TextParams);
 	}
 	*/
+#endif
 
 	// Metallicafan212:	Make a totally blank texture
 	D3D11_TEXTURE2D_DESC Desc;
@@ -987,20 +1006,16 @@ void UD3D11RenderDevice::Exit()
 
 	// Metallicafan212:	TODO! When supporting textures, clear textures
 	//					Also shaders lol
-	delete FTileShader;
-
-	delete FGenShader;
-
+	SAFE_DELETE(FTileShader);
+	SAFE_DELETE(FGenShader);
+	SAFE_DELETE(FMeshShader);
+	SAFE_DELETE(FSurfShader);
+	SAFE_DELETE(FLineShader);
 #if USE_COMPUTE_SHADER
-	delete FMshLghtCompShader;
+	SAFE_DELETE(FMshLghtCompShader);
 #endif
 
-	delete FMeshShader;
-
-	delete FSurfShader;
-
-	delete FLineShader;
-
+#if DX11_HP2
 	// Metallicafan212:	Cleanup all the fonts
 	for (TMap<FString, IDWriteTextFormat*>::TIterator It(FontMap); It; ++It)
 	{
@@ -1008,6 +1023,7 @@ void UD3D11RenderDevice::Exit()
 	}
 
 	FontMap.Empty();
+#endif
 
 	// Metallicafan212:	Cleanup the blend states
 	for (TMap<FPLAG, ID3D11BlendState*>::TIterator It(BlendMap); It; ++It)
@@ -1031,28 +1047,38 @@ void UD3D11RenderDevice::Exit()
 
 	SAFE_RELEASE(m_D3DQuery);
 
+#if DX11_HP2
+	// Metallicafan212:	HP2 specific
 	SAFE_RELEASE(m_D2DFact);
 	SAFE_RELEASE(m_D2DWriteFact);
 	SAFE_RELEASE(m_D2DRT);
 	SAFE_RELEASE(m_DXGISurf);
+	SAFE_RELEASE(m_TextParams);
+#endif
+
+	// Metallicafan212:	No bind texture/sampler
 	SAFE_RELEASE(BlankTexture);
 	SAFE_RELEASE(BlankResourceView);
 	SAFE_RELEASE(BlankSampler);
+
+
 	SAFE_RELEASE(m_DefaultZState);
-	
 	SAFE_RELEASE(m_DefaultNoZState);
 
-	SAFE_RELEASE(m_TextParams);
 
 	FlushRasterStates();
 
 
-	// Metallicafan212:	Reset the views we have now
+	// Metallicafan212:	Render target + back buffer texture
 	SAFE_RELEASE(m_BackBuffTex);
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
+	SAFE_RELEASE(m_ScreenRTSRV);
+
+	// Metallicafan212:	Depth stencil target
+	SAFE_RELEASE(m_ScreenDSTex);
 	SAFE_RELEASE(m_D3DScreenDSV);
-	SAFE_RELEASE(depthStencil);
+	SAFE_RELEASE(m_ScreenDTSRV);
 
 	// Metallicafan212:	Now flush
 	m_D3DDeviceContext->Flush();

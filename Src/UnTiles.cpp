@@ -18,6 +18,18 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	SetRasterState(DXRS_Normal | DXRS_NoAA);
 	*/
 
+	UBOOL bFontHack = (PolyFlags & (PF_NoSmooth | PF_Masked | PF_RenderHint)) == (PF_NoSmooth | PF_Masked | PF_RenderHint);
+
+	// Metallicafan212:	Per CacoFFF's suggestion, add/remove 0.1f * U/VSize when rendering fonts
+	FLOAT ExtraU = 0.0f;
+	FLOAT ExtraV = 0.0f;
+
+	if (bFontHack)
+	{
+		ExtraU = -0.1f / Info.USize;
+		ExtraV = -0.1f / Info.VSize;
+	}
+
 	/*
 	// Metallicafan212:	TEST!!!! Floor the values to see if the NV tile rendering bug goes away
 	X	= appFloor(X);
@@ -171,10 +183,10 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	FLOAT TexInfoUMult = BoundTextures[0].TexInfo->UMult;
 	FLOAT TexInfoVMult = BoundTextures[0].TexInfo->VMult;
 
-	FLOAT SU1			= U * TexInfoUMult;
-	FLOAT SU2			= (U + UL) * TexInfoUMult;
-	FLOAT SV1			= V * TexInfoVMult;
-	FLOAT SV2			= (V + VL) * TexInfoVMult;
+	FLOAT SU1			= (U * TexInfoUMult)		+ ExtraU;
+	FLOAT SU2			= ((U + UL) * TexInfoUMult) + ExtraU;
+	FLOAT SV1			= (V * TexInfoVMult)		+ ExtraV;
+	FLOAT SV2			= ((V + VL) * TexInfoVMult) + ExtraV;
 
 	// Buffer the tiles
 	m_VertexBuff[0].Color	= Color;

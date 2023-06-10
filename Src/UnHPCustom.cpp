@@ -559,11 +559,11 @@ UTexture* UD3D11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL bCre
 
 		CD3D11_DEPTH_STENCIL_VIEW_DESC dtVDesc = CD3D11_DEPTH_STENCIL_VIEW_DESC();
 		dtVDesc.Flags				= 0;
-		dtVDesc.Format				= DXGI_FORMAT_D24_UNORM_S8_UINT;
+		dtVDesc.Format				= DSTFormat;//DXGI_FORMAT_D24_UNORM_S8_UINT;
 		dtVDesc.ViewDimension		= NumAASamples > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
 		dtVDesc.Texture2D.MipSlice	= 0;
 
-		srvDesc.Format				= DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		srvDesc.Format				= DSTSTVFormat;//DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 		srvDesc.ViewDimension		= (NumAASamples > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D);//D3D11_SRV_DIMENSION_TEXTURE2DMS;
 
 		hr = m_D3DDevice->CreateTexture2D(&bufferDesc, nullptr, &Tex->DTTex);
@@ -580,6 +580,7 @@ UTexture* UD3D11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL bCre
 
 		ThrowIfFailed(hr);
 
+#if DX11_HP2
 		// Metallicafan212:	Create a RT for the local render target!
 		hr = Tex->RTTex->QueryInterface(IID_PPV_ARGS(Tex->RTDXGI.GetAddressOf()));//m_D3DSwapChain->GetBuffer(0, IID_PPV_ARGS(&m_DXGISurf));
 
@@ -590,6 +591,7 @@ UTexture* UD3D11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL bCre
 		hr = m_D2DFact->CreateDxgiSurfaceRenderTarget(Tex->RTDXGI.Get(), &props, Tex->RTD2D.GetAddressOf());
 
 		ThrowIfFailed(hr);
+#endif
 
 	}
 
@@ -678,8 +680,10 @@ void UD3D11RenderDevice::RestoreRenderTarget()
 
 	BoundRT = nullptr;
 
+#if DX11_HP2
 	// Metallicafan212:	Restore the D2D render target
 	m_CurrentD2DRT = m_D2DRT;
+#endif
 
 	unguard;
 }

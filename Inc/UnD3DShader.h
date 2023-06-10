@@ -10,16 +10,6 @@ struct FShaderVarCommon
 {
 	DirectX::XMMATRIX Proj;
 
-	/*
-	// Metallicafan212:	The Viewport width and height
-	FLOAT	ViewX;
-	FLOAT 	ViewY;
-	FLOAT	Aspect;
-	FLOAT	ProjZ;
-	FLOAT 	RFX2;
-	FLOAT	RFY2;
-	*/
-
 	// Metallicafan212:	Other needed shader vars
 	UBOOL	bColorMasked;
 	UBOOL	bDistanceFogEnabled;
@@ -31,12 +21,10 @@ struct FShaderVarCommon
 	UBOOL	bAlphaEnabled;
 
 	// Metallicafan212:	If a texture is PF_NoSmooth AND have 1 mip level!!!
-	UBOOL	bNVTileHack;
+	//UBOOL	bNVTileHack;
 
 	// Metallicafan212:	Pad it!!!!
-	FLOAT	Pad;
-	//FLOAT	Pad[2];
-	//FLOAT	Pad[3];
+	FLOAT	Pad[2];
 
 	// Metallicafan212:	Now fog settings
 	FPlane	DistanceFogColor;

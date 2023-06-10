@@ -357,6 +357,7 @@ void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
 
 #define SAFE_RELEASE(ptr) if(ptr != nullptr){ptr->Release(); ptr = nullptr;}
+#define SAFE_DELETE(ptr) if(ptr != nullptr){delete ptr; ptr = nullptr;}
 
 // Metallicafan212:	Different shader definitions
 #include "UnD3DShader.h"
@@ -413,8 +414,23 @@ class UD3D11RenderDevice : public URenderDevice
 	// Metallicafan212:	The screen render target
 	ID3D11RenderTargetView*		m_D3DScreenRTV;
 
+	// Metallicafan212:	The screen shader resource view (for MSAA resolving)
+	ID3D11ShaderResourceView*	m_ScreenRTSRV;
+
+	// Metallicafan212:	Format for creating depth targets
+	DXGI_FORMAT					DSTFormat;
+
+	// Metallicafan212:	Format for reading in shaders
+	DXGI_FORMAT					DSTSTVFormat;
+
+	// Metallicafan212:	The screen depth texture
+	ID3D11Texture2D*			m_ScreenDSTex;
+
 	// Metallicafan212:	The screen depth and stencil target
 	ID3D11DepthStencilView*		m_D3DScreenDSV;
+
+	// Metallicafan212:	The depth shader resource view (for MSAA resolving)
+	ID3D11ShaderResourceView*	m_ScreenDTSRV;
 
 	// Metallicafan212:	Default depth stencil state
 	ID3D11DepthStencilState*	m_DefaultZState;
@@ -430,8 +446,7 @@ class UD3D11RenderDevice : public URenderDevice
 	// Metallicafan212:	So we can easily request wireframe
 	DWORD						ExtraRasterFlags;
 
-	ID3D11Texture2D*			depthStencil;
-
+#if DX11_HP2
 	// Metallicafan212:	DXGI surface for D2D
 	IDXGISurface*				m_DXGISurf;
 
@@ -451,12 +466,13 @@ class UD3D11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	Holder for the different font types
 	TMap<FString, IDWriteTextFormat*>	FontMap;
+#endif
 
 	// Metallicafan212:	Array of RT textures
-	TArray<UDX11RenderTargetTexture*>		RTTextures;
+	TArray<UDX11RenderTargetTexture*>	RTTextures;
 
 	// Metallicafan212:	RTTexture currently bound
-	UDX11RenderTargetTexture*				BoundRT;
+	UDX11RenderTargetTexture*			BoundRT;
 
 	// Metallicafan212:	Shader list, so we can cleanup
 	//					TODO! Might make each base shader referenced directly rather than an array???
@@ -1038,6 +1054,7 @@ class UD3D11RenderDevice : public URenderDevice
 	// Metallicafan212:	This function just unmapps the verts
 	virtual void FinishMeshComputeShader();
 
+#if DX11_HP2
 	// Metallicafan212:	Clear out any render targets left
 	void ClearRTTextures()
 	{
@@ -1058,4 +1075,5 @@ class UD3D11RenderDevice : public URenderDevice
 		Temp.Empty();
 		RTTextures.Empty();
 	}
+#endif
 };

@@ -72,8 +72,11 @@ PSInput VertShader(VSInput input)
 
 float4 PxShader(PSInput input) : SV_TARGET
 {
+	// Metallicafan212:	Leaving this in here for future reference, if I ever need it again
+	//					NVidia, with point filtering on will not round UV coordinates coming in, like AMD and Intel
+	//					Rather, it just seems to floor them
+	/*
 	float4 DiffColor;
-	
 	// Metallicafan212:	NVIDIA SPECIFIC HACK!!!!
 	//					TODO! Figure out how to get around this when uploading the verts to the GPU, so we don't have to have vendor special code....
 	if(bNVTileHack)
@@ -90,6 +93,9 @@ float4 PxShader(PSInput input) : SV_TARGET
 	{
 		DiffColor = Diffuse.SampleBias(DiffState, input.uv, 0.0f) * input.color;
 	}
+	*/
+	
+	float4 DiffColor = Diffuse.SampleBias(DiffState, input.uv, 0.0f) * input.color;
 	
 	// Metallicafan212:	Do alpha rejecting
 	//					TODO! This also sets the global selection color for the editor!

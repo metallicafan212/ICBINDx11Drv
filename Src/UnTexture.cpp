@@ -27,6 +27,7 @@ void UD3D11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG PolyFl
 		PolyFlags |= PF_AlphaToCoverage;
 #endif
 
+	/*
 	// Metallicafan212:	TILE HACK!!!
 	//					Load the texture directly ONLY for font characters!!!
 	//					Intel and AMD both sample correctly
@@ -38,6 +39,7 @@ void UD3D11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG PolyFl
 	{
 		GlobalShaderVars.bNVTileHack = 0;
 	}
+	*/
 
 	// Metallicafan212:	Adjust the cache ID to fix masking issues (per the DX9 driver)
 	//					Like said before, this was disabled because it slots ALL textures into the first bucket
