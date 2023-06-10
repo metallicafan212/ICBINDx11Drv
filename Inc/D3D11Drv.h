@@ -53,6 +53,8 @@
 
 #define USE_COMPUTE_SHADER 0
 
+#define DX11_USE_MSAA_SHADER 0//1
+
 #define D3D_DRIVER_VERSION TEXT("0.35 Alpha")
 
 // Metallicafan212:	Compile time
@@ -72,6 +74,7 @@
 #include <d3dcompiler.h>
 #include <Windows.h>
 #include <wrl/client.h>
+#include <d3d11on12.h>
 #undef clock
 
 #include "Core.h"
@@ -91,6 +94,7 @@ enum ERasterFlags
 };
 
 class UD3D11RenderDevice;
+
 
 // Metallicafan212:	Just cutting down on the needed typing
 namespace MS = Microsoft::WRL;
@@ -379,10 +383,22 @@ class UD3D11RenderDevice : public URenderDevice
 	FLOAT						ThreeDeeLineThickness;
 	FLOAT						OrthoLineThickness;
 	UBOOL						bDebugSelection;
+	UBOOL						bUseD3D11On12;
+
+	// Metallicafan212:	TODO! MSAA resolving vars
+	FLOAT						MSAAFilterSize;
+	FLOAT						MSAAGaussianSigma;
+	FLOAT						MSAACubicB;
+	FLOAT 						MSAACubicC;
+	INT							MSAAFilterType;
 
 	// Metallicafan212:	Versions to check on lock if they changed
 	INT							LastAASamples;
 	INT							LastAFSamples;
+
+	// Metallicafan212:	HACK coord minus for the current MSAA level...
+	//					Certain levels need different coord movements
+	FLOAT						TileAAUVMove;
 
 	// Metallicafan212:	If the GPU is AMD/ATI, Intel, or NVidia
 	UBOOL						bIsNV;
@@ -408,6 +424,9 @@ class UD3D11RenderDevice : public URenderDevice
 	// Metallicafan212:	The backbuffer texture, so we can resolve resource to it (support MSAA)
 	ID3D11Texture2D*			m_BackBuffTex;
 
+	// Metallicafan212:	The render target view for the backbuffer (so we can use shaders on the input)
+	ID3D11RenderTargetView*		m_BackBuffRT;
+
 	// Metallicafan212:	The screen texture, which will use MSAA
 	ID3D11Texture2D*			m_ScreenBuffTex;
 
@@ -420,8 +439,11 @@ class UD3D11RenderDevice : public URenderDevice
 	// Metallicafan212:	Format for creating depth targets
 	DXGI_FORMAT					DSTFormat;
 
-	// Metallicafan212:	Format for reading in shaders
-	DXGI_FORMAT					DSTSTVFormat;
+	// Metallicafan212:	Format for the texture
+	DXGI_FORMAT					DSTTexFormat;
+
+	// Metallicafan212:	Format for the depth shader resource view
+	DXGI_FORMAT					DSTSRVFormat;
 
 	// Metallicafan212:	The screen depth texture
 	ID3D11Texture2D*			m_ScreenDSTex;
@@ -490,6 +512,8 @@ class UD3D11RenderDevice : public URenderDevice
 	FD3DSurfShader*						FSurfShader;
 
 	FD3DLineShader*						FLineShader;
+
+	FD3DMSAAShader*						FMSAAShader;
 
 	FD3DShader*							CurrentShader;
 

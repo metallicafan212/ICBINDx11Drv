@@ -65,7 +65,7 @@ void UD3D11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG PolyFl
 	// Metallicafan212:	Check if we need to upload it to the GPU
 	UBOOL bUpload			= DaTex == nullptr || Info->bRealtimeChanged /* || Info->bRealtime || Info->bParametric*/ || (PolyFlags & PF_Masked) != (DaTex->PolyFlags & PF_Masked);
 
-	UBOOL bDoSampUpdate;
+	UBOOL bDoSampUpdate = 0;
 
 	if(bUpload)
 	{

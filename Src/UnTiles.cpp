@@ -26,8 +26,8 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 
 	if (bFontHack)
 	{
-		ExtraU = -0.1f / Info.USize;
-		ExtraV = -0.1f / Info.VSize;
+		ExtraU = TileAAUVMove / Info.USize;
+		ExtraV = TileAAUVMove / Info.VSize;
 	}
 
 	/*

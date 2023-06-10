@@ -335,3 +335,29 @@ public:
 
 	virtual void WriteConstantBuffer(void* InMem);
 };
+
+// Metallicafan212:	MSAA resolving shader
+class FD3DMSAAShader : public FD3DShader
+{
+public:
+	FD3DMSAAShader() :
+		FD3DShader()
+	{
+		//ShaderFile	= TEXT("..\\Shaders\\TileShader.hlsl");
+		VertexFile	= SHADER_FOLDER TEXT("MSAAResolve.hlsl");
+		PixelFile	= SHADER_FOLDER TEXT("MSAAResolve.hlsl");
+		VertexFunc	= TEXT("VertShader");
+		PixelFunc	= TEXT("PxShader");
+	}
+
+	// Metallicafan212:	Constructor that inits the device pointer
+	FD3DMSAAShader(class UD3D11RenderDevice* InParent);
+
+	// Metallicafan212:	Shader interface
+	virtual void Init();
+	virtual void Bind();
+
+	virtual void SetupConstantBuffer();
+
+	virtual void WriteConstantBuffer(void* InMem);
+};

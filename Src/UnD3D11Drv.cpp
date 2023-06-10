@@ -60,6 +60,7 @@ void UD3D11RenderDevice::SetupDevice()
 
 	// Metallicafan212:	Render target and back buffer texture
 	SAFE_RELEASE(m_BackBuffTex);
+	SAFE_RELEASE(m_BackBuffRT);
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
@@ -76,6 +77,7 @@ void UD3D11RenderDevice::SetupDevice()
 	SAFE_DELETE(FMeshShader);
 	SAFE_DELETE(FSurfShader);
 	SAFE_DELETE(FLineShader);
+	SAFE_DELETE(FMSAAShader);
 
 #if USE_COMPUTE_SHADER
 	SAFE_DELETE(FMshLghtCompShader);
@@ -110,7 +112,31 @@ void UD3D11RenderDevice::SetupDevice()
 	GLog->Logf(TEXT("DX11: Creating device with the maximum feature level"));
 
 MAKE_DEVICE:
-	HRESULT hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, FLPtr, FLCount, D3D11_SDK_VERSION, &m_D3DDevice, &m_FeatureLevel, &m_D3DDeviceContext);
+	HRESULT hr = S_OK;
+
+	// Metallicafan212:	TODO! May not even support this lol
+	//					It probably wouldn't even run any better, and you need a ID3D12Device
+	/*
+	if (bUseD3D11On12)
+	{
+		hr = D3D11On12CreateDevice(nullptr, Flags, FLPtr, FLCount, nullptr, 0, 0, &m_D3DDevice, &m_D3DDeviceContext, &m_FeatureLevel);
+
+		if (FAILED(hr))
+		{
+			// Metallicafan212:	Not supported? Jump down
+			goto NORMAL_DX11;
+		}
+		else
+		{
+			GLog->Logf(TEXT("DX11: Created device using D3D11On12"));
+		}
+	}
+	else
+	*/
+	{
+	NORMAL_DX11:
+		hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, FLPtr, FLCount, D3D11_SDK_VERSION, &m_D3DDevice, &m_FeatureLevel, &m_D3DDeviceContext);
+	}
 
 	// Metallicafan212:	Check if it failed due to the debug layer
 	if (FAILED(hr) && Flags & D3D11_CREATE_DEVICE_DEBUG)
@@ -210,6 +236,8 @@ MAKE_DEVICE:
 
 	FLineShader			= new FD3DLineShader(this);
 
+	FMSAAShader			= new FD3DMSAAShader(this);
+
 	// Metallicafan212:	Setup the debug info
 #if 1//_DEBUG
 
@@ -281,15 +309,17 @@ MAKE_DEVICE:
 
 	if (FAILED(hr) || !bSupportsFormat)
 	{
-		GLog->Logf(TEXT("DX11: Using D24_S8 as the depth stencil format"));
+		GLog->Logf(TEXT("DX11: Using 24 bit depth buffer"));
 		DSTFormat		= DXGI_FORMAT_D24_UNORM_S8_UINT;
-		DSTSTVFormat	= DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		DSTTexFormat	= DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		DSTSRVFormat	= DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	}
 	else
 	{
-		GLog->Logf(TEXT("DX11: Using D32_FLOAT_S8X24 as the depth stencil format"));
+		GLog->Logf(TEXT("DX11: Using 32bit depth buffer"));
 		DSTFormat		= DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-		DSTSTVFormat	= DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+		DSTTexFormat	= DXGI_FORMAT_R32G8X24_TYPELESS;
+		DSTSRVFormat	= DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
 
 	}
 
@@ -412,6 +442,7 @@ UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT Ne
 	FLineShader			= nullptr;
 	FTileShader			= nullptr;
 	FGenShader			= nullptr;
+	FMSAAShader			= nullptr;
 #if USE_COMPUTE_SHADER
 	FMshLghtCompShader	= nullptr;
 #endif
@@ -550,6 +581,7 @@ void UD3D11RenderDevice::SetupResources()
 
 	// Metallicafan212:	Render target and back buffer texture
 	SAFE_RELEASE(m_BackBuffTex);
+	SAFE_RELEASE(m_BackBuffRT);
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
@@ -640,10 +672,8 @@ void UD3D11RenderDevice::SetupResources()
 		else if (AdDesc.VendorId == 0x163C || AdDesc.VendorId == 0x8086 || AdDesc.VendorId == 0x8087)
 		{
 			debugf(TEXT("D3D adapter vendor      : Intel"));
-			bIsIntel = true;
+			bIsIntel = 1;
 		}
-
-		
 
 		// Metallicafan212:	If to use the new Windows 10 modes. I only test if we're actually running on 10
 		//					!GIsEditor is here because using the tearing mode does something fucky in DWM, changing the window in such a way that normal non-DX11 renderers can't draw to it
@@ -770,6 +800,11 @@ void UD3D11RenderDevice::SetupResources()
 
 	ThrowIfFailed(hr);
 
+	// Metallicafan212:	Create a render target view for it
+	hr = m_D3DDevice->CreateRenderTargetView(m_BackBuffTex, nullptr, &m_BackBuffRT);
+
+	ThrowIfFailed(hr);
+
 	// Metallicafan212:	Now create the MSAA target
 	//					ClampUserOptions already checks what levels of MSAA are supported, and clamps to that
 	CD3D11_TEXTURE2D_DESC RTMSAA = CD3D11_TEXTURE2D_DESC();
@@ -792,24 +827,48 @@ void UD3D11RenderDevice::SetupResources()
 
 	ThrowIfFailed(hr);
 
+	// Metallicafan212:	Create a shader resource view for MSAA resolving
+	CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = CD3D11_SHADER_RESOURCE_VIEW_DESC();
+	srvDesc.Format						= DXGI_FORMAT_B8G8R8A8_UNORM;
+	srvDesc.ViewDimension				= NumAASamples > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;//D3D11_SRV_DIMENSION_TEXTURE2DMS;
+	srvDesc.Texture2D.MostDetailedMip	= 0;
+	srvDesc.Texture2D.MipLevels			= 1;
+
+	hr = m_D3DDevice->CreateShaderResourceView(m_ScreenBuffTex, &srvDesc, &m_ScreenRTSRV);
+
+	ThrowIfFailed(hr);
+
+
 	// Metallicafan212:	Make the depth and stencil buffer
 	//					TODO! Possibly use a higher quality format????
 	CD3D11_TEXTURE2D_DESC depthStencilDesc = CD3D11_TEXTURE2D_DESC();
-	depthStencilDesc.Format				= DSTFormat;//DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilDesc.Format				= DSTTexFormat;//DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthStencilDesc.ArraySize			= 1;
 	depthStencilDesc.Width				= SizeX;
 	depthStencilDesc.Height				= SizeY;
 	depthStencilDesc.MipLevels			= 1;
 	depthStencilDesc.SampleDesc.Count	= NumAASamples;
 	depthStencilDesc.SampleDesc.Quality = 0;//D3D11_STANDARD_MULTISAMPLE_PATTERN;//0;
-	depthStencilDesc.BindFlags			= D3D11_BIND_DEPTH_STENCIL;
-
+	depthStencilDesc.BindFlags			= D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 	
 	hr = m_D3DDevice->CreateTexture2D(&depthStencilDesc, nullptr, &m_ScreenDSTex);
 
 	ThrowIfFailed(hr);
 
-	hr = m_D3DDevice->CreateDepthStencilView(m_ScreenDSTex, nullptr, &m_D3DScreenDSV);
+	// Metallicafan212:	Now we need to declare the view as the right format
+	CD3D11_DEPTH_STENCIL_VIEW_DESC dtVDesc = CD3D11_DEPTH_STENCIL_VIEW_DESC();
+	dtVDesc.Flags				= 0;
+	dtVDesc.Format				= DSTFormat;//DXGI_FORMAT_D24_UNORM_S8_UINT;
+	dtVDesc.ViewDimension		= NumAASamples > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
+	dtVDesc.Texture2D.MipSlice	= 0;
+
+	hr = m_D3DDevice->CreateDepthStencilView(m_ScreenDSTex, &dtVDesc, &m_D3DScreenDSV);
+
+	ThrowIfFailed(hr);
+
+	// Metallicafan212:	Now make the depth shader resource
+	srvDesc.Format = DSTSRVFormat;
+	hr = m_D3DDevice->CreateShaderResourceView(m_ScreenDSTex, &srvDesc, &m_ScreenDTSRV);
 
 	ThrowIfFailed(hr);
 
@@ -1011,6 +1070,7 @@ void UD3D11RenderDevice::Exit()
 	SAFE_DELETE(FMeshShader);
 	SAFE_DELETE(FSurfShader);
 	SAFE_DELETE(FLineShader);
+	SAFE_DELETE(FMSAAShader);
 #if USE_COMPUTE_SHADER
 	SAFE_DELETE(FMshLghtCompShader);
 #endif
@@ -1071,6 +1131,7 @@ void UD3D11RenderDevice::Exit()
 
 	// Metallicafan212:	Render target + back buffer texture
 	SAFE_RELEASE(m_BackBuffTex);
+	SAFE_RELEASE(m_BackBuffRT);
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
@@ -1269,7 +1330,121 @@ void UD3D11RenderDevice::Unlock(UBOOL Blit)
 	{
 		// Metallicafan212:	Copy to the screen
 		if (NumAASamples > 1)
+		{
+#if DX11_USE_MSAA_SHADER
+			// Metallicafan212:	We have to do geometry now...
+			EndBuffering();
+
+			// Metallicafan212:	Order of operations, make sure the alpha rejection is set
+			SetBlend(0);
+
+			SetTexture(0, nullptr, 0);
+			SetTexture(1, nullptr, 0);
+
+			// Metallicafan212:	Manually setup the vars...
+			m_D3DDeviceContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
+			m_D3DDeviceContext->PSSetShaderResources(0, 1, &m_ScreenRTSRV);
+			m_D3DDeviceContext->PSSetShaderResources(1, 1, &m_ScreenDTSRV);
+
+			FMSAAShader->Bind();
+
+			FLOAT Z		= 1.0f;
+			FLOAT X		= 0.0f;
+			FLOAT Y		= 0.0f;
+			FLOAT XL	= m_sceneNodeX;
+			FLOAT YL	= m_sceneNodeY;
+
+			// Metallicafan212:	Now make 2 triangles
+			//					I copied this all from the tile rendering, since I'm such a lazy fucking bastard
+			FLOAT PX1	= X - (m_sceneNodeX * 0.5f);
+			FLOAT PX2	= PX1 + XL;
+			FLOAT PY1	= Y - (m_sceneNodeY * 0.5f);
+			FLOAT PY2	= PY1 + YL;
+
+			FLOAT RPX1	= m_RFX2 * PX1;
+			FLOAT RPX2	= m_RFX2 * PX2;
+			FLOAT RPY1	= m_RFY2 * PY1;
+			FLOAT RPY2	= m_RFY2 * PY2;
+
+			FLOAT SU1 = 0.0f;
+			FLOAT SU2 = 1.0f;
+			FLOAT SV1 = 0.0f;
+			FLOAT SV2 = 1.0f;
+
+			RPX1 *= Z;
+			RPX2 *= Z;
+			RPY1 *= Z;
+			RPY2 *= Z;
+
+
+			// Metallicafan212:	Disable depth lmao
+			//ID3D11DepthStencilState* CurState	= nullptr;
+			//UINT Sten							= 0;
+			//m_D3DDeviceContext->OMGetDepthStencilState(&CurState, &Sten);
+			//m_D3DDeviceContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+
+			LockVertexBuffer(6 * sizeof(FD3DVert));
+
+			//m_D3DDeviceContext->IASetInputLayout(nullptr);
+
+			// Metallicafan212:	Start buffering now
+			StartBuffering(BT_ScreenFlash);
+
+			m_VertexBuff[0].X		= RPX1;
+			m_VertexBuff[0].Y		= RPY1;
+			m_VertexBuff[0].Z		= Z;
+			m_VertexBuff[0].U		= SU1;
+			m_VertexBuff[0].V		= SV1;
+
+			m_VertexBuff[1].X		= RPX2;
+			m_VertexBuff[1].Y		= RPY1;
+			m_VertexBuff[1].Z		= Z;
+			m_VertexBuff[1].U		= SU2;
+			m_VertexBuff[1].V		= SV1;
+
+			m_VertexBuff[2].X		= RPX2;
+			m_VertexBuff[2].Y		= RPY2;
+			m_VertexBuff[2].Z		= Z;
+			m_VertexBuff[2].U		= SU2;
+			m_VertexBuff[2].V		= SV2;
+
+			m_VertexBuff[3].X		= RPX1;
+			m_VertexBuff[3].Y		= RPY1;
+			m_VertexBuff[3].Z		= Z;
+			m_VertexBuff[3].U		= SU1;
+			m_VertexBuff[3].V		= SV1;
+
+			m_VertexBuff[4].X		= RPX2;
+			m_VertexBuff[4].Y		= RPY2;
+			m_VertexBuff[4].Z		= Z;
+			m_VertexBuff[4].U		= SU2;
+			m_VertexBuff[4].V		= SV2;
+
+			m_VertexBuff[5].X		= RPX1;
+			m_VertexBuff[5].Y		= RPY2;
+			m_VertexBuff[5].Z		= Z;
+			m_VertexBuff[5].U		= SU1;
+			m_VertexBuff[5].V		= SV2;
+
+			UnlockVertexBuffer();
+
+			m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			AdvanceVertPos(6);
+
+			// Metallicafan212:	Draw
+			EndBuffering();
+
+			// Metallicafan212:	Reset Z state
+			//m_D3DDeviceContext->OMSetDepthStencilState(CurState, Sten);
+
+			SetTexture(0, nullptr, 0);
+			SetTexture(1, nullptr, 0);
+
+			RestoreRenderTarget();
+#else
 			m_D3DDeviceContext->ResolveSubresource(m_BackBuffTex, 0, m_ScreenBuffTex, 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+#endif
+		}
 		else
 			m_D3DDeviceContext->CopyResource(m_BackBuffTex, m_ScreenBuffTex);
 

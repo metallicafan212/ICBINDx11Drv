@@ -563,7 +563,7 @@ UTexture* UD3D11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL bCre
 		dtVDesc.ViewDimension		= NumAASamples > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
 		dtVDesc.Texture2D.MipSlice	= 0;
 
-		srvDesc.Format				= DSTSTVFormat;//DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		srvDesc.Format				= DSTSRVFormat;//DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 		srvDesc.ViewDimension		= (NumAASamples > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D);//D3D11_SRV_DIMENSION_TEXTURE2DMS;
 
 		hr = m_D3DDevice->CreateTexture2D(&bufferDesc, nullptr, &Tex->DTTex);
