@@ -1078,7 +1078,6 @@ class UD3D11RenderDevice : public URenderDevice
 	// Metallicafan212:	This function just unmapps the verts
 	virtual void FinishMeshComputeShader();
 
-#if DX11_HP2
 	// Metallicafan212:	Clear out any render targets left
 	void ClearRTTextures()
 	{
@@ -1099,5 +1098,4 @@ class UD3D11RenderDevice : public URenderDevice
 		Temp.Empty();
 		RTTextures.Empty();
 	}
-#endif
 };

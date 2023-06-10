@@ -646,8 +646,10 @@ void UD3D11RenderDevice::SetRenderTargetTexture(UTexture* Tex)
 
 		BoundRT = RT;
 
+#if DX11_HP2
 		// Metallicafan212:	Set the D2DRT as well
 		m_CurrentD2DRT = RT->RTD2D.Get();
+#endif
 	}
 	else
 	{
