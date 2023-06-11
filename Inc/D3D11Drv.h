@@ -53,7 +53,7 @@
 
 #define USE_COMPUTE_SHADER 0
 
-#define DX11_USE_MSAA_SHADER 0//1
+#define DX11_USE_MSAA_SHADER 0
 
 #define D3D_DRIVER_VERSION TEXT("0.35 Alpha")
 
@@ -239,7 +239,7 @@ struct FGlobalShaderVars
 // Metallicafan212:	Thanks to CacoFFF from OldUnreal for pointing this out for me!
 //					If you don't change the default TMap hashing, it'll place half the textures in one bin....
 //					TODO! This may only be a problem when compiling for UT99/227. I changed out the GetTypeHash to a QWORD in HP2
-#if 0
+#if !DX11_HP2
 static inline DWORD GetTypeHash(const D3DCacheId& A)
 {
 	QWORD Value		= (QWORD)A;

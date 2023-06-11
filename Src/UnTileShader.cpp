@@ -9,8 +9,11 @@ struct FTileMatrixDef : FShaderVarCommon
 	//					HLSL wants to pad a float3x4 to 4 CONSTANTS for some reason
 	UBOOL	bDoRot;
 
+	// Metallicafan212:	If it's a MSAA font character tile
+	UBOOL	bIsMSAAFontTile;
+
 	// Metallicafan212:	Keep it aligned along register bounds
-	FLOAT	Pad3[3];
+	FLOAT	Pad3[2];//[3];
 };
 
 // Metallicafan212:	This file defines the tile rendering shader
@@ -76,7 +79,8 @@ void FD3DTileShader::WriteConstantBuffer(void* InMem)
 	// Metallicafan212:	Now write the rotation stuff
 	FTileMatrixDef* Def = (FTileMatrixDef*)InMem;
 
-	Def->bDoRot = bDoTileRotation;
+	Def->bDoRot				= bDoTileRotation;
+	Def->bIsMSAAFontTile	= bDoMSAAFontHack;
 
 	// Metallicafan212:	Only copy if needed
 	if (bDoTileRotation)

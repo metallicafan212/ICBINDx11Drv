@@ -7,11 +7,13 @@ shared cbuffer CommonBuffer : register (b0)
 	COMMON_VARS;
 	
 	// Metallicafan212:	The info we use for this specific shader
-	float4		XAxis	: packoffset(c12);
-	float4		YAxis	: packoffset(c13);
-	float4		ZAxis	: packoffset(c14);
-	int			bDoRot	: packoffset(c15.x);
-	float3		Pad3	: packoffset(c15.y);
+	float4		XAxis		: packoffset(c12);
+	float4		YAxis		: packoffset(c13);
+	float4		ZAxis		: packoffset(c14);
+	int			bDoRot		: packoffset(c15.x);
+	int			bDoUVHack	: packoffset(c15.y);
+	float2		Pad3		: packoffset(c15.z);
+	//float3		Pad3		: packoffset(c15.y);
 };
 
 // Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling
@@ -35,7 +37,8 @@ struct VSInput
 struct PSInput 
 {
 	float4 pos 				: SV_POSITION0; 
-	centroid float2 uv		: TEXCOORD0;
+	float2 uv				: TEXCOORD0;
+	centroid float2 cuv		: TEXCOORD1;
 	float4 color			: COLOR0; 
 	float4 fog				: COLOR1;
 	float  distFog			: COLOR2;
@@ -59,6 +62,7 @@ PSInput VertShader(VSInput input)
 	output.pos 			= mul(input.pos, Proj);
 	output.color		= input.color;
 	output.uv.xy		= input.uv.xy;
+	output.cuv.xy		= input.uv.xy;
 	
 	// Metallicafan212:	Do the final fog value
 	output.distFog		= DoDistanceFog(output.pos);
@@ -95,7 +99,14 @@ float4 PxShader(PSInput input) : SV_TARGET
 	}
 	*/
 	
-	float4 DiffColor = Diffuse.SampleBias(DiffState, input.uv, 0.0f) * input.color;
+	float2 UseUV = input.uv;
+	
+	if(bDoUVHack)
+	{
+		UseUV = input.cuv;
+	}
+	
+	float4 DiffColor = Diffuse.SampleBias(DiffState, UseUV, 0.0f) * input.color;
 	
 	// Metallicafan212:	Do alpha rejecting
 	//					TODO! This also sets the global selection color for the editor!

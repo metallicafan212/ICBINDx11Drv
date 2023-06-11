@@ -209,6 +209,7 @@ class FD3DTileShader : public FD3DShader
 public:
 
 	UBOOL	bDoTileRotation;
+	UBOOL	bDoMSAAFontHack;
 	FCoords TileCoords;
 
 	FD3DTileShader() :

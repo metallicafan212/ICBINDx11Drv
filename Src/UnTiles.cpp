@@ -18,41 +18,6 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	SetRasterState(DXRS_Normal | DXRS_NoAA);
 	*/
 
-	UBOOL bFontHack = (PolyFlags & (PF_NoSmooth | PF_Masked | PF_RenderHint)) == (PF_NoSmooth | PF_Masked | PF_RenderHint);
-
-	// Metallicafan212:	Per CacoFFF's suggestion, add/remove 0.1f * U/VSize when rendering fonts
-	FLOAT ExtraU = 0.0f;
-	FLOAT ExtraV = 0.0f;
-
-	if (bFontHack)
-	{
-		ExtraU = TileAAUVMove / Info.USize;
-		ExtraV = TileAAUVMove / Info.VSize;
-	}
-
-	/*
-	// Metallicafan212:	TEST!!!! Floor the values to see if the NV tile rendering bug goes away
-	X	= appFloor(X);
-	Y	= appFloor(Y);
-	XL	= appFloor(XL);
-	YL	= appFloor(YL);
-	U	= appFloor(U);
-	V	= appFloor(V);
-	UL	= appFloor(UL);
-	VL	= appFloor(VL);
-	*/
-
-	/*
-	X	= appRound(X);
-	Y	= appRound(Y);
-	XL	= appRound(XL);
-	YL	= appRound(YL);
-	U	= appRound(U);
-	V	= appRound(V);
-	UL	= appRound(UL);
-	VL	= appRound(VL);
-	*/
-
 	// Metallicafan212:	The check for memorized really only need to be done in HP2, since I use it to mark a tile as rotated
 #if DX11_HP2
 	// Metallicafan212:	Make sure wireframe doesn't get set on tiles!
@@ -123,6 +88,21 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 
 	SetTexture(0, &Info, PolyFlags);
 
+	UBOOL bFontHack = (PolyFlags & (PF_NoSmooth | PF_Masked | PF_RenderHint)) == (PF_NoSmooth | PF_Masked | PF_RenderHint);
+
+	// Metallicafan212:	Per CacoFFF's suggestion, add/remove 0.1f * U/VSize when rendering fonts
+	FLOAT ExtraU = 0.0f;
+	FLOAT ExtraV = 0.0f;
+
+	if (bFontHack )//&& bIsNV)
+	{
+		ExtraU = 0.1f / Info.USize;//TileAAUVMove / Info.USize;
+		ExtraV = 0.1f / Info.VSize;//TileAAUVMove / Info.VSize;
+	}
+
+	// Metallicafan212:	Use a separate centroid UV input if we have a font tile (no smooth) and have MSAA on!
+	FTileShader->bDoMSAAFontHack = (bFontHack && NumAASamples > 1);
+
 	//Adjust Z coordinate if Z range hack is active
 	//if (1)//(m_useZRangeHack)
 	if(1)
@@ -183,9 +163,9 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	FLOAT TexInfoUMult = BoundTextures[0].TexInfo->UMult;
 	FLOAT TexInfoVMult = BoundTextures[0].TexInfo->VMult;
 
-	FLOAT SU1			= (U * TexInfoUMult)		+ ExtraU;
+	FLOAT SU1			= (U * TexInfoUMult)		- ExtraU;
 	FLOAT SU2			= ((U + UL) * TexInfoUMult) + ExtraU;
-	FLOAT SV1			= (V * TexInfoVMult)		+ ExtraV;
+	FLOAT SV1			= (V * TexInfoVMult)		- ExtraV;
 	FLOAT SV2			= ((V + VL) * TexInfoVMult) + ExtraV;
 
 	// Buffer the tiles

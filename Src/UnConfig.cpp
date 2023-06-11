@@ -46,8 +46,6 @@ void UD3D11RenderDevice::StaticConstructor()
 	SupportsTC			= 1;
 
 #if DX11_HP2
-	bSupportsTwoSided	= 0;
-
 	// Metallicafan212:	HP2 Rendertarget textures
 	bSupportsRTTextures = 1;
 

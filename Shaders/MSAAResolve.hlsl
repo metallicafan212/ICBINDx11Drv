@@ -324,10 +324,55 @@ float4 PxShader(PSInput input) : SV_TARGET
     return float4(output, 1.0f);
 	*/
 	
+	/*
 	for(int i = 0; i < NumAASamples; i++)
 	{
 		sum += RT.Load(uint2(pixelPos), i).xyz;
 	}
 	
 	return float4(sum / NumAASamples, 1.0f);
+	*/
+	
+	float3 ZeroBased = RT.Load(uint2(pixelPos), 1).xyz;
+	
+	float3 PreviousSample = float3(0.0f, 0.0f, 0.0f);
+	
+	for(int i = 0; i < NumAASamples; i++)
+	{
+		float3 CurSamp 	= RT.Load(uint2(pixelPos), i).xyz;
+		float3 DTSamp	= DST.Load(uint2(pixelPos), i).xyz;
+		
+		// Metallicafan212:	Look for a harsh border with the previous sample???
+		if(i > 1 && DTSamp.x > 0.0f && DTSamp.x <= 5.0862630208333333333333333333333e-6)
+		{
+			float3 Harsh = abs(CurSamp - PreviousSample);
+			float Harshness = (Harsh.x + Harsh.y + Harsh.z) / 3.0f;
+			float a = smoothstep(0.5f, 1.0f, Harshness);//step(Harsh.x, 0.75f) + step(Harsh.y, 0.75f) + step(Harsh.z, 0.75f);
+	
+			//sum = lerp(sum, ZeroBased, a);//lerp(ZeroBased, sum, a);
+			CurSamp = lerp(CurSamp, PreviousSample, a);
+		}
+		
+		
+		sum += CurSamp;
+		PreviousSample = CurSamp;
+	}
+	
+	sum /= float(NumAASamples);
+	
+	/*
+	// Metallicafan212:	Step it
+	//float a = abs(step(sum.x, 0.5f) + step(sum.y, 0.5f) + step(sum.z, 0.5f));
+	
+	//sum = lerp(ZeroBased, sum, a);
+	
+	// Metallicafan212:	Look for a harsh border???
+	float3 Harsh = abs(sum - ZeroBased);
+	float Harshness = (Harsh.x + Harsh.y + Harsh.z) / 3.0f;
+	float a = smoothstep(0.5f, 1.0f, Harshness);//step(Harsh.x, 0.75f) + step(Harsh.y, 0.75f) + step(Harsh.z, 0.75f);
+	
+	sum = lerp(sum, ZeroBased, a);//lerp(ZeroBased, sum, a);
+	*/
+	
+	return float4(sum, 1.0f);
 }
