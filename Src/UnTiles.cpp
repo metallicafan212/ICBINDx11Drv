@@ -94,10 +94,12 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	FLOAT ExtraU = 0.0f;
 	FLOAT ExtraV = 0.0f;
 
-	if (bFontHack )//&& bIsNV)
+	if (bFontHack && (bIsNV || NumAASamples > 1))
 	{
-		ExtraU = 0.1f / Info.USize;//TileAAUVMove / Info.USize;
-		ExtraV = 0.1f / Info.VSize;//TileAAUVMove / Info.VSize;
+		ExtraU = 0.1f / Info.USize;
+		//ExtraU = TileAAUVMove / Info.USize;
+		ExtraV = 0.1f / Info.VSize;
+		//ExtraV = TileAAUVMove / Info.VSize;
 	}
 
 	// Metallicafan212:	Use a separate centroid UV input if we have a font tile (no smooth) and have MSAA on!
