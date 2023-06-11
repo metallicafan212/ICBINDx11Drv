@@ -40,8 +40,8 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -78,6 +78,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>.\..\Lib $(Platform)\$(Configuration)\</OutDir>
     <IntDir>.X86\Release\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>.\..\Lib $(Platform)\$(Configuration)\</OutDir>
+    <IntDir>.X64\Debug\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -119,13 +123,27 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>;_WINDOWS;WIN32;UNICODE;WIN32_LEAN_AND_MEAN;_SECURE_SCL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>Default</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>..\..\Core\Inc;..\..\Engine\Inc;..\..\MWindow\Inc;..\Inc;..\..\Render\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <AssemblerListingLocation>$(Platform)\$(Configuration)\</AssemblerListingLocation>
+      <ObjectFileName>$(Platform)\$(Configuration)\</ObjectFileName>
+      <ProgramDataBaseFileName>$(Platform)\$(Configuration)\</ProgramDataBaseFileName>
+      <ControlFlowGuard>false</ControlFlowGuard>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>..\..\System X64\D3D11Drv.dll</OutputFile>
+      <AdditionalLibraryDirectories>..\..\Core\Lib $(Platform)\$(Configuration);..\..\Engine\Lib $(Platform)\$(Configuration);..\..\MWindow\Lib $(Platform)\$(Configuration);..\..\Render\Lib $(Platform)\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>winmm.lib;Core.lib;Engine.lib;Render.lib;advapi32.lib;Dwmapi.lib;MWindow.lib;D3D11.lib;D3DCompiler.lib;Dwrite.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ProgramDatabaseFile>.\..\Lib X64\D3D11Drv.pdb</ProgramDatabaseFile>
+      <ImportLibrary>.\..\Lib X64\D3D11Drv.lib</ImportLibrary>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

@@ -42,3 +42,4 @@
 *.lastbuildstate
 *FileListAbsolute.txt
 *.map
+*.idb

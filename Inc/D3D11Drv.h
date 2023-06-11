@@ -68,20 +68,20 @@
 #include <dwrite.h>
 #include <dwrite_1.h>
 #include <dwrite_2.h>
-#include <dwrite_3.h>
+//#include <dwrite_3.h>
 #include <DirectXMath.h>
 #include <DirectXColors.h>
 #include <d3dcompiler.h>
 #include <Windows.h>
+
 #include <wrl/client.h>
-#include <d3d11on12.h>
 #undef clock
 
 #include "Core.h"
-
 #include "Engine.h"
 #include "UnRender.h"
 #include "UnRenDev.h"
+
 
 #define MAX_TEXTURES 16
 

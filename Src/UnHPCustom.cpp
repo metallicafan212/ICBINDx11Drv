@@ -554,7 +554,7 @@ UTexture* UD3D11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL bCre
 		// Metallicafan212:	Now create the depth info
 		bufferDesc.BindFlags	   &= ~D3D11_BIND_RENDER_TARGET;
 		bufferDesc.BindFlags	   |= D3D11_BIND_DEPTH_STENCIL;
-		bufferDesc.Format			= DXGI_FORMAT_R24G8_TYPELESS;
+		bufferDesc.Format			= DSTTexFormat;//DXGI_FORMAT_R24G8_TYPELESS;
 		bufferDesc.SampleDesc.Count = NumAASamples;
 
 		CD3D11_DEPTH_STENCIL_VIEW_DESC dtVDesc = CD3D11_DEPTH_STENCIL_VIEW_DESC();
