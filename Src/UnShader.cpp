@@ -51,27 +51,35 @@ void FD3DShader::Init()
 
 	UINT Flags = D3DCOMPILE_DEBUG;
 
+	HRESULT hr = S_OK;
+
 	// Metallicafan212:	Compile the shaders
-	HRESULT hr = D3DCompileFromFile(*VertexFile, nullptr, D3D_CMP_STD_INC, appToAnsi(*VertexFunc), "vs_5_0", Flags, 0, &vsBuff, &error);
+	if (VertexFunc.Len())
+	{
+		hr = D3DCompileFromFile(*VertexFile, nullptr, D3D_CMP_STD_INC, appToAnsi(*VertexFunc), "vs_5_0", Flags, 0, &vsBuff, &error);
 
-	CheckShader(hr, error);
+		CheckShader(hr, error);
 
-	// Metallicafan212:	Get it as a vertex shader
-	hr = ParentDevice->m_D3DDevice->CreateVertexShader(vsBuff->GetBufferPointer(), vsBuff->GetBufferSize(), nullptr, &VertexShader);
+		// Metallicafan212:	Get it as a vertex shader
+		hr = ParentDevice->m_D3DDevice->CreateVertexShader(vsBuff->GetBufferPointer(), vsBuff->GetBufferSize(), nullptr, &VertexShader);
 
-	// Metallicafan212:	IDK, do something here?
-	ParentDevice->ThrowIfFailed(hr);
+		// Metallicafan212:	IDK, do something here?
+		ParentDevice->ThrowIfFailed(hr);
+	}
 
 	// Metallicafan212:	Now the pixel shader
-	hr = D3DCompileFromFile(*PixelFile, nullptr, D3D_CMP_STD_INC, appToAnsi(*PixelFunc), "ps_5_0", Flags, 0, &psBuff, &error);
+	if (PixelFunc.Len())
+	{
+		hr = D3DCompileFromFile(*PixelFile, nullptr, D3D_CMP_STD_INC, appToAnsi(*PixelFunc), "ps_5_0", Flags, 0, &psBuff, &error);
 
-	CheckShader(hr, error);
+		CheckShader(hr, error);
 
-	// Metallicafan212:	Get it as a pixel shader
-	hr = ParentDevice->m_D3DDevice->CreatePixelShader(psBuff->GetBufferPointer(), psBuff->GetBufferSize(), nullptr, &PixelShader);
+		// Metallicafan212:	Get it as a pixel shader
+		hr = ParentDevice->m_D3DDevice->CreatePixelShader(psBuff->GetBufferPointer(), psBuff->GetBufferSize(), nullptr, &PixelShader);
 
-	// Metallicafan212:	IDK, do something here?
-	ParentDevice->ThrowIfFailed(hr);
+		// Metallicafan212:	IDK, do something here?
+		ParentDevice->ThrowIfFailed(hr);
+	}
 
 	// Metallicafan212:	Now the geometry shader
 	if (GeoFunc.Len())
@@ -90,10 +98,13 @@ void FD3DShader::Init()
 	// Metallicafan212:	Make the input layout
 
 	// Metallicafan212:	Now create the layout pointer
-	hr = ParentDevice->m_D3DDevice->CreateInputLayout(InputDesc, InputCount, vsBuff->GetBufferPointer(), vsBuff->GetBufferSize(), &InputLayout);
+	if (VertexShader != nullptr)
+	{
+		hr = ParentDevice->m_D3DDevice->CreateInputLayout(InputDesc, InputCount, vsBuff->GetBufferPointer(), vsBuff->GetBufferSize(), &InputLayout);
 
-	// Metallicafan212:	IDK, do something here?
-	ParentDevice->ThrowIfFailed(hr);
+		// Metallicafan212:	IDK, do something here?
+		ParentDevice->ThrowIfFailed(hr);
+	}
 
 	// Metallicafan212:	Allow child shaders to setup the constant buffer how they want
 	//					TODO! The shared variables should be optimized so that they only upload once per frame/only when they change
@@ -124,7 +135,6 @@ void FD3DShader::Bind()
 
 	ParentDevice->m_D3DDeviceContext->PSSetShader(PixelShader, nullptr, 0);
 
-
 	ParentDevice->m_D3DDeviceContext->IASetInputLayout(InputLayout);
 
 	// Metallicafan212:	Map the matrix(s)
@@ -142,12 +152,14 @@ void FD3DShader::Bind()
 	ParentDevice->m_D3DDeviceContext->Unmap(ShaderConstantsBuffer, 0);
 
 	// Metallicafan212:	Now finally set it as a resource
-	ParentDevice->m_D3DDeviceContext->VSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
+	if(VertexShader != nullptr)
+		ParentDevice->m_D3DDeviceContext->VSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
 
 	if(GeoShader != nullptr)
 		ParentDevice->m_D3DDeviceContext->GSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
 
-	ParentDevice->m_D3DDeviceContext->PSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
+	if(PixelShader != nullptr)
+		ParentDevice->m_D3DDeviceContext->PSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
 
 	unguard;
 }

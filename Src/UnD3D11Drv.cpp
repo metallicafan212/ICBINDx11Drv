@@ -65,6 +65,7 @@ void UD3D11RenderDevice::SetupDevice()
 	// Metallicafan212:	Render target and back buffer texture
 	SAFE_RELEASE(m_BackBuffTex);
 	SAFE_RELEASE(m_BackBuffRT);
+	SAFE_RELEASE(m_BackBuffUAV);
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
@@ -586,6 +587,7 @@ void UD3D11RenderDevice::SetupResources()
 	// Metallicafan212:	Render target and back buffer texture
 	SAFE_RELEASE(m_BackBuffTex);
 	SAFE_RELEASE(m_BackBuffRT);
+	SAFE_RELEASE(m_BackBuffUAV);
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
@@ -733,7 +735,7 @@ void UD3D11RenderDevice::SetupResources()
 		swapChainDesc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
 		swapChainDesc.SampleDesc.Count		= 1;
 		swapChainDesc.SampleDesc.Quality	= 0;
-		swapChainDesc.BufferUsage			= DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
+		swapChainDesc.BufferUsage			= DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_UNORDERED_ACCESS;
 		swapChainDesc.BufferCount			= 2;
 		//swapChainDesc.Scaling				= DXGI_SCALING_NONE;
 		// Metallicafan212:	If we're on windows 10 or above, use the better DXGI mode
@@ -804,8 +806,24 @@ void UD3D11RenderDevice::SetupResources()
 
 	ThrowIfFailed(hr);
 
+	// Metallicafan212:	Get the texture size
+	D3D11_TEXTURE2D_DESC d;
+	m_BackBuffTex->GetDesc(&d);
+
+	// Metallicafan212:	Now set the thread groups for the MSAA compute shader
+	//					Since they're in groups of 32, we need to do an extra group if the screen size isn't % 32
+	MSAAThreadX = appRound(d.Width / 32.0f);
+	MSAAThreadY = appRound(d.Height / 32.0f);
+
 	// Metallicafan212:	Create a render target view for it
 	hr = m_D3DDevice->CreateRenderTargetView(m_BackBuffTex, nullptr, &m_BackBuffRT);
+
+	ThrowIfFailed(hr);
+
+	// Metallicafan212:	Now a UAV for a compute shader!!!
+	CD3D11_UNORDERED_ACCESS_VIEW_DESC bUAV = CD3D11_UNORDERED_ACCESS_VIEW_DESC(m_BackBuffTex, D3D11_UAV_DIMENSION_TEXTURE2D, DXGI_FORMAT_B8G8R8A8_UNORM);
+
+	hr = m_D3DDevice->CreateUnorderedAccessView(m_BackBuffTex, &bUAV, &m_BackBuffUAV);
 
 	ThrowIfFailed(hr);
 
@@ -1336,118 +1354,163 @@ void UD3D11RenderDevice::Unlock(UBOOL Blit)
 		if (NumAASamples > 1)
 		{
 #if DX11_USE_MSAA_SHADER
-			// Metallicafan212:	We have to do geometry now...
-			EndBuffering();
 
-			// Metallicafan212:	Order of operations, make sure the alpha rejection is set
-			SetBlend(0);
+#if USE_MSAA_COMPUTE
+			if (bUseMSAAComputeShader)
+			{
+				// Metallicafan212:	Use a compute shader instead!!!
+				SetTexture(0, nullptr, 0);
+				//SetTexture(1, nullptr, 0);
 
-			SetTexture(0, nullptr, 0);
-			SetTexture(1, nullptr, 0);
+				m_D3DDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
-			// Metallicafan212:	Manually setup the vars...
-			m_D3DDeviceContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
-			m_D3DDeviceContext->PSSetShaderResources(0, 1, &m_ScreenRTSRV);
-			m_D3DDeviceContext->PSSetShaderResources(1, 1, &m_ScreenDTSRV);
+				m_D3DDeviceContext->CSSetShaderResources(0, 1, &m_ScreenRTSRV);
+				//m_D3DDeviceContext->CSSetShaderResources(1, 1, &m_ScreenDTSRV);
 
-			FMSAAShader->Bind();
+				// Metallicafan212:	Now bind the output
+				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, 1, &m_BackBuffUAV, nullptr);
 
-			FLOAT Z		= 1.0f;
-			FLOAT X		= 0.0f;
-			FLOAT Y		= 0.0f;
-			FLOAT XL	= m_sceneNodeX;
-			FLOAT YL	= m_sceneNodeY;
+				// Metallicafan212:	Bind the shader
+				FMSAAShader->Bind();
 
-			// Metallicafan212:	Now make 2 triangles
-			//					I copied this all from the tile rendering, since I'm such a lazy fucking bastard
-			FLOAT PX1	= X - (m_sceneNodeX * 0.5f);
-			FLOAT PX2	= PX1 + XL;
-			FLOAT PY1	= Y - (m_sceneNodeY * 0.5f);
-			FLOAT PY2	= PY1 + YL;
+				// Metallicafan212:	Now execute!
+				m_D3DDeviceContext->Dispatch(MSAAThreadX, MSAAThreadY, 1);
 
-			FLOAT RPX1	= m_RFX2 * PX1;
-			FLOAT RPX2	= m_RFX2 * PX2;
-			FLOAT RPY1	= m_RFY2 * PY1;
-			FLOAT RPY2	= m_RFY2 * PY2;
+				// Metallicafan212:	Wait for it to complete...
+				m_D3DDeviceContext->End(m_D3DQuery);
 
-			FLOAT SU1 = 0.0f;
-			FLOAT SU2 = 1.0f;
-			FLOAT SV1 = 0.0f;
-			FLOAT SV2 = 1.0f;
+				// Metallicafan212:	Wait for it
+				BOOL bDone = 0;
 
-			RPX1 *= Z;
-			RPX2 *= Z;
-			RPY1 *= Z;
-			RPY2 *= Z;
+				while (m_D3DDeviceContext->GetData(m_D3DQuery, &bDone, sizeof(BOOL), 0) != S_OK && bDone == 0);
+
+				// Metallicafan212:	Clear the render resources!!!
+				constexpr ID3D11ShaderResourceView* SRVTemp[2] = { nullptr, nullptr };
+				m_D3DDeviceContext->CSSetShaderResources(0, 2, SRVTemp);
 
 
-			// Metallicafan212:	Disable depth lmao
-			//ID3D11DepthStencilState* CurState	= nullptr;
-			//UINT Sten							= 0;
-			//m_D3DDeviceContext->OMGetDepthStencilState(&CurState, &Sten);
-			//m_D3DDeviceContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+				constexpr ID3D11UnorderedAccessView* Temp[1] = { nullptr };
+				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, 1, Temp, nullptr);
 
-			LockVertexBuffer(6 * sizeof(FD3DVert));
-
-			//m_D3DDeviceContext->IASetInputLayout(nullptr);
-
-			// Metallicafan212:	Start buffering now
-			StartBuffering(BT_ScreenFlash);
-
-			m_VertexBuff[0].X		= RPX1;
-			m_VertexBuff[0].Y		= RPY1;
-			m_VertexBuff[0].Z		= Z;
-			m_VertexBuff[0].U		= SU1;
-			m_VertexBuff[0].V		= SV1;
-
-			m_VertexBuff[1].X		= RPX2;
-			m_VertexBuff[1].Y		= RPY1;
-			m_VertexBuff[1].Z		= Z;
-			m_VertexBuff[1].U		= SU2;
-			m_VertexBuff[1].V		= SV1;
-
-			m_VertexBuff[2].X		= RPX2;
-			m_VertexBuff[2].Y		= RPY2;
-			m_VertexBuff[2].Z		= Z;
-			m_VertexBuff[2].U		= SU2;
-			m_VertexBuff[2].V		= SV2;
-
-			m_VertexBuff[3].X		= RPX1;
-			m_VertexBuff[3].Y		= RPY1;
-			m_VertexBuff[3].Z		= Z;
-			m_VertexBuff[3].U		= SU1;
-			m_VertexBuff[3].V		= SV1;
-
-			m_VertexBuff[4].X		= RPX2;
-			m_VertexBuff[4].Y		= RPY2;
-			m_VertexBuff[4].Z		= Z;
-			m_VertexBuff[4].U		= SU2;
-			m_VertexBuff[4].V		= SV2;
-
-			m_VertexBuff[5].X		= RPX1;
-			m_VertexBuff[5].Y		= RPY2;
-			m_VertexBuff[5].Z		= Z;
-			m_VertexBuff[5].U		= SU1;
-			m_VertexBuff[5].V		= SV2;
-
-			UnlockVertexBuffer();
-
-			m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			AdvanceVertPos(6);
-
-			// Metallicafan212:	Draw
-			EndBuffering();
-
-			// Metallicafan212:	Reset Z state
-			//m_D3DDeviceContext->OMSetDepthStencilState(CurState, Sten);
-
-			SetTexture(0, nullptr, 0);
-			SetTexture(1, nullptr, 0);
-
-			RestoreRenderTarget();
+				RestoreRenderTarget();
 #else
-			m_D3DDeviceContext->ResolveSubresource(m_BackBuffTex, 0, m_ScreenBuffTex, 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+
+				// Metallicafan212:	We have to do geometry now...
+				EndBuffering();
+
+				// Metallicafan212:	Order of operations, make sure the alpha rejection is set
+				SetBlend(0);
+
+				SetTexture(0, nullptr, 0);
+				SetTexture(1, nullptr, 0);
+
+				// Metallicafan212:	Manually setup the vars...
+				m_D3DDeviceContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
+				m_D3DDeviceContext->PSSetShaderResources(0, 1, &m_ScreenRTSRV);
+				m_D3DDeviceContext->PSSetShaderResources(1, 1, &m_ScreenDTSRV);
+
+				FMSAAShader->Bind();
+
+				FLOAT Z		= 1.0f;
+				FLOAT X		= 0.0f;
+				FLOAT Y		= 0.0f;
+				FLOAT XL	= m_sceneNodeX;
+				FLOAT YL	= m_sceneNodeY;
+
+				// Metallicafan212:	Now make 2 triangles
+				//					I copied this all from the tile rendering, since I'm such a lazy fucking bastard
+				FLOAT PX1	= X - (m_sceneNodeX * 0.5f);
+				FLOAT PX2	= PX1 + XL;
+				FLOAT PY1	= Y - (m_sceneNodeY * 0.5f);
+				FLOAT PY2	= PY1 + YL;
+
+				FLOAT RPX1	= m_RFX2 * PX1;
+				FLOAT RPX2	= m_RFX2 * PX2;
+				FLOAT RPY1	= m_RFY2 * PY1;
+				FLOAT RPY2	= m_RFY2 * PY2;
+
+				FLOAT SU1 = 0.0f;
+				FLOAT SU2 = 1.0f;
+				FLOAT SV1 = 0.0f;
+				FLOAT SV2 = 1.0f;
+
+				RPX1 *= Z;
+				RPX2 *= Z;
+				RPY1 *= Z;
+				RPY2 *= Z;
+
+
+				// Metallicafan212:	Disable depth lmao
+				//ID3D11DepthStencilState* CurState	= nullptr;
+				//UINT Sten							= 0;
+				//m_D3DDeviceContext->OMGetDepthStencilState(&CurState, &Sten);
+				//m_D3DDeviceContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+
+				LockVertexBuffer(6 * sizeof(FD3DVert));
+
+				//m_D3DDeviceContext->IASetInputLayout(nullptr);
+
+				// Metallicafan212:	Start buffering now
+				StartBuffering(BT_ScreenFlash);
+
+				m_VertexBuff[0].X		= RPX1;
+				m_VertexBuff[0].Y		= RPY1;
+				m_VertexBuff[0].Z		= Z;
+				m_VertexBuff[0].U		= SU1;
+				m_VertexBuff[0].V		= SV1;
+
+				m_VertexBuff[1].X		= RPX2;
+				m_VertexBuff[1].Y		= RPY1;
+				m_VertexBuff[1].Z		= Z;
+				m_VertexBuff[1].U		= SU2;
+				m_VertexBuff[1].V		= SV1;
+
+				m_VertexBuff[2].X		= RPX2;
+				m_VertexBuff[2].Y		= RPY2;
+				m_VertexBuff[2].Z		= Z;
+				m_VertexBuff[2].U		= SU2;
+				m_VertexBuff[2].V		= SV2;
+
+				m_VertexBuff[3].X		= RPX1;
+				m_VertexBuff[3].Y		= RPY1;
+				m_VertexBuff[3].Z		= Z;
+				m_VertexBuff[3].U		= SU1;
+				m_VertexBuff[3].V		= SV1;
+
+				m_VertexBuff[4].X		= RPX2;
+				m_VertexBuff[4].Y		= RPY2;
+				m_VertexBuff[4].Z		= Z;
+				m_VertexBuff[4].U		= SU2;
+				m_VertexBuff[4].V		= SV2;
+
+				m_VertexBuff[5].X		= RPX1;
+				m_VertexBuff[5].Y		= RPY2;
+				m_VertexBuff[5].Z		= Z;
+				m_VertexBuff[5].U		= SU1;
+				m_VertexBuff[5].V		= SV2;
+
+				UnlockVertexBuffer();
+
+				m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				AdvanceVertPos(6);
+
+				// Metallicafan212:	Draw
+				EndBuffering();
+
+				// Metallicafan212:	Reset Z state
+				//m_D3DDeviceContext->OMSetDepthStencilState(CurState, Sten);
+
+				SetTexture(0, nullptr, 0);
+				SetTexture(1, nullptr, 0);
+
+				RestoreRenderTarget();
 #endif
+			}
+			else
+#endif
+			{
+				m_D3DDeviceContext->ResolveSubresource(m_BackBuffTex, 0, m_ScreenBuffTex, 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+			}
 		}
 		else
 			m_D3DDeviceContext->CopyResource(m_BackBuffTex, m_ScreenBuffTex);

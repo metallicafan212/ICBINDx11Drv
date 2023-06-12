@@ -261,6 +261,8 @@ void FD3DComputeShader::Init()
 {
 	guard(FD3DComputeShader::Init);
 
+	FD3DShader::Init();
+
 	// Metallicafan212:	TODO! Create the input parameters
 	//					Child shaders should track their own constant buffers....
 	// Metallicafan212:	Create the shader blobs (pixel, vertex), and the stream layout
@@ -287,12 +289,17 @@ void FD3DComputeShader::Bind()
 {
 	guard(FD3DComputeShader::Bind);
 
+	FD3DShader::Bind();
+
 	// Metallicafan212:	Update the pointer so that the device knows that we need to cleanup
 	ParentDevice->CurrentShader = this;
 
 	// Metallicafan212:	Bind the compute shader
 	//					We'll do the actual variable layout and input binding in the children
 	ParentDevice->m_D3DDeviceContext->CSSetShader(ComputeShader, nullptr, 0);
+
+	// Metallicafan212:	Bind the constant buffer as well
+	ParentDevice->m_D3DDeviceContext->CSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
 
 	unguard;
 }

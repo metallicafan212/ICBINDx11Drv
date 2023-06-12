@@ -33,10 +33,10 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	SetProjectionStateNoCheck(false);
 
 	// Metallicafan212:	Reset the tile state (if needed)
-	if (!(PolyFlags & PF_Memorized))
+	if (!(PolyFlags & PF_RenderFog))
 		FTileShader->bDoTileRotation = 0;
 
-	PolyFlags &= ~PF_Memorized;
+	PolyFlags &= ~PF_RenderFog;
 #else
 	SetRasterState(DXRS_Normal);
 
@@ -96,10 +96,10 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 
 	if (bFontHack && (bIsNV || NumAASamples > 1))
 	{
-		ExtraU = 0.1f / Info.USize;
-		//ExtraU = TileAAUVMove / Info.USize;
-		ExtraV = 0.1f / Info.VSize;
-		//ExtraV = TileAAUVMove / Info.VSize;
+		//ExtraU = 0.1f / Info.USize;
+		ExtraU = TileAAUVMove / Info.USize;
+		//ExtraV = 0.1f / Info.VSize;
+		ExtraV = TileAAUVMove / Info.VSize;
 	}
 
 	// Metallicafan212:	Use a separate centroid UV input if we have a font tile (no smooth) and have MSAA on!
@@ -157,17 +157,17 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	if (m_HitData != nullptr)
 		Color = CurrentHitColor;
 
-	LockVertexBuffer(6 * sizeof(FD3DVert));
-
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Tiles);
+
+	LockVertexBuffer(6 * sizeof(FD3DVert));
 
 	FLOAT TexInfoUMult = BoundTextures[0].TexInfo->UMult;
 	FLOAT TexInfoVMult = BoundTextures[0].TexInfo->VMult;
 
-	FLOAT SU1			= (U * TexInfoUMult)		- ExtraU;
+	FLOAT SU1			= (U * TexInfoUMult)		+ ExtraU;
 	FLOAT SU2			= ((U + UL) * TexInfoUMult) + ExtraU;
-	FLOAT SV1			= (V * TexInfoVMult)		- ExtraV;
+	FLOAT SV1			= (V * TexInfoVMult)		+ ExtraV;
 	FLOAT SV2			= ((V + VL) * TexInfoVMult) + ExtraV;
 
 	// Buffer the tiles
@@ -233,6 +233,6 @@ void UD3D11RenderDevice::DrawRotatedTile(FSceneNode* Frame, FTextureInfo& Info, 
 
 	FTileShader->bDoTileRotation	= 1;
 	FTileShader->TileCoords			= InCoords;
-	DrawTile(Frame, Info, X, Y, XL, YL, U, V, UL, VL, Span, Z, Color, Fog, PolyFlags | PF_Memorized);
+	DrawTile(Frame, Info, X, Y, XL, YL, U, V, UL, VL, Span, Z, Color, Fog, PolyFlags | PF_RenderFog);
 }
 #endif

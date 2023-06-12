@@ -14,15 +14,28 @@ struct FMSAAVars : FShaderVarCommon
 
 // Metallicafan212:	This file defines the MSAA resolving shader
 FD3DMSAAShader::FD3DMSAAShader(UD3D11RenderDevice* InParent)
+#if USE_MSAA_COMPUTE
+	: FD3DComputeShader(InParent)//FD3DShader(InParent)
+#else
 	: FD3DShader(InParent)
+#endif
 {
 	guard(FD3DMSAAShader::FD3DMSAAShader);
 
 	// Metallicafan212:	TODO! Read the code from file, or write it out automatically
+	//VertexFile	= SHADER_FOLDER TEXT("MSAAResolve.hlsl");
+	//PixelFile	= SHADER_FOLDER TEXT("MSAAResolve.hlsl");
+	//VertexFunc	= TEXT("VertShader");
+	//PixelFunc	= TEXT("PxShader");
+#if USE_MSAA_COMPUTE
+	ComputeFile = SHADER_FOLDER TEXT("MSAAResolve.hlsl");
+	ComputeFunc = TEXT("CSMain");
+#else
 	VertexFile	= SHADER_FOLDER TEXT("MSAAResolve.hlsl");
 	PixelFile	= SHADER_FOLDER TEXT("MSAAResolve.hlsl");
 	VertexFunc	= TEXT("VertShader");
 	PixelFunc	= TEXT("PxShader");
+#endif
 
 	Init();
 
@@ -34,7 +47,13 @@ void FD3DMSAAShader::Init()
 {
 	guard(FD3DMSAAShader::Init);
 
+#if USE_MSAA_COMPUTE
+	FD3DComputeShader::Init();
+#else
 	FD3DShader::Init();
+#endif
+
+	// Metallicafan212:	Create the view based on the old texture???
 
 	unguard;
 }
@@ -43,7 +62,11 @@ void FD3DMSAAShader::Bind()
 {
 	guard(FD3DMSAAShader::Bind);
 
+#if USE_MSAA_COMPUTE
+	FD3DComputeShader::Bind();
+#else
 	FD3DShader::Bind();
+#endif
 
 	unguard;
 }
@@ -69,7 +92,11 @@ void FD3DMSAAShader::WriteConstantBuffer(void* InMem)
 	guard(FD3DMSAAShader::WriteConstantBuffer);
 
 	// Metallicafan212:	Copy over
+#if USE_MSAA_COMPUTE
+	FD3DComputeShader::WriteConstantBuffer(InMem);
+#else
 	FD3DShader::WriteConstantBuffer(InMem);
+#endif
 
 	// Metallicafan212:	Now the rest of the data
 	FMSAAVars* SDef = (FMSAAVars*)InMem;

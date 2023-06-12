@@ -101,11 +101,12 @@ void UD3D11RenderDevice::StaticConstructor()
 	//TileAAUVMove = 0.1f;
 
 	// Metallicafan212:	TODO! MSAA resolve related vars
+	AddBoolProp(CPP_PROP(bUseMSAAComputeShader), 1);
 	AddFloatProp(CPP_PROP(MSAAFilterSize), 1.0f);
-	AddFloatProp(CPP_PROP(MSAAGaussianSigma), 0.5f);
-	AddFloatProp(CPP_PROP(MSAACubicB), 0.33f);
-	AddFloatProp(CPP_PROP(MSAACubicC), 0.33f);
-	AddIntProp(CPP_PROP(MSAAFilterType), 0);
+	AddFloatProp(CPP_PROP(MSAAGaussianSigma), 1.0f);
+	AddFloatProp(CPP_PROP(MSAACubicB), 2.0f);
+	AddFloatProp(CPP_PROP(MSAACubicC), 1.0f);
+	AddIntProp(CPP_PROP(MSAAFilterType), 8);
 
 	unguard;
 }

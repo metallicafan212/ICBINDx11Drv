@@ -48,7 +48,10 @@ struct PSInput
 
 // Metallicafan212:	MSAA textures
 Texture2DMS<float4> RT		: register(t0);
-Texture2DMS<float4>	DST		: register(t1);
+//Texture2DMS<float4>	DST		: register(t1);
+
+// Metallicafan212:	Compute shader output (directly to the back buffer texture)
+RWTexture2D<float4>	Out		: register(u0);
 
 PSInput VertShader(VSInput input)
 {	
@@ -143,33 +146,7 @@ float FilterSmoothstep(in float x)
     return 1.0f - smoothstep(0.0f, 1.0f, x);
 }
 
-/*
-float Filter(in float x)
-{
-    #if FilterType_ == 0
-        return FilterBox(x);
-    #elif FilterType_ == 1
-        return FilterTriangle(x);
-    #elif FilterType_ == 2
-        return FilterGaussian(x);
-    #elif FilterType_ == 3
-        return FilterBlackmanHarris(x);
-    #elif FilterType_ == 4
-        return FilterSmoothstep(x);
-    #elif FilterType_ == 5
-        return FilterCubic(x, 1.0, 0.0f);
-    #elif FilterType_ == 6
-        return FilterCubic(x, 0, 0.5f);
-    #elif FilterType_ == 7
-        return FilterCubic(x, 1 / 3.0f, 1 / 3.0f);
-    #elif FilterType_ == 8
-        return FilterCubic(x, CubicB, CubicC);
-    #elif FilterType_ == 9
-        return FilterSinc(x);
-    #endif
-}
-*/
-
+// Metallicafan212:	The original was a defined version, I turned it into a switch so I can change the filter type on the fly
 float Filter(in float x)
 {
 	switch(FilterType)
@@ -242,25 +219,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	float2 TextureSize = float2(W, H);
 	
-	uint SampleRadius 	= (FilterSize / 2.0f) + 0.5f;
-	
-	/*
-	uint2 UVCoords = uint2(W * input.uv.x, H * input.uv.y);
-	
-	float4 DestColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
-	
-	for(uint i = 0; i < NumAASamples; i++)
-	{
-		DestColor.xyz += RT.Load(UVCoords, i);
-	}
-	
-	// Metallicafan212:	Now average it
-	DestColor.xyz /= NumAASamples;
-	
-	return DestColor;
-	
-	//return RT.Load(UVCoords, 7);//float4(RT.Load(UVCoords, 0).xyz, 1.0f);
-	*/
+	int SampleRadius 	= (FilterSize / 2.0f) + 0.5f;
 	
 	float3 sum = 0.0f;
     float totalWeight = 0.0f;
@@ -268,22 +227,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	float2 pixelPos = float2(W * input.uv.x, H * input.uv.y);
 	
 	float2 sampleOffset = float2(0.0f, 0.0f);
-	
-	/*
-	for(uint subSampleIdx = 0; subSampleIdx < NumAASamples; ++subSampleIdx)
-    {
-		sampleOffset += SampleOffsets[subSampleIdx].xy;
-		
-		float sampleDist = length(sampleOffset) / (FilterSize / 2.0f);
-		if(sampleDist <= 1.0f)
-		{
-			float3 sample = RT.Load(uint2(pixelPos), subSampleIdx).xyz;
-			float weight = Filter(sampleDist);
-			sum += sample * weight;
-			totalWeight += weight;
-		}
-	}
-	*/
+
 
 	/*
     for(int y = -SampleRadius; y <= SampleRadius; ++y)
@@ -314,25 +258,8 @@ float4 PxShader(PSInput input) : SV_TARGET
         }
     }
 	*/
-
-	/*
-	//return float4(sum, 1.0f);
-
-    float3 output = sum / max(totalWeight, 0.00001f);
-    output = max(output, 0.0f);
-
-    return float4(output, 1.0f);
-	*/
 	
 	/*
-	for(int i = 0; i < NumAASamples; i++)
-	{
-		sum += RT.Load(uint2(pixelPos), i).xyz;
-	}
-	
-	return float4(sum / NumAASamples, 1.0f);
-	*/
-	
 	float3 ZeroBased = RT.Load(uint2(pixelPos), 1).xyz;
 	
 	float3 PreviousSample = float3(0.0f, 0.0f, 0.0f);
@@ -357,6 +284,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 		sum += CurSamp;
 		PreviousSample = CurSamp;
 	}
+	*/
 	
 	sum /= float(NumAASamples);
 	
@@ -375,4 +303,128 @@ float4 PxShader(PSInput input) : SV_TARGET
 	*/
 	
 	return float4(sum, 1.0f);
+}
+
+// Metallicafan212:	Resolve the MSAA texture to this current pixel
+[numthreads(32, 32, 1)]
+void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
+{
+	// Metallicafan212:	Sample both the render target and the depth target
+	//					TODO! Just return the first sample as a test!!!!
+	uint W, H, NumAASamples;
+	
+	RT.GetDimensions(W, H, NumAASamples);
+	
+	float2 TextureSize = float2(W, H);
+	
+	int SampleRadius 	= (FilterSize / 2.0f) + 0.5f;
+	
+	float3 sum = 0.0f;
+    float totalWeight = 0.0f;
+	
+	float2 pixelPos = dispatchThreadID.xy;
+	
+	/*
+	// Metallicafan212:	TEST!!!!
+	for(int i = 0; i < NumAASamples; i++)
+	{
+		float3 CurSamp 	= RT.Load(uint2(pixelPos), i).xyz;
+		
+		sum += CurSamp;
+	}
+	
+	sum /= float(NumAASamples);
+	
+	Out[pixelPos] = float4(sum, 1.0f);
+	return;
+	*/
+	
+	
+	float2 sampleOffset = float2(0.0f, 0.0f);
+
+    for(int y = -SampleRadius; y <= SampleRadius; ++y)
+    {
+        for(int x = -SampleRadius; x <= SampleRadius; ++x)
+        {
+            float2 sampleOffset = float2(x, y);
+            float2 samplePos = pixelPos + sampleOffset;
+            samplePos = clamp(samplePos, 0, TextureSize); //- 1.0f);
+
+            [unroll]
+            for(uint subSampleIdx = 0; subSampleIdx < NumAASamples; ++subSampleIdx)
+            {
+                sampleOffset += SampleOffsets[subSampleIdx].xy;
+
+                float sampleDist = length(sampleOffset) / (FilterSize / 2.0f);
+
+                [branch]
+                if(sampleDist <= 1.0f)
+                {
+                    float3 sample = RT.Load(uint2(samplePos), subSampleIdx).xyz;
+
+                    float weight = Filter(sampleDist);
+                    sum += sample * weight;
+                    totalWeight += weight;
+                }
+            }
+        }
+    }
+
+	/*
+	//return float4(sum, 1.0f);
+
+    float3 output = sum / max(totalWeight, 0.00001f);
+    output = max(output, 0.0f);
+
+    return float4(output, 1.0f);
+	*/
+	
+	/*
+	for(int i = 0; i < NumAASamples; i++)
+	{
+		sum += RT.Load(uint2(pixelPos), i).xyz;
+	}
+	
+	return float4(sum / NumAASamples, 1.0f);
+	*/
+	
+	/*
+	float3 ZeroBased = RT.Load(uint2(pixelPos), 1).xyz;
+	
+	float3 PreviousSample = float3(0.0f, 0.0f, 0.0f);
+	
+	for(int i = 0; i < NumAASamples; i++)
+	{
+		float3 CurSamp 	= RT.Load(uint2(pixelPos), i).xyz;
+		float3 DTSamp	= DST.Load(uint2(pixelPos), i).xyz;
+		
+		// Metallicafan212:	Look for a harsh border with the previous sample???
+		//					TODO! Should go over a pixel and shit....
+		if(i > 1 && DTSamp.x > 0.0f && DTSamp.x <= 0.5f)//<= 5.0862630208333333333333333333333e-6)
+		{
+			//float3 Harsh = abs(CurSamp - PreviousSample);
+			//float Harshness = (Harsh.x + Harsh.y + Harsh.z) / 3.0f;
+			//float a = smoothstep(0.5f, 1.0f, Harshness);//step(Harsh.x, 0.75f) + step(Harsh.y, 0.75f) + step(Harsh.z, 0.75f);
+	
+			//CurSamp = lerp(CurSamp, PreviousSample, a);
+		}
+		
+		sum += CurSamp;
+		PreviousSample = CurSamp;
+	}
+	
+	sum /= float(NumAASamples);
+	
+	//return float4(sum, 1.0f);
+	*/
+	
+	float3 output = sum / max(totalWeight, 0.00001f);
+    output = max(output, 0.0f);
+
+	Out[dispatchThreadID.xy] = float4(output, 1.0f);
+
+    //return float4(output, 1.0f);
+	
+	// Metallicafan212:	Write it!!!
+	//Out[pixelPos] = float4(sum, 1.0f);
 }

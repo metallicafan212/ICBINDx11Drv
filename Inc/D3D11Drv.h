@@ -53,7 +53,7 @@
 
 #define USE_COMPUTE_SHADER 0
 
-#define DX11_USE_MSAA_SHADER 0
+#define DX11_USE_MSAA_SHADER 1
 
 #define D3D_DRIVER_VERSION TEXT("0.35 Alpha")
 
@@ -384,6 +384,7 @@ class UD3D11RenderDevice : public URenderDevice
 	FLOAT						OrthoLineThickness;
 	UBOOL						bDebugSelection;
 	UBOOL						bUseD3D11On12;
+	UBOOL						bUseMSAAComputeShader;
 
 	// Metallicafan212:	TODO! MSAA resolving vars
 	FLOAT						MSAAFilterSize;
@@ -426,6 +427,13 @@ class UD3D11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	The render target view for the backbuffer (so we can use shaders on the input)
 	ID3D11RenderTargetView*		m_BackBuffRT;
+
+	// Metallicafan212:	The unordered view for the backbuffer, so we can use a compute shader on it
+	ID3D11UnorderedAccessView*	m_BackBuffUAV;
+
+	// Metallicafan212:	The number of threads to use for the MSAA compute shader
+	INT							MSAAThreadX;
+	INT							MSAAThreadY;
 
 	// Metallicafan212:	The screen texture, which will use MSAA
 	ID3D11Texture2D*			m_ScreenBuffTex;
