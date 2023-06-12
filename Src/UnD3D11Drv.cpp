@@ -1271,7 +1271,7 @@ void UD3D11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane Scr
 #endif
 
 	// Metallicafan212:	Only clear if we're in the editor
-	if (GIsEditor || (RenderLockFlags & LOCKR_ClearScreen))
+	if (1)//GIsEditor || (RenderLockFlags & LOCKR_ClearScreen))
 	{
 		m_D3DDeviceContext->ClearRenderTargetView(m_D3DScreenRTV, &ScreenClear.X);
 	}
@@ -1279,8 +1279,9 @@ void UD3D11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane Scr
 	m_D3DDeviceContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	// Metallicafan212:	Make sure we're always using the right RT
-	m_D3DDeviceContext->OMSetRenderTargets(1, &m_D3DScreenRTV, m_D3DScreenDSV);
-	BoundRT = nullptr;
+	//RestoreRenderTarget();
+	//m_D3DDeviceContext->OMSetRenderTargets(1, &m_D3DScreenRTV, m_D3DScreenDSV);
+	//BoundRT = nullptr;
 
 	// Metallicafan212:	Hold onto the flash fog for future render
 	FlashScale	= InFlashScale;
@@ -1324,6 +1325,9 @@ void UD3D11RenderDevice::Unlock(UBOOL Blit)
 
 	// Metallicafan212:	Reset the buffered state
 	EndBuffering();
+
+	// Metallicafan212:	Restore our render target (as it may have been changed due to RT textures)
+	RestoreRenderTarget();
 
 	// Metallicafan212:	Get the selection
 	if (m_HitData != nullptr)
