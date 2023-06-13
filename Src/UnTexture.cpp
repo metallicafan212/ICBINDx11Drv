@@ -209,6 +209,12 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, U
 	if (DaTex == nullptr)
 	{
 		DaTex = &TextureMap.Set(CacheID, FD3DTexture());
+
+		if (DaTex == nullptr)
+		{
+			// Metallicafan212:	Fail here?
+			appErrorf(TEXT("Texture map returned nullptr"));
+		}
 	}
 
 	DaTex->Tex			= Info.Texture;
@@ -264,6 +270,7 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, U
 	// Metallicafan212:	Check if we need to make it
 	if (DaTex->m_Tex == nullptr)
 	{
+		guard(CreateTexture);
 		// Metallicafan212:	Check for the info
 		DaTex->Format		= Info.Format;
 		DaTex->TexFormat	= Type->DXFormat;
@@ -340,6 +347,8 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, U
 		{
 			goto CopyTexture;
 		}
+
+		unguard;
 	}
 	else
 	{
@@ -347,16 +356,20 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, U
 		if (Type->bSupported)
 		{
 		CopyTexture:
+			guard(DirectTexCopy);
 			// Metallicafan212:	We need to copy each mip
 			for (INT i = 0; i < Info.NumMips; i++)
 			{	
 				if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch))
 					Type->TexUploadFunc(MipData, MipSize, MipPitch, ConversionMemory, DaTex, m_D3DDeviceContext, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
 			}
+
+			unguard;
 		}
 		else
 		{
 		ConvertTexture:	
+			guard(ConvertTexture);
 			// Metallicafan212:	Convert the mip (could be P8 or RGBA7)
 			UBOOL bMaskedHack = (Info.Format == TEXF_P8 && PolyFlags & PF_Masked);
 
@@ -383,6 +396,8 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, U
 			// Metallicafan212:	Restore
 			if (bMaskedHack)
 				Info.Palette[0] = OldMasked;
+
+			unguard;
 		}
 	}
 

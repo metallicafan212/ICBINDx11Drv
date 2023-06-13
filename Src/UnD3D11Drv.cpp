@@ -812,8 +812,8 @@ void UD3D11RenderDevice::SetupResources()
 
 	// Metallicafan212:	Now set the thread groups for the MSAA compute shader
 	//					Since they're in groups of 32, we need to do an extra group if the screen size isn't % 32
-	MSAAThreadX = appRound(d.Width / 32.0f);
-	MSAAThreadY = appRound(d.Height / 32.0f);
+	MSAAThreadX = appCeil(d.Width / 32.0f);
+	MSAAThreadY = appCeil(d.Height / 32.0f);
 
 	// Metallicafan212:	Create a render target view for it
 	hr = m_D3DDevice->CreateRenderTargetView(m_BackBuffTex, nullptr, &m_BackBuffRT);
