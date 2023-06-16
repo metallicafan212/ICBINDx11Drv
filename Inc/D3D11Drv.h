@@ -385,6 +385,7 @@ class UD3D11RenderDevice : public URenderDevice
 	UBOOL						bDebugSelection;
 	UBOOL						bUseD3D11On12;
 	UBOOL						bUseMSAAComputeShader;
+	UBOOL						bDisableDebugInterface;
 
 	// Metallicafan212:	TODO! MSAA resolving vars
 	FLOAT						MSAAFilterSize;
@@ -663,7 +664,6 @@ class UD3D11RenderDevice : public URenderDevice
 	FD3DVert*					m_VertexBuff;
 
 	// Metallicafan212:	How many verts were buffered (how many to render when calling a draw command)
-	//					Not currently used
 	SIZE_T						m_BufferedVerts;
 
 	// Metallicafan212:	Index buffer
@@ -687,6 +687,42 @@ class UD3D11RenderDevice : public URenderDevice
 	// Metallicafan212:	Line buffer?
 	ID3D11Buffer*				LineBuffer;
 
+	inline const TCHAR* GetD3DDebugSeverity(D3D11_MESSAGE_SEVERITY s)
+	{
+		switch (s)
+		{
+			case D3D11_MESSAGE_SEVERITY_CORRUPTION:
+			{
+				return TEXT("Corruption");
+			}
+
+			case D3D11_MESSAGE_SEVERITY_ERROR:
+			{
+				return TEXT("Error");
+			}
+
+			case D3D11_MESSAGE_SEVERITY_WARNING:
+			{
+				return TEXT("Warning");
+			}
+
+			case D3D11_MESSAGE_SEVERITY_INFO:
+			{
+				return TEXT("Info");
+			}
+
+			case D3D11_MESSAGE_SEVERITY_MESSAGE:
+			{
+				return TEXT("Message");
+			}
+
+			default:
+			{
+				return TEXT("");
+			}
+		}
+	}
+
 	// Metallicafan212:	Helper function for errors from the M$ sample
 	inline void ThrowIfFailed(HRESULT hr)
 	{
@@ -694,7 +730,38 @@ class UD3D11RenderDevice : public URenderDevice
 		{
 			// Set a breakpoint on this line to catch DirectX API errors
 			//throw std::exception();
-			appThrowf(TEXT("DX11 encountered an error (%lu)"), hr);
+			//appThrowf(TEXT("DX11 encountered an error (%lu)"), hr);
+
+			// Metallicafan212:	Grab all the debug info!!!!
+			if (m_D3DQueue != nullptr)
+			{
+				UINT64 n = m_D3DQueue->GetNumStoredMessages();
+
+				for (INT i = 0; i < n; i++)
+				{
+					// Metallicafan212:	Sigh.... No better way to do this...
+					D3D11_MESSAGE* temp = nullptr;
+
+					// Metallicafan212:	Get the size of this message
+					SIZE_T mSize = 0;
+
+					m_D3DQueue->GetMessage(i, nullptr, &mSize);
+
+					if (mSize != 0)
+					{
+						temp = (D3D11_MESSAGE*)malloc(mSize);
+
+						m_D3DQueue->GetMessage(i, temp, &mSize);
+
+						// Metallicafan212:	Now log it
+						GWarn->Logf(TEXT("DX11 debug message (%s): %s"), GetD3DDebugSeverity(temp->Severity), appFromAnsi(temp->pDescription));
+
+						free(temp);
+					}
+				}
+			}
+
+			appErrorf(TEXT("DX11 encountered an error (%lu). If the debug layer is supported, the log file will likely contain useful debug info!"), hr);
 		}
 	}
 

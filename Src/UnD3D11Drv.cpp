@@ -246,7 +246,7 @@ MAKE_DEVICE:
 	// Metallicafan212:	Setup the debug info
 #if 1//_DEBUG
 
-	if (Flags & D3D11_CREATE_DEVICE_DEBUG)
+	if (/*!bDisableDebugInterface &&*/ (Flags & D3D11_CREATE_DEVICE_DEBUG))
 	{
 		GLog->Logf(TEXT("DX11: Grabbing debug interface"));
 
@@ -258,8 +258,11 @@ MAKE_DEVICE:
 		hr = m_D3DDebug->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&m_D3DQueue);
 
 		// Metallicafan212:	To catch issues, will be removed when the renderer... works...
-		m_D3DQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-		m_D3DQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+		if (!bDisableDebugInterface)
+		{
+			m_D3DQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
+			m_D3DQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+		}
 
 		D3D11_MESSAGE_ID hide[] =
 		{

@@ -108,6 +108,8 @@ void UD3D11RenderDevice::StaticConstructor()
 	AddFloatProp(CPP_PROP(MSAACubicC), 2.69f);
 	AddIntProp(CPP_PROP(MSAAFilterType), 8);
 
+	AddBoolProp(CPP_PROP(bDisableDebugInterface), 1);
+
 	unguard;
 }
 

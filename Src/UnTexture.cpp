@@ -321,6 +321,8 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, U
 
 		ThrowIfFailed(hr);
 
+		guard(CreateSRV);
+
 		// Metallicafan212:	Create the view
 		D3D11_SHADER_RESOURCE_VIEW_DESC vDesc;
 		appMemzero(&vDesc, sizeof(vDesc));
@@ -334,6 +336,8 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, U
 		hr = m_D3DDevice->CreateShaderResourceView(DaTex->m_Tex, &vDesc, &DaTex->m_View);
 
 		ThrowIfFailed(hr);
+
+		unguard;
 
 		MakeTextureSampler(DaTex, PolyFlags);
 
