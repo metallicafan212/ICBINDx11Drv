@@ -1254,12 +1254,14 @@ void UD3D11RenderDevice::Exit()
 	DestroyWindow(hwndButton);
 	*/
 
+	/*
 	// Metallicafan212:	Maybe?????????
 	HDC hdc;
 	PAINTSTRUCT ps;
 
 	hdc = BeginPaint(h, &ps);
 	EndPaint(h, &ps);
+	*/
 
 	unguard;
 }
