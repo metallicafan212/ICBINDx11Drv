@@ -82,6 +82,11 @@
 #include "UnRender.h"
 #include "UnRenDev.h"
 
+// Metallicafan212:	Compiling with the windows 7 version number undef's this flag
+#ifndef WS_EX_NOREDIRECTIONBITMAP
+#define WS_EX_NOREDIRECTIONBITMAP 0x00200000L
+#endif
+
 
 #define MAX_TEXTURES 16
 
@@ -476,6 +481,9 @@ class UD3D11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	So we can easily request wireframe
 	DWORD						ExtraRasterFlags;
+
+	// Metallicafan212:	The extended window style before we created DX11
+	LONG_PTR					ViewExtendedStyle;
 
 #if DX11_HP2
 	// Metallicafan212:	DXGI surface for D2D

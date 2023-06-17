@@ -32,17 +32,9 @@ void UD3D11RenderDevice::SetupDevice()
 
 	ClearRTTextures();
 
-	SAFE_RELEASE(m_D3DQuery);
-	SAFE_RELEASE(m_D3DDebug);
-	SAFE_RELEASE(m_D3DQueue);
-	SAFE_RELEASE(m_D3DDevice);
-	SAFE_RELEASE(m_D3DSwapChain);
-	SAFE_RELEASE(VertexBuffer);
-	SAFE_RELEASE(IndexBuffer);
-
 #if DX11_HP2
 	// Metallicafan212:	HP2 specific
-	
+
 
 	SAFE_RELEASE(m_D2DRT);
 	SAFE_RELEASE(m_D2DFact);
@@ -51,16 +43,12 @@ void UD3D11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_TextParams);
 #endif
 
-	// Metallicafan212:	No bind texture/sampler
-	SAFE_RELEASE(BlankTexture);
-	SAFE_RELEASE(BlankResourceView);
-	SAFE_RELEASE(BlankSampler);
-
-	// Metallicafan212:	Depth states for PF_Occlude
-	SAFE_RELEASE(m_DefaultZState);
-	SAFE_RELEASE(m_DefaultNoZState);
-
-	FlushRasterStates();
+	SAFE_RELEASE(m_D3DQuery);
+	SAFE_RELEASE(m_D3DDebug);
+	SAFE_RELEASE(m_D3DQueue);
+	SAFE_RELEASE(m_D3DSwapChain);
+	SAFE_RELEASE(VertexBuffer);
+	SAFE_RELEASE(IndexBuffer);
 
 	// Metallicafan212:	Render target and back buffer texture
 	SAFE_RELEASE(m_BackBuffTex);
@@ -84,9 +72,30 @@ void UD3D11RenderDevice::SetupDevice()
 	SAFE_DELETE(FLineShader);
 	SAFE_DELETE(FMSAAShader);
 
+	FlushRasterStates();
+
 #if USE_COMPUTE_SHADER
 	SAFE_DELETE(FMshLghtCompShader);
 #endif
+
+	// Metallicafan212:	No bind texture/sampler
+	SAFE_RELEASE(BlankTexture);
+	SAFE_RELEASE(BlankResourceView);
+	SAFE_RELEASE(BlankSampler);
+
+	// Metallicafan212:	Depth states for PF_Occlude
+	SAFE_RELEASE(m_DefaultZState);
+	SAFE_RELEASE(m_DefaultNoZState);
+
+	// Metallicafan212:	Clear the mode, if the device context is already existing!
+	if (m_D3DDeviceContext != nullptr)
+	{
+		m_D3DDeviceContext->ClearState();
+		m_D3DDeviceContext->Flush();
+	}
+
+	SAFE_RELEASE(m_D3DDeviceContext);
+	SAFE_RELEASE(m_D3DDevice);
 
 	// Metallicafan212:	Set the raster state to an invalid value
 	CurrentRasterState = DXRS_MAX;
@@ -474,6 +483,9 @@ UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT Ne
 
 	Viewport			= InViewport;
 
+	// Metallicafan212:	Get the style now!!!
+	ViewExtendedStyle = GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_EXSTYLE);
+
 	// Metallicafan212:	Save the values
 	//					We also have to clamp here since unreal could pass bad values (the editor opening, for example)
 	SizeX		= Max(NewX, 2);
@@ -576,10 +588,7 @@ void UD3D11RenderDevice::SetupResources()
 	ClearRTTextures();
 
 	// Metallicafan212:	Clear any set RT/DC
-	m_D3DDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
-
-	m_D3DDeviceContext->Flush();
-	m_D3DDeviceContext->ClearState();
+	m_D3DDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);	
 
 	// Metallicafan212:	Reset the raster state
 	CurrentRasterState = DXRS_MAX;
@@ -730,6 +739,19 @@ void UD3D11RenderDevice::SetupResources()
 		hr = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
 
 		ThrowIfFailed(hr);
+		/*
+		if (bAllowTearing)
+		{
+			HWND h = (HWND)Viewport->GetWindow();
+			LONG_PTR s = GetWindowLongPtr(h, GWL_EXSTYLE);
+
+			// Metallicafan212:	Add in WS_EX_NOREDIRECTIONBITMAP, since the freesync mode needs it, if we've removed it
+			s |= WS_EX_NOREDIRECTIONBITMAP;
+
+			SetWindowLongPtr(h, GWL_EXSTYLE, s);
+			SetWindowPos(h, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_DRAWFRAME | SWP_SHOWWINDOW);
+		}
+		*/
 
 		// Metallicafan212:	Describe the non-aa swap chain (MSAA is resolved in Unlock)
 		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
@@ -750,6 +772,9 @@ void UD3D11RenderDevice::SetupResources()
 
 		GLog->Logf(TEXT("DX11: Creating swap chain for the window"));
 
+		//LONG_PTR es = GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_EXSTYLE);
+		//LONG_PTR s	= GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_STYLE);
+
 		// Metallicafan212:	Create the swap chain now
 		hr = dxgiFactory->CreateSwapChainForHwnd(
 			m_D3DDevice,
@@ -769,6 +794,12 @@ void UD3D11RenderDevice::SetupResources()
 		dxgiFactory->Release();
 		dxgiAdapter->Release();
 		dxgiDevice->Release();
+
+		// Metallicafan212:	Log the change
+		//LONG_PTR esChange	= es ^ GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_EXSTYLE);
+		//LONG_PTR sChange	= s ^ GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_STYLE);
+
+		//GLog->Logf(TEXT("Window style changes are %llu and %llu"), esChange, sChange);
 
 		SAFE_RELEASE(dxgiFactory5);
 	}
@@ -1085,6 +1116,11 @@ void UD3D11RenderDevice::Exit()
 
 	Flush(0);
 
+	SAFE_RELEASE(VertexBuffer);
+	SAFE_RELEASE(IndexBuffer);
+
+	m_D3DDeviceContext->ClearState();
+
 	// Metallicafan212:	Clear the RT textures
 	ClearRTTextures();
 
@@ -1126,6 +1162,31 @@ void UD3D11RenderDevice::Exit()
 	if(m_D3DDeviceContext != nullptr)
 		m_D3DDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
+	// Metallicafan212:	Render target + back buffer texture
+	SAFE_RELEASE(m_BackBuffTex);
+	SAFE_RELEASE(m_BackBuffRT);
+	SAFE_RELEASE(m_BackBuffUAV);
+	SAFE_RELEASE(m_ScreenBuffTex);
+	SAFE_RELEASE(m_D3DScreenRTV);
+	SAFE_RELEASE(m_ScreenRTSRV);
+
+	// Metallicafan212:	Depth stencil target
+	SAFE_RELEASE(m_ScreenDSTex);
+	SAFE_RELEASE(m_D3DScreenDSV);
+	SAFE_RELEASE(m_ScreenDTSRV);
+
+	// Metallicafan212:	No bind texture/sampler
+	SAFE_RELEASE(BlankTexture);
+	SAFE_RELEASE(BlankResourceView);
+	SAFE_RELEASE(BlankSampler);
+
+
+	SAFE_RELEASE(m_DefaultZState);
+	SAFE_RELEASE(m_DefaultNoZState);
+
+
+	FlushRasterStates();
+
 	// Metallicafan212:	Remove the swap chain early, so we can clear
 	//					Also all the other resources
 	SAFE_RELEASE(m_D3DSwapChain);
@@ -1141,38 +1202,64 @@ void UD3D11RenderDevice::Exit()
 	SAFE_RELEASE(m_TextParams);
 #endif
 
-	// Metallicafan212:	No bind texture/sampler
-	SAFE_RELEASE(BlankTexture);
-	SAFE_RELEASE(BlankResourceView);
-	SAFE_RELEASE(BlankSampler);
-
-
-	SAFE_RELEASE(m_DefaultZState);
-	SAFE_RELEASE(m_DefaultNoZState);
-
-
-	FlushRasterStates();
-
-
-	// Metallicafan212:	Render target + back buffer texture
-	SAFE_RELEASE(m_BackBuffTex);
-	SAFE_RELEASE(m_BackBuffRT);
-	SAFE_RELEASE(m_ScreenBuffTex);
-	SAFE_RELEASE(m_D3DScreenRTV);
-	SAFE_RELEASE(m_ScreenRTSRV);
-
-	// Metallicafan212:	Depth stencil target
-	SAFE_RELEASE(m_ScreenDSTex);
-	SAFE_RELEASE(m_D3DScreenDSV);
-	SAFE_RELEASE(m_ScreenDTSRV);
-
 	// Metallicafan212:	Now flush
 	m_D3DDeviceContext->Flush();
-	m_D3DDeviceContext->ClearState();
-
 
 	SAFE_RELEASE(m_D3DDeviceContext);
 	SAFE_RELEASE(m_D3DDevice);
+
+	// Metallicafan212:	Fix the window and make it compatible with other renderers
+	HWND h = (HWND)Viewport->GetWindow();
+	/*
+	LONG_PTR s = GetWindowLongPtr(h, GWL_EXSTYLE);
+
+	//GetWindowRect(h, &r);
+	//GetClientRect(h, &r);
+
+	// Metallicafan212:	Remove WS_EX_NOREDIRECTIONBITMAP, since the freesync mode adds it
+	s &= ~WS_EX_NOREDIRECTIONBITMAP;
+
+	SetWindowLongPtr(h, GWL_EXSTYLE, s);
+	*/
+
+	/*
+	SetWindowLongPtr(h, GWL_EXSTYLE, ViewExtendedStyle);
+
+	SetWindowPos(h, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_DRAWFRAME | SWP_SHOWWINDOW);
+	ShowWindowAsync(h, SW_SHOW);
+	//UpdateWindow(h);
+
+	//MoveWindow(h, r.left, r.top, r.right - r.left, r.bottom - r.top, 1);
+	*/
+
+	/*
+	// Metallicafan212:	Screw it, this is the only way to fix it.... We have to force windows to swap it back to a normal window........
+	HWND hwndButton = CreateWindow(
+		TEXT("BUTTON"),  // Predefined class; Unicode assumed 
+		L"OK",      // Button text 
+		WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
+		10,         // x position 
+		10,         // y position 
+		100,        // Button width
+		100,        // Button height
+		h,     // Parent window
+		NULL,       // No menu.
+		(HINSTANCE)GetWindowLongPtr(h, GWLP_HINSTANCE),
+		NULL);      // Pointer not needed.
+
+	ShowWindow(hwndButton, SW_SHOW);
+	UpdateWindow(hwndButton);
+	UpdateWindow(h);
+
+	DestroyWindow(hwndButton);
+	*/
+
+	// Metallicafan212:	Maybe?????????
+	HDC hdc;
+	PAINTSTRUCT ps;
+
+	hdc = BeginPaint(h, &ps);
+	EndPaint(h, &ps);
 
 	unguard;
 }
