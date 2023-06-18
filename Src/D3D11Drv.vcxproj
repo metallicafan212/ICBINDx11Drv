@@ -194,6 +194,7 @@
     <ClInclude Include="..\Inc\UnD3DShader.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ResScalingShader.cpp" />
     <ClCompile Include="UnComplexSurfShader.cpp" />
     <ClCompile Include="UnComputeShader.cpp" />
     <ClCompile Include="UnConfig.cpp" />

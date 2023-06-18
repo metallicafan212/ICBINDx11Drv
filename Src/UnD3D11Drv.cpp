@@ -1,4 +1,4 @@
-#include "D3D11Drv.h"
+﻿#include "D3D11Drv.h"
 
 // Metallicafan212:	TODO!
 IMPLEMENT_CLASS(UD3D11RenderDevice);
@@ -67,6 +67,7 @@ void UD3D11RenderDevice::SetupDevice()
 	// Metallicafan212:	TODO! Do we need to make shaders each time?
 	SAFE_DELETE(FTileShader);
 	SAFE_DELETE(FGenShader);
+	SAFE_DELETE(FResScaleShader);
 	SAFE_DELETE(FMeshShader);
 	SAFE_DELETE(FSurfShader);
 	SAFE_DELETE(FLineShader);
@@ -153,7 +154,7 @@ MAKE_DEVICE:
 	}
 
 	// Metallicafan212:	Check if it failed due to the debug layer
-	if (FAILED(hr) && Flags & D3D11_CREATE_DEVICE_DEBUG)
+	if (FAILED(hr) && (Flags & D3D11_CREATE_DEVICE_DEBUG))
 	{
 		GLog->Logf(TEXT("DX11: Removing the debug layer from the device flags"));
 		Flags &= ~D3D11_CREATE_DEVICE_DEBUG;
@@ -240,6 +241,8 @@ MAKE_DEVICE:
 
 	FGenShader			= new FD3DGenericShader(this);
 
+	FResScaleShader		= new FD3DResScalingShader(this);
+
 #if USE_COMPUTE_SHADER
 	FMshLghtCompShader	= new FD3DLghtMshCompShader(this);
 #endif
@@ -255,7 +258,7 @@ MAKE_DEVICE:
 	// Metallicafan212:	Setup the debug info
 #if 1//_DEBUG
 
-	if (/*!bDisableDebugInterface &&*/ (Flags & D3D11_CREATE_DEVICE_DEBUG))
+	if ((Flags & D3D11_CREATE_DEVICE_DEBUG))
 	{
 		GLog->Logf(TEXT("DX11: Grabbing debug interface"));
 
@@ -263,14 +266,15 @@ MAKE_DEVICE:
 
 		ThrowIfFailed(hr);
 
-		//m_D3DQueue = (ID3D11InfoQueue*)m_D3DDebug;
 		hr = m_D3DDebug->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&m_D3DQueue);
+
+		ThrowIfFailed(hr);
 
 		// Metallicafan212:	To catch issues, will be removed when the renderer... works...
 		if (!bDisableDebugInterface)
 		{
-			m_D3DQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-			m_D3DQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+			m_D3DQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, 1);
+			m_D3DQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, 1);
 		}
 
 		D3D11_MESSAGE_ID hide[] =
@@ -281,7 +285,9 @@ MAKE_DEVICE:
 		D3D11_INFO_QUEUE_FILTER filter = {};
 		filter.DenyList.NumIDs = static_cast<UINT>(ARRAYSIZE(hide));
 		filter.DenyList.pIDList = hide;
-		m_D3DQueue->AddStorageFilterEntries(&filter);
+		hr = m_D3DQueue->AddStorageFilterEntries(&filter);
+
+		ThrowIfFailed(hr);
 	}
 #endif
 
@@ -459,6 +465,7 @@ UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT Ne
 	FLineShader			= nullptr;
 	FTileShader			= nullptr;
 	FGenShader			= nullptr;
+	FResScaleShader		= nullptr;
 	FMSAAShader			= nullptr;
 #if USE_COMPUTE_SHADER
 	FMshLghtCompShader	= nullptr;
@@ -833,6 +840,31 @@ void UD3D11RenderDevice::SetupResources()
 
 	bLastFullscreen = bFullscreen;
 
+	// Metallicafan212:	Get the closer value to the DX11 resource limit!!!!
+	if (SizeY > SizeX)
+	{
+		ScaledSizeY = Clamp(SizeY * ResolutionScale, 1.f, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+
+		// Metallicafan212:	Now get it back
+		ResolutionScale = ScaledSizeY / SizeY;
+
+		ScaledSizeX = SizeX * ResolutionScale;
+	}
+	else
+	{
+		ScaledSizeX = Clamp(SizeX * ResolutionScale, 1.f, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+
+		// Metallicafan212:	Now get it back
+		ResolutionScale = ScaledSizeX / SizeX;
+
+		ScaledSizeY = SizeY * ResolutionScale;
+	}
+
+	if (ResolutionScale != 1.0f)
+	{
+		GLog->Logf(TEXT("DX11: Using a resolution scaling factor of %f. Effective resolution is %dx%d"), ResolutionScale, (INT)ScaledSizeX, (INT)ScaledSizeY);
+	}
+
 	GLog->Logf(TEXT("DX11: Setting up Render targets, Depth/Stencil, and Depth states"));
 
 	// Metallicafan212:	Now obtain the back buffer
@@ -846,8 +878,8 @@ void UD3D11RenderDevice::SetupResources()
 
 	// Metallicafan212:	Now set the thread groups for the MSAA compute shader
 	//					Since they're in groups of 32, we need to do an extra group if the screen size isn't % 32
-	MSAAThreadX = appCeil(d.Width / 32.0f);
-	MSAAThreadY = appCeil(d.Height / 32.0f);
+	MSAAThreadX = appCeil(ScaledSizeX / 32.0f);
+	MSAAThreadY = appCeil(ScaledSizeY / 32.0f);
 
 	// Metallicafan212:	Create a render target view for it
 	hr = m_D3DDevice->CreateRenderTargetView(m_BackBuffTex, nullptr, &m_BackBuffRT);
@@ -864,8 +896,8 @@ void UD3D11RenderDevice::SetupResources()
 	// Metallicafan212:	Now create the MSAA target
 	//					ClampUserOptions already checks what levels of MSAA are supported, and clamps to that
 	CD3D11_TEXTURE2D_DESC RTMSAA = CD3D11_TEXTURE2D_DESC();
-	RTMSAA.Width				= SizeX;
-	RTMSAA.Height				= SizeY;
+	RTMSAA.Width				= ScaledSizeX;
+	RTMSAA.Height				= ScaledSizeY;
 	RTMSAA.BindFlags			= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 	RTMSAA.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
 	RTMSAA.MipLevels			= 1;
@@ -900,8 +932,8 @@ void UD3D11RenderDevice::SetupResources()
 	CD3D11_TEXTURE2D_DESC depthStencilDesc = CD3D11_TEXTURE2D_DESC();
 	depthStencilDesc.Format				= DSTTexFormat;//DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthStencilDesc.ArraySize			= 1;
-	depthStencilDesc.Width				= SizeX;
-	depthStencilDesc.Height				= SizeY;
+	depthStencilDesc.Width				= ScaledSizeX;
+	depthStencilDesc.Height				= ScaledSizeY;
 	depthStencilDesc.MipLevels			= 1;
 	depthStencilDesc.SampleDesc.Count	= NumAASamples;
 	depthStencilDesc.SampleDesc.Quality = 0;//D3D11_STANDARD_MULTISAMPLE_PATTERN;//0;
@@ -1077,7 +1109,8 @@ void UD3D11RenderDevice::SetupResources()
 	m_D3DDeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
 
 	// Metallicafan212:	Keep the lock version updated
-	LastAASamples = NumAASamples;
+	LastAASamples		= NumAASamples;
+	LastResolutionScale = ResolutionScale;
 
 	unguard;
 }
@@ -1128,6 +1161,7 @@ void UD3D11RenderDevice::Exit()
 	//					Also shaders lol
 	SAFE_DELETE(FTileShader);
 	SAFE_DELETE(FGenShader);
+	SAFE_DELETE(FResScaleShader);
 	SAFE_DELETE(FMeshShader);
 	SAFE_DELETE(FSurfShader);
 	SAFE_DELETE(FLineShader);
@@ -1337,9 +1371,9 @@ void UD3D11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane Scr
 	guard(UD3D11RenderDevice::Lock);
 
 	// Metallicafan212:	Check if our lock flags changed
-	if (LastAASamples != NumAASamples || LastAFSamples != NumAFSamples)
+	if (LastAASamples != NumAASamples || LastAFSamples != NumAFSamples || LastResolutionScale != ResolutionScale)
 	{
-		if (LastAASamples != NumAASamples)
+		if (LastAASamples != NumAASamples || LastResolutionScale != ResolutionScale)
 		{
 			// Metallicafan212:	Doing this will also flush the sampler state
 			SetupResources();
@@ -1510,14 +1544,14 @@ void UD3D11RenderDevice::Unlock(UBOOL Blit)
 				FLOAT Z		= 1.0f;
 				FLOAT X		= 0.0f;
 				FLOAT Y		= 0.0f;
-				FLOAT XL	= m_sceneNodeX;
-				FLOAT YL	= m_sceneNodeY;
+				FLOAT XL	= ScaledSceneNodeX;//m_sceneNodeX;
+				FLOAT YL	= ScaledSceneNodeY;//m_sceneNodeY;
 
 				// Metallicafan212:	Now make 2 triangles
 				//					I copied this all from the tile rendering, since I'm such a lazy fucking bastard
-				FLOAT PX1	= X - (m_sceneNodeX * 0.5f);
+				FLOAT PX1	= X - (XL * 0.5f);
 				FLOAT PX2	= PX1 + XL;
-				FLOAT PY1	= Y - (m_sceneNodeY * 0.5f);
+				FLOAT PY1	= Y - (YL * 0.5f);
 				FLOAT PY2	= PY1 + YL;
 
 				FLOAT RPX1	= m_RFX2 * PX1;
@@ -1608,8 +1642,115 @@ void UD3D11RenderDevice::Unlock(UBOOL Blit)
 				m_D3DDeviceContext->ResolveSubresource(m_BackBuffTex, 0, m_ScreenBuffTex, 0, DXGI_FORMAT_B8G8R8A8_UNORM);
 			}
 		}
+		else if (ResolutionScale != 1.0f)
+		{
+			// Metallicafan212:	Render as a quad 🙃🙃🙃🙃🙃🙃🙃
+			EndBuffering();
+
+			// Metallicafan212:	Order of operations, make sure the alpha rejection is set
+			SetBlend(0);
+
+			SetTexture(0, nullptr, 0);
+
+			// Metallicafan212:	Manually setup the vars...
+			m_D3DDeviceContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
+			m_D3DDeviceContext->PSSetShaderResources(0, 1, &m_ScreenRTSRV);
+
+			SetSceneNode(nullptr);
+
+			FResScaleShader->Bind();
+
+			FLOAT Z = 1.0f;
+			FLOAT X = 0.0f;
+			FLOAT Y = 0.0f;
+			FLOAT XL = SizeX;
+			FLOAT YL = SizeY;
+
+			// Metallicafan212:	Now make 2 triangles
+			//					I copied this all from the tile rendering, since I'm such a lazy fucking bastard
+			FLOAT PX1 = X - (XL * 0.5f);
+			FLOAT PX2 = PX1 + XL;
+			FLOAT PY1 = Y - (YL * 0.5f);
+			FLOAT PY2 = PY1 + YL;
+
+			FLOAT RPX1 = m_RFX2 * PX1;
+			FLOAT RPX2 = m_RFX2 * PX2;
+			FLOAT RPY1 = m_RFY2 * PY1;
+			FLOAT RPY2 = m_RFY2 * PY2;
+
+			FLOAT SU1 = 0.0f;
+			FLOAT SU2 = 1.0f;
+			FLOAT SV1 = 0.0f;
+			FLOAT SV2 = 1.0f;
+
+			RPX1 *= Z;
+			RPX2 *= Z;
+			RPY1 *= Z;
+			RPY2 *= Z;
+
+			LockVertexBuffer(6 * sizeof(FD3DVert));
+
+			// Metallicafan212:	Start buffering now
+			StartBuffering(BT_ScreenFlash);
+
+			m_VertexBuff[0].X		= RPX1;
+			m_VertexBuff[0].Y		= RPY1;
+			m_VertexBuff[0].Z		= Z;
+			m_VertexBuff[0].U		= SU1;
+			m_VertexBuff[0].V		= SV1;
+			m_VertexBuff[0].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
+
+			m_VertexBuff[1].X		= RPX2;
+			m_VertexBuff[1].Y		= RPY1;
+			m_VertexBuff[1].Z		= Z;
+			m_VertexBuff[1].U		= SU2;
+			m_VertexBuff[1].V		= SV1;
+			m_VertexBuff[1].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
+
+			m_VertexBuff[2].X		= RPX2;
+			m_VertexBuff[2].Y		= RPY2;
+			m_VertexBuff[2].Z		= Z;
+			m_VertexBuff[2].U		= SU2;
+			m_VertexBuff[2].V		= SV2;
+			m_VertexBuff[2].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
+
+			m_VertexBuff[3].X		= RPX1;
+			m_VertexBuff[3].Y		= RPY1;
+			m_VertexBuff[3].Z		= Z;
+			m_VertexBuff[3].U		= SU1;
+			m_VertexBuff[3].V		= SV1;
+			m_VertexBuff[3].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
+
+			m_VertexBuff[4].X		= RPX2;
+			m_VertexBuff[4].Y		= RPY2;
+			m_VertexBuff[4].Z		= Z;
+			m_VertexBuff[4].U		= SU2;
+			m_VertexBuff[4].V		= SV2;
+			m_VertexBuff[4].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
+
+			m_VertexBuff[5].X		= RPX1;
+			m_VertexBuff[5].Y		= RPY2;
+			m_VertexBuff[5].Z		= Z;
+			m_VertexBuff[5].U		= SU1;
+			m_VertexBuff[5].V		= SV2;
+			m_VertexBuff[5].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
+
+			UnlockVertexBuffer();
+
+			m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			AdvanceVertPos(6);
+
+			// Metallicafan212:	Draw
+			EndBuffering();
+
+			SetTexture(0, nullptr, 0);
+
+			RestoreRenderTarget();
+		}
 		else
+		{
 			m_D3DDeviceContext->CopyResource(m_BackBuffTex, m_ScreenBuffTex);
+		}
 
 		constexpr DXGI_PRESENT_PARAMETERS Parm{ 0, nullptr, nullptr, nullptr };
 		HRESULT hr = m_D3DSwapChain->Present1(bVSync ? 1 : 0, (bAllowTearing && !bFullscreen && !bVSync ? DXGI_PRESENT_ALLOW_TEARING : 0), &Parm);//m_D3DSwapChain->Present(0, 0);
@@ -1686,14 +1827,14 @@ void UD3D11RenderDevice::EndFlash()
 		FLOAT Z		= 1.0f;
 		FLOAT X		= 0.0f;
 		FLOAT Y		= 0.0f;
-		FLOAT XL	= m_sceneNodeX;
-		FLOAT YL	= m_sceneNodeY;
+		FLOAT XL	= ScaledSceneNodeX;//m_sceneNodeX;
+		FLOAT YL	= ScaledSceneNodeY;//m_sceneNodeY;
 
 		// Metallicafan212:	Now make 2 triangles
 		//					I copied this all from the tile rendering, since I'm such a lazy fucking bastard
-		FLOAT PX1	= X - (m_sceneNodeX * 0.5f);
+		FLOAT PX1	= X - (XL * 0.5f);//(m_sceneNodeX * 0.5f);
 		FLOAT PX2	= PX1 + XL;
-		FLOAT PY1	= Y - (m_sceneNodeY * 0.5f);
+		FLOAT PY1	= Y - (YL * 0.5f);
 		FLOAT PY2	= PY1 + YL;
 
 		FLOAT RPX1	= m_RFX2 * PX1;
@@ -1780,31 +1921,90 @@ void UD3D11RenderDevice::SetSceneNode(FSceneNode* Frame)
 	// Metallicafan212:	End any buffering that was requested???
 	EndBuffering();
 
-	// Set the viewport.
-	D3D11_VIEWPORT viewport = {static_cast<FLOAT>(Frame->XB), static_cast<FLOAT>(Frame->YB), 
-		Frame->FX, Frame->FY, 0.f, 1.f };
-	m_D3DDeviceContext->RSSetViewports(1, &viewport);
+	// Metallicafan212:	Check if nullptr (special hack!!!!)
+	if (Frame == nullptr)
+	{
+		// Metallicafan212:	Scale the resolution! TODO!!!!
+		FLOAT NewX = SizeX;
+		FLOAT NewY = SizeY;
 
-	SizeX		= Frame->X;
-	SizeY		= Frame->Y;
+		// Set the viewport.
+		D3D11_VIEWPORT viewport =
+		{
+			0.0f, 0.0f,
+			NewX, NewY, 0.f, 1.f
+		};
 
-	// Metallicafan212:	All of this is copied from the DX9 driver
-	// Precompute stuff.
-	FLOAT rcpFrameFX = 1.0f / Frame->FX;
-	m_Aspect	= Frame->FY * rcpFrameFX;
+		m_D3DDeviceContext->RSSetViewports(1, &viewport);
 
-	// Metallicafan212:	This is HP2 specific! Since I have a viewport FOV that is calcuated to be a hor+ FOV, so 90 @ 16x9 is 109
+		// Metallicafan212:	All of this is copied from the DX9 driver
+		// Precompute stuff.
+		FLOAT rcpFrameFX = 1.0f / NewX;//Frame->FX;
+		m_Aspect = NewY * rcpFrameFX;//Frame->FY * rcpFrameFX;
+
+		// Metallicafan212:	This is HP2 specific! Since I have a viewport FOV that is calcuated to be a hor+ FOV, so 90 @ 16x9 is 109
 #if DX11_HP2
-	m_RProjZ	= appTan(Viewport->FOVAngle * PI / 360.0);//Viewport->Actor->FovAngle * PI / 360.0);
+		m_RProjZ = appTan(Viewport->FOVAngle * PI / 360.0);//Viewport->Actor->FovAngle * PI / 360.0);
 #else
-	m_RProjZ	= appTan(Viewport->Actor->FovAngle * PI / 360.0);
+		m_RProjZ = appTan(Viewport->Actor->FovAngle * PI / 360.0);
 #endif
-	m_RFX2		= 2.0f * m_RProjZ * rcpFrameFX;
-	m_RFY2		= 2.0f * m_RProjZ * rcpFrameFX;
+		m_RFX2 = 2.0f * m_RProjZ * rcpFrameFX;
+		m_RFY2 = 2.0f * m_RProjZ * rcpFrameFX;
 
-	//Remember Frame->X and Frame->Y
-	m_sceneNodeX = Frame->X;
-	m_sceneNodeY = Frame->Y;
+		//Remember Frame->X and Frame->Y
+		m_sceneNodeX = SizeX;
+		m_sceneNodeY = SizeY;
+
+		// Metallicafan212:	Remember the scaled values!
+		ScaledSceneNodeX = NewX;
+		ScaledSceneNodeY = NewY;
+	}
+	else
+	{
+		// Metallicafan212:	Scale the resolution! TODO!!!!
+		FLOAT NewX = Frame->FX;
+		FLOAT NewY = Frame->FY;
+
+		if (BoundRT == nullptr)
+		{
+			NewX *= ResolutionScale;
+			NewY *= ResolutionScale;
+		}
+
+		// Set the viewport.
+		D3D11_VIEWPORT viewport =
+		{
+			static_cast<FLOAT>(Frame->XB), static_cast<FLOAT>(Frame->YB),
+			NewX, NewY, 0.f, 1.f
+		};
+
+		m_D3DDeviceContext->RSSetViewports(1, &viewport);
+
+		SizeX = Frame->X;
+		SizeY = Frame->Y;
+
+		// Metallicafan212:	All of this is copied from the DX9 driver
+		// Precompute stuff.
+		FLOAT rcpFrameFX = 1.0f / NewX;//Frame->FX;
+		m_Aspect = NewY * rcpFrameFX;//Frame->FY * rcpFrameFX;
+
+		// Metallicafan212:	This is HP2 specific! Since I have a viewport FOV that is calcuated to be a hor+ FOV, so 90 @ 16x9 is 109
+#if DX11_HP2
+		m_RProjZ = appTan(Viewport->FOVAngle * PI / 360.0);//Viewport->Actor->FovAngle * PI / 360.0);
+#else
+		m_RProjZ = appTan(Viewport->Actor->FovAngle * PI / 360.0);
+#endif
+		m_RFX2 = 2.0f * m_RProjZ * rcpFrameFX;
+		m_RFY2 = 2.0f * m_RProjZ * rcpFrameFX;
+
+		//Remember Frame->X and Frame->Y
+		m_sceneNodeX = Frame->X;
+		m_sceneNodeY = Frame->Y;
+
+		// Metallicafan212:	Remember the scaled values!
+		ScaledSceneNodeX = NewX;
+		ScaledSceneNodeY = NewY;
+	}
 
 	SetProjectionStateNoCheck(0, 1);
 
@@ -1870,8 +2070,8 @@ void UD3D11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRangeHac
 	Proj.m[1][2] = 0.0f;
 	Proj.m[1][3] = 0.0f;
 
-	Proj.m[2][0] = 1.0f / (FLOAT)m_sceneNodeX;
-	Proj.m[2][1] = -1.0f / (FLOAT)m_sceneNodeY;
+	Proj.m[2][0] = 1.0f		/ ScaledSceneNodeX;//(FLOAT)m_sceneNodeX;
+	Proj.m[2][1] = -1.0f	/ ScaledSceneNodeY;//(FLOAT)m_sceneNodeY;
 	Proj.m[2][2] = zScaleVal * (zFar * invNearMinusFar);
 	Proj.m[2][3] = -1.0f;
 

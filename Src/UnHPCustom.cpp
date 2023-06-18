@@ -314,6 +314,18 @@ int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& Dr
 				//layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);//->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 			}
 
+			if (BoundRT == nullptr)
+			{
+				D2D1::Matrix3x2F s = D2D1::Matrix3x2F::Scale(ResolutionScale, ResolutionScale);
+
+				// Metallicafan212:	Now apply the scale!!!
+				m_CurrentD2DRT->SetTransform(s);
+			}
+			else
+			{
+				m_CurrentD2DRT->SetTransform(D2D1::Matrix3x2F::Identity());
+			}
+
 			layout->SetMaxWidth(W);
 			layout->SetMaxHeight(H);
 

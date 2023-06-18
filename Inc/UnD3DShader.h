@@ -261,6 +261,28 @@ public:
 	virtual void Bind();
 };
 
+// Metallicafan212:	Shader to scale up/down the final output (so we can have super resolution)
+class FD3DResScalingShader : public FD3DShader
+{
+public:
+	FD3DResScalingShader() :
+		FD3DShader()
+	{
+		//ShaderFile	= TEXT("..\\Shaders\\TileShader.hlsl");
+		VertexFile = SHADER_FOLDER TEXT("ResScaling.hlsl");
+		PixelFile = SHADER_FOLDER TEXT("ResScaling.hlsl");
+		VertexFunc = TEXT("VertShader");
+		PixelFunc = TEXT("PxShader");
+	}
+
+	// Metallicafan212:	Constructor that inits the device pointer
+	FD3DResScalingShader(class UD3D11RenderDevice* InParent);
+
+	// Metallicafan212:	Shader interface
+	virtual void Init();
+	virtual void Bind();
+};
+
 #define INSTANCED_LINES 0
 
 // Metallicafan212:	Line shader with a geo shader for line thiccness

@@ -72,8 +72,8 @@ void FD3DLineShader::WriteConstantBuffer(void* InMem)
 	// Metallicafan212:	Now write the line info
 	FLineMatrixDef* Def = (FLineMatrixDef*)InMem;
 
-	Def->View[0]		= ParentDevice->m_sceneNodeX;
-	Def->View[1]		= ParentDevice->m_sceneNodeY;
+	Def->View[0]		= ParentDevice->ScaledSceneNodeX;//ParentDevice->m_sceneNodeX;
+	Def->View[1]		= ParentDevice->ScaledSceneNodeY;//ParentDevice->m_sceneNodeY;
 
 	unguard;
 }

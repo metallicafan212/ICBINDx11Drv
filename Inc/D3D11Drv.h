@@ -404,9 +404,14 @@ class UD3D11RenderDevice : public URenderDevice
 	INT							LastAASamples;
 	INT							LastAFSamples;
 
+	FLOAT						LastResolutionScale;
+
 	// Metallicafan212:	HACK coord minus for the current MSAA level...
 	//					Certain levels need different coord movements
 	FLOAT						TileAAUVMove;
+
+	// Metallicafan212:	TODO! Float to provide super/min'd resolution scaling
+	FLOAT						ResolutionScale;
 
 	// Metallicafan212:	If the GPU is AMD/ATI, Intel, or NVidia
 	UBOOL						bIsNV;
@@ -520,6 +525,7 @@ class UD3D11RenderDevice : public URenderDevice
 
 	FD3DTileShader*						FTileShader;
 	FD3DGenericShader*					FGenShader;
+	FD3DResScalingShader*				FResScaleShader;
 
 #if USE_COMPUTE_SHADER
 	FD3DLghtMshCompShader*				FMshLghtCompShader;
@@ -556,6 +562,8 @@ class UD3D11RenderDevice : public URenderDevice
 	UBOOL								bLastFullscreen;
 	INT									SizeX;
 	INT									SizeY;
+	FLOAT								ScaledSizeX;
+	FLOAT								ScaledSizeY;
 
 	// Metallicafan212:	Valid display modes
 	TArray<FPlane>						Modes;
@@ -620,6 +628,7 @@ class UD3D11RenderDevice : public URenderDevice
 	FLOAT m_RProjZ, m_Aspect;
 	FLOAT m_RFX2, m_RFY2;
 	INT m_sceneNodeX, m_sceneNodeY;
+	FLOAT ScaledSceneNodeX, ScaledSceneNodeY;
 
 	// Metallicafan212:	TODO! Global complex surface info
 	FCoords								SurfCoords;
@@ -733,7 +742,7 @@ class UD3D11RenderDevice : public URenderDevice
 	}
 
 	// Metallicafan212:	Helper function for errors from the M$ sample
-	inline void ThrowIfFailed(HRESULT hr)
+	FORCEINLINE void ThrowIfFailed(HRESULT hr)
 	{
 		if (FAILED(hr))
 		{

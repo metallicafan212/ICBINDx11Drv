@@ -80,5 +80,8 @@
     <ClCompile Include="UnMSAAShader.cpp">
       <Filter>Source Files\Shaders</Filter>
     </ClCompile>
+    <ClCompile Include="ResScalingShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -127,10 +127,20 @@ void UD3D11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X
 	FLOAT PY1 = Y - Frame->FY2;
 	FLOAT PY2 = PY1 + YL;
 
+	// Metallicafan212:	Scale UP!!!!
 	FLOAT RPX1 = m_RFX2 * PX1;
 	FLOAT RPX2 = m_RFX2 * PX2;
 	FLOAT RPY1 = m_RFY2 * PY1;
 	FLOAT RPY2 = m_RFY2 * PY2;
+
+	if (BoundRT == nullptr)
+	{
+		RPX1 *= ResolutionScale;
+		RPX2 *= ResolutionScale;
+		RPY1 *= ResolutionScale;
+		RPY2 *= ResolutionScale;
+	}
+
 
 	if (Frame->Viewport->Actor != nullptr && Frame->Viewport->IsOrtho())
 	{

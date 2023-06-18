@@ -111,6 +111,8 @@ void UD3D11RenderDevice::StaticConstructor()
 	AddBoolProp(CPP_PROP(bDisableDebugInterface), 1);
 	AddBoolProp(CPP_PROP(bVSync), 0);
 
+	AddFloatProp(CPP_PROP(ResolutionScale), 1.0f);
+
 	unguard;
 }
 
@@ -196,8 +198,15 @@ void UD3D11RenderDevice::ClampUserOptions()
 		SampleCount *= 2;
 	}
 
+	ResolutionScale = Clamp(ResolutionScale, 0.1f, 10.0f);
+
+	// Metallicafan212:	TODO!!!! Don't allow MSAA when the resolution scale isn't 1.0
+
 	// Metallicafan212:	We have the final clamp
-	NumAASamples = Clamp(NumAASamples, 1, static_cast<INT>(SampleCount));
+	if (ResolutionScale != 1.0f)
+		NumAASamples = 1;
+	else
+		NumAASamples = Clamp(NumAASamples, 1, static_cast<INT>(SampleCount));
 
 	// Metallicafan212:	Now make sure it's the lower of the request (if it's odd)
 	//					TODO! Rewrite this, if the user specifies 6, we return 8 due to the mod 2 not working since 6 isn't odd
@@ -236,6 +245,8 @@ void UD3D11RenderDevice::ClampUserOptions()
 			break;
 		}
 	}
+
+	
 
 	unguard;
 }
