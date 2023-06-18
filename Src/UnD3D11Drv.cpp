@@ -1611,8 +1611,8 @@ void UD3D11RenderDevice::Unlock(UBOOL Blit)
 		else
 			m_D3DDeviceContext->CopyResource(m_BackBuffTex, m_ScreenBuffTex);
 
-		DXGI_PRESENT_PARAMETERS Parm{ 0, nullptr, nullptr, nullptr };
-		HRESULT hr = m_D3DSwapChain->Present1(0, (bAllowTearing && !bFullscreen ? DXGI_PRESENT_ALLOW_TEARING : 0), &Parm);//m_D3DSwapChain->Present(0, 0);
+		constexpr DXGI_PRESENT_PARAMETERS Parm{ 0, nullptr, nullptr, nullptr };
+		HRESULT hr = m_D3DSwapChain->Present1(bVSync ? 1 : 0, (bAllowTearing && !bFullscreen && !bVSync ? DXGI_PRESENT_ALLOW_TEARING : 0), &Parm);//m_D3DSwapChain->Present(0, 0);
 
 		// Metallicafan212:	Check if DXGI needs a resize (alt+tab in fullscreen for example)
 		if (hr == DXGI_ERROR_INVALID_CALL)

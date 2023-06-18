@@ -391,6 +391,7 @@ class UD3D11RenderDevice : public URenderDevice
 	UBOOL						bUseD3D11On12;
 	UBOOL						bUseMSAAComputeShader;
 	UBOOL						bDisableDebugInterface;
+	UBOOL						bVSync;
 
 	// Metallicafan212:	TODO! MSAA resolving vars
 	FLOAT						MSAAFilterSize;

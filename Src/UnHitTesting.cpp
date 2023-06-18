@@ -160,6 +160,9 @@ void UD3D11RenderDevice::DetectPixelHit()
 		return;
 	}
 
+	// Metallicafan212:	This needs to be reset!!!
+	SAFE_RELEASE(test);
+
 	m_D3DScreenRTV->GetResource(&RTResource);
 
 	D3D11_BOX Box;
@@ -179,7 +182,7 @@ void UD3D11RenderDevice::DetectPixelHit()
 
 	SAFE_RELEASE(Resolved);
 
-	m_D3DDeviceContext->Flush();
+	//m_D3DDeviceContext->Flush();
 
 	// Metallicafan212:	Now release that copy
 	RTResource->Release();

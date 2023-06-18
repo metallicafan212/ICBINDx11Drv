@@ -109,6 +109,7 @@ void UD3D11RenderDevice::StaticConstructor()
 	AddIntProp(CPP_PROP(MSAAFilterType), 8);
 
 	AddBoolProp(CPP_PROP(bDisableDebugInterface), 1);
+	AddBoolProp(CPP_PROP(bVSync), 0);
 
 	unguard;
 }
