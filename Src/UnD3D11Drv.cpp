@@ -1958,6 +1958,10 @@ void UD3D11RenderDevice::SetSceneNode(FSceneNode* Frame)
 		// Metallicafan212:	Remember the scaled values!
 		ScaledSceneNodeX = NewX;
 		ScaledSceneNodeY = NewY;
+
+		// Metallicafan212:	Scaled FX2 and FY2
+		ScaledFX2		= NewX * 0.5f;
+		ScaledFY2		= NewY * 0.5f;
 	}
 	else
 	{
@@ -1969,6 +1973,16 @@ void UD3D11RenderDevice::SetSceneNode(FSceneNode* Frame)
 		{
 			NewX *= ResolutionScale;
 			NewY *= ResolutionScale;
+
+			// Metallicafan212:	Scaled FX2 and FY2
+			ScaledFX2 = Frame->FX2 * ResolutionScale;
+			ScaledFY2 = Frame->FY2 * ResolutionScale;
+		}
+		else
+		{
+			// Metallicafan212:	Scaled FX2 and FY2
+			ScaledFX2 = Frame->FX2;
+			ScaledFY2 = Frame->FY2;
 		}
 
 		// Set the viewport.
@@ -2004,6 +2018,8 @@ void UD3D11RenderDevice::SetSceneNode(FSceneNode* Frame)
 		// Metallicafan212:	Remember the scaled values!
 		ScaledSceneNodeX = NewX;
 		ScaledSceneNodeY = NewY;
+
+		
 	}
 
 	SetProjectionStateNoCheck(0, 1);
@@ -2020,8 +2036,8 @@ void UD3D11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRangeHac
 	if (m_nearZRangeHackProjectionActive != bRequestingNearRangeHack)
 		EndBuffering();
 	// Metallicafan212:	Check if it was set at least once!
-	else if(!bForceUpdate && m_CurrentBuff != BT_None)
-		return;
+	//else if(!bForceUpdate && m_CurrentBuff != BT_None)
+	//	return;
 
 	//Save new Z range hack projection state
 	m_nearZRangeHackProjectionActive = bRequestingNearRangeHack;

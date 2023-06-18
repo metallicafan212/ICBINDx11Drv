@@ -629,6 +629,7 @@ class UD3D11RenderDevice : public URenderDevice
 	FLOAT m_RFX2, m_RFY2;
 	INT m_sceneNodeX, m_sceneNodeY;
 	FLOAT ScaledSceneNodeX, ScaledSceneNodeY;
+	FLOAT ScaledFX2, ScaledFY2;
 
 	// Metallicafan212:	TODO! Global complex surface info
 	FCoords								SurfCoords;

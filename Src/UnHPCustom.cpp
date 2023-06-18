@@ -136,6 +136,12 @@ int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& Dr
 {
 	guard(UD3D11RenderDevice::DrawString);
 
+	// Metallicafan212:	Update the color if we're doing selection testing
+	FPlane LocalColor = Color;
+
+	if (m_HitData != nullptr)
+		LocalColor = CurrentHitColor;
+
 	// Metallicafan212:	TODO! Draw using Direct2D
 
 	//FString RealText = FString(Text);
@@ -295,7 +301,7 @@ int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& Dr
 			m_CurrentD2DRT->BeginDraw();
 
 			ID2D1SolidColorBrush* ColBrush = nullptr;
-			m_CurrentD2DRT->CreateSolidColorBrush(D2D1::ColorF(Color.X, Color.Y, Color.Z, 1.f - Color.W), &ColBrush);
+			m_CurrentD2DRT->CreateSolidColorBrush(D2D1::ColorF(LocalColor.X, LocalColor.Y, LocalColor.Z, 1.f - LocalColor.W), &ColBrush);
 
 			// Metallicafan212:	Now draw it at the right location
 			FLOAT X = OldDrawX + Canvas->OrgX;

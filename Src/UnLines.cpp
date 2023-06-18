@@ -5,6 +5,8 @@ void UD3D11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 {
 	guard(UD3D11RenderDevice::Draw3DLine);
 
+	FLOAT ExtraScale = (BoundRT == nullptr ? ResolutionScale : 1.0f);
+
 	// Metallicafan212:	We need to transform some lines into screen-space, as only some aren't already done
 	//					So the collision boxes are already in worldspace, so doing this transform causes it to skew
 	//					Consequently, all other lines do not render without this
@@ -55,13 +57,13 @@ void UD3D11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 
 		ExtraRasterFlags = OldFlags;
 
-		FPlane LineThick(GExtraLineSize * ThreeDeeLineThickness, 0.0f, 0.0f, 0.0f);
+		FPlane LineThick(GExtraLineSize * ThreeDeeLineThickness * ExtraScale, 0.0f, 0.0f, 0.0f);
 #else
 		Color.W = 1.0f;
 
 		SetRasterState(DXRS_Normal);
 
-		FPlane LineThick(ThreeDeeLineThickness, 0.0f, 0.0f, 0.0f);
+		FPlane LineThick(ThreeDeeLineThickness * ExtraScale, 0.0f, 0.0f, 0.0f);
 #endif
 
 		// Metallicafan212:	Selection testing
@@ -89,7 +91,8 @@ void UD3D11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 
 		// Metallicafan212:	Start buffering now
 		StartBuffering(BT_Lines);
-	
+
+
 		m_VertexBuff[0].X		= P1.X;
 		m_VertexBuff[0].Y		= P1.Y;
 		m_VertexBuff[0].Z		= P1.Z;
@@ -122,6 +125,13 @@ void UD3D11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 	
 	SetBlend(PF_Highlighted | PF_Occlude);
 
+	FLOAT ExtraScale = (BoundRT == nullptr ? ResolutionScale : 1.0f);
+
+	P1.X *= ExtraScale;
+	P1.Y *= ExtraScale;
+	P2.X *= ExtraScale;
+	P2.Y *= ExtraScale;
+
 #if DX11_HP2
 	// Metallicafan212:	Make the alpha reversed as well
 	//					I may want to make alpha'd lines in the future
@@ -137,13 +147,13 @@ void UD3D11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 
 	ExtraRasterFlags = OldFlags;
 
-	FPlane LineThick(GExtraLineSize * OrthoLineThickness, 0.0f, 0.0f, 0.0f);
+	FPlane LineThick(GExtraLineSize * OrthoLineThickness * ExtraScale, 0.0f, 0.0f, 0.0f);
 #else
 	Color.W = 1.0f;
 
 	SetRasterState(DXRS_Normal);
 
-	FPlane LineThick(OrthoLineThickness, 0.0f, 0.0f, 0.0f);
+	FPlane LineThick(OrthoLineThickness * ExtraScale, 0.0f, 0.0f, 0.0f);
 
 #endif
 
@@ -168,10 +178,16 @@ void UD3D11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 	StartBuffering(BT_Lines);
 
 	//Get line coordinates back in 3D
-	FLOAT X1Pos = m_RFX2 * (P1.X - Frame->FX2);
-	FLOAT Y1Pos = m_RFY2 * (P1.Y - Frame->FY2);
-	FLOAT X2Pos = m_RFX2 * (P2.X - Frame->FX2);
-	FLOAT Y2Pos = m_RFY2 * (P2.Y - Frame->FY2);
+	FLOAT X1Pos = m_RFX2 * (P1.X - ScaledFX2);
+	FLOAT Y1Pos = m_RFY2 * (P1.Y - ScaledFY2);
+	FLOAT X2Pos = m_RFX2 * (P2.X - ScaledFX2);
+	FLOAT Y2Pos = m_RFY2 * (P2.Y - ScaledFY2);
+
+	// Metallicafan212:	Scale it if needed
+	//X1Pos *= ExtraScale;
+	//Y1Pos *= ExtraScale;
+	//X2Pos *= ExtraScale;
+	//Y2Pos *= ExtraScale;
 
 	// Metallicafan212:	Selection testing
 	if (m_HitData != nullptr)
@@ -212,6 +228,13 @@ void UD3D11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 void UD3D11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD LineFlags, FLOAT X1, FLOAT Y1, FLOAT X2, FLOAT Y2, FLOAT Z)
 {
 	guard(UD3D11RenderDevice::Draw2DPoint);
+
+	FLOAT ExtraScale = (BoundRT == nullptr ? ResolutionScale : 1.0f);
+
+	X1 *= ExtraScale;
+	Y1 *= ExtraScale;
+	X2 *= ExtraScale;
+	Y2 *= ExtraScale;
 
 #if DX11_HP2
 	// Metallicafan212:	Make the alpha reversed as well
@@ -259,10 +282,16 @@ void UD3D11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD Line
 		Color = CurrentHitColor;
 
 	//Get point coordinates back in 3D
-	FLOAT X1Pos = m_RFX2 * (X1 - Frame->FX2);
-	FLOAT Y1Pos = m_RFY2 * (Y1 - Frame->FY2);
-	FLOAT X2Pos = m_RFX2 * (X2 - Frame->FX2);
-	FLOAT Y2Pos = m_RFY2 * (Y2 - Frame->FY2);
+	FLOAT X1Pos = m_RFX2 * (X1 - ScaledFX2);
+	FLOAT Y1Pos = m_RFY2 * (Y1 - ScaledFY2);
+	FLOAT X2Pos = m_RFX2 * (X2 - ScaledFX2);
+	FLOAT Y2Pos = m_RFY2 * (Y2 - ScaledFY2);
+
+	// Metallicafan212:	Scale it if needed
+	//X1Pos *= ExtraScale;
+	//Y1Pos *= ExtraScale;
+	//X2Pos *= ExtraScale;
+	//Y2Pos *= ExtraScale;
 
 	if (Frame->Viewport->IsOrtho())
 	{
@@ -281,7 +310,6 @@ void UD3D11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD Line
 	// Metallicafan212:	Only do the point hack if we're drawing straight from Editor.dll
 	bool bDoPointHack = (LineFlags == LINE_None && Frame->Viewport->IsOrtho());
 	bool bDo3DPointHack = LineFlags == LINE_None && !bDoPointHack;
-
 
 	if (bDo3DPointHack)
 		Z = 1.0f;

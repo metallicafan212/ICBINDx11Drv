@@ -7,10 +7,10 @@ FD3DResScalingShader::FD3DResScalingShader(UD3D11RenderDevice* InParent)
 	guard(FD3DResScalingShader::FD3DResScalingShader);
 
 	// Metallicafan212:	TODO! Read the code from file, or write it out automatically
-	VertexFile = SHADER_FOLDER TEXT("ResScaling.hlsl");
-	PixelFile = SHADER_FOLDER TEXT("ResScaling.hlsl");
-	VertexFunc = TEXT("VertShader");
-	PixelFunc = TEXT("PxShader");
+	VertexFile	= SHADER_FOLDER TEXT("ResScaling.hlsl");
+	PixelFile	= SHADER_FOLDER TEXT("ResScaling.hlsl");
+	VertexFunc	= TEXT("VertShader");
+	PixelFunc	= TEXT("PxShader");
 
 	Init();
 

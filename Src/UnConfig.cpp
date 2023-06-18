@@ -86,7 +86,9 @@ void UD3D11RenderDevice::StaticConstructor()
 	// Metallicafan212:	Add on our stuff
 
 	// Metallicafan212:	TODO! More config options
-	AddIntProp(CPP_PROP(NumAASamples), 4);
+
+	// Metallicafan212:	MSAA will be disabled by default
+	AddIntProp(CPP_PROP(NumAASamples), 1);
 	AddIntProp(CPP_PROP(NumAFSamples), 16);
 
 	// Metallicafan212:	TODO! Make this engine global!!!!
@@ -111,6 +113,7 @@ void UD3D11RenderDevice::StaticConstructor()
 	AddBoolProp(CPP_PROP(bDisableDebugInterface), 1);
 	AddBoolProp(CPP_PROP(bVSync), 0);
 
+	// Metallicafan212:	TODO! Should this be 1.2f by default? I'll leave it all alone in case there's some user out there that will complain lol
 	AddFloatProp(CPP_PROP(ResolutionScale), 1.0f);
 
 	unguard;

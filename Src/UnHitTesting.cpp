@@ -112,8 +112,8 @@ void UD3D11RenderDevice::DetectPixelHit()
 	D3D11_TEXTURE2D_DESC ResolveDesc;
 
 	ResolveDesc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
-	ResolveDesc.Width				= SizeX;
-	ResolveDesc.Height				= SizeY;
+	ResolveDesc.Width				= ScaledSizeX;
+	ResolveDesc.Height				= ScaledSizeY;
 	ResolveDesc.CPUAccessFlags		= D3D11_CPU_ACCESS_READ;
 	ResolveDesc.MipLevels			= 1;
 	ResolveDesc.ArraySize			= 1;
@@ -130,8 +130,8 @@ void UD3D11RenderDevice::DetectPixelHit()
 	D3D11_TEXTURE2D_DESC Desc;
 
 	Desc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
-	Desc.Width				= Viewport->HitXL;
-	Desc.Height				= Viewport->HitYL;
+	Desc.Width				= Viewport->HitXL * ResolutionScale;
+	Desc.Height				= Viewport->HitYL * ResolutionScale;
 	Desc.CPUAccessFlags		= D3D11_CPU_ACCESS_READ;
 	Desc.MipLevels			= 1;
 	Desc.ArraySize			= 1;
@@ -169,10 +169,10 @@ void UD3D11RenderDevice::DetectPixelHit()
 
 	appMemzero(&Box, sizeof(Box));
 
-	Box.left				= Viewport->HitX;
-	Box.right				= Box.left + Viewport->HitXL;
-	Box.top					= Viewport->HitY;
-	Box.bottom				= Box.top + Viewport->HitYL;
+	Box.left				= Viewport->HitX * ResolutionScale;
+	Box.right				= Box.left + (Viewport->HitXL * ResolutionScale);
+	Box.top					= Viewport->HitY * ResolutionScale;
+	Box.bottom				= Box.top + (Viewport->HitYL * ResolutionScale);
 	Box.back				= 1;
 	
 	m_D3DDeviceContext->ResolveSubresource(Resolved, 0, RTResource, 0, DXGI_FORMAT_B8G8R8A8_UNORM);
@@ -203,8 +203,8 @@ void UD3D11RenderDevice::DetectPixelHit()
 
 	INT PHitNum = PixelHitInfo.Num();
 
-	INT HitYL = Viewport->HitYL;//Viewport->HitY + Viewport->HitYL;
-	INT HitXL = Viewport->HitXL;//Viewport->HitX + Viewport->HitXL;
+	INT HitYL = Viewport->HitYL * ResolutionScale;//Viewport->HitY + Viewport->HitYL;
+	INT HitXL = Viewport->HitXL * ResolutionScale;//Viewport->HitX + Viewport->HitXL;
 
 	for (INT y = 0; y < HitYL; y++)//Viewport->HitY; y < HitYL; y++)
 	{
