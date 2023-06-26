@@ -94,6 +94,38 @@ void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Sur
 	FSurfShader->SurfAlpha = 1.0f;
 #endif
 
+	/*
+	// Metallicafan212:	HACK!!!!
+	if (PolyFlags & PF_Invisible && BoundRT == nullptr)
+	{
+		FSurfShader->bSurfInvisible = 1;
+
+		// Metallicafan212: Unset it as the texture
+		m_D3DDeviceContext->PSSetShaderResources(16, 0, nullptr);
+
+		ID3D11RenderTargetView* RTs[2] = { m_D3DScreenRTV, m_D3DScreenOpacityRTV };
+
+		// Metallicafan212:	Now set
+		m_D3DDeviceContext->OMSetRenderTargets(2, RTs, m_D3DScreenDSV);
+
+		PolyFlags &= ~(PF_Invisible | PF_Occlude);
+		PolyFlags |= PF_NoOcclude;
+	}
+	else
+	{
+		FSurfShader->bSurfInvisible = 0;
+
+		if (BoundRT == nullptr)
+		{
+			// Metallicafan212:	Reset it
+			m_D3DDeviceContext->OMSetRenderTargets(1, &m_D3DScreenRTV, m_D3DScreenDSV);
+
+			// Metallicafan212:	Set it as the texture
+			m_D3DDeviceContext->PSSetShaderResources(16, 1, &m_ScreenOpacityRTSRV);
+		}
+	}
+	*/
+
 	SetBlend(PolyFlags);
 
 	// Metallicafan212:	Raster state

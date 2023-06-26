@@ -340,6 +340,9 @@ public:
 	// Metallicafan212:	The alpha of the surface
 	FLOAT				SurfAlpha;
 
+	// Metallicafan212:	If the surface we're rendering is invisible
+	UBOOL				bSurfInvisible;
+
 	FD3DSurfShader() :
 		FD3DShader()
 	{

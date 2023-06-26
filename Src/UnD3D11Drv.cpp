@@ -58,6 +58,10 @@ void UD3D11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
 
+	SAFE_RELEASE(m_ScreenOpacityTex);
+	SAFE_RELEASE(m_ScreenOpacityRTSRV);
+	SAFE_RELEASE(m_D3DScreenOpacityRTV);
+
 	// Metallicafan212:	Depth stencil target
 	SAFE_RELEASE(m_ScreenDSTex);
 	SAFE_RELEASE(m_D3DScreenDSV);
@@ -446,6 +450,10 @@ UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT Ne
 	m_D3DScreenRTV		= nullptr;
 	m_ScreenRTSRV		= nullptr;
 
+	m_ScreenOpacityTex		= nullptr;
+	m_D3DScreenOpacityRTV	= nullptr;
+	m_ScreenOpacityRTSRV	= nullptr;
+
 	// Metallicafan212:	Depth stencil target stuff
 	m_ScreenDSTex		= nullptr;
 	m_ScreenDTSRV		= nullptr;
@@ -479,6 +487,8 @@ UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT Ne
 	// Metallicafan212:	Raster states for turning on and off occlusion
 	m_DefaultZState		= nullptr;
 	m_DefaultNoZState	= nullptr;
+
+	ScreenSamp			= nullptr;
 
 	CurrentRasterState	= DXRS_MAX;
 
@@ -610,6 +620,10 @@ void UD3D11RenderDevice::SetupResources()
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
+
+	SAFE_RELEASE(m_ScreenOpacityTex);
+	SAFE_RELEASE(m_ScreenOpacityRTSRV);
+	SAFE_RELEASE(m_D3DScreenOpacityRTV);
 
 	// Metallicafan212:	Depth stencil target
 	SAFE_RELEASE(m_ScreenDSTex);
@@ -909,9 +923,21 @@ void UD3D11RenderDevice::SetupResources()
 
 	ThrowIfFailed(hr);
 
+	// Metallicafan212:	Now the hacked texture for opacity checking
+	//					We only need one color
+	RTMSAA.SampleDesc.Count		= 1;
+	RTMSAA.Format				= DXGI_FORMAT_R32_FLOAT;
+
+	hr = m_D3DDevice->CreateTexture2D(&RTMSAA, nullptr, &m_ScreenOpacityTex);
+
+	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Now create the views
 	hr = m_D3DDevice->CreateRenderTargetView(m_ScreenBuffTex, nullptr, &m_D3DScreenRTV);
+
+	ThrowIfFailed(hr);
+
+	hr = m_D3DDevice->CreateRenderTargetView(m_ScreenOpacityTex, nullptr, &m_D3DScreenOpacityRTV);
 
 	ThrowIfFailed(hr);
 
@@ -923,6 +949,14 @@ void UD3D11RenderDevice::SetupResources()
 	srvDesc.Texture2D.MipLevels			= 1;
 
 	hr = m_D3DDevice->CreateShaderResourceView(m_ScreenBuffTex, &srvDesc, &m_ScreenRTSRV);
+
+	ThrowIfFailed(hr);
+
+	// Metallicafan212:	Now the shader resource for the opacity texture
+	srvDesc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Format						= DXGI_FORMAT_R32_FLOAT;
+
+	hr = m_D3DDevice->CreateShaderResourceView(m_ScreenOpacityTex, &srvDesc, &m_ScreenOpacityRTSRV);
 
 	ThrowIfFailed(hr);
 
@@ -974,6 +1008,33 @@ void UD3D11RenderDevice::SetupResources()
 
 	// Metallicafan212:	Set the main surface
 	m_CurrentD2DRT = m_D2DRT;
+
+	// Metallicafan212:	Setup AA now
+	m_D2DRT->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+	m_D2DRT->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+
+	// Metallicafan212:	Get the defaults
+	IDWriteRenderingParams* Def = nullptr;
+	m_D2DRT->GetTextRenderingParams(&Def);
+
+	if (Def != nullptr)
+	{
+		// Metallicafan212:	Create the text rendering parameters from the defaults
+		hr = m_D2DWriteFact->CreateCustomRenderingParams(Def->GetGamma(), Def->GetEnhancedContrast(), Def->GetClearTypeLevel(), Def->GetPixelGeometry(), DWRITE_RENDERING_MODE_NATURAL, &m_TextParams);
+
+		ThrowIfFailed(hr);
+
+		Def->Release();
+	}
+	else
+	{
+		// Metallicafan212:	Make our own....
+		hr = m_D2DWriteFact->CreateCustomRenderingParams(1.0f, 0.0f, 0.0f, DWRITE_PIXEL_GEOMETRY_BGR, DWRITE_RENDERING_MODE_NATURAL, &m_TextParams);
+
+		ThrowIfFailed(hr);
+	}
+
+	m_D2DRT->SetTextRenderingParams(m_TextParams);
 
 	/*
 	// Metallicafan212:	IMPORTANT!!! If we have AA, turn off AA in D2D!
@@ -1404,6 +1465,9 @@ void UD3D11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane Scr
 	// Metallicafan212:	TODO! Only do this in the editor?
 	m_D3DDeviceContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
+	// Metallicafan212:	Clear to max Z
+	m_D3DDeviceContext->ClearRenderTargetView(m_D3DScreenOpacityRTV, DirectX::Colors::White);
+
 	// Metallicafan212:	Make sure we're always using the right RT
 	//RestoreRenderTarget();
 	//m_D3DDeviceContext->OMSetRenderTargets(1, &m_D3DScreenRTV, m_D3DScreenDSV);
@@ -1644,6 +1708,28 @@ void UD3D11RenderDevice::Unlock(UBOOL Blit)
 		}
 		else if (ResolutionScale != 1.0f)
 		{
+			// Metallicafan212:	Check if we need to create the sampler
+			if (ScreenSamp == nullptr)
+			{
+				// Metallicafan212:	Create it
+				CD3D11_SAMPLER_DESC SDesc = CD3D11_SAMPLER_DESC(D3D11_DEFAULT);
+			
+				// Metallicafan212:	Bilinear filtering
+				SDesc.Filter			= D3D11_FILTER_MIN_MAG_MIP_LINEAR;//D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;//D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;//D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+				SDesc.AddressU			= D3D11_TEXTURE_ADDRESS_CLAMP;
+				SDesc.AddressV			= SDesc.AddressU;
+				SDesc.AddressW			= D3D11_TEXTURE_ADDRESS_WRAP;//SDesc.AddressU;
+				SDesc.MinLOD			= -D3D11_FLOAT32_MAX;
+				SDesc.MaxLOD			= D3D11_FLOAT32_MAX;
+				SDesc.MipLODBias		= 0.0f;
+				SDesc.MaxAnisotropy		= 1;//16;//16;
+				SDesc.ComparisonFunc	= D3D11_COMPARISON_NEVER;
+
+				HRESULT hr = m_D3DDevice->CreateSamplerState(&SDesc, &ScreenSamp);
+
+				ThrowIfFailed(hr);
+			}
+
 			// Metallicafan212:	Render as a quad 🙃🙃🙃🙃🙃🙃🙃
 			EndBuffering();
 
@@ -1651,6 +1737,8 @@ void UD3D11RenderDevice::Unlock(UBOOL Blit)
 			SetBlend(0);
 
 			SetTexture(0, nullptr, 0);
+
+			m_D3DDeviceContext->PSSetSamplers(0, 1, &ScreenSamp);
 
 			// Metallicafan212:	Manually setup the vars...
 			m_D3DDeviceContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
@@ -1795,11 +1883,13 @@ void UD3D11RenderDevice::EndFlash()
 	guard(UD3D11RenderDevice::EndFlash);
 
 #if DX11_HP2
+	/*
 	// Metallicafan212:	Test for a very small, but not 0 float, since the code seems to keep running for some reason
 	if ((1.0f - Min(FlashScale.W * 2.0f, 1.0f)) <= 0.0001f)
 	{
 		return;
 	}
+	*/
 #endif
 
 	// Metallicafan212:	Draw it as a tile, but using the generic shader
@@ -1824,7 +1914,7 @@ void UD3D11RenderDevice::EndFlash()
 		FPlane Color = FPlane(FlashFog.X, FlashFog.Y, FlashFog.Z, 1.0f - Min(FlashScale.X * 2.0f, 1.0f));
 #endif
 
-		FLOAT Z		= 1.0f;
+		FLOAT Z		= 0.5f;
 		FLOAT X		= 0.0f;
 		FLOAT Y		= 0.0f;
 		FLOAT XL	= ScaledSceneNodeX;//m_sceneNodeX;

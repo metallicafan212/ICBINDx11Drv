@@ -5,11 +5,13 @@ struct FSurfMatrixDef : FShaderVarCommon
 	FPlane	XAxis, YAxis;
 	//FPlane LPanScale, MPanScale, FPanScale;
 	FPlane	PanScale[5];
-	FPlane	LightScale;
+	FPlane	LightandFogScale;
 	FLOAT	SurfAlpha;
+	UBOOL	bDrawOpacity;
 
 	// Metallicafan212:	Keep it aligned along register bounds
-	FLOAT	Pad3[3];
+	FLOAT	Pad2[2];
+	//FLOAT	Pad3[3];
 };
 
 // Metallicafan212:	This file defines the mesh (one texture???) rendering shader
@@ -80,6 +82,7 @@ void FD3DSurfShader::WriteConstantBuffer(void* InMem)
 	SDef->XAxis				= FPlane(ParentDevice->SurfCoords.XAxis, UDot);
 	SDef->YAxis				= FPlane(ParentDevice->SurfCoords.YAxis, VDot);
 	SDef->SurfAlpha			= SurfAlpha;
+	SDef->bDrawOpacity		= bSurfInvisible;
 
 
 	// Metallicafan212:	Now the pan info
@@ -94,7 +97,17 @@ void FD3DSurfShader::WriteConstantBuffer(void* InMem)
 
 	// Metallicafan212:	And lastly the original lightmap scale
 	if (ParentDevice->BoundTextures[1].TexInfo != nullptr)
-		SDef->LightScale = FPlane(ParentDevice->BoundTextures[1].TexInfo->UScale, ParentDevice->BoundTextures[1].TexInfo->VScale, 0.0f, 0.0f);
+	{
+		SDef->LightandFogScale.X	= ParentDevice->BoundTextures[1].TexInfo->UScale;
+		SDef->LightandFogScale.Y	= ParentDevice->BoundTextures[1].TexInfo->VScale;
+	}
+
+	// Metallicafan212:	And the fog scale
+	if (ParentDevice->BoundTextures[3].TexInfo != nullptr)
+	{
+		SDef->LightandFogScale.Z = ParentDevice->BoundTextures[3].TexInfo->UScale;
+		SDef->LightandFogScale.W = ParentDevice->BoundTextures[3].TexInfo->VScale;
+	}
 
 	unguard;
 }

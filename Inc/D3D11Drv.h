@@ -400,18 +400,19 @@ class UD3D11RenderDevice : public URenderDevice
 	FLOAT 						MSAACubicC;
 	INT							MSAAFilterType;
 
-	// Metallicafan212:	Versions to check on lock if they changed
-	INT							LastAASamples;
-	INT							LastAFSamples;
-
-	FLOAT						LastResolutionScale;
-
 	// Metallicafan212:	HACK coord minus for the current MSAA level...
 	//					Certain levels need different coord movements
 	FLOAT						TileAAUVMove;
 
 	// Metallicafan212:	TODO! Float to provide super/min'd resolution scaling
 	FLOAT						ResolutionScale;
+
+
+	// Metallicafan212:	Versions to check on lock if they changed
+	INT							LastAASamples;
+	INT							LastAFSamples;
+
+	FLOAT						LastResolutionScale;
 
 	// Metallicafan212:	If the GPU is AMD/ATI, Intel, or NVidia
 	UBOOL						bIsNV;
@@ -444,8 +445,19 @@ class UD3D11RenderDevice : public URenderDevice
 	ID3D11UnorderedAccessView*	m_BackBuffUAV;
 
 	// Metallicafan212:	The number of threads to use for the MSAA compute shader
+	//					TODO! Work on this more so that the shader can be recompiled with the right base level of threads!!!!
 	INT							MSAAThreadX;
 	INT							MSAAThreadY;
+
+	// Metallicafan212:	Hacked screen texture for checking if a opacity frame rendered on top or not
+	//					May or may not work as intended!!!!
+	ID3D11Texture2D*			m_ScreenOpacityTex;
+
+	// Metallicafan212:	Render target to bind when rendering complex surfaces
+	ID3D11RenderTargetView*		m_D3DScreenOpacityRTV;
+
+	// Metallicafan212:	Shader resource when we read from it
+	ID3D11ShaderResourceView*	m_ScreenOpacityRTSRV;
 
 	// Metallicafan212:	The screen texture, which will use MSAA
 	ID3D11Texture2D*			m_ScreenBuffTex;
@@ -551,6 +563,9 @@ class UD3D11RenderDevice : public URenderDevice
 	//					This is required since you can't just on the fly update sampler objects....
 	//					Sucks, but it is what it is
 	TMap<FPLAG, ID3D11SamplerState*>	SampMap;
+
+	// Metallicafan212:	Sampler for drawing the scaled screen (using ResolutionScale)
+	ID3D11SamplerState*					ScreenSamp;
 
 	FPLAG								CurrentPolyFlags;
 
@@ -960,6 +975,8 @@ class UD3D11RenderDevice : public URenderDevice
 			It.Value()->Release();
 		}
 		SampMap.Empty();
+
+		SAFE_RELEASE(ScreenSamp);
 	}
 
 	inline void FlushRasterStates()

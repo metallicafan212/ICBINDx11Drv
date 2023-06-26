@@ -132,6 +132,9 @@ void ReplaceInText(FString& In, const TCHAR* Match, const TCHAR* With)
 }
 
 #if DX11_HP2
+
+#define DO_MANUAL_SCALE 0
+
 int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, FLOAT Scale, FLOAT SpriteScaleX, FLOAT SpriteScaleY)
 {
 	guard(UD3D11RenderDevice::DrawString);
@@ -172,6 +175,11 @@ int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& Dr
 
 	if (Scale > 1.0f)
 		fontScale = Font->FontHeight * Scale;
+
+#if DO_MANUAL_SCALE
+	if(BoundRT == nullptr)
+		fontScale *= ResolutionScale;
+#endif
 
 	FString FontKey = *FString::Printf(TEXT("%s %d"), *Font->FontName, fontScale);
 
@@ -288,6 +296,14 @@ int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& Dr
 		INT OldDrawX = DrawX;
 		INT OldDrawY = DrawY;
 
+#if DO_MANUAL_SCALE
+		if (BoundRT == nullptr)
+		{
+			Met.width /= ResolutionScale;
+			Met.height /= ResolutionScale;
+		}
+#endif
+
 		DrawX += Met.width;
 		DrawY += Met.height;
 
@@ -319,7 +335,15 @@ int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& Dr
 				//H = Canvas->ClipY - Y;
 				//layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);//->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 			}
-
+#if DO_MANUAL_SCALE
+			if (BoundRT == nullptr)
+			{
+				X *= ResolutionScale;
+				Y *= ResolutionScale;
+				W *= ResolutionScale;
+				H *= ResolutionScale;
+			}
+#else
 			if (BoundRT == nullptr)
 			{
 				D2D1::Matrix3x2F s = D2D1::Matrix3x2F::Scale(ResolutionScale, ResolutionScale);
@@ -331,12 +355,13 @@ int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& Dr
 			{
 				m_CurrentD2DRT->SetTransform(D2D1::Matrix3x2F::Identity());
 			}
+#endif
 
 			layout->SetMaxWidth(W);
 			layout->SetMaxHeight(H);
 
 			//m_D2DRT->FillRectangle(D2D1::RectF(0, 0, 1920, 1080), ColBrush);
-			m_CurrentD2DRT->DrawTextLayout(D2D1::Point2F(X, Y), layout, ColBrush); //D2D1_DRAW_TEXT_OPTIONS_CLIP);
+			m_CurrentD2DRT->DrawTextLayout(D2D1::Point2F(X, Y), layout, ColBrush, D2D1_DRAW_TEXT_OPTIONS_NONE); //D2D1_DRAW_TEXT_OPTIONS_CLIP);
 			
 			// Metallicafan212:	Now end and release
 			m_CurrentD2DRT->EndDraw();
