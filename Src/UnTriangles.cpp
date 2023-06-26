@@ -30,7 +30,8 @@ FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, FPLAG PolyFlags, UBO
 	{
 		if (PolyFlags & PF_Modulated)
 		{
-			m_Vert->Color = FPlane(1.0f, 1.0f, 1.0f, 1.0f);
+			m_Vert->Color	= FPlane(1.0f, 1.0f, 1.0f, 1.0f);
+			m_Vert->Fog		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 		else if (bDoFog)
 		{
@@ -40,7 +41,7 @@ FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, FPLAG PolyFlags, UBO
 		else
 		{
 			m_Vert->Color	= P->Light;
-			m_Vert->Fog		= FPlane(0, 0, 0, 0);
+			m_Vert->Fog		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 
 		// Set selection stuff
