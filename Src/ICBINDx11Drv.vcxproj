@@ -142,8 +142,8 @@
       <OutputFile>..\..\System X64\ICBINDx11Drv.dll</OutputFile>
       <AdditionalLibraryDirectories>..\..\Core\Lib $(Platform)\$(Configuration);..\..\Engine\Lib $(Platform)\$(Configuration);..\..\MWindow\Lib $(Platform)\$(Configuration);..\..\Render\Lib $(Platform)\$(Configuration)</AdditionalLibraryDirectories>
       <AdditionalDependencies>winmm.lib;Core.lib;Engine.lib;Render.lib;advapi32.lib;Dwmapi.lib;MWindow.lib;D3D11.lib;D3DCompiler.lib;Dwrite.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ProgramDatabaseFile>.\..\Lib X64\D3D11Drv.pdb</ProgramDatabaseFile>
-      <ImportLibrary>.\..\Lib X64\D3D11Drv.lib</ImportLibrary>
+      <ProgramDatabaseFile>.\..\Lib X64\ICBINDx11Drv.pdb</ProgramDatabaseFile>
+      <ImportLibrary>.\..\Lib X64\ICBINDx11Drv.lib</ImportLibrary>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -182,10 +182,10 @@
       <OutputFile>..\..\System X64\ICBINDx11Drv.dll</OutputFile>
       <AdditionalLibraryDirectories>..\..\Core\Lib $(Platform)\$(Configuration);..\..\Engine\Lib $(Platform)\$(Configuration);..\..\MWindow\Lib $(Platform)\$(Configuration);..\..\Render\Lib $(Platform)\$(Configuration)</AdditionalLibraryDirectories>
       <AdditionalDependencies>winmm.lib;Core.lib;Engine.lib;Render.lib;advapi32.lib;Dwmapi.lib;MWindow.lib;D3D11.lib;D3DCompiler.lib;Dwrite.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ProgramDatabaseFile>.\..\Lib X64\D3D11Drv.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\..\Lib X64\$(ProjectName).pdb</ProgramDatabaseFile>
       <GenerateMapFile>true</GenerateMapFile>
-      <MapFileName>.\X64\Release\D3D11Drv.map</MapFileName>
-      <ImportLibrary>.\..\Lib X64\D3D11Drv.lib</ImportLibrary>
+      <MapFileName>.\X64\Release\$(ProjectName).map</MapFileName>
+      <ImportLibrary>.\..\Lib X64\$(ProjectName).lib</ImportLibrary>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <Profile>true</Profile>
     </Link>
@@ -199,7 +199,7 @@
     <ClCompile Include="UnComplexSurfShader.cpp" />
     <ClCompile Include="UnComputeShader.cpp" />
     <ClCompile Include="UnConfig.cpp" />
-    <ClCompile Include="UnD3D11Drv.cpp" />
+    <ClCompile Include="UnICBINDDx11Drv.cpp" />
     <ClCompile Include="UnGenericShader.cpp" />
     <ClCompile Include="UnHitTesting.cpp" />
     <ClCompile Include="UnHPCustom.cpp" />

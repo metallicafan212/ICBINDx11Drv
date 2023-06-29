@@ -29,7 +29,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="UnD3D11Drv.cpp">
+    <ClCompile Include="UnICBINDDx11Drv.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UnTiles.cpp">
