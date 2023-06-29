@@ -1,4 +1,4 @@
-# ICBINDx11: I can't believe it's not D3D11Drv!
+# ICBINDx11Drv: I can't believe it's not D3D11Drv!
 Metallicafan212’s Farm-Raised Open Source DirectX 11 Renderer.
 ![image](https://github.com/metallicafan212/D3D11Drv/assets/5996243/787208bd-fe10-4f51-a7e6-675cc8a5fc3c)
 
