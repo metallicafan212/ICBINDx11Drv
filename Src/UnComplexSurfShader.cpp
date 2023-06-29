@@ -1,4 +1,4 @@
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 struct FSurfMatrixDef : FShaderVarCommon
 {
@@ -15,7 +15,7 @@ struct FSurfMatrixDef : FShaderVarCommon
 };
 
 // Metallicafan212:	This file defines the mesh (one texture???) rendering shader
-FD3DSurfShader::FD3DSurfShader(UD3D11RenderDevice* InParent)
+FD3DSurfShader::FD3DSurfShader(UICBINDx11RenderDevice* InParent)
 	: FD3DShader(InParent)
 {
 	guard(FD3DSurfShader::FD3DSurfShader);

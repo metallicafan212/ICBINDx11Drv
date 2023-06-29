@@ -24,6 +24,7 @@
     <ProjectGuid>{6a1bd3a7-e291-4fbb-9d42-af79a070cc23}</ProjectGuid>
     <RootNamespace>D3D11Drv</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>ICBINDx11Drv</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -116,7 +117,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>..\..\System\D3D11Drv.dll</OutputFile>
+      <OutputFile>..\..\System\ICBINDx11Drv.dll</OutputFile>
       <AdditionalLibraryDirectories>..\..\Core\Lib;..\..\Engine\Lib\;..\..\Render\Lib\</AdditionalLibraryDirectories>
       <AdditionalDependencies>Core.lib;Engine.lib;winmm.lib;advapi32.lib;Dwmapi.lib;D3D11.lib;D3DCompiler.lib;Dwrite.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -138,7 +139,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>..\..\System X64\D3D11Drv.dll</OutputFile>
+      <OutputFile>..\..\System X64\ICBINDx11Drv.dll</OutputFile>
       <AdditionalLibraryDirectories>..\..\Core\Lib $(Platform)\$(Configuration);..\..\Engine\Lib $(Platform)\$(Configuration);..\..\MWindow\Lib $(Platform)\$(Configuration);..\..\Render\Lib $(Platform)\$(Configuration)</AdditionalLibraryDirectories>
       <AdditionalDependencies>winmm.lib;Core.lib;Engine.lib;Render.lib;advapi32.lib;Dwmapi.lib;MWindow.lib;D3D11.lib;D3DCompiler.lib;Dwrite.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>.\..\Lib X64\D3D11Drv.pdb</ProgramDatabaseFile>
@@ -178,7 +179,7 @@
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>..\..\System X64\D3D11Drv.dll</OutputFile>
+      <OutputFile>..\..\System X64\ICBINDx11Drv.dll</OutputFile>
       <AdditionalLibraryDirectories>..\..\Core\Lib $(Platform)\$(Configuration);..\..\Engine\Lib $(Platform)\$(Configuration);..\..\MWindow\Lib $(Platform)\$(Configuration);..\..\Render\Lib $(Platform)\$(Configuration)</AdditionalLibraryDirectories>
       <AdditionalDependencies>winmm.lib;Core.lib;Engine.lib;Render.lib;advapi32.lib;Dwmapi.lib;MWindow.lib;D3D11.lib;D3DCompiler.lib;Dwrite.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>.\..\Lib X64\D3D11Drv.pdb</ProgramDatabaseFile>
@@ -190,7 +191,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\Inc\D3D11Drv.h" />
+    <ClInclude Include="..\Inc\ICBINDx11Drv.h" />
     <ClInclude Include="..\Inc\UnD3DShader.h" />
   </ItemGroup>
   <ItemGroup>

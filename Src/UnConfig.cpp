@@ -1,4 +1,4 @@
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 #if DX11_HP2
 // Metallicafan212:	Needed for the editorres folder
@@ -15,11 +15,11 @@ const TCHAR* ClsName = nullptr;
 #define CPP_PROP(PROP) TEXT(#PROP), PROP, CPP_PROPERTY(PROP)
 
 // Metallicafan212:	Properties for preferences
-void UD3D11RenderDevice::StaticConstructor()
+void UICBINDx11RenderDevice::StaticConstructor()
 {
-	guard(UD3D11RenderDevice::StaticConstructor);
+	guard(UICBINDx11RenderDevice::StaticConstructor);
 
-	ClsName = UD3D11RenderDevice::StaticClass()->GetPathName();
+	ClsName = UICBINDx11RenderDevice::StaticClass()->GetPathName();
 
 #if DX11_HP2
 	// Metallicafan212:	Setup editor info
@@ -121,9 +121,9 @@ void UD3D11RenderDevice::StaticConstructor()
 
 #undef CPP_PROP
 
-void UD3D11RenderDevice::AddBoolProp(const TCHAR* Name, UBOOL& InParam, ECppProperty CPP, INT Offset, UBOOL bDefaultVal)
+void UICBINDx11RenderDevice::AddBoolProp(const TCHAR* Name, UBOOL& InParam, ECppProperty CPP, INT Offset, UBOOL bDefaultVal)
 {
-	guard(UD3D11RenderDevice::AddBoolProp);
+	guard(UICBINDx11RenderDevice::AddBoolProp);
 
 	new(GetClass(), Name, RF_Public)UBoolProperty(CPP, Offset, TEXT("Options"), CPF_Config);
 
@@ -138,9 +138,9 @@ void UD3D11RenderDevice::AddBoolProp(const TCHAR* Name, UBOOL& InParam, ECppProp
 	unguard;
 }
 
-void UD3D11RenderDevice::AddFloatProp(const TCHAR* Name, FLOAT& InParam, ECppProperty CPP, INT Offset, FLOAT fDefaultVal)
+void UICBINDx11RenderDevice::AddFloatProp(const TCHAR* Name, FLOAT& InParam, ECppProperty CPP, INT Offset, FLOAT fDefaultVal)
 {
-	guard(UD3D11RenderDevice::AddFloatProp);
+	guard(UICBINDx11RenderDevice::AddFloatProp);
 
 	new(GetClass(), Name, RF_Public)UFloatProperty(CPP, Offset, TEXT("Options"), CPF_Config);
 
@@ -155,9 +155,9 @@ void UD3D11RenderDevice::AddFloatProp(const TCHAR* Name, FLOAT& InParam, ECppPro
 	unguard;
 }
 
-void UD3D11RenderDevice::AddIntProp(const TCHAR* Name, INT& InParam, ECppProperty CPP, INT Offset, INT iDefaultVal)
+void UICBINDx11RenderDevice::AddIntProp(const TCHAR* Name, INT& InParam, ECppProperty CPP, INT Offset, INT iDefaultVal)
 {
-	guard(UD3D11RenderDevice::AddIntProp);
+	guard(UICBINDx11RenderDevice::AddIntProp);
 
 	new(GetClass(), Name, RF_Public)UIntProperty(CPP, Offset, TEXT("Options"), CPF_Config);
 
@@ -172,9 +172,9 @@ void UD3D11RenderDevice::AddIntProp(const TCHAR* Name, INT& InParam, ECppPropert
 	unguard;
 }
 
-void UD3D11RenderDevice::ClampUserOptions()
+void UICBINDx11RenderDevice::ClampUserOptions()
 {
-	guard(UD3D11RenderDevice::ClampUserOptions);
+	guard(UICBINDx11RenderDevice::ClampUserOptions);
 
 	// Metallicafan212:	TODO! Add some way to automatically clamp these options!!!
 	NumAFSamples = Clamp(NumAFSamples, 0, D3D11_REQ_MAXANISOTROPY);

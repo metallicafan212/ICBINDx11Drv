@@ -55,7 +55,7 @@
 
 #define DX11_USE_MSAA_SHADER 1
 
-#define D3D_DRIVER_VERSION TEXT("0.35 Alpha")
+#define D3D_DRIVER_VERSION TEXT("0.45 Alpha")
 
 // Metallicafan212:	Compile time
 #define COMPILED_AT			*FString::Printf(TEXT("%s @ %s"), appFromAnsi(__DATE__), appFromAnsi(__TIME__))
@@ -98,7 +98,7 @@ enum ERasterFlags
 	DXRS_MAX		= 0xFF,
 };
 
-class UD3D11RenderDevice;
+class UICBINDx11RenderDevice;
 
 
 // Metallicafan212:	Just cutting down on the needed typing
@@ -112,7 +112,7 @@ class UDX11RenderTargetTexture : public UTexture
 	DECLARE_CLASS(UDX11RenderTargetTexture, UTexture, CLASS_Config | CLASS_Transient | CLASS_NoUserCreate, D3D11Drv);
 
 	// Metallicafan212:	Pointer to our render device
-	class UD3D11RenderDevice*				D3DDev;
+	class UICBINDx11RenderDevice*				D3DDev;
 
 	// Metallicafan212:	Vars to hold the targets
 	MS::ComPtr<ID3D11Texture2D>				RTTex;
@@ -373,13 +373,13 @@ extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
 
 // Metallicafan212:	Define an exported renderer
 #if DX11_UT_469
-class UD3D11RenderDevice : public URenderDeviceOldUnreal469
+class UICBINDx11RenderDevice : public URenderDeviceOldUnreal469
 {
-	DECLARE_CLASS(UD3D11RenderDevice, URenderDeviceOldUnreal469, CLASS_Config, D3D11Drv);
+	DECLARE_CLASS(UICBINDx11RenderDevice, URenderDeviceOldUnreal469, CLASS_Config, D3D11Drv);
 #else
-class UD3D11RenderDevice : public URenderDevice
+class UICBINDx11RenderDevice : public URenderDevice
 {
-	DECLARE_CLASS(UD3D11RenderDevice, URenderDevice, CLASS_Config, D3D11Drv);
+	DECLARE_CLASS(UICBINDx11RenderDevice, URenderDevice, CLASS_Config, D3D11Drv);
 #endif
 
 	// Metallicafan212:	User options
@@ -451,13 +451,13 @@ class UD3D11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	Hacked screen texture for checking if a opacity frame rendered on top or not
 	//					May or may not work as intended!!!!
-	ID3D11Texture2D*			m_ScreenOpacityTex;
+	//ID3D11Texture2D*			m_ScreenOpacityTex;
 
 	// Metallicafan212:	Render target to bind when rendering complex surfaces
-	ID3D11RenderTargetView*		m_D3DScreenOpacityRTV;
+	//ID3D11RenderTargetView*		m_D3DScreenOpacityRTV;
 
 	// Metallicafan212:	Shader resource when we read from it
-	ID3D11ShaderResourceView*	m_ScreenOpacityRTSRV;
+	//ID3D11ShaderResourceView*	m_ScreenOpacityRTSRV;
 
 	// Metallicafan212:	The screen texture, which will use MSAA
 	ID3D11Texture2D*			m_ScreenBuffTex;
@@ -993,7 +993,7 @@ class UD3D11RenderDevice : public URenderDevice
 
 	inline ID3D11SamplerState* GetSamplerState(FPLAG PolyFlags)
 	{
-		guard(UD3D11RenderDevice::GetSamplerState);
+		guard(UICBINDx11RenderDevice::GetSamplerState);
 
 		// Metallicafan212:	We have to use global sampler, since per-texture won't ever work... It'll force all of the same texture to no smooth (for example)
 		ID3D11SamplerState* S = SampMap.FindRef(PolyFlags & (PF_NoSmooth | PF_ClampUVs));

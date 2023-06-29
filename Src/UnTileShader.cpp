@@ -1,4 +1,4 @@
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 struct FTileMatrixDef : FShaderVarCommon
 {
@@ -17,7 +17,7 @@ struct FTileMatrixDef : FShaderVarCommon
 };
 
 // Metallicafan212:	This file defines the tile rendering shader
-FD3DTileShader::FD3DTileShader(UD3D11RenderDevice* InParent)
+FD3DTileShader::FD3DTileShader(UICBINDx11RenderDevice* InParent)
 	: FD3DShader(InParent),
 	bDoTileRotation(0),
 	TileCoords(GMath.UnitCoords)

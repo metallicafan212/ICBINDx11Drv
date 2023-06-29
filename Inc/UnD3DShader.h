@@ -43,7 +43,7 @@ class FD3DShader
 {
 public:
 	// Metallicafan212:	Global backwards pointer to the device (so we can access all variables if needed)
-	class UD3D11RenderDevice* ParentDevice;
+	class UICBINDx11RenderDevice* ParentDevice;
 
 	// Metallicafan212:	Global stuff for it
 	ID3D11PixelShader*			PixelShader;
@@ -100,7 +100,7 @@ public:
 	}
 
 	// Metallicafan212:	Constructor that inits the device pointer
-	FD3DShader(class UD3D11RenderDevice* InParent) :
+	FD3DShader(class UICBINDx11RenderDevice* InParent) :
 		ParentDevice(InParent),
 		PixelShader(nullptr),
 		VertexShader(nullptr),
@@ -154,7 +154,7 @@ public:
 	}
 
 	// Metallicafan212:	Constructor that inits the device pointer
-	FD3DComputeShader(class UD3D11RenderDevice* InParent);
+	FD3DComputeShader(class UICBINDx11RenderDevice* InParent);
 
 	virtual void Init();
 
@@ -197,7 +197,7 @@ public:
 	}
 
 	// Metallicafan212:	Device pointer version
-	FD3DLghtMshCompShader(class UD3D11RenderDevice* InParent);
+	FD3DLghtMshCompShader(class UICBINDx11RenderDevice* InParent);
 
 	virtual void Init();
 
@@ -228,7 +228,7 @@ public:
 	}
 
 	// Metallicafan212:	Constructor that inits the device pointer
-	FD3DTileShader(class UD3D11RenderDevice* InParent);
+	FD3DTileShader(class UICBINDx11RenderDevice* InParent);
 
 	// Metallicafan212:	Shader interface
 	virtual void Init();
@@ -254,7 +254,7 @@ public:
 	}
 
 	// Metallicafan212:	Constructor that inits the device pointer
-	FD3DGenericShader(class UD3D11RenderDevice* InParent);
+	FD3DGenericShader(class UICBINDx11RenderDevice* InParent);
 
 	// Metallicafan212:	Shader interface
 	virtual void Init();
@@ -276,7 +276,7 @@ public:
 	}
 
 	// Metallicafan212:	Constructor that inits the device pointer
-	FD3DResScalingShader(class UD3D11RenderDevice* InParent);
+	FD3DResScalingShader(class UICBINDx11RenderDevice* InParent);
 
 	// Metallicafan212:	Shader interface
 	virtual void Init();
@@ -301,7 +301,7 @@ public:
 	}
 
 	// Metallicafan212:	Constructor that inits the device pointer
-	FD3DLineShader(class UD3D11RenderDevice* InParent);
+	FD3DLineShader(class UICBINDx11RenderDevice* InParent);
 
 	// Metallicafan212:	Shader interface
 	virtual void Init();
@@ -326,7 +326,7 @@ public:
 	}
 
 	// Metallicafan212:	Constructor that inits the device pointer
-	FD3DMeshShader(class UD3D11RenderDevice* InParent);
+	FD3DMeshShader(class UICBINDx11RenderDevice* InParent);
 
 	// Metallicafan212:	Shader interface
 	virtual void Init();
@@ -353,7 +353,7 @@ public:
 	}
 
 	// Metallicafan212:	Constructor that inits the device pointer
-	FD3DSurfShader(class UD3D11RenderDevice* InParent);
+	FD3DSurfShader(class UICBINDx11RenderDevice* InParent);
 
 	// Metallicafan212:	Shader interface
 	virtual void Init();
@@ -397,7 +397,7 @@ public:
 	}
 
 	// Metallicafan212:	Constructor that inits the device pointer
-	FD3DMSAAShader(class UD3D11RenderDevice* InParent);
+	FD3DMSAAShader(class UICBINDx11RenderDevice* InParent);
 
 	// Metallicafan212:	Shader interface
 	virtual void Init();

@@ -21,7 +21,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Inc\D3D11Drv.h">
+    <ClInclude Include="..\Inc\ICBINDx11Drv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Inc\UnD3DShader.h">

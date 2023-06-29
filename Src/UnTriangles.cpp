@@ -1,4 +1,4 @@
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, FPLAG PolyFlags, UBOOL bDoFog, FLOAT UMult, FLOAT VMult, UBOOL bDoSelection, FPlane SelectionColor)
 {
@@ -54,9 +54,9 @@ FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, FPLAG PolyFlags, UBO
 
 // Metallicafan212:	Functions relating to mesh/particle drawing
 //					TODO! Add in a config option to turn off and on "corrected fog", where it can completely fog actor verts!
-void UD3D11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, INT NumPts, _WORD* Indices, INT NumIndices, QWORD PolyFlags, FSpanBuffer* Span)
+void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, INT NumPts, _WORD* Indices, INT NumIndices, QWORD PolyFlags, FSpanBuffer* Span)
 {
-	guard(UD3D11RenderDevice::DrawTriangles);
+	guard(UICBINDx11RenderDevice::DrawTriangles);
 
 	SetBlend(PolyFlags);
 
@@ -133,16 +133,16 @@ void UD3D11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FT
 }
 
 #if !DX11_HP2
-void UD3D11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, int NumPts, DWORD PolyFlags, FSpanBuffer* Span)
+void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, int NumPts, DWORD PolyFlags, FSpanBuffer* Span)
 {
 	// TODO: Implement!
 }
 #endif
 
 #if DX11_UT_469
-void UD3D11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const FTextureInfo& Info, FTransTexture* const Pts, INT NumPts, DWORD PolyFlags, DWORD DataFlags, FSpanBuffer* Span)
+void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const FTextureInfo& Info, FTransTexture* const Pts, INT NumPts, DWORD PolyFlags, DWORD DataFlags, FSpanBuffer* Span)
 {
-	guard(UD3D11RenderDevice::DrawTriangles);
+	guard(UICBINDx11RenderDevice::DrawTriangles);
 
 	SetBlend(PolyFlags);
 

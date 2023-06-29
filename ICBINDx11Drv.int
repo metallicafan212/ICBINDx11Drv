@@ -1,0 +1,9 @@
+[Public]
+Object=(Name=ICBINDx11Drv.ICBINDx11RenderDevice,Class=Class,MetaClass=Engine.RenderDevice,Autodetect=)
+Preferences=(Caption="Rendering",Parent="Advanced Options")
+Preferences=(Caption="DirectX 11 support",Parent="Rendering",Class=ICBINDx11Drv.ICBINDx11RenderDevice,Immediate=True)
+
+[ICBINDx11RenderDevice]
+ClassCaption="DirectX 11 Support"
+AskInstalled=Do you want to use DirectX 11?
+AskUse=

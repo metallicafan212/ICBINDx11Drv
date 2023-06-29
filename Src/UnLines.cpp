@@ -1,9 +1,9 @@
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 // Metallicafan212:	Line/point related functions
-void UD3D11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD LineFlags, FVector P1, FVector P2)
+void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD LineFlags, FVector P1, FVector P2)
 {
-	guard(UD3D11RenderDevice::Draw3DLine);
+	guard(UICBINDx11RenderDevice::Draw3DLine);
 
 	FLOAT ExtraScale = (BoundRT == nullptr ? ResolutionScale : 1.0f);
 
@@ -119,9 +119,9 @@ void UD3D11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 	unguard;
 }
 
-void UD3D11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD LineFlags, FVector P1, FVector P2)
+void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD LineFlags, FVector P1, FVector P2)
 {
-	guard(UD3D11RenderDevice::Draw2DLine);
+	guard(UICBINDx11RenderDevice::Draw2DLine);
 	
 	SetBlend(PF_Highlighted | PF_Occlude);
 
@@ -225,9 +225,9 @@ void UD3D11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD LineF
 	unguard;
 }
 
-void UD3D11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD LineFlags, FLOAT X1, FLOAT Y1, FLOAT X2, FLOAT Y2, FLOAT Z)
+void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD LineFlags, FLOAT X1, FLOAT Y1, FLOAT X2, FLOAT Y2, FLOAT Z)
 {
-	guard(UD3D11RenderDevice::Draw2DPoint);
+	guard(UICBINDx11RenderDevice::Draw2DPoint);
 
 	FLOAT ExtraScale = (BoundRT == nullptr ? ResolutionScale : 1.0f);
 

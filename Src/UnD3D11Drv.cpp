@@ -1,12 +1,12 @@
-﻿#include "D3D11Drv.h"
+﻿#include "ICBINDx11Drv.h"
 
 // Metallicafan212:	TODO!
-IMPLEMENT_CLASS(UD3D11RenderDevice);
-IMPLEMENT_PACKAGE(D3D11Drv);
+IMPLEMENT_CLASS(UICBINDx11RenderDevice);
+IMPLEMENT_PACKAGE(ICBINDx11Drv);
 
-void UD3D11RenderDevice::SetupDevice()
+void UICBINDx11RenderDevice::SetupDevice()
 {
-	guard(UD3D11RenderDevice::SetupDevice);
+	guard(UICBINDx11RenderDevice::SetupDevice);
 
 #if DX11_HP2
 	// Metallicafan212:	Release all the fonts
@@ -58,9 +58,9 @@ void UD3D11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
 
-	SAFE_RELEASE(m_ScreenOpacityTex);
-	SAFE_RELEASE(m_ScreenOpacityRTSRV);
-	SAFE_RELEASE(m_D3DScreenOpacityRTV);
+	//SAFE_RELEASE(m_ScreenOpacityTex);
+	//SAFE_RELEASE(m_ScreenOpacityRTSRV);
+	//SAFE_RELEASE(m_D3DScreenOpacityRTV);
 
 	// Metallicafan212:	Depth stencil target
 	SAFE_RELEASE(m_ScreenDSTex);
@@ -363,9 +363,9 @@ MAKE_DEVICE:
 //					"Note  For feature levels 9.1, 9.2, 9.3, and 10.0, if you set MultisampleEnable to FALSE, 
 //					 the runtime renders all points, lines, and triangles without anti-aliasing even for render targets with a sample count greater than 1. 
 //					 For feature levels 10.1 and higher, the setting of MultisampleEnable has no effect on points and triangles with regard to MSAA and impacts only the selection of the line-rendering algorithm"
-void UD3D11RenderDevice::SetRasterState(DWORD State)
+void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 {
-	guard(UD3D11RenderDevice::SetRasterState);
+	guard(UICBINDx11RenderDevice::SetRasterState);
 
 	// Metallicafan212:	See if the raster state differs
 	//					TODO! Add more flags
@@ -435,9 +435,9 @@ void UD3D11RenderDevice::SetRasterState(DWORD State)
 }
 
 // Metallicafan212:	Generalized functions for render device stuff (Init, Lock, Unlock, etc.)
-UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT NewColorBytes, UBOOL Fullscreen)
+UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT NewColorBytes, UBOOL Fullscreen)
 {
-	guard(UD3D11RenderDevice::Init);
+	guard(UICBINDx11RenderDevice::Init);
 
 	// Metallicafan212:	Init pointers
 	m_D3DDevice			= nullptr;
@@ -450,9 +450,9 @@ UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT Ne
 	m_D3DScreenRTV		= nullptr;
 	m_ScreenRTSRV		= nullptr;
 
-	m_ScreenOpacityTex		= nullptr;
-	m_D3DScreenOpacityRTV	= nullptr;
-	m_ScreenOpacityRTSRV	= nullptr;
+	//m_ScreenOpacityTex		= nullptr;
+	//m_D3DScreenOpacityRTV	= nullptr;
+	//m_ScreenOpacityRTSRV	= nullptr;
 
 	// Metallicafan212:	Depth stencil target stuff
 	m_ScreenDSTex		= nullptr;
@@ -581,9 +581,9 @@ UBOOL UD3D11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, INT Ne
 	unguard;
 }
 
-void UD3D11RenderDevice::SetupResources()
+void UICBINDx11RenderDevice::SetupResources()
 {
-	guard(UD3D11RenderDevice::SetupResources);
+	guard(UICBINDx11RenderDevice::SetupResources);
 
 	GLog->Logf(TEXT("DX11: Setting up resources"));
 
@@ -621,9 +621,9 @@ void UD3D11RenderDevice::SetupResources()
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
 
-	SAFE_RELEASE(m_ScreenOpacityTex);
-	SAFE_RELEASE(m_ScreenOpacityRTSRV);
-	SAFE_RELEASE(m_D3DScreenOpacityRTV);
+	//SAFE_RELEASE(m_ScreenOpacityTex);
+	//SAFE_RELEASE(m_ScreenOpacityRTSRV);
+	//SAFE_RELEASE(m_D3DScreenOpacityRTV);
 
 	// Metallicafan212:	Depth stencil target
 	SAFE_RELEASE(m_ScreenDSTex);
@@ -923,6 +923,7 @@ void UD3D11RenderDevice::SetupResources()
 
 	ThrowIfFailed(hr);
 
+	/*
 	// Metallicafan212:	Now the hacked texture for opacity checking
 	//					We only need one color
 	RTMSAA.SampleDesc.Count		= 1;
@@ -931,15 +932,18 @@ void UD3D11RenderDevice::SetupResources()
 	hr = m_D3DDevice->CreateTexture2D(&RTMSAA, nullptr, &m_ScreenOpacityTex);
 
 	ThrowIfFailed(hr);
+	*/
 
 	// Metallicafan212:	Now create the views
 	hr = m_D3DDevice->CreateRenderTargetView(m_ScreenBuffTex, nullptr, &m_D3DScreenRTV);
 
 	ThrowIfFailed(hr);
 
+	/*
 	hr = m_D3DDevice->CreateRenderTargetView(m_ScreenOpacityTex, nullptr, &m_D3DScreenOpacityRTV);
 
 	ThrowIfFailed(hr);
+	*/
 
 	// Metallicafan212:	Create a shader resource view for MSAA resolving
 	CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = CD3D11_SHADER_RESOURCE_VIEW_DESC();
@@ -952,6 +956,7 @@ void UD3D11RenderDevice::SetupResources()
 
 	ThrowIfFailed(hr);
 
+	/*
 	// Metallicafan212:	Now the shader resource for the opacity texture
 	srvDesc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Format						= DXGI_FORMAT_R32_FLOAT;
@@ -959,6 +964,7 @@ void UD3D11RenderDevice::SetupResources()
 	hr = m_D3DDevice->CreateShaderResourceView(m_ScreenOpacityTex, &srvDesc, &m_ScreenOpacityRTSRV);
 
 	ThrowIfFailed(hr);
+	*/
 
 
 	// Metallicafan212:	Make the depth and stencil buffer
@@ -1176,9 +1182,9 @@ void UD3D11RenderDevice::SetupResources()
 	unguard;
 }
 
-UBOOL UD3D11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOOL Fullscreen)
+UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOOL Fullscreen)
 {
-	guard(UD3D11RenderDevice::SetRes);
+	guard(UICBINDx11RenderDevice::SetRes);
 
 	// Metallicafan212:	Save the values
 	//					We also have to clamp here since unreal could pass bad values (the editor opening, for example)
@@ -1204,9 +1210,9 @@ UBOOL UD3D11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOOL Fu
 	unguard;
 }
 
-void UD3D11RenderDevice::Exit()
+void UICBINDx11RenderDevice::Exit()
 {
-	guard(UD3D11RenderDevice::Exit);
+	guard(UICBINDx11RenderDevice::Exit);
 
 	Flush(0);
 
@@ -1361,9 +1367,9 @@ void UD3D11RenderDevice::Exit()
 	unguard;
 }
 
-void UD3D11RenderDevice::Flush(UBOOL AllowPrecache)
+void UICBINDx11RenderDevice::Flush(UBOOL AllowPrecache)
 {
-	guard(UD3D11RenderDevice::Flush);
+	guard(UICBINDx11RenderDevice::Flush);
 
 	// Metallicafan212:	Loop and flush out the textures
 	//					TODO! There might be a more efficient way to do this!
@@ -1381,9 +1387,9 @@ void UD3D11RenderDevice::Flush(UBOOL AllowPrecache)
 	unguard;
 }
 
-UBOOL UD3D11RenderDevice::Exec(const TCHAR* Cmd, FOutputDevice& Ar)
+UBOOL UICBINDx11RenderDevice::Exec(const TCHAR* Cmd, FOutputDevice& Ar)
 {
-	guard(UD3D11RenderDevice::Exec);
+	guard(UICBINDx11RenderDevice::Exec);
 
 	if (URenderDevice::Exec(Cmd, Ar))
 	{
@@ -1427,9 +1433,9 @@ UBOOL UD3D11RenderDevice::Exec(const TCHAR* Cmd, FOutputDevice& Ar)
 	unguard;
 }
 
-void UD3D11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane ScreenClear, DWORD RenderLockFlags, BYTE* HitData, INT* HitSize)
+void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane ScreenClear, DWORD RenderLockFlags, BYTE* HitData, INT* HitSize)
 {
-	guard(UD3D11RenderDevice::Lock);
+	guard(UICBINDx11RenderDevice::Lock);
 
 	// Metallicafan212:	Check if our lock flags changed
 	if (LastAASamples != NumAASamples || LastAFSamples != NumAFSamples || LastResolutionScale != ResolutionScale)
@@ -1466,7 +1472,7 @@ void UD3D11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane Scr
 	m_D3DDeviceContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	// Metallicafan212:	Clear to max Z
-	m_D3DDeviceContext->ClearRenderTargetView(m_D3DScreenOpacityRTV, DirectX::Colors::White);
+	//m_D3DDeviceContext->ClearRenderTargetView(m_D3DScreenOpacityRTV, DirectX::Colors::White);
 
 	// Metallicafan212:	Make sure we're always using the right RT
 	//RestoreRenderTarget();
@@ -1509,9 +1515,9 @@ void UD3D11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane Scr
 	unguard;
 }
 
-void UD3D11RenderDevice::Unlock(UBOOL Blit)
+void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 {
-	guard(UD3D11RenderDevice::Unlock);
+	guard(UICBINDx11RenderDevice::Unlock);
 
 	// Metallicafan212:	Reset the buffered state
 	EndBuffering();
@@ -1867,9 +1873,9 @@ void UD3D11RenderDevice::Unlock(UBOOL Blit)
 	unguard;
 }
 
-void UD3D11RenderDevice::ClearZ(FSceneNode* Frame)
+void UICBINDx11RenderDevice::ClearZ(FSceneNode* Frame)
 {
-	guard(UD3D11RenderDevice::ClearZ);
+	guard(UICBINDx11RenderDevice::ClearZ);
 
 	EndBuffering();
 
@@ -1878,9 +1884,9 @@ void UD3D11RenderDevice::ClearZ(FSceneNode* Frame)
 	unguard;
 }
 
-void UD3D11RenderDevice::EndFlash()
+void UICBINDx11RenderDevice::EndFlash()
 {
-	guard(UD3D11RenderDevice::EndFlash);
+	guard(UICBINDx11RenderDevice::EndFlash);
 
 #if DX11_HP2
 	/*
@@ -1994,19 +2000,19 @@ void UD3D11RenderDevice::EndFlash()
 	unguard;
 }
 
-void UD3D11RenderDevice::GetStats(TCHAR* Result)
+void UICBINDx11RenderDevice::GetStats(TCHAR* Result)
 {
 
 }
 
-void UD3D11RenderDevice::DrawStats(FSceneNode* Frame)
+void UICBINDx11RenderDevice::DrawStats(FSceneNode* Frame)
 {
 
 }
 
-void UD3D11RenderDevice::SetSceneNode(FSceneNode* Frame)
+void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 {
-	guard(UD3D11RenderDevice::SetSceneNode);
+	guard(UICBINDx11RenderDevice::SetSceneNode);
 
 	// Metallicafan212:	End any buffering that was requested???
 	EndBuffering();
@@ -2118,7 +2124,7 @@ void UD3D11RenderDevice::SetSceneNode(FSceneNode* Frame)
 }
 
 // Metallicafan212:	Shamfully copied from the DX9 renderer
-void UD3D11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRangeHack, UBOOL bForceUpdate)
+void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRangeHack, UBOOL bForceUpdate)
 {
 	float left, right, bottom, top, zNear, zFar;
 	float invRightMinusLeft, invTopMinusBottom, invNearMinusFar;
@@ -2212,9 +2218,9 @@ void UD3D11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRangeHac
 	appMemcpy(&Proj.m[0][0], &Temp[0][0], sizeof(FLOAT[4][4]));
 }
 
-void UD3D11RenderDevice::PrecacheTexture(FTextureInfo& Info, FPLAG PolyFlags)
+void UICBINDx11RenderDevice::PrecacheTexture(FTextureInfo& Info, FPLAG PolyFlags)
 {
-	guard(UD3D11RenderDevice::PrecacheTexture);
+	guard(UICBINDx11RenderDevice::PrecacheTexture);
 
 	// Metallicafan212:	Upload it now
 	CacheTextureInfo(Info, PolyFlags);

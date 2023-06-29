@@ -1,4 +1,4 @@
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 inline void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_VertexBuff, _WORD* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies)
 {
@@ -45,14 +45,14 @@ inline void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_Verte
 
 // Metallicafan212:	Definitions relating to complex surface (BSP) drawing
 #if DX11_HP2
-void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet, QWORD PolyFlags, BYTE cAlpha)
+void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet, QWORD PolyFlags, BYTE cAlpha)
 {
 #else
-void UD3D11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet)
+void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet)
 {
 	FPLAG PolyFlags = Surface.PolyFlags;
 #endif
-	guard(UD3D11RenderDevice::DrawComplexSurface);
+	guard(UICBINDx11RenderDevice::DrawComplexSurface);
 
 	// Metallicafan212:	This breaks mirrors, we HAVE to render invisible surfaces....
 	//if (PolyFlags & PF_Invisible)

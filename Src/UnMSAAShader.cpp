@@ -1,4 +1,4 @@
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 struct FMSAAVars : FShaderVarCommon
 {
@@ -13,7 +13,7 @@ struct FMSAAVars : FShaderVarCommon
 };
 
 // Metallicafan212:	This file defines the MSAA resolving shader
-FD3DMSAAShader::FD3DMSAAShader(UD3D11RenderDevice* InParent)
+FD3DMSAAShader::FD3DMSAAShader(UICBINDx11RenderDevice* InParent)
 #if USE_MSAA_COMPUTE
 	: FD3DComputeShader(InParent)//FD3DShader(InParent)
 #else

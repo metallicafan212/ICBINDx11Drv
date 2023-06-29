@@ -1,7 +1,7 @@
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 // Metallicafan212:	This file defines the mesh (one texture???) rendering shader
-FD3DMeshShader::FD3DMeshShader(UD3D11RenderDevice* InParent)
+FD3DMeshShader::FD3DMeshShader(UICBINDx11RenderDevice* InParent)
 	: FD3DShader(InParent)
 {
 	guard(FD3DMeshShader::FD3DMeshShader);

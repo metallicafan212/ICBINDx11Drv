@@ -1,10 +1,10 @@
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 // Metallicafan212:	Functions relating to testing mouse clicks on the render target
 //					I've coped and modified all the hit testing stuff from my version of the DX9 driver
-void UD3D11RenderDevice::PushHit(const BYTE* Data, INT Count)
+void UICBINDx11RenderDevice::PushHit(const BYTE* Data, INT Count)
 {
-	guard(UD3D11RenderDevice::PushHit);
+	guard(UICBINDx11RenderDevice::PushHit);
 
 	// Metallicafan212:	End rendering now
 	EndBuffering();
@@ -47,9 +47,9 @@ void UD3D11RenderDevice::PushHit(const BYTE* Data, INT Count)
 	unguard;
 }
 
-void UD3D11RenderDevice::PopHit(INT Count, UBOOL bForce)
+void UICBINDx11RenderDevice::PopHit(INT Count, UBOOL bForce)
 {
-	guard(UD3D11RenderDevice::PopHit);
+	guard(UICBINDx11RenderDevice::PopHit);
 
 	EndBuffering();
 
@@ -69,7 +69,7 @@ void UD3D11RenderDevice::PopHit(INT Count, UBOOL bForce)
 	unguard;
 }
 
-void UD3D11RenderDevice::ReadPixels(FColor* Pixels)
+void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 {
 	// Metallicafan212:	TODO! Return a screenshot
 }
@@ -88,9 +88,9 @@ struct FPixelIndex
 
 // Metallicafan212:	For detecting the hit after the scene is rendered
 //					TODO! Might be quicker to reimplement this entire block as a compute shader that scans the screen itself
-void UD3D11RenderDevice::DetectPixelHit()
+void UICBINDx11RenderDevice::DetectPixelHit()
 {
-	guard(UD3D11RenderDevice::DetectPixelHit);
+	guard(UICBINDx11RenderDevice::DetectPixelHit);
 
 	// Metallicafan212:	Early break
 	if (PixelHitInfo.Num() == 0)
@@ -318,9 +318,9 @@ void UD3D11RenderDevice::DetectPixelHit()
 }
 
 // Metallicafan212:	For setting up the shit for pixel hitting
-void UD3D11RenderDevice::SetupPixelHitTest()
+void UICBINDx11RenderDevice::SetupPixelHitTest()
 {
-	guard(UD3D11RenderDevice::SetupPixelHitTest);
+	guard(UICBINDx11RenderDevice::SetupPixelHitTest);
 
 	// Metallicafan212:	Do pixel selection through the normal shaders
 

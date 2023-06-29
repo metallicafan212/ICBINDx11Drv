@@ -1,4 +1,4 @@
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 #include "Render.h"
 
@@ -66,9 +66,9 @@ struct FActorLightCommon
 	INT				Pad[2];
 };
 
-FTransTexture* UD3D11RenderDevice::InitMeshComputeShader(INT VertCount)
+FTransTexture* UICBINDx11RenderDevice::InitMeshComputeShader(INT VertCount)
 {
-	guard(UD3D11RenderDevice::InitMeshComputeShader);
+	guard(UICBINDx11RenderDevice::InitMeshComputeShader);
 
 #if USE_COMPUTE_SHADER
 	// Metallicafan212:	See if it's beyond the number of verts we have
@@ -90,9 +90,9 @@ FTransTexture* UD3D11RenderDevice::InitMeshComputeShader(INT VertCount)
 	unguard;
 }
 
-void UD3D11RenderDevice::FinishMeshComputeShader()
+void UICBINDx11RenderDevice::FinishMeshComputeShader()
 {
-	guard(UD3D11RenderDevice::FinishMeshComputeShader);
+	guard(UICBINDx11RenderDevice::FinishMeshComputeShader);
 #if USE_COMPUTE_SHADER
 	// Metallicafan212:	Unmap for future use
 	m_D3DDeviceContext->Unmap(FMshLghtCompShader->VertBuffer, 0);
@@ -101,9 +101,9 @@ void UD3D11RenderDevice::FinishMeshComputeShader()
 	unguard;
 }
 
-void UD3D11RenderDevice::ExecuteMeshLightShader(FSceneNode* Frame, INT VertCount, void* MeshLights, void* LastLight, FLOAT Specular, FLOAT SpecMinCos, FLOAT Diffuse, FVector AmbientVector, AActor* Actor, QWORD PolyFlags)
+void UICBINDx11RenderDevice::ExecuteMeshLightShader(FSceneNode* Frame, INT VertCount, void* MeshLights, void* LastLight, FLOAT Specular, FLOAT SpecMinCos, FLOAT Diffuse, FVector AmbientVector, AActor* Actor, QWORD PolyFlags)
 {
-	guard(UD3D11RenderDevice::ExecuteMeshLightShader);
+	guard(UICBINDx11RenderDevice::ExecuteMeshLightShader);
 #if USE_COMPUTE_SHADER
 	// Metallicafan212:	Assemble the common actor data!
 	FMshLghtCompShader->Bind();
@@ -222,7 +222,7 @@ void UD3D11RenderDevice::ExecuteMeshLightShader(FSceneNode* Frame, INT VertCount
 // Metallicafan212:	Compute shader implementation
 // 
 // Metallicafan212:	Constructor that inits the device pointer
-FD3DComputeShader::FD3DComputeShader(UD3D11RenderDevice* InParent)
+FD3DComputeShader::FD3DComputeShader(UICBINDx11RenderDevice* InParent)
 	: FD3DShader(InParent),
 	ComputeShader(nullptr)
 {
@@ -306,7 +306,7 @@ void FD3DComputeShader::Bind()
 
 #if USE_COMPUTE_SHADER
 // Metallicafan212:	Device pointer version
-FD3DLghtMshCompShader::FD3DLghtMshCompShader(UD3D11RenderDevice* InParent)
+FD3DLghtMshCompShader::FD3DLghtMshCompShader(UICBINDx11RenderDevice* InParent)
 	: FD3DComputeShader(InParent)
 {
 	ComputeFile = SHADER_FOLDER TEXT("MeshTandLCompute.hlsl");

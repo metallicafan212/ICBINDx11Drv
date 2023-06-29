@@ -1,9 +1,9 @@
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 // Metallicafan212:	Texturing related functions (since there's going to be quite a bit)
-void UD3D11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG PolyFlags)
+void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG PolyFlags)
 {
-	guard(UD3D11RenderDevice::SetTexture);
+	guard(UICBINDx11RenderDevice::SetTexture);
 
 	// Metallicafan212:	Support null textures
 	if (Info == nullptr)
@@ -127,9 +127,9 @@ void UD3D11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG PolyFl
 
 // Metallicafan212:	TODO! Since I've redone the way samplers are made, this is pretty redundant now
 //					The only check is for UV clamp
-void UD3D11RenderDevice::MakeTextureSampler(FD3DTexture* Bind, FPLAG PolyFlags)
+void UICBINDx11RenderDevice::MakeTextureSampler(FD3DTexture* Bind, FPLAG PolyFlags)
 {
-	guard(UD3D11RenderDevice::MakeTextureSampler);
+	guard(UICBINDx11RenderDevice::MakeTextureSampler);
 
 	if (((Bind->UClamp ^ Bind->USize) | (Bind->VClamp ^ Bind->VSize)) != 0)
 	{
@@ -185,9 +185,9 @@ static UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*
 	return TRUE;
 }
 
-void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, UBOOL bJustSampler)
+void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, UBOOL bJustSampler)
 {
-	guard(UD3D11RenderDevice::CacheTextureInfo);
+	guard(UICBINDx11RenderDevice::CacheTextureInfo);
 
 	HRESULT hr = S_OK;
 
@@ -412,9 +412,9 @@ void UD3D11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, U
 
 // Metallicafan212:	Function to register supported texture types
 //					The device will query first to see what's supported, while some hand-fed types will be provided
-void UD3D11RenderDevice::RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, INT ByteOrBlockSize, FD3DTexType::GetPitch PitchFunc, FD3DTexType::UploadFunc UFunc, FD3DTexType::ConversionFunc UConv)
+void UICBINDx11RenderDevice::RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, INT ByteOrBlockSize, FD3DTexType::GetPitch PitchFunc, FD3DTexType::UploadFunc UFunc, FD3DTexType::ConversionFunc UConv)
 {
-	guard(UD3D11RenderDevice::RegisterTextureFormat);
+	guard(UICBINDx11RenderDevice::RegisterTextureFormat);
 
 	// Metallicafan212:	Init the format description
 	FD3DTexType Type;
@@ -535,9 +535,9 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 }
 
 // Metallicafan212:	Based on the DX9 version, but HEAVILY modified
-void UD3D11RenderDevice::SetBlend(FPLAG PolyFlags)
+void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 {
-	guard(UD3D11RenderDevice::SetBlend);
+	guard(UICBINDx11RenderDevice::SetBlend);
 
 	// Metallicafan212:	Cut it down to only specific flags
 	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected)))
@@ -748,7 +748,7 @@ void UD3D11RenderDevice::SetBlend(FPLAG PolyFlags)
 }
 
 #if DX11_UT_469
-UBOOL UD3D11RenderDevice::SupportsTextureFormat(ETextureFormat Format)
+UBOOL UICBINDx11RenderDevice::SupportsTextureFormat(ETextureFormat Format)
 {
 	switch (Format)
 	{

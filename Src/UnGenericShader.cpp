@@ -1,7 +1,7 @@
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 // Metallicafan212:	This file defines the generic (no texture) rendering shader
-FD3DGenericShader::FD3DGenericShader(UD3D11RenderDevice* InParent)
+FD3DGenericShader::FD3DGenericShader(UICBINDx11RenderDevice* InParent)
 	: FD3DShader(InParent)
 {
 	guard(FD3DGenericShader::FD3DGenericShader);

@@ -1,4 +1,4 @@
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 struct FLineMatrixDef : FShaderVarCommon
 {
@@ -10,7 +10,7 @@ struct FLineMatrixDef : FShaderVarCommon
 };
 
 // Metallicafan212:	This file defines the line shader, with optional line size
-FD3DLineShader::FD3DLineShader(UD3D11RenderDevice* InParent)
+FD3DLineShader::FD3DLineShader(UICBINDx11RenderDevice* InParent)
 	: FD3DShader(InParent)
 {
 	guard(FD3DLineShader::FD3DLineShader);

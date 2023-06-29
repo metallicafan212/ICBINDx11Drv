@@ -1,5 +1,5 @@
 ﻿// Metallicafan212:	My custom shit here
-#include "D3D11Drv.h"
+#include "ICBINDx11Drv.h"
 
 IMPLEMENT_CLASS(UDX11RenderTargetTexture);
 
@@ -135,9 +135,9 @@ void ReplaceInText(FString& In, const TCHAR* Match, const TCHAR* With)
 
 #define DO_MANUAL_SCALE 0
 
-int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, FLOAT Scale, FLOAT SpriteScaleX, FLOAT SpriteScaleY)
+int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, FLOAT Scale, FLOAT SpriteScaleX, FLOAT SpriteScaleY)
 {
-	guard(UD3D11RenderDevice::DrawString);
+	guard(UICBINDx11RenderDevice::DrawString);
 
 	// Metallicafan212:	Update the color if we're doing selection testing
 	FPlane LocalColor = Color;
@@ -379,9 +379,9 @@ int UD3D11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& Dr
 #endif
 
 // Metallicafan212:	Viewer-based zone fog
-void UD3D11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FPlane Color, FLOAT FadeRate)
+void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FPlane Color, FLOAT FadeRate)
 {
-	guard(UD3D11RenderDevice::SetDistanceFog);
+	guard(UICBINDx11RenderDevice::SetDistanceFog);
 
 	// Metallicafan212:	Fog is already disabled?
 	if (!Enable && !GlobalShaderVars.bDoDistanceFog)
@@ -437,9 +437,9 @@ void UD3D11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogE
 	unguard;
 }
 
-void UD3D11RenderDevice::TickDistanceFog()
+void UICBINDx11RenderDevice::TickDistanceFog()
 {
-	guard(UD3D11RenderDevice::TickDistanceFog);
+	guard(UICBINDx11RenderDevice::TickDistanceFog);
 
 	// Metallicafan212:	If fog is disabled but we don't have 0 alpha, fade out
 	if (GlobalShaderVars.bFadeFogValues)
@@ -478,9 +478,9 @@ void UD3D11RenderDevice::TickDistanceFog()
 	unguard;
 }
 
-void UD3D11RenderDevice::ForceSetFogColor(FPlane FogColor)
+void UICBINDx11RenderDevice::ForceSetFogColor(FPlane FogColor)
 {
-	guard(UD3D11RenderDevice::ForceSetFogColor);
+	guard(UICBINDx11RenderDevice::ForceSetFogColor);
 
 	// Metallicafan212:	TODO!
 	GlobalShaderVars.DistanceFogColor = FogColor;
@@ -489,9 +489,9 @@ void UD3D11RenderDevice::ForceSetFogColor(FPlane FogColor)
 }
 
 // Metallicafan212:	Simple BW shader for doing stupid "old-time" looking shit
-void UD3D11RenderDevice::SetBWPercent(FLOAT Percent)
+void UICBINDx11RenderDevice::SetBWPercent(FLOAT Percent)
 {
-	guard(UD3D11RenderDevice::SetBWPercent);
+	guard(UICBINDx11RenderDevice::SetBWPercent);
 
 	Percent = Clamp(Percent, 0.0f, 1.0f);
 
@@ -509,9 +509,9 @@ void UD3D11RenderDevice::SetBWPercent(FLOAT Percent)
 
 // Metallicafan212:	New RT stuff
 //					Create an RT texture, this is so the texture can be used in normal stuff
-UTexture* UD3D11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL bCreateDepth) 
+UTexture* UICBINDx11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL bCreateDepth) 
 {
-	guard(UD3D11RenderDevice::CreateRenderTargetTexture);
+	guard(UICBINDx11RenderDevice::CreateRenderTargetTexture);
 
 	// Metallicafan212:	Create the texture
 #if DX11_HP2
@@ -647,9 +647,9 @@ UTexture* UD3D11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL bCre
 	unguard;
 }
 
-void UD3D11RenderDevice::SetRenderTargetTexture(UTexture* Tex) 
+void UICBINDx11RenderDevice::SetRenderTargetTexture(UTexture* Tex) 
 {
-	guard(UD3D11RenderDevice::SetRenderTargetTexture);
+	guard(UICBINDx11RenderDevice::SetRenderTargetTexture);
 
 	UDX11RenderTargetTexture* RT = Cast<UDX11RenderTargetTexture>(Tex);
 
@@ -704,9 +704,9 @@ void UD3D11RenderDevice::SetRenderTargetTexture(UTexture* Tex)
 	unguard;
 }
 
-void UD3D11RenderDevice::RestoreRenderTarget()
+void UICBINDx11RenderDevice::RestoreRenderTarget()
 {
-	guard(UD3D11RenderDevice::RestoreRenderTarget);
+	guard(UICBINDx11RenderDevice::RestoreRenderTarget);
 
 	EndBuffering();
 
