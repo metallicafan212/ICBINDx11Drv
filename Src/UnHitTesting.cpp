@@ -71,7 +71,114 @@ void UICBINDx11RenderDevice::PopHit(INT Count, UBOOL bForce)
 
 void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 {
-	// Metallicafan212:	TODO! Return a screenshot
+	// Metallicafan212:	Read the back buffer
+	guard(UICBINDx11RenderDevice::ReadPixels);
+
+	ID3D11Texture2D* Resolved	= nullptr;
+	ID3D11Texture2D* Stage		= nullptr;
+	HRESULT hr = S_OK;
+
+	guard(CopyFromRT);
+	// Metallicafan212:	Get a copy of the render target!
+	//					We have to copy the whole damn thing when MSAA is enabled!!!!!!!
+	//					Because of that, we need to resolve to a temp texture....
+	D3D11_TEXTURE2D_DESC ResolveDesc;
+
+	ResolveDesc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
+	ResolveDesc.Width				= ScaledSizeX;
+	ResolveDesc.Height				= ScaledSizeY;
+	ResolveDesc.CPUAccessFlags		= D3D11_CPU_ACCESS_READ;
+	ResolveDesc.MipLevels			= 1;
+	ResolveDesc.ArraySize			= 1;
+	ResolveDesc.SampleDesc.Count	= 1;
+	ResolveDesc.SampleDesc.Quality	= 0;
+	ResolveDesc.Usage				= D3D11_USAGE_DEFAULT;
+	ResolveDesc.BindFlags			= 0;
+	ResolveDesc.MiscFlags			= 0;
+
+	hr = m_D3DDevice->CreateTexture2D(&ResolveDesc, nullptr, &Resolved);
+
+	ThrowIfFailed(hr);
+
+	// Metallicafan212:	We need a CPU mem copy
+	ResolveDesc.Usage				= D3D11_USAGE_STAGING;
+	hr = m_D3DDevice->CreateTexture2D(&ResolveDesc, nullptr, &Stage);
+	ThrowIfFailed(hr);
+
+	// Metallicafan212:	Now get the screen resource
+	ID3D11Resource* RTResource = nullptr;
+
+	m_D3DScreenRTV->GetResource(&RTResource);
+
+	m_D3DDeviceContext->ResolveSubresource(Resolved, 0, RTResource, 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+
+	// Metallicafan212:	Now release that copy
+	RTResource->Release();
+
+	// Metallicafan212:	Copy to a staging texture...
+	m_D3DDeviceContext->CopySubresourceRegion(Stage, 0, 0, 0, 0, Resolved, 0, nullptr);
+
+	SAFE_RELEASE(Resolved);
+
+	unguard;
+
+	guard(ReadPixels);
+
+	// Metallicafan212:	TODO! Make a new texture and map it to a compute shader to do filtering!!!!
+	//					For now, just memcpy if the resolution scale is 1.0
+	if (ResolutionScale == 1.0f)
+	{
+		struct ColorHack
+		{
+			union
+			{
+				DWORD P;
+				struct
+				{
+					BYTE R;
+					BYTE G;
+					BYTE B;
+					BYTE A;
+				};
+			};
+		};
+
+		D3D11_MAPPED_SUBRESOURCE Map;
+		hr = m_D3DDeviceContext->Map(Stage, 0, D3D11_MAP_READ, 0, &Map);
+
+		ThrowIfFailed(hr);
+
+		//appMemcpy(Pixels, )
+		for (INT y = 0; y < ScaledSizeY; y++)
+		{
+			INT Row			= ScaledSizeX * y;
+			ColorHack*	H	= ((ColorHack*)Map.pData) + Row;
+			FColor*		P	= Pixels + Row;
+
+			for (INT x = 0; x < ScaledSizeX; x++)
+			{
+#if DX11_HP2
+				P->Int4 = H->P;
+#else
+				*P = FColor(H->R, H->G, H->B, 255);
+#endif
+				P++;
+				H++;
+			}
+		}
+
+		m_D3DDeviceContext->Unmap(Stage, 0);
+
+		SAFE_RELEASE(Stage);
+	}
+	else
+	{
+		// Metallicafan212:	Do nothing right now, we need a compute shader
+	}
+
+	unguard;
+
+	unguard;
 }
 
 struct FPixelIndex

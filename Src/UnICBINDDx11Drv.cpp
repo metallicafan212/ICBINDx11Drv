@@ -892,8 +892,8 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	// Metallicafan212:	Now set the thread groups for the MSAA compute shader
 	//					Since they're in groups of 32, we need to do an extra group if the screen size isn't % 32
-	MSAAThreadX = appCeil(ScaledSizeX / 32.0f);
-	MSAAThreadY = appCeil(ScaledSizeY / 32.0f);
+	MSAAThreadX = appCeil(SizeX / 32.0f);
+	MSAAThreadY = appCeil(SizeY / 32.0f);
 
 	// Metallicafan212:	Create a render target view for it
 	hr = m_D3DDevice->CreateRenderTargetView(m_BackBuffTex, nullptr, &m_BackBuffRT);
@@ -1714,6 +1714,42 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 		}
 		else if (ResolutionScale != 1.0f)
 		{
+#if USE_RES_COMPUTE
+			// Metallicafan212:	Use a compute shader instead!!!
+			SetTexture(0, nullptr, 0);
+
+			m_D3DDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+
+			m_D3DDeviceContext->CSSetShaderResources(0, 1, &m_ScreenRTSRV);
+			//m_D3DDeviceContext->CSSetShaderResources(1, 1, &m_ScreenDTSRV);
+
+			// Metallicafan212:	Now bind the output
+			m_D3DDeviceContext->CSSetUnorderedAccessViews(0, 1, &m_BackBuffUAV, nullptr);
+
+			// Metallicafan212:	Bind the shader
+			FResScaleShader->Bind();
+
+			// Metallicafan212:	Now execute!
+			m_D3DDeviceContext->Dispatch(MSAAThreadX, MSAAThreadY, 1);
+
+			// Metallicafan212:	Wait for it to complete...
+			m_D3DDeviceContext->End(m_D3DQuery);
+
+			// Metallicafan212:	Wait for it
+			BOOL bDone = 0;
+
+			while (m_D3DDeviceContext->GetData(m_D3DQuery, &bDone, sizeof(BOOL), 0) != S_OK && bDone == 0);
+
+			// Metallicafan212:	Clear the render resources!!!
+			constexpr ID3D11ShaderResourceView* SRVTemp[2] = { nullptr, nullptr };
+			m_D3DDeviceContext->CSSetShaderResources(0, 2, SRVTemp);
+
+
+			constexpr ID3D11UnorderedAccessView* Temp[1] = { nullptr };
+			m_D3DDeviceContext->CSSetUnorderedAccessViews(0, 1, Temp, nullptr);
+
+			RestoreRenderTarget();
+#else
 			// Metallicafan212:	Check if we need to create the sampler
 			if (ScreenSamp == nullptr)
 			{
@@ -1840,6 +1876,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			SetTexture(0, nullptr, 0);
 
 			RestoreRenderTarget();
+#endif
 		}
 		else
 		{

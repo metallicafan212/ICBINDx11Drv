@@ -68,7 +68,14 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 
 		// Metallicafan212:	Selection testing
 		if (m_HitData != nullptr)
+		{
 			Color = CurrentHitColor;
+
+			// Metallicafan212:	If this isn't HP2, set the priority on lines/points higher
+#if !DX11_HP2
+			PixelHitInfo[PixelTopIndex].Priority = 10;
+#endif
+		}
 
 		// Metallicafan212:	TODO! Other games don't have the flags I added... So we need to make it possible to project lines above everything (maybe a config option???)
 #if DX11_HP2
@@ -191,7 +198,14 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 
 	// Metallicafan212:	Selection testing
 	if (m_HitData != nullptr)
+	{
 		Color = CurrentHitColor;
+
+		// Metallicafan212:	If this isn't HP2, set the priority on lines/points higher
+#if !DX11_HP2
+		PixelHitInfo[PixelTopIndex].Priority = 10;
+#endif
+	}
 
 	if (!Frame->Viewport->IsOrtho())
 	{
@@ -279,7 +293,14 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 
 	// Metallicafan212:	Selection testing
 	if (m_HitData != nullptr)
+	{
 		Color = CurrentHitColor;
+
+		// Metallicafan212:	If this isn't HP2, set the priority on lines/points higher
+#if !DX11_HP2
+		PixelHitInfo[PixelTopIndex].Priority = 10;
+#endif
+	}
 
 	//Get point coordinates back in 3D
 	FLOAT X1Pos = m_RFX2 * (X1 - ScaledFX2);

@@ -1,6 +1,7 @@
 #pragma once
 
 #define USE_MSAA_COMPUTE 1
+#define USE_RES_COMPUTE 1
 
 // Metallicafan212:	Shader folder
 //					Some people may not want to have shaders next to Textures, Sounds, etc.
@@ -261,28 +262,6 @@ public:
 	virtual void Bind();
 };
 
-// Metallicafan212:	Shader to scale up/down the final output (so we can have super resolution)
-class FD3DResScalingShader : public FD3DShader
-{
-public:
-	FD3DResScalingShader() :
-		FD3DShader()
-	{
-		//ShaderFile	= TEXT("..\\Shaders\\TileShader.hlsl");
-		VertexFile = SHADER_FOLDER TEXT("ResScaling.hlsl");
-		PixelFile = SHADER_FOLDER TEXT("ResScaling.hlsl");
-		VertexFunc = TEXT("VertShader");
-		PixelFunc = TEXT("PxShader");
-	}
-
-	// Metallicafan212:	Constructor that inits the device pointer
-	FD3DResScalingShader(class UICBINDx11RenderDevice* InParent);
-
-	// Metallicafan212:	Shader interface
-	virtual void Init();
-	virtual void Bind();
-};
-
 #define INSTANCED_LINES 0
 
 // Metallicafan212:	Line shader with a geo shader for line thiccness
@@ -364,10 +343,52 @@ public:
 	virtual void WriteConstantBuffer(void* InMem);
 };
 
+
+
+
+// Metallicafan212:	Shader to scale up/down the final output (so we can have super resolution)
+class FD3DResScalingShader 
+#if USE_RES_COMPUTE
+	: public FD3DComputeShader
+#else
+	: public FD3DShader
+#endif
+{
+public:
+	FD3DResScalingShader() :
+#if USE_RES_COMPUTE
+		FD3DComputeShader()
+#else
+		FD3DShader()
+#endif
+	{
+#if USE_RES_COMPUTE
+		ComputeFile = SHADER_FOLDER TEXT("ResScaling.hlsl");
+		ComputeFunc = TEXT("CSMain");
+#else
+		VertexFile	= SHADER_FOLDER TEXT("ResScaling.hlsl");
+		PixelFile	= SHADER_FOLDER TEXT("ResScaling.hlsl");
+		VertexFunc	= TEXT("VertShader");
+		PixelFunc	= TEXT("PxShader");
+#endif
+	}
+
+	// Metallicafan212:	Constructor that inits the device pointer
+	FD3DResScalingShader(class UICBINDx11RenderDevice* InParent);
+
+	// Metallicafan212:	Shader interface
+	virtual void Init();
+	virtual void Bind();
+
+	virtual void SetupConstantBuffer();
+
+	virtual void WriteConstantBuffer(void* InMem);
+};
+
 // Metallicafan212:	MSAA resolving shader
 class FD3DMSAAShader 
 #if USE_MSAA_COMPUTE
-	: public FD3DComputeShader//FD3DShader
+	: public FD3DComputeShader
 #else
 	: public FD3DShader
 #endif

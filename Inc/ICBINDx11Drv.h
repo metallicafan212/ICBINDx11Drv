@@ -375,11 +375,11 @@ extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
 #if DX11_UT_469
 class UICBINDx11RenderDevice : public URenderDeviceOldUnreal469
 {
-	DECLARE_CLASS(UICBINDx11RenderDevice, URenderDeviceOldUnreal469, CLASS_Config, D3D11Drv);
+	DECLARE_CLASS(UICBINDx11RenderDevice, URenderDeviceOldUnreal469, CLASS_Config, ICBINDx11Drv);
 #else
 class UICBINDx11RenderDevice : public URenderDevice
 {
-	DECLARE_CLASS(UICBINDx11RenderDevice, URenderDevice, CLASS_Config, D3D11Drv);
+	DECLARE_CLASS(UICBINDx11RenderDevice, URenderDevice, CLASS_Config, ICBINDx11Drv);
 #endif
 
 	// Metallicafan212:	User options
