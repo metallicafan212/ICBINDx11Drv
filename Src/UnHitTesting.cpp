@@ -74,6 +74,8 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	// Metallicafan212:	Read the back buffer
 	guard(UICBINDx11RenderDevice::ReadPixels);
 
+#if 0
+
 	ID3D11Texture2D* Resolved	= nullptr;
 	ID3D11Texture2D* Stage		= nullptr;
 	HRESULT hr = S_OK;
@@ -82,27 +84,27 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	// Metallicafan212:	Get a copy of the render target!
 	//					We have to copy the whole damn thing when MSAA is enabled!!!!!!!
 	//					Because of that, we need to resolve to a temp texture....
-	D3D11_TEXTURE2D_DESC ResolveDesc;
+	D3D11_TEXTURE2D_DESC StageDesc;
 
-	ResolveDesc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
-	ResolveDesc.Width				= ScaledSizeX;
-	ResolveDesc.Height				= ScaledSizeY;
-	ResolveDesc.CPUAccessFlags		= D3D11_CPU_ACCESS_READ;
-	ResolveDesc.MipLevels			= 1;
-	ResolveDesc.ArraySize			= 1;
-	ResolveDesc.SampleDesc.Count	= 1;
-	ResolveDesc.SampleDesc.Quality	= 0;
-	ResolveDesc.Usage				= D3D11_USAGE_DEFAULT;
-	ResolveDesc.BindFlags			= 0;
-	ResolveDesc.MiscFlags			= 0;
+	StageDesc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
+	StageDesc.Width					= ScaledSizeX;
+	StageDesc.Height				= ScaledSizeY;
+	StageDesc.CPUAccessFlags		= D3D11_CPU_ACCESS_READ;
+	StageDesc.MipLevels				= 1;
+	StageDesc.ArraySize				= 1;
+	StageDesc.SampleDesc.Count		= 1;
+	StageDesc.SampleDesc.Quality	= 0;
+	StageDesc.Usage					= D3D11_USAGE_DEFAULT;
+	StageDesc.BindFlags				= 0;
+	StageDesc.MiscFlags				= 0;
 
-	hr = m_D3DDevice->CreateTexture2D(&ResolveDesc, nullptr, &Resolved);
+	hr = m_D3DDevice->CreateTexture2D(&StageDesc, nullptr, &Resolved);
 
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	We need a CPU mem copy
-	ResolveDesc.Usage				= D3D11_USAGE_STAGING;
-	hr = m_D3DDevice->CreateTexture2D(&ResolveDesc, nullptr, &Stage);
+	StageDesc.Usage				= D3D11_USAGE_STAGING;
+	hr = m_D3DDevice->CreateTexture2D(&StageDesc, nullptr, &Stage);
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Now get the screen resource
@@ -177,6 +179,75 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	}
 
 	unguard;
+#else
+
+	// Metallicafan212:	Grab the back buffer texture
+	ID3D11Texture2D* Stage = nullptr;
+
+	D3D11_TEXTURE2D_DESC StageDesc;
+
+	StageDesc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
+	StageDesc.Width					= SizeX;
+	StageDesc.Height				= SizeY;
+	StageDesc.CPUAccessFlags		= D3D11_CPU_ACCESS_READ;
+	StageDesc.MipLevels				= 1;
+	StageDesc.ArraySize				= 1;
+	StageDesc.SampleDesc.Count		= 1;
+	StageDesc.SampleDesc.Quality	= 0;
+	StageDesc.Usage					= D3D11_USAGE_STAGING;
+	StageDesc.BindFlags				= 0;
+	StageDesc.MiscFlags				= 0;
+	
+	HRESULT hr = m_D3DDevice->CreateTexture2D(&StageDesc, nullptr, &Stage);
+	ThrowIfFailed(hr);
+
+	// Metallicafan212:	Copy to a staging texture...
+	m_D3DDeviceContext->CopySubresourceRegion(Stage, 0, 0, 0, 0, m_BackBuffTex, 0, nullptr);
+
+	struct ColorHack
+	{
+		union
+		{
+			DWORD P;
+			struct
+			{
+				BYTE R;
+				BYTE G;
+				BYTE B;
+				BYTE A;
+			};
+		};
+	};
+
+	D3D11_MAPPED_SUBRESOURCE Map;
+	hr = m_D3DDeviceContext->Map(Stage, 0, D3D11_MAP_READ, 0, &Map);
+
+	ThrowIfFailed(hr);
+
+	//appMemcpy(Pixels, )
+	for (INT y = 0; y < SizeY; y++)
+	{
+		INT Row = SizeX * y;
+		ColorHack* H = ((ColorHack*)Map.pData) + Row;
+		FColor* P = Pixels + Row;
+
+		for (INT x = 0; x < SizeX; x++)
+		{
+#if DX11_HP2
+			P->Int4 = H->P;
+#else
+			* P = FColor(H->R, H->G, H->B, 255);
+#endif
+			P++;
+			H++;
+		}
+	}
+
+	m_D3DDeviceContext->Unmap(Stage, 0);
+
+	SAFE_RELEASE(Stage);
+
+#endif
 
 	unguard;
 }

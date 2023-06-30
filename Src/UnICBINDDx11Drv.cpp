@@ -1726,6 +1726,30 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			// Metallicafan212:	Now bind the output
 			m_D3DDeviceContext->CSSetUnorderedAccessViews(0, 1, &m_BackBuffUAV, nullptr);
 
+			// Metallicafan212:	Check if we need to create the sampler
+			if (ScreenSamp == nullptr)
+			{
+				// Metallicafan212:	Create it
+				CD3D11_SAMPLER_DESC SDesc = CD3D11_SAMPLER_DESC(D3D11_DEFAULT);
+			
+				// Metallicafan212:	Bilinear filtering
+				SDesc.Filter			= D3D11_FILTER_MIN_MAG_MIP_LINEAR;//D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;//D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;//D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+				SDesc.AddressU			= D3D11_TEXTURE_ADDRESS_CLAMP;
+				SDesc.AddressV			= SDesc.AddressU;
+				SDesc.AddressW			= D3D11_TEXTURE_ADDRESS_WRAP;//SDesc.AddressU;
+				SDesc.MinLOD			= -D3D11_FLOAT32_MAX;
+				SDesc.MaxLOD			= D3D11_FLOAT32_MAX;
+				SDesc.MipLODBias		= 0.0f;
+				SDesc.MaxAnisotropy		= 1;//16;//16;
+				SDesc.ComparisonFunc	= D3D11_COMPARISON_NEVER;
+
+				HRESULT hr = m_D3DDevice->CreateSamplerState(&SDesc, &ScreenSamp);
+
+				ThrowIfFailed(hr);
+			}
+
+			m_D3DDeviceContext->CSSetSamplers(0, 1, &ScreenSamp);
+
 			// Metallicafan212:	Bind the shader
 			FResScaleShader->Bind();
 
