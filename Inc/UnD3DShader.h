@@ -1,7 +1,7 @@
 #pragma once
 
 #define USE_MSAA_COMPUTE 1
-#define USE_RES_COMPUTE 1
+#define USE_RES_COMPUTE 0
 
 // Metallicafan212:	Shader folder
 //					Some people may not want to have shaders next to Textures, Sounds, etc.

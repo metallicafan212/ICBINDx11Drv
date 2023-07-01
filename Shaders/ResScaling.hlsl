@@ -57,10 +57,23 @@ PSInput VertShader(VSInput input)
 }
 
 float4 PxShader(PSInput input) : SV_TARGET
-{	
-	return float4(Screen.SampleBias(ScreenState, input.uv, 0.0f).xyz, 0.0f);
+{
+	// Metallicafan212:	Try this
+	//					This is the algorithm from here: https://www.shadertoy.com/view/XsfGDn
+	uint SW, SH;
+	Screen.GetDimensions(SW, SH);
+	
+	float2 UV	= input.uv;
+	UV 			= UV * SW + 0.5;
+	float2	iUV	= floor(UV);
+	float2 	fUV	= frac(UV);
+	UV			= iUV + fUV * fUV * (3.0 - 2.0 * fUV);
+	UV			= (UV - 0.5) / SW;
+
+	return float4(Screen.SampleBias(ScreenState, UV, 0.0f).xyz, 1.0f);//float4(Screen.SampleBias(ScreenState, input.uv, 0.0f).xyz, 1.0f);
 }
 
+// Metallicafan212:	Compute shader version (slow!!!!)
 RWTexture2D<float4>	Out		: register(u0);
 
 float GetColor(float4 InSamp, float2 InFrac, float4 Comp)
