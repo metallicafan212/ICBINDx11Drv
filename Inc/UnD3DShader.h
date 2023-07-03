@@ -6,7 +6,9 @@
 // Metallicafan212:	Shader folder
 //					Some people may not want to have shaders next to Textures, Sounds, etc.
 //					So, this allows you to redefine the path
+#ifndef SHADER_FOLDER
 #define SHADER_FOLDER TEXT("..\\Shaders\\")
+#endif
 
 // Metallicafan212:	Common shader variables
 struct FShaderVarCommon

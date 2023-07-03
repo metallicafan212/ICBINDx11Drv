@@ -9,6 +9,7 @@
 //					TODO!!!! Block more code behind this!!!!!!
 #define DX11_HP2 (!defined(DX11_UT_99) && !defined(DX11_UT_469) && !defined(DX11_UNREAL_227) && !defined(DX11_HP1) && !defined(DX11_RUNE) && !defined(DX11_DX))
 
+#define RES_SCALE_IN_PROJ 0
 
 #if UNREAL_TOURNAMENT_OLDUNREAL
 # define DX11_UT_469 1
@@ -244,7 +245,7 @@ struct FGlobalShaderVars
 // Metallicafan212:	Thanks to CacoFFF from OldUnreal for pointing this out for me!
 //					If you don't change the default TMap hashing, it'll place half the textures in one bin....
 //					TODO! This may only be a problem when compiling for UT99/227. I changed out the GetTypeHash to a QWORD in HP2
-#if !DX11_HP2
+#if !DX11_HP2 && !DX11_UT_469
 static inline DWORD GetTypeHash(const D3DCacheId& A)
 {
 	QWORD Value		= (QWORD)A;

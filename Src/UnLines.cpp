@@ -5,7 +5,11 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 {
 	guard(UICBINDx11RenderDevice::Draw3DLine);
 
+#if !RES_SCALE_IN_PROJ
 	FLOAT ExtraScale = (BoundRT == nullptr ? ResolutionScale : 1.0f);
+#else
+	FLOAT ExtraScale = 1.0f;
+#endif
 
 	// Metallicafan212:	We need to transform some lines into screen-space, as only some aren't already done
 	//					So the collision boxes are already in worldspace, so doing this transform causes it to skew
@@ -133,7 +137,11 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	
 	SetBlend(PF_Highlighted | PF_Occlude);
 
+#if !RES_SCALE_IN_PROJ
 	FLOAT ExtraScale = (BoundRT == nullptr ? ResolutionScale : 1.0f);
+#else
+	FLOAT ExtraScale = 1.0f;
+#endif
 
 	P1.X *= ExtraScale;
 	P1.Y *= ExtraScale;
@@ -245,7 +253,11 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 {
 	guard(UICBINDx11RenderDevice::Draw2DPoint);
 
+#if !RES_SCALE_IN_PROJ
 	FLOAT ExtraScale = (BoundRT == nullptr ? ResolutionScale : 1.0f);
+#else
+	FLOAT ExtraScale = 1.0f;
+#endif
 
 	X1 *= ExtraScale;
 	Y1 *= ExtraScale;
