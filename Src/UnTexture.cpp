@@ -602,7 +602,7 @@ void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 #if DX11_HP2
 				else if (blendFlags & PF_Translucent && (blendFlags & PF_Highlighted || blendFlags & PF_AlphaBlend))
 #else
-				else if (blendFlags & PF_Translucent && (blendFlags & PF_Highlighted))
+				else if ((blendFlags & (PF_Translucent | PF_Highlighted)) == (PF_Translucent | PF_Highlighted))//blendFlags & PF_Translucent && (blendFlags & PF_Highlighted))
 #endif
 				{
 					FindAndSetBlend(PF_Translucent | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);

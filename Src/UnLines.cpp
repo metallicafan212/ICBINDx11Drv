@@ -73,7 +73,8 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 
 			// Metallicafan212:	If this isn't HP2, set the priority on lines/points higher
 #if !DX11_HP2
-			PixelHitInfo[PixelTopIndex].Priority = 10;
+			if (PixelTopIndex != -1)
+				PixelHitInfo(PixelTopIndex).Priority = 10;
 #endif
 		}
 
@@ -203,7 +204,8 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 
 		// Metallicafan212:	If this isn't HP2, set the priority on lines/points higher
 #if !DX11_HP2
-		PixelHitInfo[PixelTopIndex].Priority = 10;
+		if (PixelTopIndex != -1)
+			PixelHitInfo(PixelTopIndex).Priority = 10;
 #endif
 	}
 
@@ -298,7 +300,8 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 
 		// Metallicafan212:	If this isn't HP2, set the priority on lines/points higher
 #if !DX11_HP2
-		PixelHitInfo[PixelTopIndex].Priority = 10;
+		if(PixelTopIndex != -1)
+			PixelHitInfo(PixelTopIndex).Priority = 10;
 #endif
 	}
 

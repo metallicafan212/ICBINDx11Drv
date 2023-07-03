@@ -857,7 +857,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	// Metallicafan212:	Get the closer value to the DX11 resource limit!!!!
 	if (SizeY > SizeX)
 	{
-		ScaledSizeY = Clamp(SizeY * ResolutionScale, 1.f, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		ScaledSizeY = Clamp(SizeY * ResolutionScale, 1.f, static_cast<FLOAT>(D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION));
 
 		// Metallicafan212:	Now get it back
 		ResolutionScale = ScaledSizeY / SizeY;
@@ -866,7 +866,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	}
 	else
 	{
-		ScaledSizeX = Clamp(SizeX * ResolutionScale, 1.f, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		ScaledSizeX = Clamp(SizeX * ResolutionScale, 1.f, static_cast<FLOAT>(D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION));
 
 		// Metallicafan212:	Now get it back
 		ResolutionScale = ScaledSizeX / SizeX;

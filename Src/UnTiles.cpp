@@ -163,6 +163,13 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	Color.W = 1.0f;
 #endif
 
+	// Metallicafan212:	Swap the color out if we're modulated. Somehow I missed this the first time around
+	if (PolyFlags & PF_Modulated)
+	{
+		Color = FPlane(1.f, 1.f, 1.f, 1.f);
+	}
+
+
 	// Metallicafan212:	Selection testing!!!!
 	if (m_HitData != nullptr)
 		Color = CurrentHitColor;
