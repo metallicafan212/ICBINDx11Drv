@@ -723,12 +723,6 @@ void UICBINDx11RenderDevice::SetupResources()
 #endif
 			);
 
-		if (bAllowTearing)
-		{
-			GLog->Logf(TEXT("DX11: Setting up swap chain with tearing support"));
-		}
-
-		// And obtain the factory object that created it.
 
 		IDXGIFactory5* dxgiFactory5 = nullptr;
 		hr = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory5));
@@ -738,6 +732,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		if (FAILED(hr))
 		{
 			// Metallicafan212:	Get the DXGI factory2 only
+			bAllowTearing = 0;
 		}
 		else
 		{
@@ -756,6 +751,13 @@ void UICBINDx11RenderDevice::SetupResources()
 			}
 
 		}
+
+		if (bAllowTearing)
+		{
+			GLog->Logf(TEXT("DX11: Setting up swap chain with tearing support"));
+		}
+
+		// And obtain the factory object that created it.
 
 		hr = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
 
