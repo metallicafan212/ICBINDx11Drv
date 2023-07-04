@@ -408,6 +408,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	TODO! Float to provide super/min'd resolution scaling
 	FLOAT						ResolutionScale;
 
+	// Metallicafan212:	Gamma correction value for the final output
+	FLOAT						Gamma;
+
 
 	// Metallicafan212:	Versions to check on lock if they changed
 	INT							LastAASamples;

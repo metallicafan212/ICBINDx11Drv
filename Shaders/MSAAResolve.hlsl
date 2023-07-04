@@ -14,7 +14,8 @@ shared cbuffer CommonBuffer : register (b0)
 	float	CubicB					: packoffset(c12.z);
 	float 	CubicC					: packoffset(c12.w);
 	int		FilterType				: packoffset(c13.x);
-	float3	Pad3					: packoffset(c13.y);
+	float	Gamma					: packoffset(c13.y);
+	float2	Pad3					: packoffset(c13.z);
 	float4 	SampleOffsets[8]		: packoffset(c14);
 };
 
@@ -302,7 +303,10 @@ float4 PxShader(PSInput input) : SV_TARGET
 	sum = lerp(sum, ZeroBased, a);//lerp(ZeroBased, sum, a);
 	*/
 	
-	return float4(sum, 1.0f);
+	// Metallicafan212:	Gamma correct it
+	float OverGamma = 1.0f / Gamma;
+	return float4(pow(sum, float3(OverGamma, OverGamma, OverGamma)), 1.0f);
+	
 }
 
 // Metallicafan212:	Resolve the MSAA texture to this current pixel
@@ -420,8 +424,10 @@ void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 	
 	float3 output = sum / max(totalWeight, 0.00001f);
     output = max(output, 0.0f);
-
-	Out[dispatchThreadID.xy] = float4(output, 1.0f);
+	
+	// Metallicafan212:	Gamma correct it
+	float OverGamma = 1.0f / Gamma;
+	Out[dispatchThreadID.xy] = float4(pow(output, float3(OverGamma, OverGamma, OverGamma)), 1.0f);
 
     //return float4(output, 1.0f);
 	

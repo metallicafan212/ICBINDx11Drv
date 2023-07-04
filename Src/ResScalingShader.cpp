@@ -4,7 +4,8 @@ struct FResScaleVars : FShaderVarCommon
 {
 	// Metallicafan212:	The info we use for this specific shader	
 	FLOAT	ResolutionScale;
-	FLOAT	Pad3[3];
+	FLOAT	Gamma;
+	FLOAT	Pad3[2];
 };
 
 // Metallicafan212:	This file defines the generic (no texture) rendering shader
@@ -91,6 +92,7 @@ void FD3DResScalingShader::WriteConstantBuffer(void* InMem)
 	FResScaleVars* SDef		= (FResScaleVars*)InMem;
 
 	SDef->ResolutionScale	= ParentDevice->ResolutionScale;
+	SDef->Gamma				= ParentDevice->Gamma;
 
 	unguard;
 }

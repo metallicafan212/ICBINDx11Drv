@@ -10,7 +10,8 @@ shared cbuffer CommonBuffer : register (b0)
 	
 	// Metallicafan212:	The info we use for this specific shader	
 	float	ResolutionScale				: packoffset(c12.x);
-	float3	Pad3						: packoffset(c12.y);
+	float	Gamma						: packoffset(c12.y);
+	float2	Pad3						: packoffset(c12.z);
 };
 
 // Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling
@@ -69,8 +70,12 @@ float4 PxShader(PSInput input) : SV_TARGET
 	float2 	fUV	= frac(UV);
 	UV			= iUV + fUV * fUV * (3.0 - 2.0 * fUV);
 	UV			= (UV - 0.5) / SW;
-
-	return float4(Screen.SampleBias(ScreenState, UV, 0.0f).xyz, 1.0f);//float4(Screen.SampleBias(ScreenState, input.uv, 0.0f).xyz, 1.0f);
+	
+	float3	TexColor = Screen.SampleBias(ScreenState, UV, 0.0f).xyz;
+	
+	// Metallicafan212:	Gamma correct it
+	float OverGamma = 1.0f / Gamma;
+	return float4(pow(TexColor, float3(OverGamma, OverGamma, OverGamma)), 1.0f);
 }
 
 // Metallicafan212:	Compute shader version (slow!!!!)
@@ -187,6 +192,10 @@ void CSMain( uint3 pixelID : SV_DispatchThreadID )
 	
 	Result.xyz		/= 2.0f;
 	*/
+	
+	// Metallicafan212:	Gamma correct it
+	float OverGamma = 1.0f / Gamma;
+	Result	= float4(pow(Result, float3(OverGamma, OverGamma, OverGamma)), 1.0f);
 	
 	Out[pixelID.xy]	= Result;
 }

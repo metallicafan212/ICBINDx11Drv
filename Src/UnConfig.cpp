@@ -116,6 +116,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	TODO! Should this be 1.2f by default? I'll leave it all alone in case there's some user out there that will complain lol
 	AddFloatProp(CPP_PROP(ResolutionScale), 1.0f);
 
+	AddFloatProp(CPP_PROP(Gamma), 1.0f);
+
 	unguard;
 }
 

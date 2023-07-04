@@ -1712,7 +1712,9 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 				m_D3DDeviceContext->ResolveSubresource(m_BackBuffTex, 0, m_ScreenBuffTex, 0, DXGI_FORMAT_B8G8R8A8_UNORM);
 			}
 		}
-		else if (ResolutionScale != 1.0f)
+		// Metallicafan212:	Always use the resolution scaling shader, so we can do final effects on the screen
+		else
+		//else if (ResolutionScale != 1.0f)
 		{
 #if USE_RES_COMPUTE
 			// Metallicafan212:	Use a compute shader instead!!!
@@ -1902,10 +1904,12 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			RestoreRenderTarget();
 #endif
 		}
+		/*
 		else
 		{
 			m_D3DDeviceContext->CopyResource(m_BackBuffTex, m_ScreenBuffTex);
 		}
+		*/
 
 		constexpr DXGI_PRESENT_PARAMETERS Parm{ 0, nullptr, nullptr, nullptr };
 		HRESULT hr = m_D3DSwapChain->Present1(bVSync ? 1 : 0, (bAllowTearing && !bFullscreen && !bVSync ? DXGI_PRESENT_ALLOW_TEARING : 0), &Parm);//m_D3DSwapChain->Present(0, 0);
