@@ -423,6 +423,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	UBOOL						bIsAMD;
 	UBOOL						bIsIntel;
 
+	// Metallicafan212:	If we're using RGBA8 instead of BGRA8
+	UBOOL						bForceRGBA;
+
 
 	// Metallicafan212:	TODO! Generalized D3D variables
 	ID3D11Device*				m_D3DDevice;

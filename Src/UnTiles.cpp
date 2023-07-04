@@ -88,7 +88,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 
 	SetTexture(0, &Info, PolyFlags);
 
-	UBOOL bFontHack = (PolyFlags & (PF_NoSmooth | PF_Masked | PF_RenderHint)) == (PF_NoSmooth | PF_Masked | PF_RenderHint);
+	UBOOL bFontHack = (PolyFlags & PF_NoSmooth);//(PolyFlags & (PF_NoSmooth | PF_Masked | PF_RenderHint)) == (PF_NoSmooth | PF_Masked | PF_RenderHint);
 
 	// Metallicafan212:	Per CacoFFF's suggestion, add/remove 0.1f * U/VSize when rendering fonts
 	FLOAT ExtraU = 0.0f;

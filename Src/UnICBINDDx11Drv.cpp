@@ -776,6 +776,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		}
 		*/
 
+		bForceRGBA = 0;
+
 		// Metallicafan212:	Describe the non-aa swap chain (MSAA is resolved in Unlock)
 		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
 		swapChainDesc.Width					= SizeX;

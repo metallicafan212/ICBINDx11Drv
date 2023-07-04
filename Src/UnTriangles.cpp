@@ -135,7 +135,86 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 #if !DX11_HP2
 void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, int NumPts, DWORD PolyFlags, FSpanBuffer* Span)
 {
-	// TODO: Implement!
+	guard(UICBINDx11RenderDevice::DrawGouraudPolygon);
+
+	SetBlend(PolyFlags);
+
+	// Metallicafan212:	Request normal raster state
+	SetRasterState(DXRS_Normal);
+
+	// Metallicafan212:	Set the texture
+	SetTexture(0, const_cast<FTextureInfo*>(&Info), PolyFlags);
+
+	// Metallicafan212:	HP2 is HF_Weapon, UT 469 is HACKFLAGS_PostRender
+	if ((GUglyHackFlags & HACKFLAGS_PostRender))
+	{
+		SetProjectionStateNoCheck(true);
+	}
+	else
+	{
+		SetProjectionStateNoCheck(false);
+	}
+
+	// Metallicafan212:	TODO!
+	FMeshShader->Bind();
+
+	LockVertexBuffer(NumPts * sizeof(FD3DVert));
+
+	EndBuffering();
+	LockIndexBuffer((NumPts - 2) * 3);
+
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_Triangles);
+
+	// Metallicafan212:	Added in distance fog
+	//					All calculations have to be done ourselfs, but at least it's doable
+	UBOOL drawFog = (((PolyFlags & (PF_RenderFog | PF_Translucent | PF_Modulated)) == PF_RenderFog));
+
+	// Metallicafan212:	Turn off Light A if we're missing the required flags for opacity
+	UBOOL bNoOpacity = ((PolyFlags & (PF_Highlighted | PF_Translucent)) != (PF_Highlighted | PF_Translucent));
+
+	FD3DVert* Mshy = (FD3DVert*)m_VertexBuff;
+
+	_WORD vIndex = 0;
+	SIZE_T V = 0;
+
+
+	_WORD baseVIndex = V + m_BufferedVerts;
+
+	if (bNoOpacity)
+	{
+		Pts[0]->Light.W = 1.0f;
+		Pts[1]->Light.W = 1.0f;
+	}
+
+	DoVert(Pts[0], &Mshy[0], PolyFlags, drawFog, BoundTextures[0].TexInfo->UMult, BoundTextures[0].TexInfo->VMult, m_HitData != nullptr, CurrentHitColor);
+	DoVert(Pts[1], &Mshy[1], PolyFlags, drawFog, BoundTextures[0].TexInfo->UMult, BoundTextures[0].TexInfo->VMult, m_HitData != nullptr, CurrentHitColor);
+
+	// Metallicafan212:	First two verts, then we fan out
+
+	for (INT i = 2; i < NumPts; i++)
+	{
+		// Metallicafan212:	TODO! This should be done in the shader, not here!
+		if (bNoOpacity)
+			Pts[i]->Light.W = 1.0f;
+
+		DoVert(Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].TexInfo->UMult, BoundTextures[0].TexInfo->VMult, m_HitData != nullptr, CurrentHitColor);
+
+		// Metallicafan212:	Now the indices
+		m_IndexBuff[vIndex++] = baseVIndex;
+		m_IndexBuff[vIndex++] = (i - 1) + baseVIndex;
+		m_IndexBuff[vIndex++] = (i)+baseVIndex;
+	}
+
+	UnlockVertexBuffer();
+	UnlockIndexBuffer();
+
+	// Metallicafan212:	Now copy the indices
+	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	AdvanceVertPos(NumPts, sizeof(FD3DVert), (NumPts - 2) * 3);
+
+	unguard;
 }
 #endif
 
