@@ -116,7 +116,10 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	TODO! Should this be 1.2f by default? I'll leave it all alone in case there's some user out there that will complain lol
 	AddFloatProp(CPP_PROP(ResolutionScale), 1.0f);
 
+	// Metallicafan212:	Gamma/brightness is done here because a HP2 speedrunning trick involves messing with the brightness bar
+#if DX11_HP2
 	AddFloatProp(CPP_PROP(Gamma), 1.0f);
+#endif
 
 	unguard;
 }

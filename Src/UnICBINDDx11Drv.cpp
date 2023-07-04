@@ -1455,6 +1455,11 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 		}
 	}
 
+	// Metallicafan212:	Gamma is disabled in HP2 because a speedrunning trick involves messing with the brighness bar
+#if !DX11_HP2
+	Gamma = Viewport->GetOuterUClient()->Brightness * 2.0f;
+#endif
+
 #if DX11_HP2
 	// Metallicafan212:	Check for wireframe
 	if (Viewport->IsWire())
