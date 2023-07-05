@@ -292,7 +292,7 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 	ResolveDesc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
 	ResolveDesc.Width				= ScaledSizeX;
 	ResolveDesc.Height				= ScaledSizeY;
-	ResolveDesc.CPUAccessFlags		= D3D11_CPU_ACCESS_READ;
+	ResolveDesc.CPUAccessFlags		= 0;//D3D11_CPU_ACCESS_READ;
 	ResolveDesc.MipLevels			= 1;
 	ResolveDesc.ArraySize			= 1;
 	ResolveDesc.SampleDesc.Count	= 1;

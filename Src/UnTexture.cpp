@@ -287,13 +287,13 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		appMemzero(&Desc, sizeof(Desc));
 
 		Desc.Format				= Type->DXFormat;
-		Desc.Width				= Info.USize;
-		Desc.Height				= Info.VSize;
+		Desc.Width				= DaTex->USize;
+		Desc.Height				= DaTex->VSize;
 		Desc.MipLevels			= Info.NumMips;
 		Desc.Usage				= D3D11_USAGE_DEFAULT;
 		Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE;
 		Desc.ArraySize			= 1;
-		Desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
+		Desc.CPUAccessFlags		= 0;//D3D11_CPU_ACCESS_WRITE;
 		Desc.SampleDesc.Count	= 1;
 
 		// Metallicafan212:	TODO! Find some way to force DX11 to directly read the data, we need pitch info though...
