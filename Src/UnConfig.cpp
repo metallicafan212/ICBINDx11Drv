@@ -53,7 +53,6 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	bSupportsNativeWireframe = 1;
 #endif
 
-	// Metallicafan212:	This makes fonts look better, but we still need a MSAA resolve to make it not blurry
 #if DX11_UT_469
 	NeedsMaskedFonts = 1;
 #endif
@@ -229,9 +228,10 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 	// Metallicafan212:	TODO! Hard-coded offsets to make tiles not look like ass....
 	switch (NumAASamples)
 	{
+		case 0:
 		case 1:
 		{
-			TileAAUVMove = 0.1f;
+			TileAAUVMove = 0.01f;
 			break;
 		}
 
@@ -252,9 +252,7 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 			TileAAUVMove = 0.2f;
 			break;
 		}
-	}
-
-	
+	}	
 
 	unguard;
 }
