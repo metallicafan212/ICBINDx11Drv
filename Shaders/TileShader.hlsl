@@ -101,12 +101,47 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	float2 UseUV = input.uv;
 	
+	float4 DiffColor;
+	
 	if(bDoUVHack)
 	{
-		UseUV = input.cuv;
+		UseUV 		= input.cuv;
+		
+		/*
+		if(UseUV.x >= 1.0f)
+		{
+			UseUV.x -= floor(UseUV.x);
+		}
+		
+		if(UseUV.y >= 1.0f)
+		{
+			UseUV.y -= floor(UseUV.y);
+		}
+		
+		float USize, VSize, Levels;
+		
+		// Metallicafan212:	Calculate the mip level
+		float LOD = 0.0f;//Diffuse.CalculateLevelOfDetail(DiffState, UseUV);
+		
+		// Metallicafan212:	Get the dimensions, since .Load uses the actual pixel locations, not 0.0-1.0 UV coords
+		Diffuse.GetDimensions(LOD, USize, VSize, Levels);
+		
+		UseUV		= UseUV * (float2(USize, VSize));
+		
+		// Metallicafan212:	Round the coordinates to get around the NVidia UV issues
+		UseUV 		= round(UseUV);
+		
+		
+		DiffColor = Diffuse.Load(float3(UseUV, LOD)) * input.color;
+		*/
+		
+		DiffColor = Diffuse.SampleBias(DiffState, UseUV, 0.0f) * input.color;
+	}
+	else
+	{
+		DiffColor = Diffuse.SampleBias(DiffState, UseUV, 0.0f) * input.color;
 	}
 	
-	float4 DiffColor = Diffuse.SampleBias(DiffState, UseUV, 0.0f) * input.color;
 	
 	// Metallicafan212:	Do alpha rejecting
 	//					TODO! This also sets the global selection color for the editor!

@@ -88,7 +88,11 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 
 	SetTexture(0, &Info, PolyFlags);
 
-	UBOOL bFontHack = (PolyFlags & PF_NoSmooth);//(PolyFlags & (PF_NoSmooth | PF_Masked | PF_RenderHint)) == (PF_NoSmooth | PF_Masked | PF_RenderHint);
+#if 0//DX11_UT_469
+	UBOOL bFontHack = (PolyFlags & (PF_NoSmooth | PF_Highlighted)) == (PF_NoSmooth | PF_Highlighted);
+#else
+	UBOOL bFontHack = (PolyFlags & PF_NoSmooth | PF_Masked) == (PolyFlags & PF_NoSmooth | PF_Masked);//(PolyFlags & (PF_NoSmooth | PF_Masked)) == (PF_NoSmooth | PF_Masked);
+#endif
 
 	// Metallicafan212:	Per CacoFFF's suggestion, add/remove 0.1f * U/VSize when rendering fonts
 	FLOAT ExtraU = 0.0f;
@@ -103,7 +107,8 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	}
 
 	// Metallicafan212:	Use a separate centroid UV input if we have a font tile (no smooth) and have MSAA on!
-	FTileShader->bDoMSAAFontHack = (bFontHack && NumAASamples > 1);
+	FTileShader->bDoMSAAFontHack = (bFontHack && (NumAASamples > 1));
+
 
 	//Adjust Z coordinate if Z range hack is active
 	//if (1)//(m_useZRangeHack)

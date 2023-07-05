@@ -1455,6 +1455,11 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 		}
 	}
 
+	// Metallicafan212:	Gamma is disabled in HP2 because a speedrunning trick involves messing with the brighness bar
+#if !DX11_HP2
+	Gamma = Viewport->GetOuterUClient()->Brightness * 2.0f;
+#endif
+
 #if DX11_HP2
 	// Metallicafan212:	Check for wireframe
 	if (Viewport->IsWire())
@@ -1787,7 +1792,14 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 				CD3D11_SAMPLER_DESC SDesc = CD3D11_SAMPLER_DESC(D3D11_DEFAULT);
 			
 				// Metallicafan212:	Bilinear filtering
-				SDesc.Filter			= D3D11_FILTER_MIN_MAG_MIP_LINEAR;//D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;//D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;//D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+				if (ResolutionScale == 1.0f)
+				{
+					SDesc.Filter			= D3D11_FILTER_MIN_MAG_MIP_POINT;
+				}
+				else
+				{
+					SDesc.Filter			= D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+				}//D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;//D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;//D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 				SDesc.AddressU			= D3D11_TEXTURE_ADDRESS_CLAMP;
 				SDesc.AddressV			= SDesc.AddressU;
 				SDesc.AddressW			= D3D11_TEXTURE_ADDRESS_WRAP;//SDesc.AddressU;
