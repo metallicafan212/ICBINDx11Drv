@@ -2142,32 +2142,18 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 	}
 	else
 	{
-		// Metallicafan212:	Scale the resolution! TODO!!!!
-		FLOAT NewX = Frame->FX;
-		FLOAT NewY = Frame->FY;
-
-		if (!bSmallerSceneNode && ResolutionScale != 1.0f && (NewX != SizeX || NewY != SizeY))
-		{
-			// Metallicafan212:	ReScale it!
-			Frame->X	*= ResolutionScale;
-			Frame->Y	*= ResolutionScale;
-			Frame->XB	*= ResolutionScale;
-			Frame->YB	*= ResolutionScale;
-
-			bSmallerSceneNode = 1;
-
-			Frame->ComputeRenderCoords(Frame->Coords.Origin, Frame->Coords.OrthoRotation());
-			Frame->ComputeRenderSize();
-
-			
-
-			return;
-		}
+		// Metallicafan212:	Scale the resolution!
+		FLOAT NewX	= Frame->FX;
+		FLOAT NewY	= Frame->FY;
+		FLOAT NewXB	= Frame->XB;
+		FLOAT NewYB = Frame->YB;
 
 		if (BoundRT == nullptr)
 		{
-			NewX *= ResolutionScale;
-			NewY *= ResolutionScale;
+			NewX	*= ResolutionScale;
+			NewY	*= ResolutionScale;
+			NewXB	*= ResolutionScale;
+			NewYB	*= ResolutionScale;
 
 			// Metallicafan212:	Scaled FX2 and FY2
 #if 1//!RES_SCALE_IN_PROJ
@@ -2188,7 +2174,7 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 		// Set the viewport.
 		D3D11_VIEWPORT viewport =
 		{
-			static_cast<FLOAT>(Frame->XB), static_cast<FLOAT>(Frame->YB),
+			NewXB, NewYB,
 			NewX, NewY, 0.f, 1.f
 		};
 
