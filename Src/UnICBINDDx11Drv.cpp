@@ -2140,8 +2140,13 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 			NewY *= ResolutionScale;
 
 			// Metallicafan212:	Scaled FX2 and FY2
+#if !RES_SCALE_IN_PROJ
 			ScaledFX2 = Frame->FX2 * ResolutionScale;
 			ScaledFY2 = Frame->FY2 * ResolutionScale;
+#else
+			ScaledFX2 = Frame->FX2;
+			ScaledFY2 = Frame->FY2;
+#endif
 		}
 		else
 		{
@@ -2251,8 +2256,13 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	Proj.m[1][2] = 0.0f;
 	Proj.m[1][3] = 0.0f;
 
+#if RES_SCALE_IN_PROJ
+	Proj.m[2][0] = 1.0f		/ m_sceneNodeX;//(FLOAT)m_sceneNodeX;
+	Proj.m[2][1] = -1.0f	/ m_sceneNodeY;//(FLOAT)m_sceneNodeY;
+#else
 	Proj.m[2][0] = 1.0f		/ ScaledSceneNodeX;//(FLOAT)m_sceneNodeX;
 	Proj.m[2][1] = -1.0f	/ ScaledSceneNodeY;//(FLOAT)m_sceneNodeY;
+#endif
 	Proj.m[2][2] = zScaleVal * (zFar * invNearMinusFar);
 	Proj.m[2][3] = -1.0f;
 
@@ -2260,6 +2270,10 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	Proj.m[3][1] = 0.0f;
 	Proj.m[3][2] = zScaleVal * zScaleVal * (zNear * zFar * invNearMinusFar);
 	Proj.m[3][3] = 0.0f;
+
+#if RES_SCALE_IN_PROJ
+	//Proj *= DirectX::XMMatrixScaling(1.0f / ResolutionScale, 1.0f / ResolutionScale, 1.0f);
+#endif
 
 	//Proj = DirectX::XMMatrixPerspectiveFovLH(m_RProjZ, ((FLOAT)m_sceneNodeX) / ((FLOAT)m_sceneNodeY), zScaleVal * zNear, zScaleVal * zFar);
 

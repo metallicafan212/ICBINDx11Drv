@@ -9,7 +9,7 @@
 //					TODO!!!! Block more code behind this!!!!!!
 #define DX11_HP2 (!defined(DX11_UT_99) && !defined(DX11_UT_469) && !defined(DX11_UNREAL_227) && !defined(DX11_HP1) && !defined(DX11_RUNE) && !defined(DX11_DX))
 
-#define RES_SCALE_IN_PROJ 0
+#define RES_SCALE_IN_PROJ 1
 
 #if UNREAL_TOURNAMENT_OLDUNREAL
 # define DX11_UT_469 1
