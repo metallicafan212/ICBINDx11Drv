@@ -2146,6 +2146,24 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 		FLOAT NewX = Frame->FX;
 		FLOAT NewY = Frame->FY;
 
+		if (!bSmallerSceneNode && ResolutionScale != 1.0f && (NewX != SizeX || NewY != SizeY))
+		{
+			// Metallicafan212:	ReScale it!
+			Frame->X	*= ResolutionScale;
+			Frame->Y	*= ResolutionScale;
+			Frame->XB	*= ResolutionScale;
+			Frame->YB	*= ResolutionScale;
+
+			bSmallerSceneNode = 1;
+
+			Frame->ComputeRenderCoords(Frame->Coords.Origin, Frame->Coords.OrthoRotation());
+			Frame->ComputeRenderSize();
+
+			
+
+			return;
+		}
+
 		if (BoundRT == nullptr)
 		{
 			NewX *= ResolutionScale;

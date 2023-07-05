@@ -9,7 +9,7 @@
 //					TODO!!!! Block more code behind this!!!!!!
 #define DX11_HP2 (!defined(DX11_UT_99) && !defined(DX11_UT_469) && !defined(DX11_UNREAL_227) && !defined(DX11_HP1) && !defined(DX11_RUNE) && !defined(DX11_DX))
 
-#define RES_SCALE_IN_PROJ 1
+#define RES_SCALE_IN_PROJ 0
 
 #if UNREAL_TOURNAMENT_OLDUNREAL
 # define DX11_UT_469 1
@@ -425,6 +425,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	If we're using RGBA8 instead of BGRA8
 	UBOOL						bForceRGBA;
+
+	// Metallicafan212:	HACK for resolution scale! If this is set, it means that the scene node set isn't the same as the viewport size
+	UBOOL						bSmallerSceneNode;
 
 
 	// Metallicafan212:	TODO! Generalized D3D variables
