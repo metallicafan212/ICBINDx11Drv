@@ -1803,9 +1803,9 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 				SDesc.AddressU			= D3D11_TEXTURE_ADDRESS_CLAMP;
 				SDesc.AddressV			= SDesc.AddressU;
 				SDesc.AddressW			= D3D11_TEXTURE_ADDRESS_WRAP;//SDesc.AddressU;
-				SDesc.MinLOD			= -D3D11_FLOAT32_MAX;
-				SDesc.MaxLOD			= D3D11_FLOAT32_MAX;
-				SDesc.MipLODBias		= 0.0f;
+				SDesc.MinLOD			= 0.0f;
+				SDesc.MaxLOD			= 0.0f;
+				SDesc.MipLODBias		= -16.0f;
 				SDesc.MaxAnisotropy		= 1;//16;//16;
 				SDesc.ComparisonFunc	= D3D11_COMPARISON_NEVER;
 
@@ -1832,7 +1832,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 			FResScaleShader->Bind();
 
-			FLOAT Z = 1.0f;
+			FLOAT Z = 0.5f;
 			FLOAT X = 0.0f;
 			FLOAT Y = 0.0f;
 			FLOAT XL = SizeX;
@@ -2152,7 +2152,7 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 			NewY *= ResolutionScale;
 
 			// Metallicafan212:	Scaled FX2 and FY2
-#if !RES_SCALE_IN_PROJ
+#if 1//!RES_SCALE_IN_PROJ
 			ScaledFX2 = Frame->FX2 * ResolutionScale;
 			ScaledFY2 = Frame->FY2 * ResolutionScale;
 #else

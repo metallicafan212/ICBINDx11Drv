@@ -138,7 +138,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	FLOAT RPY1 = m_RFY2 * PY1;
 	FLOAT RPY2 = m_RFY2 * PY2;
 
-#if !RES_SCALE_IN_PROJ
+#if 1//!RES_SCALE_IN_PROJ
 	if (BoundRT == nullptr)
 	{
 		RPX1 *= ResolutionScale;
