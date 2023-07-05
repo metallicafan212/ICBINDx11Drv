@@ -229,8 +229,8 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 	if (m_FeatureLevel != D3D_FEATURE_LEVEL_11_1)
 	{
-		DaTex->USize	= Clamp(DaTex->USize, 4.0f, static_cast<FLOAT>(D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION));
-		DaTex->VSize	= Clamp(DaTex->VSize, 4.0f, static_cast<FLOAT>(D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION));
+		DaTex->USize	= Clamp(DaTex->USize, 4, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		DaTex->VSize	= Clamp(DaTex->VSize, 4, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
 	}
 	
 	DaTex->UMult		= 1.0f / (Info.UScale * Info.USize);
