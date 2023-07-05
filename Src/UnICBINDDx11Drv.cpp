@@ -778,11 +778,13 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		bForceRGBA = 0;
 
+		ScreenFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+
 		// Metallicafan212:	Describe the non-aa swap chain (MSAA is resolved in Unlock)
 		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
 		swapChainDesc.Width					= SizeX;
 		swapChainDesc.Height				= SizeY;
-		swapChainDesc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
+		swapChainDesc.Format				= ScreenFormat;
 		swapChainDesc.SampleDesc.Count		= 1;
 		swapChainDesc.SampleDesc.Quality	= 0;
 		swapChainDesc.BufferUsage			= DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_UNORDERED_ACCESS;
@@ -800,6 +802,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		//LONG_PTR es = GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_EXSTYLE);
 		//LONG_PTR s	= GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_STYLE);
 
+	RETRY_SWAP:
 		// Metallicafan212:	Create the swap chain now
 		hr = dxgiFactory->CreateSwapChainForHwnd(
 			m_D3DDevice,
@@ -809,6 +812,18 @@ void UICBINDx11RenderDevice::SetupResources()
 			nullptr,
 			&m_D3DSwapChain
 		);
+
+		if (FAILED(hr) && !bForceRGBA)
+		{
+			// Metallicafan212:	Test with RGBA8
+			ScreenFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+			swapChainDesc.Format = ScreenFormat;
+
+			bForceRGBA = 1;
+
+			goto RETRY_SWAP;
+		}
 
 		ThrowIfFailed(hr);
 
@@ -841,7 +856,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		}
 
 		// Metallicafan212:	Resize it
-		hr = m_D3DSwapChain->ResizeBuffers(2, SizeX, SizeY, DXGI_FORMAT_B8G8R8A8_UNORM, (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0));
+		hr = m_D3DSwapChain->ResizeBuffers(2, SizeX, SizeY, ScreenFormat, (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0));
 
 		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
 		{
@@ -917,7 +932,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	RTMSAA.Width				= ScaledSizeX;
 	RTMSAA.Height				= ScaledSizeY;
 	RTMSAA.BindFlags			= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-	RTMSAA.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
+	RTMSAA.Format				= ScreenFormat;
 	RTMSAA.MipLevels			= 1;
 	RTMSAA.SampleDesc.Count		= NumAASamples;
 	RTMSAA.SampleDesc.Quality	= 0;//D3D11_STANDARD_MULTISAMPLE_PATTERN;//0;
@@ -951,7 +966,7 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	// Metallicafan212:	Create a shader resource view for MSAA resolving
 	CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = CD3D11_SHADER_RESOURCE_VIEW_DESC();
-	srvDesc.Format						= DXGI_FORMAT_B8G8R8A8_UNORM;
+	srvDesc.Format						= ScreenFormat;
 	srvDesc.ViewDimension				= NumAASamples > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;//D3D11_SRV_DIMENSION_TEXTURE2DMS;
 	srvDesc.Texture2D.MostDetailedMip	= 0;
 	srvDesc.Texture2D.MipLevels			= 1;
@@ -1088,7 +1103,8 @@ void UICBINDx11RenderDevice::SetupResources()
 	Desc.Usage				= D3D11_USAGE_DEFAULT;
 	Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE;
 	Desc.ArraySize			= 1;
-	Desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
+	// Metallicafan212:	Not needed
+	Desc.CPUAccessFlags		= 0;//D3D11_CPU_ACCESS_WRITE;
 	Desc.SampleDesc.Count	= 1;
 	hr = m_D3DDevice->CreateTexture2D(&Desc, nullptr, &BlankTexture);
 

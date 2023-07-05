@@ -63,7 +63,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	FD3DTexture* DaTex		= TextureMap.Find(Info->CacheID);
 
 	// Metallicafan212:	Check if we need to upload it to the GPU
-	UBOOL bUpload			= DaTex == nullptr || Info->bRealtimeChanged /* || Info->bRealtime || Info->bParametric*/ || (PolyFlags & PF_Masked) != (DaTex->PolyFlags & PF_Masked);
+	UBOOL bUpload			= DaTex == nullptr || Info->bRealtimeChanged /* || Info->bRealtime || Info->bParametric*/ || ( ((PolyFlags & PF_Masked) ^ (DaTex->PolyFlags & PF_Masked)) == PF_Masked);
 
 	UBOOL bDoSampUpdate = 0;
 
@@ -226,6 +226,13 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	DaTex->PolyFlags	= PolyFlags;
 	DaTex->USize		= Info.USize;
 	DaTex->VSize		= Info.VSize;
+
+	if (m_FeatureLevel != D3D_FEATURE_LEVEL_11_1)
+	{
+		DaTex->USize	= Clamp(DaTex->USize, 4.0f, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		DaTex->VSize	= Clamp(DaTex->VSize, 4.0f, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+	}
+	
 	DaTex->UMult		= 1.0f / (Info.UScale * Info.USize);
 	DaTex->VMult		= 1.0f / (Info.VScale * Info.VSize);
 	DaTex->UScale		= Info.UScale;
