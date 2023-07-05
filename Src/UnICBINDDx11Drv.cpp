@@ -780,6 +780,14 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		ScreenFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
 
+		// Metallicafan212:	Base this on the feature level
+		if (m_FeatureLevel < D3D_FEATURE_LEVEL_11_1)
+		{
+			bForceRGBA = 1;
+			ScreenFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
+		
+
 		// Metallicafan212:	Describe the non-aa swap chain (MSAA is resolved in Unlock)
 		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
 		swapChainDesc.Width					= SizeX;
@@ -920,7 +928,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Now a UAV for a compute shader!!!
-	CD3D11_UNORDERED_ACCESS_VIEW_DESC bUAV = CD3D11_UNORDERED_ACCESS_VIEW_DESC(m_BackBuffTex, D3D11_UAV_DIMENSION_TEXTURE2D, DXGI_FORMAT_B8G8R8A8_UNORM);
+	CD3D11_UNORDERED_ACCESS_VIEW_DESC bUAV = CD3D11_UNORDERED_ACCESS_VIEW_DESC(m_BackBuffTex, D3D11_UAV_DIMENSION_TEXTURE2D, ScreenFormat);
 
 	hr = m_D3DDevice->CreateUnorderedAccessView(m_BackBuffTex, &bUAV, &m_BackBuffUAV);
 
