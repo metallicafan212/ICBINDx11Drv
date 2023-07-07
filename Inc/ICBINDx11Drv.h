@@ -286,14 +286,14 @@ struct FD3DTexture
 	INT				VSize;
 
 	// Metallicafan212:	Scaling info
-	FLOAT			UScale;
-	FLOAT			VScale;
+	//FLOAT			UScale;
+	//FLOAT			VScale;
 
 	INT				UClamp;
 	INT				VClamp;
 
-	FLOAT			UMult;
-	FLOAT			VMult;
+	//FLOAT			UMult;
+	//FLOAT			VMult;
 
 
 	// Metallicafan212:	Number of mips
@@ -316,6 +316,10 @@ struct FD3DBoundTex
 	// Metallicafan212:	TODO! More bound vars
 	FLOAT						UPan;
 	FLOAT						VPan;
+	FLOAT						UMult;
+	FLOAT						VMult;
+	FLOAT						UScale;
+	FLOAT						VScale;
 };
 
 // Metallicafan212:	Texture support table info

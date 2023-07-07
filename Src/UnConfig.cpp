@@ -55,6 +55,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 #if DX11_UT_469
 	NeedsMaskedFonts = 1;
+
+	// Metallicafan212:	DX11 supports massive textures
+	UseLightmapAtlas = 1;
 #endif
 
 	if (!GConfig->GetBool(ClsName, TEXT("DetailTextures"), (UBOOL&)DetailTextures))

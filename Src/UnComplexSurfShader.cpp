@@ -91,22 +91,22 @@ void FD3DSurfShader::WriteConstantBuffer(void* InMem)
 		// Metallicafan212:	Copy the pan and scale info
 		if (ParentDevice->BoundTextures[i].TexInfo != nullptr)
 		{
-			SDef->PanScale[i] = FPlane(ParentDevice->BoundTextures[i].UPan, ParentDevice->BoundTextures[i].VPan, ParentDevice->BoundTextures[i].TexInfo->UMult, ParentDevice->BoundTextures[i].TexInfo->VMult);
+			SDef->PanScale[i] = FPlane(ParentDevice->BoundTextures[i].UPan, ParentDevice->BoundTextures[i].VPan, ParentDevice->BoundTextures[i].UMult, ParentDevice->BoundTextures[i].VMult);
 		}
 	}
 
 	// Metallicafan212:	And lastly the original lightmap scale
 	if (ParentDevice->BoundTextures[1].TexInfo != nullptr)
 	{
-		SDef->LightandFogScale.X	= ParentDevice->BoundTextures[1].TexInfo->UScale;
-		SDef->LightandFogScale.Y	= ParentDevice->BoundTextures[1].TexInfo->VScale;
+		SDef->LightandFogScale.X	= ParentDevice->BoundTextures[1].UScale;
+		SDef->LightandFogScale.Y	= ParentDevice->BoundTextures[1].VScale;
 	}
 
 	// Metallicafan212:	And the fog scale
 	if (ParentDevice->BoundTextures[3].TexInfo != nullptr)
 	{
-		SDef->LightandFogScale.Z = ParentDevice->BoundTextures[3].TexInfo->UScale;
-		SDef->LightandFogScale.W = ParentDevice->BoundTextures[3].TexInfo->VScale;
+		SDef->LightandFogScale.Z = ParentDevice->BoundTextures[3].UScale;
+		SDef->LightandFogScale.W = ParentDevice->BoundTextures[3].VScale;
 	}
 
 	unguard;

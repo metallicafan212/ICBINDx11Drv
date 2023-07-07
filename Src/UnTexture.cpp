@@ -87,6 +87,12 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	BoundTextures[TexNum].VPan		= Info->Pan.Y;
 	BoundTextures[TexNum].bIsRT		= DaTex->bIsRT;
 
+	// Metallicafan212:	Save this as part of the bound texture, not the cached info
+	BoundTextures[TexNum].UScale	= Info->UScale;
+	BoundTextures[TexNum].VScale	= Info->VScale;
+	BoundTextures[TexNum].UMult		= 1.0f / (Info->UScale * Info->USize);
+	BoundTextures[TexNum].VMult		= 1.0f / (Info->VScale * Info->VSize);
+
 	// Metallicafan212:	Check if it's a RT texture!!
 	//					Really should use IsA, but this is quicker
 	if (Info->Texture != nullptr && Info->Texture->GetClass() == UDX11RenderTargetTexture::StaticClass())
@@ -226,10 +232,10 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	DaTex->PolyFlags	= PolyFlags;
 	DaTex->USize		= Info.USize;
 	DaTex->VSize		= Info.VSize;
-	DaTex->UMult		= 1.0f / (Info.UScale * Info.USize);
-	DaTex->VMult		= 1.0f / (Info.VScale * Info.VSize);
-	DaTex->UScale		= Info.UScale;
-	DaTex->VScale		= Info.VScale;
+	//DaTex->UMult		= 1.0f / (Info.UScale * Info.USize);
+	//DaTex->VMult		= 1.0f / (Info.VScale * Info.VSize);
+	//DaTex->UScale		= Info.UScale;
+	//DaTex->VScale		= Info.VScale;
 	DaTex->CacheID		= CacheID;
 
 	// Metallicafan212:	More texture information

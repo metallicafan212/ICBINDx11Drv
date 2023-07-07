@@ -112,7 +112,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 
 	for (INT i = 0; i < NumPts; i++)
 	{
-		DoVert(Pts[i],  &Mshy[i], PolyFlags, drawFog, BoundTextures[0].TexInfo->UMult, BoundTextures[0].TexInfo->VMult, m_HitData != nullptr, CurrentHitColor);
+		DoVert(Pts[i],  &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
 	}
 
 	UnlockVertexBuffer();
@@ -187,8 +187,8 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 		Pts[1]->Light.W = 1.0f;
 	}
 
-	DoVert(Pts[0], &Mshy[0], PolyFlags, drawFog, BoundTextures[0].TexInfo->UMult, BoundTextures[0].TexInfo->VMult, m_HitData != nullptr, CurrentHitColor);
-	DoVert(Pts[1], &Mshy[1], PolyFlags, drawFog, BoundTextures[0].TexInfo->UMult, BoundTextures[0].TexInfo->VMult, m_HitData != nullptr, CurrentHitColor);
+	DoVert(Pts[0], &Mshy[0], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
+	DoVert(Pts[1], &Mshy[1], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
 
 	// Metallicafan212:	First two verts, then we fan out
 
@@ -198,7 +198,7 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 		if (bNoOpacity)
 			Pts[i]->Light.W = 1.0f;
 
-		DoVert(Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].TexInfo->UMult, BoundTextures[0].TexInfo->VMult, m_HitData != nullptr, CurrentHitColor);
+		DoVert(Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
 
 		// Metallicafan212:	Now the indices
 		m_IndexBuff[vIndex++] = baseVIndex;
@@ -269,7 +269,7 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 		if (bNoOpacity)
 			Pts[i].Light.W = 1.0f;
 
-		DoVert(&Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].TexInfo->UMult, BoundTextures[0].TexInfo->VMult, m_HitData != nullptr, CurrentHitColor);
+		DoVert(&Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
 	}
 
 	UnlockVertexBuffer();

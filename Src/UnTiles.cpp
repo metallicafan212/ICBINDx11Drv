@@ -186,8 +186,8 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 
 	LockVertexBuffer(6 * sizeof(FD3DVert));
 
-	FLOAT TexInfoUMult = BoundTextures[0].TexInfo->UMult;
-	FLOAT TexInfoVMult = BoundTextures[0].TexInfo->VMult;
+	FLOAT TexInfoUMult = BoundTextures[0].UMult;
+	FLOAT TexInfoVMult = BoundTextures[0].VMult;
 
 	FLOAT SU1			= (U * TexInfoUMult)		+ ExtraU;
 	FLOAT SU2			= ((U + UL) * TexInfoUMult) + ExtraU;
