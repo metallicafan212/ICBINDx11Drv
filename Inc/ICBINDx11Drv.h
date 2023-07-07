@@ -430,6 +430,8 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	If we're using RGBA8 instead of BGRA8
 	UBOOL						bForceRGBA;
 
+	DXGI_FORMAT					ScreenFormat;
+
 	// Metallicafan212:	HACK for resolution scale! If this is set, it means that the scene node set isn't the same as the viewport size
 	UBOOL						bSmallerSceneNode;
 

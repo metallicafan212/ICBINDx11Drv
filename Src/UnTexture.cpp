@@ -63,7 +63,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	FD3DTexture* DaTex		= TextureMap.Find(Info->CacheID);
 
 	// Metallicafan212:	Check if we need to upload it to the GPU
-	UBOOL bUpload			= DaTex == nullptr || Info->bRealtimeChanged /* || Info->bRealtime || Info->bParametric*/ || (PolyFlags & PF_Masked) != (DaTex->PolyFlags & PF_Masked);
+	UBOOL bUpload			= DaTex == nullptr || Info->bRealtimeChanged /* || Info->bRealtime || Info->bParametric*/ || ( ((PolyFlags & PF_Masked) ^ (DaTex->PolyFlags & PF_Masked)) == PF_Masked);
 
 	UBOOL bDoSampUpdate = 0;
 
@@ -86,12 +86,6 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	BoundTextures[TexNum].UPan		= Info->Pan.X;
 	BoundTextures[TexNum].VPan		= Info->Pan.Y;
 	BoundTextures[TexNum].bIsRT		= DaTex->bIsRT;
-
-	// Metallicafan212:	Save this as part of the bound texture, not the cached info
-	BoundTextures[TexNum].UScale	= Info->UScale;
-	BoundTextures[TexNum].VScale	= Info->VScale;
-	BoundTextures[TexNum].UMult		= 1.0f / (Info->UScale * Info->USize);
-	BoundTextures[TexNum].VMult		= 1.0f / (Info->VScale * Info->VSize);
 
 	// Metallicafan212:	Check if it's a RT texture!!
 	//					Really should use IsA, but this is quicker
@@ -232,6 +226,13 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	DaTex->PolyFlags	= PolyFlags;
 	DaTex->USize		= Info.USize;
 	DaTex->VSize		= Info.VSize;
+
+	if (m_FeatureLevel != D3D_FEATURE_LEVEL_11_1)
+	{
+		DaTex->USize	= Clamp(DaTex->USize, 4, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		DaTex->VSize	= Clamp(DaTex->VSize, 4, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+	}
+	
 	//DaTex->UMult		= 1.0f / (Info.UScale * Info.USize);
 	//DaTex->VMult		= 1.0f / (Info.VScale * Info.VSize);
 	//DaTex->UScale		= Info.UScale;
@@ -286,13 +287,13 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		appMemzero(&Desc, sizeof(Desc));
 
 		Desc.Format				= Type->DXFormat;
-		Desc.Width				= Info.USize;
-		Desc.Height				= Info.VSize;
+		Desc.Width				= DaTex->USize;
+		Desc.Height				= DaTex->VSize;
 		Desc.MipLevels			= Info.NumMips;
 		Desc.Usage				= D3D11_USAGE_DEFAULT;
 		Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE;
 		Desc.ArraySize			= 1;
-		Desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
+		Desc.CPUAccessFlags		= 0;//D3D11_CPU_ACCESS_WRITE;
 		Desc.SampleDesc.Count	= 1;
 
 		// Metallicafan212:	TODO! Find some way to force DX11 to directly read the data, we need pitch info though...
