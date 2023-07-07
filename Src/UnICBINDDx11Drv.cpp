@@ -498,6 +498,9 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 
 	CurrentPolyFlags	= 0;
 
+	ConversionMemory	= nullptr;
+	ConversionMemSize	= 0;
+
 	Viewport			= InViewport;
 
 	// Metallicafan212:	Get the style now!!!
@@ -1243,6 +1246,13 @@ void UICBINDx11RenderDevice::Exit()
 	guard(UICBINDx11RenderDevice::Exit);
 
 	Flush(0);
+
+	// Metallicafan212:	Free the memory buffer if it's used
+	if (ConversionMemory != nullptr)
+	{
+		appFree(ConversionMemory);
+		ConversionMemory = nullptr;
+	}
 
 	SAFE_RELEASE(VertexBuffer);
 	SAFE_RELEASE(IndexBuffer);

@@ -27,6 +27,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 		PolyFlags |= PF_AlphaToCoverage;
 #endif
 
+
+
 	/*
 	// Metallicafan212:	TILE HACK!!!
 	//					Load the texture directly ONLY for font characters!!!
@@ -65,7 +67,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	// Metallicafan212:	Check if we need to upload it to the GPU
 	UBOOL bUpload			= DaTex == nullptr || Info->bRealtimeChanged /* || Info->bRealtime || Info->bParametric*/ || ( ((PolyFlags & PF_Masked) ^ (DaTex->PolyFlags & PF_Masked)) == PF_Masked);
 
-	UBOOL bDoSampUpdate = 0;
+	//UBOOL bDoSampUpdate = 0;
 
 	if(bUpload)
 	{
@@ -75,18 +77,34 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 		DaTex = TextureMap.Find(CacheID);
 
 		// Metallicafan212:	Already did the sample update
-		bDoSampUpdate = 0;
+		//bDoSampUpdate = 0;
 	}
+	/*
 	else if (DaTex)
 	{
 		bDoSampUpdate = (PolyFlags & (PF_NoSmooth | PF_ClampUVs)) != (DaTex->PolyFlags & (PF_NoSmooth | PF_ClampUVs));
 	}
+	*/
 
 	BoundTextures[TexNum].TexInfo	= DaTex;
 	BoundTextures[TexNum].UPan		= Info->Pan.X;
 	BoundTextures[TexNum].VPan		= Info->Pan.Y;
 	BoundTextures[TexNum].bIsRT		= DaTex->bIsRT;
+	BoundTextures[TexNum].UScale	= Info->UScale;
+	BoundTextures[TexNum].VScale	= Info->VScale;
+	BoundTextures[TexNum].UMult		= 1.0f / (Info->UScale * Info->USize);
+	BoundTextures[TexNum].VMult		= 1.0f / (Info->VScale * Info->VSize);
 
+	if (((DaTex->UClamp ^ DaTex->USize) | (DaTex->VClamp ^ DaTex->VSize)) != 0)
+	{
+		DaTex->bShouldUVClamp = 1;
+	}
+	else
+	{
+		DaTex->bShouldUVClamp = 0;
+	}
+
+#if DX11_HP2
 	// Metallicafan212:	Check if it's a RT texture!!
 	//					Really should use IsA, but this is quicker
 	if (Info->Texture != nullptr && Info->Texture->GetClass() == UDX11RenderTargetTexture::StaticClass())
@@ -109,13 +127,16 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 
 		return;
 	}
+#endif
 
 	BoundTextures[TexNum].m_SRV = DaTex->m_View;
 
+	/*
 	if (bDoSampUpdate)
 	{
 		MakeTextureSampler(DaTex, PolyFlags);
 	}
+	*/
 
 	m_D3DDeviceContext->PSSetShaderResources(TexNum, 1, &DaTex->m_View);
 
@@ -260,8 +281,10 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		return;
 	}
 
+	
+
 	// Metallicafan212:	TODO! Would it be better to have static memory for this? Or to hold onto a buffer, and only increase its size as the request gets bigger?
-	ConversionMemory	= new BYTE[4 * Info.USize * Info.VSize]();
+	//ConversionMemory	= new BYTE[4 * Info.USize * Info.VSize]();
 
 	// Metallicafan212:	Get the format description
 	//					DO THIS FROM THE INFO!!!! THE MAPPED VERSION IS NULL
@@ -381,6 +404,18 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		{
 		ConvertTexture:	
 			guard(ConvertTexture);
+
+			// Metallicafan212:	Create the conversion mem
+			//					TODO! Hardcoded size!!!!
+			SIZE_T MemRequest = Info.USize * Info.VSize * 4;
+
+			// Metallicafan212:	Resize as needed
+			if (MemRequest > ConversionMemSize)
+			{
+				ConversionMemory = (BYTE*)appRealloc(ConversionMemory, MemRequest, TEXT("DX11ConversionMem"));
+				ConversionMemSize = MemRequest;
+			}
+
 			// Metallicafan212:	Convert the mip (could be P8 or RGBA7)
 			UBOOL bMaskedHack = (Info.Format == TEXF_P8 && PolyFlags & PF_Masked);
 
@@ -412,7 +447,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		}
 	}
 
-	delete[] ConversionMemory;
+	//delete[] ConversionMemory;
 
 	unguard;
 }
@@ -523,11 +558,14 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 #if DX11_HP2
 		(*(DWORD*)DBytes) = Palette[Bytes[Read]].Int4;
 #else
+		/*
 		const FColor& Color = Palette[Bytes[Read]];
 		DBytes[0] = Color.R;
 		DBytes[1] = Color.G;
 		DBytes[2] = Color.B;
 		DBytes[3] = Color.A;
+		*/
+		(*(DWORD*)DBytes) = GET_COLOR_DWORD(Palette[Bytes[Read]]);
 #endif
 
 		Read	+= 1;

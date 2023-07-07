@@ -151,8 +151,8 @@ class UDX11RenderTargetTexture : public UTexture
 	void Lock(FTextureInfo& TextureInfo, FTime CurrentTime, INT LOD, URenderDevice* RenDev);
 };
 
-#define VBUFF_SIZE 200000
-#define IBUFF_SIZE 200000
+#define VBUFF_SIZE 20000//200000
+#define IBUFF_SIZE 20000//200000
 
 // Metallicafan212:	Base vertex definition
 struct FD3DVert
@@ -628,16 +628,17 @@ class UICBINDx11RenderDevice : public URenderDevice
 		}
 	};
 
-	TArray<FPixHitInfo> PixelHitInfo;
+	TArray<FPixHitInfo>					PixelHitInfo;
 
 	// Metallicafan212:	Keep track of the "top" index
-	INT					PixelTopIndex;
+	INT									PixelTopIndex;
 
-	FPlane				CurrentHitColor;
+	FPlane								CurrentHitColor;
 
 	// Metallicafan212:	Dynamic memory, equal to sizeof(PixelFormat) * USize * VSize;
 	//					For most, it's just going to be = 4bpp (to keep it simple)
 	BYTE*								ConversionMemory;
+	SIZE_T								ConversionMemSize;
 
 	// Metallicafan212:	Texturing support
 	//					TODO! Query for this limitation and put the number in a ifdef!
