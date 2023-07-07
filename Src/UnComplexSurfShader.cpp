@@ -38,6 +38,11 @@ void FD3DSurfShader::Init()
 
 	FD3DShader::Init();
 
+#if !DX11_HP2
+	// Metallicafan212:	TODO! Other games might use a surface alpha (like Rune iirc?). Reevaluate this later
+	SurfAlpha = 1.0f;
+#endif
+
 	unguard;
 }
 

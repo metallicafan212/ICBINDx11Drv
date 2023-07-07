@@ -264,7 +264,6 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 #if DX11_HP2
 	DaTex->MaskedColor			= Info.MaskedColor.Plane();
 	DaTex->MaskedGranularity	= Info.GranularityColor.Plane();
-#endif
 
 	// Metallicafan212:	If this is a RT texture, we need to not do any of this!!!!
 	//					I know I should be using IsA, but this is quicker (for now)
@@ -280,6 +279,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 		return;
 	}
+#endif
 
 	
 

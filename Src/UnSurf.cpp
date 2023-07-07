@@ -89,9 +89,11 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 			PolyFlags |= PF_Occlude;
 		}
 	}
+/*
 #else
 	// Metallicafan212:	TODO! Other games might use a surface alpha (like Rune iirc?). Reevaluate this later
 	FSurfShader->SurfAlpha = 1.0f;
+*/
 #endif
 
 	/*
