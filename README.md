@@ -21,8 +21,9 @@ Full UnrealEd support including all line drawing routines, selection, user-custo
 Raytracing, external texture loading, support other games (yet).
 
 ## What's missing to support other games?
-Generally, some features may be missing right now like Gouraud triangle drawing. In HP1/2, Epic updated the base engine to do indexed triangle drawing for meshes, so the interface slightly changed.
-Theoretically, the code can work just fine as long as the Gouraud triangles are unfanned (using an index list), but no support has been written as of right now.
+This is now implemented. The full (base) UE1 rendering interface is implemented and working. Specific game extensions (Rune, DX) are not implemented.
+~~Generally, some features may be missing right now like Gouraud triangle drawing. In HP1/2, Epic updated the base engine to do indexed triangle drawing for meshes, so the interface slightly changed.
+Theoretically, the code can work just fine as long as the Gouraud triangles are unfanned (using an index list), but no support has been written as of right now.~~
 
 ## Building
 ```
@@ -41,9 +42,13 @@ This will require the Windows 10 SDK for building, but should run under Windows 
 
 Tools I used: Visual Studio 2022 (for the C++ code), Notepad++ for HLSL. Any syntax errors in the HLSL code is an instant crash in this driver right now, be warned. In the future, I'll handle errors more gracefully.
 
-Currently, this will NOT be able to be built. It’s written for the HP2 new engine, and none of those headers/libs are included. In the future, when more games are supported, it will be buildable as long as you have the SDK for those games and define the right preprocessor macro.
+~~Currently, this will NOT be able to be built. It’s written for the HP2 new engine, and none of those headers/libs are included. In the future, when more games are supported, it will be buildable as long as you have the SDK for those games and define the right preprocessor macro.~~
+
+Currently, this is only able to be built for UT 469 only, other games are unimplemented and the HP2 new engine does not have public headers to allow for support. My recommendation, if you want to help improve it, is use the UT469 public SDK as a stable development platform.
 
 Shaders are currently configured to point to ..\Shaders, next to Sounds, Textures, etc. I did this because I want to eventually support user created HLSL code for HP2, but for ports, this might be annoying. So, in the shader header (UnD3DShader.h), the path can be quickly changed by modifying the macro SHADER_FOLDER.
+
+In the future, I might make this a config var.
 
 ## Contributing
 Contributing is welcomed! If you wish to port this to other UE1 games, fork it, make the modifications in your fork, and submit a merge request. I will review and edit as needed.
