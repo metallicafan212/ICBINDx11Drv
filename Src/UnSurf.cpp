@@ -1,9 +1,11 @@
 #include "ICBINDx11Drv.h"
 
-inline void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_VertexBuff, _WORD* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies)
+FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_VertexBuff, _WORD* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies)
 {
-	_WORD vIndex	= 0;
+	SIZE_T vIndex	= 0;
 	SIZE_T V		= 0;
+
+	_WORD rVIndex	= m_BufferedVerts;
 
 	for (FSavedPoly* Poly = Facet.Polys; Poly; Poly = Poly->Next)
 	{
@@ -13,7 +15,8 @@ inline void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_Verte
 			continue;
 
 		// Metallicafan212:	Save the current vertex index
-		_WORD baseVIndex = V + m_BufferedVerts;
+		//_WORD baseVIndex = V + m_BufferedVerts;
+		_WORD baseVIndex = rVIndex + V;
 
 		// Metallicafan212:	Do the first 2 verts (since we only add on one more vert at a time)
 		m_VertexBuff[V].X		= Poly->Pts[0]->Point.X;
@@ -38,7 +41,7 @@ inline void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_Verte
 			//					It always uses the base vertex, the previous one, and the current one
 			m_IndexBuff[vIndex++] = baseVIndex;
 			m_IndexBuff[vIndex++] = (i - 1) + baseVIndex;
-			m_IndexBuff[vIndex++] = (i)+baseVIndex;
+			m_IndexBuff[vIndex++] = i + baseVIndex;
 		}
 	}
 }
@@ -61,6 +64,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	SetProjectionStateNoCheck(false);
 
 	// Metallicafan212:	TODO! Do indexed buffering
+	//					This means that we HAVE to pack the pan information into the verts somehow...
+	//					Otherwise, the textures will start skewing due to the changed surface info.
+	//					This does provide a performance boost (when drawing in textured view) but it obviously doesn't work as intended yet
 	EndBuffering();
 
 #if DX11_HP2
@@ -161,7 +167,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 	FSurfShader->Bind();
 
-	check(Surface.Texture);
+	checkSlow(Surface.Texture);
 
 	// Metallicafan212:	Just use the lightmap for color?
 	FPlane TestColor = FPlane(1.f, 1.f, 1.f, 1.f);
@@ -257,7 +263,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		// Metallicafan212:	We have to draw the previous indexed surface first!!!!
 		EndBuffering();
 
-		LockVertexBuffer(sizeof(FD3DVert)* VertRequest);
+		LockVertexBuffer(sizeof(FD3DVert) * VertRequest);
 		LockIndexBuffer(IndexRequest);
 
 		// Metallicafan212:	Start buffering now

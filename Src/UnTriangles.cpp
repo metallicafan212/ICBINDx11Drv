@@ -28,7 +28,14 @@ FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, FPLAG PolyFlags, UBO
 	}
 	else
 	{
-		if (PolyFlags & PF_Modulated)
+
+		// Set selection stuff
+		if (GIsEditor && (PolyFlags & PF_Selected))
+		{
+			m_Vert->Color	= FPlane(0.0f, 1.0f, 0.0f, 1);
+			m_Vert->Fog		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
+		}
+		else if (PolyFlags & PF_Modulated)
 		{
 			m_Vert->Color	= FPlane(1.0f, 1.0f, 1.0f, 1.0f);
 			m_Vert->Fog		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
@@ -42,12 +49,6 @@ FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, FPLAG PolyFlags, UBO
 		{
 			m_Vert->Color	= P->Light;
 			m_Vert->Fog		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
-		}
-
-		// Set selection stuff
-		if (GIsEditor && (PolyFlags & PF_Selected))
-		{
-			m_Vert->Color = FPlane(0.0f, 1.0f, 0.0f, 1);
 		}
 	}
 }
@@ -176,12 +177,12 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	FD3DVert* Mshy = (FD3DVert*)m_VertexBuff;
 
 	_WORD vIndex = 0;
-	SIZE_T V = 0;
 
+	_WORD baseVIndex = m_BufferedVerts;
 
-	_WORD baseVIndex = V + m_BufferedVerts;
-
+#if DX11_HP2
 	if (bNoOpacity)
+#endif
 	{
 		Pts[0]->Light.W = 1.0f;
 		Pts[1]->Light.W = 1.0f;
@@ -194,8 +195,10 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 
 	for (INT i = 2; i < NumPts; i++)
 	{
+#if DX11_HP2
 		// Metallicafan212:	TODO! This should be done in the shader, not here!
 		if (bNoOpacity)
+#endif
 			Pts[i]->Light.W = 1.0f;
 
 		DoVert(Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
@@ -266,8 +269,8 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	for (INT i = 0; i < NumPts; i++)
 	{
 		// Metallicafan212:	TODO! This should be done in the shader, not here!
-		if (bNoOpacity)
-			Pts[i].Light.W = 1.0f;
+		//if (bNoOpacity)
+		Pts[i].Light.W = 1.0f;
 
 		DoVert(&Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
 	}
