@@ -297,7 +297,7 @@ MAKE_DEVICE:
 
 	// Metallicafan212:	Setup vertex buffers here
 	m_VertexBuffSize			= sizeof(FD3DVert)	* VBUFF_SIZE;
-	m_IndexBuffSize				= sizeof(_WORD)		* IBUFF_SIZE;
+	m_IndexBuffSize				= sizeof(INDEX)		* IBUFF_SIZE;
 	D3D11_BUFFER_DESC VertDesc	= { m_VertexBuffSize, D3D11_USAGE_DYNAMIC, D3D11_BIND_VERTEX_BUFFER, D3D11_CPU_ACCESS_WRITE, NULL, 0 };
 	D3D11_BUFFER_DESC IndexDesc = { m_IndexBuffSize, D3D11_USAGE_DYNAMIC, D3D11_BIND_INDEX_BUFFER, D3D11_CPU_ACCESS_WRITE, NULL, 0 };
 
@@ -1201,7 +1201,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Set the index and vertex buffers now (since we don't swap them in and out)
-	m_D3DDeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+	m_D3DDeviceContext->IASetIndexBuffer(IndexBuffer, INDEX_FORMAT, 0);
 	UINT Stride = sizeof(FD3DVert);
 	UINT Offset = 0;
 	m_D3DDeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);

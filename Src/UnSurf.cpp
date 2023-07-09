@@ -1,11 +1,11 @@
 #include "ICBINDx11Drv.h"
 
-FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_VertexBuff, _WORD* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies)
+FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_VertexBuff, INDEX* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies)
 {
 	SIZE_T vIndex	= 0;
 	SIZE_T V		= 0;
 
-	_WORD rVIndex	= m_BufferedVerts;
+	INDEX rVIndex	= m_BufferedVerts;
 
 	for (FSavedPoly* Poly = Facet.Polys; Poly; Poly = Poly->Next)
 	{
@@ -16,7 +16,7 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 
 		// Metallicafan212:	Save the current vertex index
 		//_WORD baseVIndex = V + m_BufferedVerts;
-		_WORD baseVIndex = rVIndex + V;
+		INDEX baseVIndex = rVIndex + V;
 
 		// Metallicafan212:	Do the first 2 verts (since we only add on one more vert at a time)
 		m_VertexBuff[V].X		= Poly->Pts[0]->Point.X;

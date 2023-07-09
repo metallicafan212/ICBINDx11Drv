@@ -90,8 +90,10 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 
 	if (Indices != nullptr)
 	{
+#if !INT_INDEX_BUFF
 		// Metallicafan212:	TODO! Do something to be able to draw indexed AND buffer at the same time
 		EndBuffering();
+#endif
 		LockIndexBuffer(NumIndices);
 	}
 	else if (bIndexedBuffered)
@@ -111,6 +113,13 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 
 	FD3DVert* Mshy = (FD3DVert*)m_VertexBuff;
 
+#if INT_INDEX_BUFF
+	for (INT i = 0; i < NumIndices; i++)
+	{
+		m_IndexBuff[i] = ((INT)Indices[i]) + m_BufferedVerts;
+	}
+#endif
+
 	for (INT i = 0; i < NumPts; i++)
 	{
 		DoVert(Pts[i],  &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
@@ -121,12 +130,19 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	// Metallicafan212:	Now copy the indices
 	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+#if !INT_INDEX_BUFF
 	if (Indices != nullptr)
 	{
 		appMemcpy(m_IndexBuff, Indices, sizeof(_WORD) * NumIndices);
 
 		UnlockIndexBuffer();
 	}
+#else
+	if (Indices != nullptr)
+	{
+		UnlockIndexBuffer();
+	}
+#endif
 
 	AdvanceVertPos(NumPts, sizeof(FD3DVert), (Indices != nullptr ? NumIndices : 0));
 
@@ -176,9 +192,9 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 
 	FD3DVert* Mshy = (FD3DVert*)m_VertexBuff;
 
-	_WORD vIndex = 0;
+	INDEX vIndex = 0;
 
-	_WORD baseVIndex = m_BufferedVerts;
+	INDEX baseVIndex = m_BufferedVerts;
 
 #if DX11_HP2
 	if (bNoOpacity)

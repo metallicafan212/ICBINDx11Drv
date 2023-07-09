@@ -38,6 +38,16 @@
 
 #endif
 
+#define INT_INDEX_BUFF 1
+
+#if INT_INDEX_BUFF
+typedef int INDEX;
+#define INDEX_FORMAT DXGI_FORMAT_R32_UINT
+#else
+typedef unsigned short INDEX;
+#define INDEX_FORMAT DXGI_FORMAT_R16_UINT
+#endif
+
 // Metallicafan212:	Define the Polyflags datatype...
 //					I made polyflags a QWORD in HP2, all other UE1 games are DWORD
 #if DX11_HP2
@@ -56,7 +66,7 @@
 
 #define DX11_USE_MSAA_SHADER 1
 
-#define D3D_DRIVER_VERSION TEXT("0.54 Alpha")
+#define D3D_DRIVER_VERSION TEXT("0.55 Alpha")
 
 // Metallicafan212:	Compile time
 #define COMPILED_AT			*FString::Printf(TEXT("%s @ %s"), appFromAnsi(__DATE__), appFromAnsi(__TIME__))
@@ -731,7 +741,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	SIZE_T						m_IndexBuffSize;
 
 	// Metallicafan212:	Pointer to the index data
-	_WORD*						m_IndexBuff;
+	INDEX*						m_IndexBuff;
 
 	SIZE_T						m_BufferedIndices;
 
@@ -859,7 +869,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 		if (IndexCount != 0)
 		{
-			m_IndexBuffPos += sizeof(_WORD) * IndexCount;
+			m_IndexBuffPos += sizeof(INDEX) * IndexCount;
 			//m_DrawnIndices += IndexCount;
 			m_BufferedIndices += IndexCount;
 
@@ -870,7 +880,8 @@ class UICBINDx11RenderDevice : public URenderDevice
 	inline void LockIndexBuffer(INT IndicesToReserver, UBOOL bNoOverwrite = 1)
 	{
 		// Metallicafan212:	TODO! Check if we have enough room
-		if ((IndicesToReserver * sizeof(_WORD)) + m_IndexBuffPos >= m_IndexBuffSize)
+		//					Might make the index buffer 32bit ints instead of 16bit... So we can buffer more
+		if ((IndicesToReserver * sizeof(INDEX)) + m_IndexBuffPos >= m_IndexBuffSize)
 			bNoOverwrite = 0;
 
 		if (!bNoOverwrite)
@@ -890,7 +901,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 		HRESULT hr = m_D3DDeviceContext->Map(IndexBuffer, 0, bNoOverwrite ? D3D11_MAP_WRITE_NO_OVERWRITE : D3D11_MAP_WRITE_DISCARD, 0, &IndexBuffMap);
 
-		m_IndexBuff = (_WORD*)((BYTE*)IndexBuffMap.pData + m_IndexBuffPos);
+		m_IndexBuff = (INDEX*)((BYTE*)IndexBuffMap.pData + m_IndexBuffPos);
 
 		ThrowIfFailed(hr);
 
