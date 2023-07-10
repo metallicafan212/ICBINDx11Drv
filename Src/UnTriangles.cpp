@@ -161,6 +161,10 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 {
 	guard(UICBINDx11RenderDevice::DrawGouraudPolygon);
 
+	// Metallicafan212:	Reject invalid number of points
+	if (NumPts < 3)
+		return;
+
 	SetBlend(PolyFlags);
 
 	// Metallicafan212:	Request normal raster state

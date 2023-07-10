@@ -235,6 +235,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	SIZE_T IndexRequest = 0;
 	for (FSavedPoly* Poly = Facet.Polys; Poly; Poly = Poly->Next)
 	{
+		// Metallicafan212:	Reject invalid number of verts lmao
+		if (Poly->NumPts < 3)
+			continue;
 		VertRequest		+= (Poly->NumPts);
 		IndexRequest	+= (Poly->NumPts - 2) * 3;
 	}
