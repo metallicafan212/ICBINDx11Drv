@@ -164,7 +164,7 @@ void UICBINDx11RenderDevice::MakeTextureSampler(FD3DTexture* Bind, FPLAG PolyFla
 	unguard;
 }
 
-static UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch)
+FORCEINLINE UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch)
 {
 #if DX11_HP2
 	FMipmap* Mip = Info.Mips[MipNum];
@@ -297,6 +297,24 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	BYTE* MipData = nullptr;
 	INT MipSize = 0, MipPitch = 0;
 
+	// Metallicafan212:	Create the conversion mem
+//					TODO! Hardcoded size!!!!
+	SIZE_T MemRequest = Info.USize * Info.VSize * 4;
+
+	// Metallicafan212:	Resize as needed
+	if (MemRequest > ConversionMemSize)
+	{
+		if (ConversionMemory == nullptr)
+		{
+			ConversionMemory = (BYTE*)appMalloc(MemRequest, TEXT("DX11ConversionMem"));
+		}
+		else
+		{
+			ConversionMemory = (BYTE*)appRealloc(ConversionMemory, MemRequest, TEXT("DX11ConversionMem"));
+		}
+		ConversionMemSize = MemRequest;
+	}
+
 	// Metallicafan212:	Check if we need to make it
 	if (DaTex->m_Tex == nullptr)
 	{
@@ -404,17 +422,6 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		{
 		ConvertTexture:	
 			guard(ConvertTexture);
-
-			// Metallicafan212:	Create the conversion mem
-			//					TODO! Hardcoded size!!!!
-			SIZE_T MemRequest = Info.USize * Info.VSize * 4;
-
-			// Metallicafan212:	Resize as needed
-			if (MemRequest > ConversionMemSize)
-			{
-				ConversionMemory = (BYTE*)appRealloc(ConversionMemory, MemRequest, TEXT("DX11ConversionMem"));
-				ConversionMemSize = MemRequest;
-			}
 
 			// Metallicafan212:	Convert the mip (could be P8 or RGBA7)
 			UBOOL bMaskedHack = (Info.Format == TEXF_P8 && PolyFlags & PF_Masked);
