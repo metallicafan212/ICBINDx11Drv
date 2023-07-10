@@ -745,6 +745,11 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	SIZE_T						m_BufferedIndices;
 
+	UBOOL						bNeedsAutoIBuff;
+
+	INT							m_VLockCount;
+	INT							m_ILockCount;
+
 	// Metallicafan212:	Line buffer?
 	ID3D11Buffer*				LineBuffer;
 
@@ -826,6 +831,106 @@ class UICBINDx11RenderDevice : public URenderDevice
 		}
 	}
 
+	// Metallicafan212:	TODO! Replace ALL non-indexed drawing with this....
+	inline void DoStandardIBuff(INT VertNum)
+	{
+		// Metallicafan212:	This'll fill the index buffer with just a standard indices pointing to the raw triangle list we have
+		INDEX BaseIndex = m_BufferedVerts;
+
+		for (INT i = 0; i < VertNum; i++)
+		{
+			m_IndexBuff[i] = BaseIndex++;
+		}
+
+		m_BufferedIndices += VertNum;
+
+		m_IndexBuffPos += sizeof(INDEX) * VertNum;
+	}
+
+	inline void LockVertAndIndexBuffer(INT VertCount, INT IndexCount = 0, UBOOL bNoOverwrite = 1)
+	{
+		m_VLockCount = VertCount;
+		m_ILockCount = IndexCount;
+
+		// Metallicafan212:	Check for room
+		if (VertCount + m_BufferedVerts + m_DrawnVerts >= VBUFF_SIZE)
+		{
+			bNoOverwrite = 0;
+		}
+
+		// Metallicafan212:	Default allotment
+		if (IndexCount == 0)
+		{
+			IndexCount = VertCount;
+
+			// Metallicafan212:	Automatically fill the index buffer
+			bNeedsAutoIBuff = 1;
+		}
+		else
+		{
+			bNeedsAutoIBuff = 0;
+		}
+
+		if (IndexCount + m_BufferedIndices + m_DrawnIndices >= IBUFF_SIZE)
+		{
+			bNoOverwrite = 0;
+		}
+
+		if (!bNoOverwrite)
+		{
+			// Metallicafan212:	Ran out of room, check if there's stuff to render
+			if (m_BufferedIndices != 0 || m_BufferedVerts != 0)
+			{
+				EndBuffering();
+			}
+
+			m_VertexBuffPos = 0;
+			m_IndexBuffPos	= 0;
+			m_DrawnVerts	= 0;
+			m_DrawnIndices	= 0;
+		}
+
+		D3D11_MAP MType = bNoOverwrite ? D3D11_MAP_WRITE_NO_OVERWRITE : D3D11_MAP_WRITE_DISCARD;
+
+		D3D11_MAPPED_SUBRESOURCE	VertexBuffMap = { nullptr, 0, 0 };
+
+		HRESULT hr = m_D3DDeviceContext->Map(VertexBuffer, 0, MType, 0, &VertexBuffMap);
+
+		m_VertexBuff = (FD3DVert*)((BYTE*)VertexBuffMap.pData + m_VertexBuffPos);
+
+		ThrowIfFailed(hr);
+
+		// Metallicafan212:	Now lock the IBuff
+		D3D11_MAPPED_SUBRESOURCE	IndexBuffMap = { nullptr, 0, 0 };
+
+		hr = m_D3DDeviceContext->Map(IndexBuffer, 0, MType, 0, &IndexBuffMap);
+
+		m_IndexBuff = (INDEX*)((BYTE*)IndexBuffMap.pData + m_IndexBuffPos);
+
+		ThrowIfFailed(hr);
+	}
+
+	inline void UnlockBuffers()
+	{
+		if (bNeedsAutoIBuff)
+		{
+			DoStandardIBuff(m_VLockCount);
+
+			bNeedsAutoIBuff = 0;
+		}
+
+		if (m_VertexBuff != nullptr)
+			m_D3DDeviceContext->Unmap(VertexBuffer, 0);
+
+		m_VertexBuff = nullptr;
+
+		if (m_IndexBuff != nullptr)
+			m_D3DDeviceContext->Unmap(IndexBuffer, 0);
+
+		m_IndexBuff = nullptr;
+	}
+
+	/*
 	inline void LockVertexBuffer(INT BytesToReserve, UBOOL bNoOverwrite = 1)
 	{
 		// Metallicafan212:	Make sure we have enough room
@@ -860,28 +965,32 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 		m_VertexBuff = nullptr;
 	}
+	*/
 
 	inline void AdvanceVertPos(INT VertCount, SIZE_T VertexSize = sizeof(FD3DVert), INT IndexCount = 0)
 	{
-		//m_DrawnVerts	+= VertCount;
 		m_BufferedVerts += VertCount;
 		m_VertexBuffPos += VertCount * VertexSize;
 
 		if (IndexCount != 0)
 		{
-			m_IndexBuffPos += sizeof(INDEX) * IndexCount;
-			//m_DrawnIndices += IndexCount;
-			m_BufferedIndices += IndexCount;
+			if (IndexCount + m_BufferedIndices + m_DrawnIndices >= IBUFF_SIZE)
+				appErrorf(TEXT("Metallicafan212 you fucking idiot, fix the index buffer!"));
 
-			bIndexedBuffered = 1;
+			m_IndexBuffPos		+= sizeof(INDEX) * IndexCount;
+			m_BufferedIndices	+= IndexCount;
+
+			//bIndexedBuffered	= 1;
 		}
 	}
 
+	/*
 	inline void LockIndexBuffer(INT IndicesToReserver, UBOOL bNoOverwrite = 1)
 	{
 		// Metallicafan212:	TODO! Check if we have enough room
 		//					Might make the index buffer 32bit ints instead of 16bit... So we can buffer more
-		if ((IndicesToReserver * sizeof(INDEX)) + m_IndexBuffPos >= m_IndexBuffSize)
+		//if ( ((IndicesToReserver * sizeof(INDEX)) + m_IndexBuffPos) >= m_IndexBuffSize)
+		if(IndicesToReserver + m_DrawnIndices + m_BufferedIndices >= IBUFF_SIZE)
 			bNoOverwrite = 0;
 
 		if (!bNoOverwrite)
@@ -915,6 +1024,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 		m_IndexBuff = nullptr;
 	}
+	*/
 
 	inline void EndBuffering()
 	{
@@ -927,24 +1037,32 @@ class UICBINDx11RenderDevice : public URenderDevice
 			if (m_VertexBuff != nullptr)
 			{
 				bLockVert = 1;
-				UnlockVertexBuffer();
+				//UnlockVertexBuffer();
 			}
 
+			/*
 			if (m_IndexBuff != nullptr)
 			{
-				UnlockIndexBuffer();
+				//UnlockIndexBuffer();
 				bLockInd = 1;
 			}
+			*/
 
-			if (bIndexedBuffered)
+			//if (bIndexedBuffered)
 			{
+				if (m_BufferedIndices + m_DrawnIndices >= IBUFF_SIZE)
+				{
+					appErrorf(TEXT("Metallicafan212, you fucking idiot, the index buffer is fucked"));
+				}
 				m_D3DDeviceContext->DrawIndexed(m_BufferedIndices, m_DrawnIndices, m_DrawnVerts);
 				//bIndexedBuffered = 0;
 			}
+			/*
 			else
 			{
 				m_D3DDeviceContext->Draw(m_BufferedVerts, m_DrawnVerts);
 			}
+			*/
 
 			// Metallicafan212:	Increment the buffer counters
 			m_DrawnIndices	+= m_BufferedIndices;
@@ -959,11 +1077,17 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 		// Metallicafan212:	Relock it if it was locked
 		//					We already checked if it had room or not
-		if (bLockVert)
-			LockVertexBuffer(0);
+		//if (bLockVert)
+		//	LockVertexBuffer(0);
 
-		if (bLockInd)
-			LockIndexBuffer(0);
+		//if (bLockInd)
+		//	LockIndexBuffer(0);
+		
+		if (bLockVert)
+			LockVertAndIndexBuffer(m_VLockCount, m_ILockCount);
+			//appErrorf(TEXT("Metallicafan212, check the codepath"));
+			//LockVertAndIndexBuffer(0, )
+
 		//else
 		//	bIndexedBuffered = 0;
 	}
@@ -973,7 +1097,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	{
 		// Metallicafan212:	Check if we need to draw
 		//					TEST! Hold onto BSP buffers for longer, since we always start at the buffered index location
-		if (inBuff != m_CurrentBuff || (inBuff != BT_BSP && (bIndexedBuffered || (bNeedsIndices && !bIndexedBuffered))) )
+		if (inBuff != m_CurrentBuff)//|| (inBuff != BT_BSP && (bIndexedBuffered || (bNeedsIndices && !bIndexedBuffered))) )
 		{
 			EndBuffering();
 		}

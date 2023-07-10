@@ -239,16 +239,20 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		IndexRequest	+= (Poly->NumPts - 2) * 3;
 	}
 
-	LockVertexBuffer(sizeof(FD3DVert) * VertRequest);
-	LockIndexBuffer(IndexRequest);
+	//LockVertexBuffer(sizeof(FD3DVert) * VertRequest);
+	//LockIndexBuffer(IndexRequest);
+
+	LockVertAndIndexBuffer(VertRequest, IndexRequest);
 
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_BSP, 1);
 
 	BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices);
 
-	UnlockIndexBuffer();
-	UnlockVertexBuffer();
+	//UnlockIndexBuffer();
+	//UnlockVertexBuffer();
+
+	UnlockBuffers();
 
 	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	AdvanceVertPos(VertRequest, sizeof(FD3DVert), IndexRequest);
@@ -263,8 +267,10 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		// Metallicafan212:	We have to draw the previous indexed surface first!!!!
 		EndBuffering();
 
-		LockVertexBuffer(sizeof(FD3DVert) * VertRequest);
-		LockIndexBuffer(IndexRequest);
+		LockVertAndIndexBuffer(VertRequest, IndexRequest);
+
+		//LockVertexBuffer(sizeof(FD3DVert) * VertRequest);
+		//LockIndexBuffer(IndexRequest);
 
 		// Metallicafan212:	Start buffering now
 		StartBuffering(BT_BSP, 1);
@@ -312,8 +318,10 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		// Metallicafan212:	Rebuffer the verts (again)
 		BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices);
 
-		UnlockVertexBuffer();
-		UnlockIndexBuffer();
+		//UnlockVertexBuffer();
+		//UnlockIndexBuffer();
+
+		UnlockBuffers();
 
 		AdvanceVertPos(VertRequest, sizeof(FD3DVert), IndexRequest);
 	}

@@ -99,7 +99,8 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		// Metallicafan212:	TODO! Line specific shader for making the lines thiccc
 		FLineShader->Bind();
 
-		LockVertexBuffer(2 * sizeof(FD3DVert));
+		//LockVertexBuffer(2 * sizeof(FD3DVert));
+		LockVertAndIndexBuffer(2);
 
 		// Metallicafan212:	Start buffering now
 		StartBuffering(BT_Lines);
@@ -120,7 +121,9 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		m_VertexBuff[1].Fog		= LineThick;
 
 		// Metallicafan212:	Now render
-		UnlockVertexBuffer();
+		//UnlockVertexBuffer();
+
+		UnlockBuffers();
 
 		m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
@@ -188,7 +191,8 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	// Metallicafan212:	TODO! Line specific shader
 	FLineShader->Bind();
 
-	LockVertexBuffer(2 * sizeof(FD3DVert));
+	//LockVertexBuffer(2 * sizeof(FD3DVert));
+	LockVertAndIndexBuffer(2);
 
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Lines);
@@ -240,7 +244,8 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	m_VertexBuff[1].Fog		= LineThick;
 
 	// Metallicafan212:	Now draw
-	UnlockVertexBuffer();
+	//UnlockVertexBuffer();
+	UnlockBuffers();
 	
 	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
@@ -299,7 +304,8 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 
 	FGenShader->Bind();
 
-	LockVertexBuffer(sizeof(FD3DVert) * 6);
+	//LockVertexBuffer(sizeof(FD3DVert) * 6);
+	LockVertAndIndexBuffer(6);
 
 
 	// Metallicafan212:	Start buffering now
@@ -382,7 +388,10 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 	m_VertexBuff[5].Color	= Color;
 
 	// Metallicafan212:	Render
-	UnlockVertexBuffer();
+	//UnlockVertexBuffer();
+
+	UnlockBuffers();
+
 	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	AdvanceVertPos(6);

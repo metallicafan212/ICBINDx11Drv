@@ -184,7 +184,8 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Tiles);
 
-	LockVertexBuffer(6 * sizeof(FD3DVert));
+	//LockVertexBuffer(6 * sizeof(FD3DVert));
+	LockVertAndIndexBuffer(6);
 
 	FLOAT TexInfoUMult = BoundTextures[0].UMult;
 	FLOAT TexInfoVMult = BoundTextures[0].VMult;
@@ -237,7 +238,8 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	m_VertexBuff[5].U		= SU1;
 	m_VertexBuff[5].V		= SV2;
 
-	UnlockVertexBuffer();
+	//UnlockVertexBuffer();
+	UnlockBuffers();
 
 	// Metallicafan212:	Now draw
 	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

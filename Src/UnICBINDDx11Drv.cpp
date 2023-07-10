@@ -501,6 +501,11 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	ConversionMemory	= nullptr;
 	ConversionMemSize	= 0;
 
+	m_DrawnIndices		= 0;
+	m_DrawnVerts		= 0;
+	m_BufferedIndices	= 0;
+	m_BufferedVerts		= 0;
+
 	Viewport			= InViewport;
 
 	// Metallicafan212:	Get the style now!!!
@@ -1506,6 +1511,9 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	}
 #endif
 
+	// Metallicafan212:	Make sure the RT is set?
+	RestoreRenderTarget();
+
 	// Metallicafan212:	Only clear if we're in the editor
 	if (1)//GIsEditor || (RenderLockFlags & LOCKR_ClearScreen))
 	{
@@ -1523,8 +1531,8 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	//BoundRT = nullptr;
 
 	// Metallicafan212:	Hold onto the flash fog for future render
-	FlashScale	= InFlashScale;
-	FlashFog	= InFlashFog;
+	FlashScale		= InFlashScale;
+	FlashFog		= InFlashFog;
 
 	// Metallicafan212:	Hold onto the hit related info
 	m_HitData		= HitData;
@@ -1544,13 +1552,16 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	}
 
 	// Metallicafan212:	Setup the buffers
+	//					TODO! For performance reasons, I have disabled this block
+	/*
 	LockVertexBuffer(0, 0);
 	LockIndexBuffer(0, 0);
 	UnlockVertexBuffer();
 	UnlockIndexBuffer();
+	*/
 
 	// Metallicafan212:	Reset the buffered state
-	EndBuffering();
+	//EndBuffering();
 
 	if (GlobalShaderVars.bDoDistanceFog || GlobalShaderVars.bFadeFogValues)
 		TickDistanceFog();
@@ -1894,7 +1905,8 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			RPY1 *= Z;
 			RPY2 *= Z;
 
-			LockVertexBuffer(6 * sizeof(FD3DVert));
+			//LockVertexBuffer(6 * sizeof(FD3DVert));
+			LockVertAndIndexBuffer(6);
 
 			// Metallicafan212:	Start buffering now
 			StartBuffering(BT_ScreenFlash);
@@ -1941,7 +1953,8 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			m_VertexBuff[5].V		= SV2;
 			m_VertexBuff[5].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
 
-			UnlockVertexBuffer();
+			//UnlockVertexBuffer();
+			UnlockBuffers();
 
 			m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			AdvanceVertPos(6);
@@ -1983,6 +1996,43 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 	if (bDebugSelection && m_HitData != nullptr)
 	{
 		appSleep(1.0f);
+	}
+
+	// Metallicafan212:	Grab all the debug info!!!!
+	if (m_D3DQueue != nullptr)
+	{
+		UINT64 n = m_D3DQueue->GetNumStoredMessages();
+
+		if (n > 0)
+		{
+			// Metallicafan212:	Get the current timestamp
+			const TCHAR* tStamp = appTimestamp();
+
+			GLog->Logf(TEXT("DX11: Warnings and errors during this frame:"));
+
+			for (INT i = 0; i < n; i++)
+			{
+				// Metallicafan212:	Sigh.... No better way to do this...
+				D3D11_MESSAGE* temp = nullptr;
+
+				// Metallicafan212:	Get the size of this message
+				SIZE_T mSize = 0;
+
+				m_D3DQueue->GetMessage(i, nullptr, &mSize);
+
+				if (mSize != 0)
+				{
+					temp = (D3D11_MESSAGE*)malloc(mSize);
+
+					m_D3DQueue->GetMessage(i, temp, &mSize);
+
+					// Metallicafan212:	Now log it
+					GWarn->Logf(TEXT("DX11 debug message (%s): %s at %s"), GetD3DDebugSeverity(temp->Severity), appFromAnsi(temp->pDescription), tStamp);
+
+					free(temp);
+				}
+			}
+		}
 	}
 
 	unguard;
@@ -2065,7 +2115,8 @@ void UICBINDx11RenderDevice::EndFlash()
 		m_D3DDeviceContext->OMGetDepthStencilState(&CurState, &Sten);
 		m_D3DDeviceContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
 
-		LockVertexBuffer(6 * sizeof(FD3DVert));
+		//LockVertexBuffer(6 * sizeof(FD3DVert));
+		LockVertAndIndexBuffer(6);
 
 		// Metallicafan212:	Start buffering now
 		StartBuffering(BT_ScreenFlash);
@@ -2100,7 +2151,8 @@ void UICBINDx11RenderDevice::EndFlash()
 		m_VertexBuff[5].Y		= RPY2;
 		m_VertexBuff[5].Z		= Z;
 
-		UnlockVertexBuffer();
+		//UnlockVertexBuffer();
+		UnlockBuffers();
 
 		m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		AdvanceVertPos(6);
