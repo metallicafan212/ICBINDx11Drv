@@ -239,12 +239,12 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	m_VertexBuff[5].V		= SV2;
 
 	//UnlockVertexBuffer();
-	UnlockBuffers();
+	//UnlockBuffers();
 
 	// Metallicafan212:	Now draw
 	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	AdvanceVertPos(6);
+	AdvanceVertPos();//6);
 
 
 	unguard;

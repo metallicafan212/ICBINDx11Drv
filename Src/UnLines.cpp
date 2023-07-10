@@ -99,11 +99,12 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		// Metallicafan212:	TODO! Line specific shader for making the lines thiccc
 		FLineShader->Bind();
 
+		// Metallicafan212:	Start buffering now
+		StartBuffering(BT_Lines);
+
 		//LockVertexBuffer(2 * sizeof(FD3DVert));
 		LockVertAndIndexBuffer(2);
 
-		// Metallicafan212:	Start buffering now
-		StartBuffering(BT_Lines);
 
 
 		m_VertexBuff[0].X		= P1.X;
@@ -123,11 +124,11 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		// Metallicafan212:	Now render
 		//UnlockVertexBuffer();
 
-		UnlockBuffers();
+		//UnlockBuffers();
 
 		m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
-		AdvanceVertPos(2);
+		AdvanceVertPos();//2);
 	}
 
 
@@ -191,11 +192,11 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	// Metallicafan212:	TODO! Line specific shader
 	FLineShader->Bind();
 
-	//LockVertexBuffer(2 * sizeof(FD3DVert));
-	LockVertAndIndexBuffer(2);
-
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Lines);
+
+	//LockVertexBuffer(2 * sizeof(FD3DVert));
+	LockVertAndIndexBuffer(2);
 
 	//Get line coordinates back in 3D
 	FLOAT X1Pos = m_RFX2 * (P1.X - ScaledFX2);
@@ -245,11 +246,11 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 
 	// Metallicafan212:	Now draw
 	//UnlockVertexBuffer();
-	UnlockBuffers();
+	//UnlockBuffers();
 	
 	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
-	AdvanceVertPos(2);
+	AdvanceVertPos();//2);
 
 	unguard;
 }
@@ -304,12 +305,12 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 
 	FGenShader->Bind();
 
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_Points);
+
 	//LockVertexBuffer(sizeof(FD3DVert) * 6);
 	LockVertAndIndexBuffer(6);
 
-
-	// Metallicafan212:	Start buffering now
-	StartBuffering(BT_Points);
 
 	// Metallicafan212:	Selection testing
 	if (m_HitData != nullptr)
@@ -390,11 +391,11 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 	// Metallicafan212:	Render
 	//UnlockVertexBuffer();
 
-	UnlockBuffers();
+	//UnlockBuffers();
 
 	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	AdvanceVertPos(6);
+	AdvanceVertPos();//6);
 
 	unguard;
 }

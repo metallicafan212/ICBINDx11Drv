@@ -307,12 +307,18 @@ MAKE_DEVICE:
 
 	ThrowIfFailed(hr);
 
+	m_BufferedVerts = 0;
+	m_DrawnVerts	= 0;
+
 	GLog->Logf(TEXT("DX11: Creating index buffer"));
 
 	// Metallicafan212:	Index buffer
 	hr = m_D3DDevice->CreateBuffer(&IndexDesc, nullptr, &IndexBuffer);
 
 	ThrowIfFailed(hr);
+
+	m_BufferedIndices	= 0;
+	m_DrawnIndices		= 0;
 
 #if DX11_HP2
 	GLog->Logf(TEXT("DX11: Creating D2D1 factory1"));
@@ -1746,7 +1752,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 				UnlockVertexBuffer();
 
 				m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-				AdvanceVertPos(6);
+				AdvanceVertPos();//6);
 
 				// Metallicafan212:	Draw
 				EndBuffering();
@@ -1905,11 +1911,11 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			RPY1 *= Z;
 			RPY2 *= Z;
 
-			//LockVertexBuffer(6 * sizeof(FD3DVert));
-			LockVertAndIndexBuffer(6);
-
 			// Metallicafan212:	Start buffering now
 			StartBuffering(BT_ScreenFlash);
+
+			//LockVertexBuffer(6 * sizeof(FD3DVert));
+			LockVertAndIndexBuffer(6);
 
 			m_VertexBuff[0].X		= RPX1;
 			m_VertexBuff[0].Y		= RPY1;
@@ -1954,10 +1960,10 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			m_VertexBuff[5].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
 
 			//UnlockVertexBuffer();
-			UnlockBuffers();
+			//UnlockBuffers();
 
 			m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			AdvanceVertPos(6);
+			AdvanceVertPos();//6);
 
 			// Metallicafan212:	Draw
 			EndBuffering();
@@ -2115,11 +2121,11 @@ void UICBINDx11RenderDevice::EndFlash()
 		m_D3DDeviceContext->OMGetDepthStencilState(&CurState, &Sten);
 		m_D3DDeviceContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
 
-		//LockVertexBuffer(6 * sizeof(FD3DVert));
-		LockVertAndIndexBuffer(6);
-
 		// Metallicafan212:	Start buffering now
 		StartBuffering(BT_ScreenFlash);
+
+		//LockVertexBuffer(6 * sizeof(FD3DVert));
+		LockVertAndIndexBuffer(6);
 
 		m_VertexBuff[0].Color	= Color;
 		m_VertexBuff[0].X		= RPX1;
@@ -2152,10 +2158,10 @@ void UICBINDx11RenderDevice::EndFlash()
 		m_VertexBuff[5].Z		= Z;
 
 		//UnlockVertexBuffer();
-		UnlockBuffers();
+		//UnlockBuffers();
 
 		m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		AdvanceVertPos(6);
+		AdvanceVertPos();//6);
 
 		// Metallicafan212:	Draw
 		EndBuffering();

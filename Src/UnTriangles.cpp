@@ -86,6 +86,9 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	// Metallicafan212:	TODO!
 	FMeshShader->Bind();
 
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_Triangles);
+
 	//LockVertexBuffer(NumPts * sizeof(FD3DVert));
 	LockVertAndIndexBuffer(NumPts, NumIndices);
 
@@ -103,9 +106,6 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 		EndBuffering();
 	}
 	*/
-
-	// Metallicafan212:	Start buffering now
-	StartBuffering(BT_Triangles, Indices != nullptr);
 
 	// Metallicafan212:	Added in distance fog
 	//					All calculations have to be done ourselfs, but at least it's doable
@@ -149,9 +149,9 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	*/
 #endif
 
-	UnlockBuffers();
+	//UnlockBuffers();
 
-	AdvanceVertPos(NumPts, sizeof(FD3DVert), (Indices != nullptr ? NumIndices : 0));
+	AdvanceVertPos();//NumPts, sizeof(FD3DVert), (Indices != nullptr ? NumIndices : 0));
 
 	unguard;
 }
@@ -182,15 +182,15 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	// Metallicafan212:	TODO!
 	FMeshShader->Bind();
 
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_Triangles);
+
 	LockVertAndIndexBuffer(NumPts, (NumPts - 2) * 3);
 
 	//LockVertexBuffer(NumPts * sizeof(FD3DVert));
 
 	//EndBuffering();
 	//LockIndexBuffer((NumPts - 2) * 3);
-
-	// Metallicafan212:	Start buffering now
-	StartBuffering(BT_Triangles);
 
 	// Metallicafan212:	Added in distance fog
 	//					All calculations have to be done ourselfs, but at least it's doable
@@ -237,12 +237,12 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	//UnlockVertexBuffer();
 	//UnlockIndexBuffer();
 
-	UnlockBuffers();
+	//UnlockBuffers();
 
 	// Metallicafan212:	Now copy the indices
 	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	AdvanceVertPos(NumPts, sizeof(FD3DVert), (NumPts - 2) * 3);
+	AdvanceVertPos();//NumPts, sizeof(FD3DVert), (NumPts - 2) * 3);
 
 	unguard;
 }
@@ -276,15 +276,15 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 
 	//LockVertexBuffer(NumPts * sizeof(FD3DVert));
 
-	LockVertAndIndexBuffer(NumPts);
-
-	if (bIndexedBuffered)
-	{
-		EndBuffering();
-	}
-
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Triangles);
+
+	LockVertAndIndexBuffer(NumPts);
+
+	//if (bIndexedBuffered)
+	//{
+	//	EndBuffering();
+	//}
 
 	// Metallicafan212:	Added in distance fog
 	//					All calculations have to be done ourselfs, but at least it's doable
@@ -306,12 +306,12 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 
 	//UnlockVertexBuffer();
 
-	UnlockBuffers();
+	//UnlockBuffers();
 
 	// Metallicafan212:	Now copy the indices
 	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	AdvanceVertPos(NumPts, sizeof(FD3DVert), 0);
+	AdvanceVertPos();//NumPts, sizeof(FD3DVert));
 
 	unguard;
 }

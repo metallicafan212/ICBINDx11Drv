@@ -228,7 +228,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	UnlockVertexBuffer();
 	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_D3DDeviceContext->Draw(VertRequest, m_DrawnVerts);
-	AdvanceVertPos(VertRequest);
+	AdvanceVertPos();//VertRequest);
 
 #else
 	// Metallicafan212:	Experiment, draw indexed
@@ -242,20 +242,20 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	//LockVertexBuffer(sizeof(FD3DVert) * VertRequest);
 	//LockIndexBuffer(IndexRequest);
 
-	LockVertAndIndexBuffer(VertRequest, IndexRequest);
-
 	// Metallicafan212:	Start buffering now
-	StartBuffering(BT_BSP, 1);
+	StartBuffering(BT_BSP);
+
+	LockVertAndIndexBuffer(VertRequest, IndexRequest);
 
 	BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices);
 
 	//UnlockIndexBuffer();
 	//UnlockVertexBuffer();
 
-	UnlockBuffers();
+	//UnlockBuffers();
 
 	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	AdvanceVertPos(VertRequest, sizeof(FD3DVert), IndexRequest);
+	AdvanceVertPos();//VertRequest, sizeof(FD3DVert), IndexRequest);
 
 #endif
 
@@ -267,13 +267,13 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		// Metallicafan212:	We have to draw the previous indexed surface first!!!!
 		EndBuffering();
 
+		// Metallicafan212:	Start buffering now
+		StartBuffering(BT_BSP);
+
 		LockVertAndIndexBuffer(VertRequest, IndexRequest);
 
 		//LockVertexBuffer(sizeof(FD3DVert) * VertRequest);
 		//LockIndexBuffer(IndexRequest);
-
-		// Metallicafan212:	Start buffering now
-		StartBuffering(BT_BSP, 1);
 
 		//SetBlend(PF_Translucent);
 		SetTexture(0, nullptr, 0);
@@ -321,9 +321,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		//UnlockVertexBuffer();
 		//UnlockIndexBuffer();
 
-		UnlockBuffers();
+		//UnlockBuffers();
 
-		AdvanceVertPos(VertRequest, sizeof(FD3DVert), IndexRequest);
+		AdvanceVertPos();//VertRequest, sizeof(FD3DVert), IndexRequest);
 	}
 
 	unguard;
