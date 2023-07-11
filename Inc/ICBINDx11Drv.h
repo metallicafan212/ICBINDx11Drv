@@ -304,6 +304,9 @@ struct FD3DTexture
 	INT				UClamp;
 	INT				VClamp;
 
+	// Metallicafan212:	UT469 (and now HP2) tracked number of changes to this texture
+	INT				RealtimeChangeCount;
+
 	//FLOAT			UMult;
 	//FLOAT			VMult;
 

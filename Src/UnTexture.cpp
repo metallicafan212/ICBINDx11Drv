@@ -64,8 +64,14 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	// Metallicafan212:	Search for the bind
 	FD3DTexture* DaTex		= TextureMap.Find(Info->CacheID);
 
+#if DX11_UT_469 || DX11_HP2
+	UBOOL bTexChanged = (Info->Texture != nullptr && DaTex != nullptr ? Info->Texture->RealtimeChangedCount != DaTex->RealtimeChangeCount : 0);
+#else
+	UBOOL bTexChanged = Info->bRealtimeChanged;
+#endif
+
 	// Metallicafan212:	Check if we need to upload it to the GPU
-	UBOOL bUpload			= DaTex == nullptr || Info->bRealtimeChanged /* || Info->bRealtime || Info->bParametric*/ || ( ((PolyFlags & PF_Masked) ^ (DaTex->PolyFlags & PF_Masked)) == PF_Masked);
+	UBOOL bUpload			= DaTex == nullptr || bTexChanged /* || Info->bRealtime || Info->bParametric*/ || ( ((PolyFlags & PF_Masked) ^ (DaTex->PolyFlags & PF_Masked)) == PF_Masked);
 
 	//UBOOL bDoSampUpdate = 0;
 
@@ -215,6 +221,7 @@ UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataP
 	return TRUE;
 }
 
+#if DX11_UT_469
 void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V, INT UL, INT VL)
 {
 	guard(UICBINDx11RenderDevice::UpdateTextureRect);
@@ -258,6 +265,7 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 
 	unguard;
 }
+#endif
 
 void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, UBOOL bJustSampler)
 {
@@ -300,6 +308,13 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	DaTex->PolyFlags	= PolyFlags;
 	DaTex->USize		= Info.USize;
 	DaTex->VSize		= Info.VSize;
+
+	// Metallicafan212:	Implement checking against the new UT469 realtime changed count
+#if DX11_UT_469 || DX11_HP2
+	DaTex->RealtimeChangeCount = Info.Texture != nullptr ? Info.Texture->RealtimeChangedCount : 0;
+#else
+	DaTex->RealtimeChangeCount = 0;
+#endif
 
 	if (m_FeatureLevel != D3D_FEATURE_LEVEL_11_1)
 	{
