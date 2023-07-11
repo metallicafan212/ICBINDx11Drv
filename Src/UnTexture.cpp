@@ -65,13 +65,14 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	FD3DTexture* DaTex		= TextureMap.Find(Info->CacheID);
 
 #if DX11_UT_469 || DX11_HP2
-	UBOOL bTexChanged = (Info->Texture != nullptr && DaTex != nullptr ? Info->Texture->RealtimeChangeCount != DaTex->RealtimeChangeCount : 0);
+	UBOOL bTexChanged = (Info->Texture != nullptr && DaTex != nullptr ? Info->Texture->RealtimeChangeCount != DaTex->RealtimeChangeCount : Info->bRealtimeChanged);
 #else
 	UBOOL bTexChanged = Info->bRealtimeChanged;
 #endif
 
 	// Metallicafan212:	Check if we need to upload it to the GPU
-	UBOOL bUpload			= DaTex == nullptr || bTexChanged /* || Info->bRealtime || Info->bParametric*/ || ( ((PolyFlags & PF_Masked) ^ (DaTex->PolyFlags & PF_Masked)) == PF_Masked);
+	//					I also check masked as we need to rehack the palette when mask changes
+	UBOOL bUpload			= DaTex == nullptr || bTexChanged || ( ((PolyFlags & PF_Masked) ^ (DaTex->PolyFlags & PF_Masked)) == PF_Masked);
 
 	//UBOOL bDoSampUpdate = 0;
 
