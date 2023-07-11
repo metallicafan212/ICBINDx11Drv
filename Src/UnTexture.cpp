@@ -65,7 +65,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	FD3DTexture* DaTex		= TextureMap.Find(Info->CacheID);
 
 #if DX11_UT_469 || DX11_HP2
-	UBOOL bTexChanged = (Info->Texture != nullptr && DaTex != nullptr ? Info->Texture->RealtimeChangedCount != DaTex->RealtimeChangeCount : 0);
+	UBOOL bTexChanged = (Info->Texture != nullptr && DaTex != nullptr ? Info->Texture->RealtimeChangeCount != DaTex->RealtimeChangeCount : 0);
 #else
 	UBOOL bTexChanged = Info->bRealtimeChanged;
 #endif
@@ -311,7 +311,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 	// Metallicafan212:	Implement checking against the new UT469 realtime changed count
 #if DX11_UT_469 || DX11_HP2
-	DaTex->RealtimeChangeCount = Info.Texture != nullptr ? Info.Texture->RealtimeChangedCount : 0;
+	DaTex->RealtimeChangeCount = Info.Texture != nullptr ? Info.Texture->RealtimeChangeCount : 0;
 #else
 	DaTex->RealtimeChangeCount = 0;
 #endif
