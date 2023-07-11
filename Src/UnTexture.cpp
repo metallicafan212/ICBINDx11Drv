@@ -697,27 +697,20 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 	// Metallicafan212:	Update each 4 byte block
 	SIZE_T	Read	= 0;
 	BYTE*	Bytes	= (BYTE*)Source;
-	BYTE*	DBytes	= (BYTE*)ConversionMem;
+	DWORD*	DBytes	= (DWORD*)ConversionMem;
 
 	// Metallicafan212:	Just read across
 	//					There might be a quicker way to do this, but this was the easiest to write lmao
-	while (Read < SourceLength)
+	for(INT i = 0; i < SourceLength; i++)
 	{
 #if DX11_HP2
-		(*(DWORD*)DBytes) = Palette[Bytes[Read]].Int4;
+		(*DBytes) = Palette[*Bytes].Int4;
 #else
-		/*
-		const FColor& Color = Palette[Bytes[Read]];
-		DBytes[0] = Color.R;
-		DBytes[1] = Color.G;
-		DBytes[2] = Color.B;
-		DBytes[3] = Color.A;
-		*/
-		(*(DWORD*)DBytes) = GET_COLOR_DWORD(Palette[Bytes[Read]]);
+		(*DBytes) = GET_COLOR_DWORD(Palette[*Bytes]);
 #endif
 
-		Read	+= 1;
-		DBytes	+= 4;
+		Bytes++;
+		DBytes++;
 	}
 
 
