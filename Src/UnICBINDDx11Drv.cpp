@@ -556,7 +556,11 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	GLog->Logf(TEXT("DX11: Registering supported texture formats"));
 
 	// Metallicafan212:	Assemble the supported texture types
+#if P8_COMPUTE_SHADER
 	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
+#else
+	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 4, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
+#endif
 
 	RegisterTextureFormat(TEXF_RGBA7, DXGI_FORMAT_B8G8R8A8_UNORM, 1, 4, &FD3DTexType::RawPitch, nullptr, RGBA7To8);
 	

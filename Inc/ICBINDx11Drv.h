@@ -11,6 +11,8 @@
 
 #define RES_SCALE_IN_PROJ 0
 
+#define P8_COMPUTE_SHADER 0 
+
 #if UNREAL_TOURNAMENT_OLDUNREAL
 # define DX11_UT_469 1
 # undef DX11_HP2

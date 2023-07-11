@@ -396,6 +396,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 		unguard;
 
+#if P8_COMPUTE_SHADER
 		guard(CreateUAVViews);
 
 		if (Info.Format == TEXF_P8)
@@ -444,6 +445,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		}
 
 		unguard;
+#endif
 
 		MakeTextureSampler(DaTex, PolyFlags);
 
@@ -490,6 +492,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 			if (bMaskedHack)
 				Info.Palette[0] = FColor(0, 0, 0, 0);
 
+#if P8_COMPUTE_SHADER
 			// Metallicafan212:	TODO! Move this around to allow the child convert functions to loop
 			//					This way, I don't need a specific P8 hack!!!
 			if (Info.Format == TEXF_P8)
@@ -504,6 +507,20 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 						m_D3DDeviceContext->UpdateSubresource(DaTex->P8ConvTex, i, nullptr, MipData, MipPitch, 0);
 					}
 				}
+
+				INT SavedTexAddress = -1;
+
+				// Metallicafan212:	Figure out if it's set!
+				for (INT i = 0; i < ARRAY_COUNT(BoundTextures); i++)
+				{
+					if (BoundTextures[i].m_SRV == DaTex->m_View)
+					{
+						SetTexture(i, nullptr, 0);
+						SavedTexAddress = i;
+						break;
+					}
+				}
+
 
 				// Metallicafan212:	Use the shader for this purpose!!!!
 				INT X = appCeil(Info.USize / 32.0f);
@@ -522,7 +539,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 				ID3D11ShaderResourceView* InSRV[2] = { DaTex->P8ConvSRV, PaletteSRV };
 				m_D3DDeviceContext->CSSetShaderResources(0, 2, InSRV);
 
-				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, Info.NumMips, DaTex->UAVMips.GetData(), nullptr);
+				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, Info.NumMips, (ID3D11UnorderedAccessView**)DaTex->UAVMips.GetData(), nullptr);
 
 				// Metallicafan212:	Bind the P8 upload shader
 				FP8ToRGBAShader->USize	= Info.USize;
@@ -544,9 +561,17 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 				constexpr ID3D11ShaderResourceView* SRVTemp[2] = { nullptr, nullptr };
 				m_D3DDeviceContext->CSSetShaderResources(0, 2, SRVTemp);
 
-				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, Info.NumMips, DaTex->UAVBlank.GetData(), nullptr);
+				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, Info.NumMips, (ID3D11UnorderedAccessView**)DaTex->UAVBlank.GetData(), nullptr);
+
+				Info.bRealtimeChanged = 0;
+
+				if (SavedTexAddress != -1)
+				{
+					SetTexture(SavedTexAddress, &Info, PolyFlags);
+				}
 			}
 			else
+#endif
 			{
 
 				for (INT i = 0; i < Info.NumMips; i++)
