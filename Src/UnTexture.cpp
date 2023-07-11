@@ -215,6 +215,50 @@ UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataP
 	return TRUE;
 }
 
+void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V, INT UL, INT VL)
+{
+	guard(UICBINDx11RenderDevice::UpdateTextureRect);
+
+	// Metallicafan212:	This is used by the lightmap atlas textures
+	QWORD CacheID = Info.CacheID;
+
+	// Metallicafan212:	TODO! Create the texture
+	FD3DTexture* DaTex = TextureMap.Find(CacheID);
+
+	if (DaTex == nullptr)
+	{
+		DaTex = &TextureMap.Set(CacheID, FD3DTexture());
+
+		if (DaTex == nullptr)
+		{
+			// Metallicafan212:	Fail here?
+			appErrorf(TEXT("Texture map returned nullptr"));
+		}
+	}
+
+	// Metallicafan212:	All of this is just copied from the full function
+	DaTex->Tex			= Info.Texture;
+
+	// Metallicafan212:	Cache it now!
+	DaTex->UClamp		= Info.UClamp;
+	DaTex->VClamp		= Info.VClamp;
+	DaTex->NumMips		= Info.NumMips;
+	DaTex->USize		= Info.USize;
+	DaTex->VSize		= Info.VSize;
+
+	if (m_FeatureLevel != D3D_FEATURE_LEVEL_11_1)
+	{
+		DaTex->USize	= Clamp(DaTex->USize, 4, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		DaTex->VSize	= Clamp(DaTex->VSize, 4, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+	}
+	
+	DaTex->CacheID		= CacheID;
+
+	// Metallicafan212:	TODO! Add in a partial upload function to the texture type support struct!!!
+
+	unguard;
+}
+
 void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, UBOOL bJustSampler)
 {
 	guard(UICBINDx11RenderDevice::CacheTextureInfo);

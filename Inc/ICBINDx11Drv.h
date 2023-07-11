@@ -1189,6 +1189,10 @@ class UICBINDx11RenderDevice : public URenderDevice
 	virtual UBOOL SupportsTextureFormat(ETextureFormat Format);
 	
 	virtual void DrawGouraudTriangles(const FSceneNode * Frame, const FTextureInfo & Info, FTransTexture* const Pts, INT NumPts, DWORD PolyFlags, DWORD DataFlags, FSpanBuffer * Span);
+
+	// Metallicafan212:	Support partial uploads
+	virtual void UpdateTextureRect(FTextureInfo& Info, INT U, INT V, INT UL, INT VL);
+
 #endif
 
 	virtual void Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD LineFlags, FVector OrigP, FVector OrigQ);

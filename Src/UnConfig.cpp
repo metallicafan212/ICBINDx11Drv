@@ -58,6 +58,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	// Metallicafan212:	DX11 supports massive textures
 	UseLightmapAtlas = 1;
+
+	MaxTextureSize		= D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION;
 #endif
 
 	if (!GConfig->GetBool(ClsName, TEXT("DetailTextures"), (UBOOL&)DetailTextures))
