@@ -164,10 +164,19 @@ void UICBINDx11RenderDevice::MakeTextureSampler(FD3DTexture* Bind, FPLAG PolyFla
 	unguard;
 }
 
-FORCEINLINE UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch)
+UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch)
 {
 #if DX11_HP2
 	FMipmap* Mip = Info.Mips[MipNum];
+
+	Size = 0;
+	SourcePitch = 0;
+
+	if (Mip == nullptr)
+	{
+		return 0;
+	}
+
 	if (Mip->DataPtr == nullptr)
 	{
 		Mip->DataArray.Load();
@@ -332,7 +341,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		Desc.Height				= DaTex->VSize;
 		Desc.MipLevels			= Info.NumMips;
 		Desc.Usage				= D3D11_USAGE_DEFAULT;
-		Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE;
+		Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE | (Info.Format == TEXF_P8 ? D3D11_BIND_UNORDERED_ACCESS : 0);
 		Desc.ArraySize			= 1;
 		Desc.CPUAccessFlags		= 0;//D3D11_CPU_ACCESS_WRITE;
 		Desc.SampleDesc.Count	= 1;
@@ -387,6 +396,55 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 		unguard;
 
+		guard(CreateUAVViews);
+
+		if (Info.Format == TEXF_P8)
+		{
+			// Metallicafan212:	Create the UAV for this mip
+			DaTex->UAVMips.Add(Info.NumMips);
+			DaTex->UAVBlank.AddZeroed(Info.NumMips);
+
+			CD3D11_UNORDERED_ACCESS_VIEW_DESC UAVDesc = CD3D11_UNORDERED_ACCESS_VIEW_DESC(DaTex->m_Tex, D3D11_UAV_DIMENSION_TEXTURE2D, DXGI_FORMAT_R8G8B8A8_UNORM);
+			for (INT i = 0; i < Info.NumMips; i++)
+			{
+				UAVDesc.Texture2D.MipSlice = i;
+				hr = m_D3DDevice->CreateUnorderedAccessView(DaTex->m_Tex, &UAVDesc, &DaTex->UAVMips(i));
+
+				ThrowIfFailed(hr);
+			}
+
+			// Metallicafan212:	Now create a texture to hold onto the P8 info when converting it
+			//CD3D11_TEXTURE2D_DESC tempDesc = CD3D11_TEXTURE2D_DESC(DXGI_FORMAT_R8_UNORM, Info.USize, Info.VSize, 1U, Info.NumMips);
+			Desc.Format				= DXGI_FORMAT_R8_TYPELESS;
+			Desc.Width				= DaTex->USize;
+			Desc.Height				= DaTex->VSize;
+			Desc.MipLevels			= Info.NumMips;
+			Desc.Usage				= D3D11_USAGE_DEFAULT;
+			Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+			Desc.ArraySize			= 1;
+			Desc.CPUAccessFlags		= 0;//D3D11_CPU_ACCESS_WRITE;
+			Desc.SampleDesc.Count	= 1;
+
+			hr = m_D3DDevice->CreateTexture2D(&Desc, nullptr, &DaTex->P8ConvTex);
+
+			ThrowIfFailed(hr);
+
+			// Metallicafan212:	Now the shader resource view
+			D3D11_SHADER_RESOURCE_VIEW_DESC vDesc;
+			appMemzero(&vDesc, sizeof(vDesc));
+
+			vDesc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
+			vDesc.Texture2D.MipLevels		= Info.NumMips;
+			vDesc.Texture2D.MostDetailedMip = 0;
+			vDesc.BufferEx.FirstElement		= 0;
+			vDesc.Format					= DXGI_FORMAT_R8_UINT;
+			hr = m_D3DDevice->CreateShaderResourceView(DaTex->P8ConvTex, &vDesc, &DaTex->P8ConvSRV);
+
+			ThrowIfFailed(hr);
+		}
+
+		unguard;
+
 		MakeTextureSampler(DaTex, PolyFlags);
 
 		// Metallicafan212:	Now process it
@@ -413,7 +471,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 			for (INT i = 0; i < Info.NumMips; i++)
 			{	
 				if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch))
-					Type->TexUploadFunc(MipData, MipSize, MipPitch, ConversionMemory, DaTex, m_D3DDeviceContext, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
+					Type->TexUploadFunc(MipData, MipSize, MipPitch, ConversionMemory, DaTex, this, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
 			}
 
 			unguard;
@@ -432,18 +490,78 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 			if (bMaskedHack)
 				Info.Palette[0] = FColor(0, 0, 0, 0);
 
-			for (INT i = 0; i < Info.NumMips; i++)
+			// Metallicafan212:	TODO! Move this around to allow the child convert functions to loop
+			//					This way, I don't need a specific P8 hack!!!
+			if (Info.Format == TEXF_P8)
 			{
-				if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch))
+				for (INT i = 0; i < Info.NumMips; i++)
 				{
-					// Metallicafan212:	Sigh.... We need to map dynamic memory to do this!!!!!
-					// Metallicafan212:	Do the conversion over
-					SIZE_T Size = (MipSize == 0 ? 4 * Info.Mips[i]->USize * Info.Mips[i]->VSize : MipSize);
-					checkSlow(Size <= 4 * Info.USize * Info.VSize);
+					MipData		= nullptr;
+					MipPitch	= 0;
 
-					Type->TexConvFunc(Info.Palette, MipData, Size, (Type->*P)(Info.Mips[i]->USize), ConversionMemory, DaTex, m_D3DDeviceContext, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
+					if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch))
+					{
+						m_D3DDeviceContext->UpdateSubresource(DaTex->P8ConvTex, i, nullptr, MipData, MipPitch, 0);
+					}
 				}
 
+				// Metallicafan212:	Use the shader for this purpose!!!!
+				INT X = appCeil(Info.USize / 32.0f);
+				INT Y = appCeil(Info.VSize / 32.0f);
+
+				// Metallicafan212:	Update the palette colors
+				//					This is probably dangerous to do this way, but it's much much quicker
+				for (INT i = 0; i < 256; i++)
+				{
+					((DWORD*)ConversionMemory)[i] = GET_COLOR_DWORD(Info.Palette[i]);
+				}
+				//m_D3DDeviceContext->UpdateSubresource(PaletteTexture, 0, nullptr, (void*)Info.Palette, 256 * 4, 0);
+				m_D3DDeviceContext->UpdateSubresource(PaletteTexture, 0, nullptr, ConversionMemory, 256 * 4, 0);
+
+				// Metallicafan212:	Now bind the input
+				ID3D11ShaderResourceView* InSRV[2] = { DaTex->P8ConvSRV, PaletteSRV };
+				m_D3DDeviceContext->CSSetShaderResources(0, 2, InSRV);
+
+				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, Info.NumMips, DaTex->UAVMips.GetData(), nullptr);
+
+				// Metallicafan212:	Bind the P8 upload shader
+				FP8ToRGBAShader->USize	= Info.USize;
+				FP8ToRGBAShader->VSize	= Info.VSize;
+				FP8ToRGBAShader->Bind();
+
+				// Metallicafan212:	Now execute
+				m_D3DDeviceContext->Dispatch(X, Y, Info.NumMips);
+
+				// Metallicafan212:	Wait for it to complete...
+				m_D3DDeviceContext->End(m_D3DQuery);
+
+				// Metallicafan212:	Wait for it
+				BOOL bDone = 0;
+
+				while (m_D3DDeviceContext->GetData(m_D3DQuery, &bDone, sizeof(BOOL), 0) != S_OK && bDone == 0);
+
+				// Metallicafan212:	Clear the render resources!!!
+				constexpr ID3D11ShaderResourceView* SRVTemp[2] = { nullptr, nullptr };
+				m_D3DDeviceContext->CSSetShaderResources(0, 2, SRVTemp);
+
+				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, Info.NumMips, DaTex->UAVBlank.GetData(), nullptr);
+			}
+			else
+			{
+
+				for (INT i = 0; i < Info.NumMips; i++)
+				{
+					if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch))
+					{
+						// Metallicafan212:	Sigh.... We need to map dynamic memory to do this!!!!!
+						// Metallicafan212:	Do the conversion over
+						SIZE_T Size = (MipSize == 0 ? 4 * Info.Mips[i]->USize * Info.Mips[i]->VSize : MipSize);
+						checkSlow(Size <= 4 * Info.USize * Info.VSize);
+
+						Type->TexConvFunc(Info.Palette, MipData, Size, (Type->*P)(Info.Mips[i]->USize), ConversionMemory, DaTex, this, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
+					}
+
+				}
 			}
 
 			// Metallicafan212:	Restore
@@ -453,8 +571,6 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 			unguard;
 		}
 	}
-
-	//delete[] ConversionMemory;
 
 	unguard;
 }
@@ -483,17 +599,17 @@ void UICBINDx11RenderDevice::RegisterTextureFormat(ETextureFormat Format, DXGI_F
 }
 
 // Metallicafan212:	Texture uploading functions
-void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip)
+void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip)
 {
 	guard(MemcpyTexUpload);
 
 	// Metallicafan212:	Just copy over, todo!!!!
-	m_D3DDeviceContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, Source, SourcePitch, 0);
+	inDev->m_D3DDeviceContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, Source, SourcePitch, 0);
 
 	unguard;
 }
 
-void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip)
+void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip)
 {
 	guard(RGBA7To8);
 
@@ -545,11 +661,11 @@ void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 	}
 
 	// Metallicafan212:	Now update
-	m_D3DDeviceContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, ConversionMem, SourcePitch, 0);
+	inDev->m_D3DDeviceContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, ConversionMem, SourcePitch, 0);
 	unguard;
 }
 
-void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip)
+void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip)
 {
 	guard(P8ToRGBA);
 
@@ -581,7 +697,7 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 
 
 	// Metallicafan212:	Now update
-	m_D3DDeviceContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, ConversionMem, SourcePitch, 0);
+	inDev->m_D3DDeviceContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, ConversionMem, SourcePitch, 0);
 
 	unguard;
 }

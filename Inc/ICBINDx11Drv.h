@@ -312,6 +312,18 @@ struct FD3DTexture
 	// Metallicafan212:	Color for the "color masking" system I added
 	FPlane			MaskedColor;
 	FPlane			MaskedGranularity;
+
+	//ID3D11UnorderedAccessView*	TexUAV;
+
+	// Metallicafan212:	Array of UAVs for this texture
+	TArray<ID3D11UnorderedAccessView*> UAVMips;
+
+	// Metallicafan212:	TODO! Keep around an array of nullptr to reset the compute shader
+	TArray<ID3D11UnorderedAccessView*> UAVBlank;
+
+	// Metallicafan212:	Conversion texture for the P8 data
+	ID3D11Texture2D* P8ConvTex;
+	ID3D11ShaderResourceView* P8ConvSRV;
 };
 
 struct FD3DBoundTex
@@ -335,8 +347,8 @@ struct FD3DBoundTex
 // Metallicafan212:	Texture support table info
 struct FD3DTexType
 {
-	typedef void (*UploadFunc)(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
-	typedef void (*ConversionFunc)(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
+	typedef void (*UploadFunc)(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip);
+	typedef void (*ConversionFunc)(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip);
 	typedef SIZE_T (FD3DTexType::* GetPitch)(INT USize);
 
 	// Metallicafan212:	The UE format
@@ -373,9 +385,9 @@ struct FD3DTexType
 };
 
 // Metallicafan212:	TODO! Work on this more
-void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
-void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
-void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, ID3D11DeviceContext* m_D3DDeviceContext, INT USize, INT VSize, INT Mip);
+void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip);
+void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip);
+void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip);
 
 // Metallicafan212:	Base layout declaration
 extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
@@ -576,6 +588,8 @@ class UICBINDx11RenderDevice : public URenderDevice
 	FD3DLineShader*						FLineShader;
 
 	FD3DMSAAShader*						FMSAAShader;
+	
+	FD3DP8ToRGBAShader*					FP8ToRGBAShader;
 
 	FD3DShader*							CurrentShader;
 
@@ -649,6 +663,10 @@ class UICBINDx11RenderDevice : public URenderDevice
 	//					For most, it's just going to be = 4bpp (to keep it simple)
 	BYTE*								ConversionMemory;
 	SIZE_T								ConversionMemSize;
+
+	// Metallicafan212:	Special texture for holding the palette colors
+	ID3D11Texture2D*					PaletteTexture;
+	ID3D11ShaderResourceView*			PaletteSRV;
 
 	// Metallicafan212:	Texturing support
 	//					TODO! Query for this limitation and put the number in a ifdef!

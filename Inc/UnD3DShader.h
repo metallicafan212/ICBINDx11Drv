@@ -430,3 +430,28 @@ public:
 
 	virtual void WriteConstantBuffer(void* InMem);
 };
+
+// Metallicafan212:	P8 to RGBA8 compute shader
+class FD3DP8ToRGBAShader : public FD3DComputeShader
+{
+public:
+
+	INT USize, VSize;
+
+	FD3DP8ToRGBAShader() : FD3DComputeShader()
+	{
+		ComputeFile = SHADER_FOLDER TEXT("P8ToRGBA.hlsl");
+		ComputeFunc = TEXT("CSMain");
+	}
+
+	// Metallicafan212:	Constructor that inits the device pointer
+	FD3DP8ToRGBAShader(class UICBINDx11RenderDevice* InParent);
+
+	// Metallicafan212:	Shader interface
+	virtual void Init();
+	virtual void Bind();
+
+	virtual void SetupConstantBuffer();
+
+	virtual void WriteConstantBuffer(void* InMem);
+};

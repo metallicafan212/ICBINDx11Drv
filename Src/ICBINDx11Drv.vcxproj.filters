@@ -78,10 +78,13 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UnMSAAShader.cpp">
-      <Filter>Source Files\Shaders</Filter>
+      <Filter>Source Files\Shaders\ComputeShaders</Filter>
     </ClCompile>
     <ClCompile Include="ResScalingShader.cpp">
-      <Filter>Source Files\Shaders</Filter>
+      <Filter>Source Files\Shaders\ComputeShaders</Filter>
+    </ClCompile>
+    <ClCompile Include="UnP8ToRGBAShader.cpp">
+      <Filter>Source Files\Shaders\ComputeShaders</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

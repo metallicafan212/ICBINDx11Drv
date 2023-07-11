@@ -76,6 +76,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_DELETE(FSurfShader);
 	SAFE_DELETE(FLineShader);
 	SAFE_DELETE(FMSAAShader);
+	SAFE_DELETE(FP8ToRGBAShader);
 
 	FlushRasterStates();
 
@@ -258,6 +259,8 @@ MAKE_DEVICE:
 	FLineShader			= new FD3DLineShader(this);
 
 	FMSAAShader			= new FD3DMSAAShader(this);
+
+	FP8ToRGBAShader		= new FD3DP8ToRGBAShader(this);
 
 	// Metallicafan212:	Setup the debug info
 #if 1//_DEBUG
@@ -481,9 +484,13 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	FGenShader			= nullptr;
 	FResScaleShader		= nullptr;
 	FMSAAShader			= nullptr;
+	FP8ToRGBAShader		= nullptr;
 #if USE_COMPUTE_SHADER
 	FMshLghtCompShader	= nullptr;
 #endif
+
+	PaletteTexture		= nullptr;
+	PaletteSRV = nullptr;
 
 	// Metallicafan212:	Blank tex, resource, and samplers for defaults
 	BlankTexture		= nullptr;
@@ -549,7 +556,7 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	GLog->Logf(TEXT("DX11: Registering supported texture formats"));
 
 	// Metallicafan212:	Assemble the supported texture types
-	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 4, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
+	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
 
 	RegisterTextureFormat(TEXF_RGBA7, DXGI_FORMAT_B8G8R8A8_UNORM, 1, 4, &FD3DTexType::RawPitch, nullptr, RGBA7To8);
 	
@@ -650,6 +657,9 @@ void UICBINDx11RenderDevice::SetupResources()
 	SAFE_RELEASE(m_DXGISurf);
 	SAFE_RELEASE(m_TextParams);
 #endif
+
+	SAFE_RELEASE(PaletteSRV);
+	SAFE_RELEASE(PaletteTexture);
 
 	// Metallicafan212:	No bind texture/sampler
 	SAFE_RELEASE(BlankTexture);
@@ -1123,7 +1133,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	Desc.Height				= 2;
 	Desc.MipLevels			= 1;
 	Desc.Usage				= D3D11_USAGE_DEFAULT;
-	Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE;
+	Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 	Desc.ArraySize			= 1;
 	// Metallicafan212:	Not needed
 	Desc.CPUAccessFlags		= 0;//D3D11_CPU_ACCESS_WRITE;
@@ -1160,6 +1170,20 @@ void UICBINDx11RenderDevice::SetupResources()
 	SDesc.ComparisonFunc	= D3D11_COMPARISON_NEVER;
 
 	hr = m_D3DDevice->CreateSamplerState(&SDesc, &BlankSampler);
+
+	ThrowIfFailed(hr);
+
+	// Metallicafan212:	Make a texture to hold onto the palette info
+	Desc.Width				= 256;
+	Desc.Height				= 1;
+	Desc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;
+
+	hr = m_D3DDevice->CreateTexture2D(&Desc, nullptr, &PaletteTexture);
+
+	ThrowIfFailed(hr);
+
+	// Metallicafan212:	Now the shader resource for it
+	hr = m_D3DDevice->CreateShaderResourceView(PaletteTexture, nullptr, &PaletteSRV);
 
 	ThrowIfFailed(hr);
 
@@ -1282,6 +1306,7 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_DELETE(FSurfShader);
 	SAFE_DELETE(FLineShader);
 	SAFE_DELETE(FMSAAShader);
+	SAFE_DELETE(FP8ToRGBAShader);
 #if USE_COMPUTE_SHADER
 	SAFE_DELETE(FMshLghtCompShader);
 #endif
@@ -1425,8 +1450,19 @@ void UICBINDx11RenderDevice::Flush(UBOOL AllowPrecache)
 	for (TMap<D3DCacheId, FD3DTexture>::TIterator It(TextureMap); It; ++It)
 	{
 		// Metallicafan212:	Release all this info
-		SAFE_RELEASE(It.Value().m_View);
-		SAFE_RELEASE(It.Value().m_Tex);
+		FD3DTexture& Tex = It.Value();
+		SAFE_RELEASE(Tex.m_View);
+		SAFE_RELEASE(Tex.m_Tex);
+
+		for (INT i = 0; i < Tex.UAVMips.Num(); i++)
+		{
+			SAFE_RELEASE(Tex.UAVMips(i));
+		}
+
+		//SAFE_RELEASE(Tex.TexUAV);
+
+		SAFE_RELEASE(Tex.P8ConvSRV);
+		SAFE_RELEASE(Tex.P8ConvTex);
 	}
 
 	TextureMap.Empty();

@@ -207,6 +207,7 @@
     <ClCompile Include="UnLineShader.cpp" />
     <ClCompile Include="UnMeshShader.cpp" />
     <ClCompile Include="UnMSAAShader.cpp" />
+    <ClCompile Include="UnP8ToRGBAShader.cpp" />
     <ClCompile Include="UnShader.cpp" />
     <ClCompile Include="UnSurf.cpp" />
     <ClCompile Include="UnTexture.cpp" />
