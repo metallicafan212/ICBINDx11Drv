@@ -76,7 +76,9 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_DELETE(FSurfShader);
 	SAFE_DELETE(FLineShader);
 	SAFE_DELETE(FMSAAShader);
+#if P8_COMPUTE_SHADER
 	SAFE_DELETE(FP8ToRGBAShader);
+#endif
 
 	FlushRasterStates();
 
@@ -260,7 +262,9 @@ MAKE_DEVICE:
 
 	FMSAAShader			= new FD3DMSAAShader(this);
 
+#if P8_COMPUTE_SHADER
 	FP8ToRGBAShader		= new FD3DP8ToRGBAShader(this);
+#endif
 
 	// Metallicafan212:	Setup the debug info
 #if 1//_DEBUG
@@ -484,7 +488,9 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	FGenShader			= nullptr;
 	FResScaleShader		= nullptr;
 	FMSAAShader			= nullptr;
+#if P8_COMPUTE_SHADER
 	FP8ToRGBAShader		= nullptr;
+#endif
 #if USE_COMPUTE_SHADER
 	FMshLghtCompShader	= nullptr;
 #endif
@@ -1310,7 +1316,9 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_DELETE(FSurfShader);
 	SAFE_DELETE(FLineShader);
 	SAFE_DELETE(FMSAAShader);
+#if P8_COMPUTE_SHADER
 	SAFE_DELETE(FP8ToRGBAShader);
+#endif
 #if USE_COMPUTE_SHADER
 	SAFE_DELETE(FMshLghtCompShader);
 #endif

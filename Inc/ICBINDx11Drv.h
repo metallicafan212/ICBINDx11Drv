@@ -594,7 +594,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	FD3DMSAAShader*						FMSAAShader;
 	
+#if P8_COMPUTE_SHADER
 	FD3DP8ToRGBAShader*					FP8ToRGBAShader;
+#endif
 
 	FD3DShader*							CurrentShader;
 
