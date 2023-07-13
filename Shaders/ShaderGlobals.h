@@ -92,6 +92,14 @@ float4 DoPixelFog(float DistFog, float4 Color)
 	return float4(Temp, Color.w);
 }
 
+float4 DoGammaCorrection(float4 ColorIn)
+{
+	float OverGamma = 1.0f / Gamma;
+	ColorIn.xyz = pow(ColorIn.xyz, float3(OverGamma, OverGamma, OverGamma));
+	
+	return ColorIn;
+}
+
 float4 DoFinalColor(float4 ColorIn)
 {
 	// Metallicafan212:	If doing selection, move out the selection color
@@ -108,8 +116,8 @@ float4 DoFinalColor(float4 ColorIn)
 	}
 	
 	// Metallicafan212:	Gamma correct the color!!!!
-	float OverGamma = 1.0f / Gamma;
-	ColorIn.xyz = pow(ColorIn.xyz, float3(OverGamma, OverGamma, OverGamma));
+	//float OverGamma = 1.0f / Gamma;
+	//ColorIn.xyz = pow(ColorIn.xyz, float3(OverGamma, OverGamma, OverGamma));
 	
 	// Metallicafan212:	Early return
 	if(BWPercent <= 0.0f)

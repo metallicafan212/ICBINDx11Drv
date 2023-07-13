@@ -135,11 +135,11 @@ float4 PxShader(PSInput input) : SV_TARGET
 		DiffColor = Diffuse.Load(float3(UseUV, LOD)) * input.color;
 		*/
 		
-		DiffColor = Diffuse.SampleBias(DiffState, UseUV, 0.0f) * input.color;
+		DiffColor = DoGammaCorrection(Diffuse.SampleBias(DiffState, UseUV, 0.0f)) * input.color;
 	}
 	else
 	{
-		DiffColor = Diffuse.SampleBias(DiffState, UseUV, 0.0f) * input.color;
+		DiffColor = DoGammaCorrection(Diffuse.SampleBias(DiffState, UseUV, 0.0f)) * input.color;
 	}
 	
 	

@@ -162,7 +162,7 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	Diffuse texture
 	if(bTexturesBound[0].x != 0)
 	{
-		float4 Diff  	= Diffuse.SampleBias(DiffState, input.uv, 0.0f);
+		float4 Diff  	= DoGammaCorrection(Diffuse.SampleBias(DiffState, input.uv, 0.0f));
 		DiffColor.xyz  *= Diff.xyz;
 		DiffColor.w	   *= Diff.w;
 	}
@@ -173,7 +173,7 @@ PSOutput PxShader(PSInput input)
 	if(bTexturesBound[1].x != 0 && input.dUV.z < 380.0f)
 	{
 		// Metallicafan212:	Sample it
-		float3 Det = Detail.SampleBias(DetailState, input.dUV.xy, 0.0f).xyz;
+		float3 Det = DoGammaCorrection(Detail.SampleBias(DetailState, input.dUV.xy, 0.0f)).xyz;
 		
 		// Metallicafan212:	Now lerp it
 		float alpha = input.dUV.z / 380.0f;
@@ -194,7 +194,7 @@ PSOutput PxShader(PSInput input)
 	//					This just modulates the color, like the lightmap
 	if(bTexturesBound[0].z != 0)
 	{
-		DiffColor.xyz *= (Macro.SampleBias(MacroState, input.mUV, 0.0f)).xyz;
+		DiffColor.xyz *= DoGammaCorrection(Macro.SampleBias(MacroState, input.mUV, 0.0f)).xyz;
 	}
 	
 	//float lAlpha = 1.0f;
@@ -203,7 +203,7 @@ PSOutput PxShader(PSInput input)
 	//					TODO! Allow the user to specify the lightmap multiplication (some people like one-x scaling)
 	if(bTexturesBound[0].y != 0)
 	{
-		float4 LColor 	= Light.SampleBias(LightState, input.lUV, 0.0f);
+		float4 LColor 	= DoGammaCorrection(Light.SampleBias(LightState, input.lUV, 0.0f));
 		DiffColor.xyz 	*= LColor.xyz * 2.0f;
 		
 		//lAlpha = LColor.w;
@@ -212,7 +212,7 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	Fog map
 	if(bTexturesBound[0].w != 0)
 	{
-		float4 FogColor = Fogmap.SampleBias(FogState, input.fUV, 0.0f);
+		float4 FogColor = DoGammaCorrection(Fogmap.SampleBias(FogState, input.fUV, 0.0f));
 		DiffColor.xyz 	= mad(DiffColor.xyz, (1.0f - FogColor.w), FogColor.xyz);
 		//DiffColor.xyz *= FogColor.w;
 		//DiffColor.xyz += FogColor.xyz;
