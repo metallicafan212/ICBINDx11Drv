@@ -2,11 +2,13 @@
 Metallicafan212’s Farm-Raised Open Source DirectX 11 Renderer.
 ![image](https://github.com/metallicafan212/D3D11Drv/assets/5996243/787208bd-fe10-4f51-a7e6-675cc8a5fc3c)
 
-
 This repository contains a working (albeit unoptimized and a bit messy) DX11 renderer for HP2 New Engine, Old Unreal UT 469, and in the future, for more UE1 games as well.
 Currently in an alpha stage, as I need to implement more user configurables, more features, add a custom MSAA resolve to fix blurry tile rendering, etc.
 Parts are based on how the DX9 renderer works, but have been heavily modified by myself. The only part copied "wholesale" from DX9 is the projection setup, as it actually works.
 Eventually, I will be recoding the projection setup so that it uses the standard DirectX math libraries, but for now, this works.
+
+## TL;DR, Pls gib latest release
+https://github.com/metallicafan212/ICBINDx11Drv/releases/latest
 
 ## Current state
 This renderer works great, but it's about 10% slower than DX9 in the most optimal of scenes, and up to 50% slower than DX9 in the least optimal scenes (tons of actors, for example).
