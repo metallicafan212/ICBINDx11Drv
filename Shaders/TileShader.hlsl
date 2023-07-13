@@ -150,10 +150,10 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	DiffColor = DoPixelFog(input.distFog, DiffColor);
 	
-	if(bDoSelection || !input.bRejectBW)
-	{
-		DiffColor = DoFinalColor(DiffColor);
-	}
+	//if(bDoSelection || !input.bRejectBW)
+	//{
+	DiffColor = DoFinalColor(DiffColor);
+	//}
 
 	return DiffColor;
 }

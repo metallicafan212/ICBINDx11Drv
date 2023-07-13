@@ -29,7 +29,9 @@ struct FShaderVarCommon
 	//UBOOL	bNVTileHack;
 
 	// Metallicafan212:	Pad it!!!!
-	FLOAT	Pad[2];
+	//FLOAT	Pad[2];
+	FLOAT	Gamma;
+	FLOAT	Pad;
 
 	// Metallicafan212:	Now fog settings
 	FPlane	DistanceFogColor;

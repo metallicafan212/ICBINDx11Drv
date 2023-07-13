@@ -34,7 +34,9 @@ float	AlphaReject								: packoffset(c4.w); \
 float	BWPercent								: packoffset(c5.x);	\
 int		bAlphaEnabled							: packoffset(c5.y); \
 /*int		bNVTileHack								: packoffset(c5.z); */	\
-float2	Pad										: packoffset(c5.z);	\
+/*float2	Pad										: packoffset(c5.z);*/	\
+float	Gamma									: packoffset(c5.z); \
+float	Pad										: packoffset(c5.w); \
 float4	DistanceFogColor						: packoffset(c6);	\
 float4	DistanceFogSettings						: packoffset(c7);	\
 int4	bTexturesBound[4]						: packoffset(c8);
@@ -104,6 +106,10 @@ float4 DoFinalColor(float4 ColorIn)
 			return float4(SelectionColor.xyz, 1.0f);
 		}
 	}
+	
+	// Metallicafan212:	Gamma correct the color!!!!
+	float OverGamma = 1.0f / Gamma;
+	ColorIn.xyz = pow(ColorIn.xyz, float3(OverGamma, OverGamma, OverGamma));
 	
 	// Metallicafan212:	Early return
 	if(BWPercent <= 0.0f)

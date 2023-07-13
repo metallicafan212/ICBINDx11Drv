@@ -14,8 +14,8 @@ shared cbuffer CommonBuffer : register (b0)
 	float	CubicB					: packoffset(c12.z);
 	float 	CubicC					: packoffset(c12.w);
 	int		FilterType				: packoffset(c13.x);
-	float	Gamma					: packoffset(c13.y);
-	float2	Pad3					: packoffset(c13.z);
+	//float	Gamma					: packoffset(c13.y);
+	float3	Pad3					: packoffset(c13.y);
 	float4 	SampleOffsets[8]		: packoffset(c14);
 };
 
@@ -426,8 +426,10 @@ void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
     output = max(output, 0.0f);
 	
 	// Metallicafan212:	Gamma correct it
-	float OverGamma = 1.0f / Gamma;
-	Out[dispatchThreadID.xy] = float4(pow(output, float3(OverGamma, OverGamma, OverGamma)), 1.0f);
+	//float OverGamma = 1.0f / Gamma;
+	//Out[dispatchThreadID.xy] = float4(pow(output, float3(OverGamma, OverGamma, OverGamma)), 1.0f);
+
+	Out[dispatchThreadID.xy] = float4(output, 1.0f);
 
     //return float4(output, 1.0f);
 	

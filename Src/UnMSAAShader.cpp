@@ -8,8 +8,8 @@ struct FMSAAVars : FShaderVarCommon
 	FLOAT	CubicB;
 	FLOAT 	CubicC;
 	INT		FilterType;
-	FLOAT	Gamma;
-	FLOAT	Pad3[2];
+	//FLOAT	Gamma;
+	FLOAT	Pad3[3];
 	FPlane 	SampleOffsets[8];
 };
 
@@ -111,7 +111,7 @@ void FD3DMSAAShader::WriteConstantBuffer(void* InMem)
 	SDef->FilterType		= ParentDevice->MSAAFilterType;
 
 	// Metallicafan212:	Copy the gamma over
-	SDef->Gamma				= ParentDevice->Gamma;
+	//SDef->Gamma				= ParentDevice->Gamma;
 
 	// Metallicafan212:	Sample offsets
 	switch (ParentDevice->NumAASamples)
