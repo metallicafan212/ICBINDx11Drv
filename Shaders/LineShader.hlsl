@@ -1,24 +1,26 @@
-#define DO_STANDARD_BUFFER 0
+//#define DO_STANDARD_BUFFER 0
 #include "ShaderGlobals.h"
 
 // Metallicafan212:	If to turn on this geo shader or not 
 //					I might make it a user option in the future and dynamically compile this define statement
 #define USE_GEO_SHADER 1
 
+/*
 // Metallicafan212:	Constant buffer, but with the added line stuff
-shared cbuffer CommonBuffer : register (b0)
+shared cbuffer CommonBuffer : register (START_CONST_NUM)
 {
 	COMMON_VARS;
 	
 	// Metallicafan212:	The info we use for this specific shader
-	float2 	ViewSize	: packoffset(c12);
-	float2	Pad2		: packoffset(c12.z);
+	float2 	ViewSize	: packoffset(c6.x);
+	float2	Pad2		: packoffset(c6.z);
 };
+*/
 
 // Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling
 //					The buffer variables have to be defined before they can be used
-#define DO_FINAL_COLOR
-#include "ShaderGlobals.h"
+//#define DO_FINAL_COLOR
+//#include "ShaderGlobals.h"
 
 struct VSInput 
 { 

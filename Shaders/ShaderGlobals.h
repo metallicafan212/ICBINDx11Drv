@@ -2,6 +2,8 @@
 
 #define PI 					(3.1415926535897932f)
 
+#define START_CONST_NUM		b2
+
 // Metallicafan212:	If to define the "final" color function
 //					The complex surface shader redefines the input buffer (as I don't want to keep track of multiple independant buffers)
 //					So we need a way to JUST define this function (if we include it again
@@ -11,43 +13,42 @@
 #define DO_FINAL_COLOR 1
 #endif
 
-#define MAX_TEXTURE_NUMBER 16
-
-/*
-// Metallicafan212:	These weren't needed anymore, so I removed them
-float	ViewX 									: packoffset(c4.x); \
-float 	ViewY 									: packoffset(c4.y); \
-float	Aspect 									: packoffset(c4.z); \
-float	ProjZ 									: packoffset(c4.w); \
-float 	RFX2 									: packoffset(c5.x); \
-float	RFY2 									: packoffset(c5.y); \
-
-*/
+#define MAX_TEX_NUM 16
 
 #define COMMON_VARS \
-matrix 	Proj									: packoffset(c0); 	\
 /* Metallicafan212:	New vars for different effects */ 				\
-int		bColorMasked							: packoffset(c4.x); \
-int		bDoDistanceFog							: packoffset(c4.y); \
-int		bDoSelection							: packoffset(c4.z);	\
-float	AlphaReject								: packoffset(c4.w); \
-float	BWPercent								: packoffset(c5.x);	\
-int		bAlphaEnabled							: packoffset(c5.y); \
-/*int		bNVTileHack								: packoffset(c5.z); */	\
-/*float2	Pad										: packoffset(c5.z);*/	\
-float	Gamma									: packoffset(c5.z); \
-float	Pad										: packoffset(c5.w); \
-float4	DistanceFogColor						: packoffset(c6);	\
-float4	DistanceFogSettings						: packoffset(c7);	\
-int4	bTexturesBound[4]						: packoffset(c8);
+int		bColorMasked							: packoffset(c0.x); \
+int		bDoSelection							: packoffset(c0.y);	\
+float	AlphaReject								: packoffset(c0.z); \
+float	BWPercent								: packoffset(c0.w);	\
+int		bAlphaEnabled							: packoffset(c1.x); \
+float3	Pad										: packoffset(c1.y); \
+int4	bTexturesBound[MAX_TEX_NUM / 4]			: packoffset(c2);
 
 #if DO_STANDARD_BUFFER
-shared cbuffer CommonBuffer : register (b0)
+shared cbuffer CommonBuffer : register (START_CONST_NUM)
 {
     COMMON_VARS;
 };
 #endif
 #ifdef DO_FINAL_COLOR
+
+// Metallicafan212:	Define the base constant buffer!!!!
+shared cbuffer FrameVariables : register (b0)
+{
+	matrix 	Proj		: packoffset(c0);
+	float	Gamma		: packoffset(c4.x);
+	float2	ViewSize	: packoffset(c4.y);
+	float	Paddy		: packoffset(c4.w);
+};
+
+shared cbuffer DFogVariables : register (b1)
+{
+	float4 	DistanceFogColor 	: packoffset(c0);
+	float4 	DistanceFogSettings	: packoffset(c1);
+	int 	bDoDistanceFog		: packoffset(c2.x);
+	float3	Paddy3				: packoffset(c2.y);
+};
 
 // Metallicafan212:	Distance fog shit
 //					TODO! A better algorithm????

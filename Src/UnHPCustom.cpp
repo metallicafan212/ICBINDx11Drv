@@ -477,6 +477,8 @@ void UICBINDx11RenderDevice::TickDistanceFog()
 	// Metallicafan212:	Keep a copy so we can swap it for the modulated and translucent hacks
 	GlobalShaderVars.DistanceFogFinal	= GlobalShaderVars.DistanceFogColor;
 
+	UpdateFogSettings();
+
 	unguard;
 }
 

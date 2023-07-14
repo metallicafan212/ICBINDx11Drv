@@ -2,17 +2,17 @@
 #include "ShaderGlobals.h"
 
 // Metallicafan212:	Constant buffer, but with the added tile rotation values
-shared cbuffer CommonBuffer : register (b0)
+shared cbuffer CommonBuffer : register (START_CONST_NUM)
 {
 	COMMON_VARS;
 	
 	// Metallicafan212:	The info we use for this specific shader
-	float4		XAxis		: packoffset(c12);
-	float4		YAxis		: packoffset(c13);
-	float4		ZAxis		: packoffset(c14);
-	int			bDoRot		: packoffset(c15.x);
-	int			bDoUVHack	: packoffset(c15.y);
-	float2		Pad3		: packoffset(c15.z);
+	float4		XAxis		: packoffset(c6);
+	float4		YAxis		: packoffset(c7);
+	float4		ZAxis		: packoffset(c8);
+	int			bDoRot		: packoffset(c9.x);
+	int			bDoUVHack	: packoffset(c9.y);
+	float2		Pad3		: packoffset(c9.z);
 	//float3		Pad3		: packoffset(c15.y);
 };
 

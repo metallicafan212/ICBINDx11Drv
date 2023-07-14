@@ -153,13 +153,13 @@ void FD3DShader::Bind()
 
 	// Metallicafan212:	Now finally set it as a resource
 	if(VertexShader != nullptr)
-		ParentDevice->m_D3DDeviceContext->VSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
+		ParentDevice->m_D3DDeviceContext->VSSetConstantBuffers(2, 1, &ShaderConstantsBuffer);
 
 	if(GeoShader != nullptr)
-		ParentDevice->m_D3DDeviceContext->GSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
+		ParentDevice->m_D3DDeviceContext->GSSetConstantBuffers(2, 1, &ShaderConstantsBuffer);
 
 	if(PixelShader != nullptr)
-		ParentDevice->m_D3DDeviceContext->PSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
+		ParentDevice->m_D3DDeviceContext->PSSetConstantBuffers(2, 1, &ShaderConstantsBuffer);
 
 	unguard;
 }
@@ -187,7 +187,8 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 
 	// Metallicafan212:	Copy over
 	FShaderVarCommon* MDef			= ((FShaderVarCommon*)InMem);
-	MDef->Proj					= ParentDevice->Proj;
+	
+	//MDef->Proj					= ParentDevice->Proj;
 	/*
 	MDef->ViewX					= ParentDevice->m_sceneNodeX;
 	MDef->ViewY					= ParentDevice->m_sceneNodeY;
@@ -200,7 +201,7 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 	// Metallicafan212:	Common static information
 	MDef->AlphaReject			= ParentDevice->GlobalShaderVars.AlphaReject;
 	MDef->bColorMasked			= ParentDevice->GlobalShaderVars.bColorMasked;
-	MDef->bDistanceFogEnabled	= ParentDevice->GlobalShaderVars.bDoDistanceFog;
+	//MDef->bDistanceFogEnabled	= ParentDevice->GlobalShaderVars.bDoDistanceFog;
 	MDef->BWPercent				= ParentDevice->GlobalShaderVars.BWPercent;
 
 	// Metallicafan212:	Automatically tell the shader that it's doing selection testing
@@ -211,7 +212,7 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 	//					TODO! Find out the actual reason this happens!!!
 	//MDef->bNVTileHack			= ParentDevice->GlobalShaderVars.bNVTileHack;
 
-	MDef->Gamma					= ParentDevice->Gamma;
+	//MDef->Gamma					= ParentDevice->Gamma;
 
 	// Metallicafan212:	Loop and tell the shader how many textures are bound
 	for (INT i = 0; i < MAX_TEXTURES; i++)
@@ -220,8 +221,8 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 	}
 
 	// Metallicafan212:	Fog stuff
-	MDef->DistanceFogColor		= ParentDevice->GlobalShaderVars.DistanceFogColor;
-	MDef->DistanceFogSettings	= ParentDevice->GlobalShaderVars.DistanceFogSettings;
+	//MDef->DistanceFogColor		= ParentDevice->GlobalShaderVars.DistanceFogColor;
+	//MDef->DistanceFogSettings	= ParentDevice->GlobalShaderVars.DistanceFogSettings;
 
 	unguard;
 }

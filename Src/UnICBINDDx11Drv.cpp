@@ -105,6 +105,9 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_D3DDeviceContext);
 	SAFE_RELEASE(m_D3DDevice);
 
+	SAFE_RELEASE(FrameConstantsBuffer);
+	SAFE_RELEASE(GlobalDistFogBuffer);
+
 	// Metallicafan212:	Set the raster state to an invalid value
 	CurrentRasterState = DXRS_MAX;
 
@@ -366,7 +369,32 @@ MAKE_DEVICE:
 	SetRasterState(DXRS_Normal);
 
 	// Metallicafan212:	Reset the shader state
-	GlobalShaderVars = FGlobalShaderVars();
+	GlobalShaderVars	= FGlobalShaderVars();
+	FrameShaderVars		= FFrameShaderVars();
+
+	// Metallicafan212:	Recreate the constant buffer as well
+	D3D11_BUFFER_DESC ConstDesc = { sizeof(FFrameShaderVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
+
+	hr = m_D3DDevice->CreateBuffer(&ConstDesc, nullptr, &FrameConstantsBuffer);
+
+	// Metallicafan212:	IDK, do something here?
+	ThrowIfFailed(hr);
+
+	m_D3DDeviceContext->VSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
+	m_D3DDeviceContext->GSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
+	m_D3DDeviceContext->PSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
+	m_D3DDeviceContext->CSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
+
+	// Metallicafan212:	Now create one for the distance fog settings
+	D3D11_BUFFER_DESC DistConst = { sizeof(FDistFogVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
+	hr = m_D3DDevice->CreateBuffer(&DistConst, nullptr, &GlobalDistFogBuffer);
+
+	ThrowIfFailed(hr);
+
+	m_D3DDeviceContext->VSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+	m_D3DDeviceContext->GSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+	m_D3DDeviceContext->PSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+	m_D3DDeviceContext->CSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
 
 	unguard;
 }
@@ -524,6 +552,10 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	m_DrawnVerts		= 0;
 	m_BufferedIndices	= 0;
 	m_BufferedVerts		= 0;
+
+	FrameConstantsBuffer = nullptr;
+	GlobalDistFogBuffer = nullptr;
+	
 
 	Viewport			= InViewport;
 
@@ -1550,7 +1582,9 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 	// Metallicafan212:	Gamma is disabled in HP2 because a speedrunning trick involves messing with the brighness bar
 #if !DX11_HP2
-	Gamma = Viewport->GetOuterUClient()->Brightness * 2.0f;
+	FrameShaderVars.Gamma = Viewport->GetOuterUClient()->Brightness * 2.0f;
+#else
+	FrameShaderVars.Gamma = Gamma;
 #endif
 
 #if DX11_HP2
@@ -1619,6 +1653,9 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 	if (GlobalShaderVars.bDoDistanceFog || GlobalShaderVars.bFadeFogValues)
 		TickDistanceFog();
+
+	// Metallicafan212:	Update the shader variables
+	UpdateGlobalShaderVars();
 
 	unguard;
 }
@@ -2344,9 +2381,10 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 		// Metallicafan212:	Remember the scaled values!
 		ScaledSceneNodeX = NewX;
 		ScaledSceneNodeY = NewY;
-
-		
 	}
+
+	FrameShaderVars.ViewX = ScaledSceneNodeX;
+	FrameShaderVars.ViewY = ScaledSceneNodeY;
 
 	SetProjectionStateNoCheck(0, 1);
 
@@ -2402,59 +2440,62 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	invTopMinusBottom = 1.0f / (top - bottom);
 	invNearMinusFar = 1.0f / (zNear - zFar);
 
-	Proj.m[0][0] = 2.0f * zNear * invRightMinusLeft;
-	Proj.m[0][1] = 0.0f;
-	Proj.m[0][2] = 0.0f;
-	Proj.m[0][3] = 0.0f;
+	FrameShaderVars.Proj.m[0][0] = 2.0f * zNear * invRightMinusLeft;
+	FrameShaderVars.Proj.m[0][1] = 0.0f;
+	FrameShaderVars.Proj.m[0][2] = 0.0f;
+	FrameShaderVars.Proj.m[0][3] = 0.0f;
 
-	Proj.m[1][0] = 0.0f;
-	Proj.m[1][1] = 2.0f * zNear * invTopMinusBottom;
-	Proj.m[1][2] = 0.0f;
-	Proj.m[1][3] = 0.0f;
+	FrameShaderVars.Proj.m[1][0] = 0.0f;
+	FrameShaderVars.Proj.m[1][1] = 2.0f * zNear * invTopMinusBottom;
+	FrameShaderVars.Proj.m[1][2] = 0.0f;
+	FrameShaderVars.Proj.m[1][3] = 0.0f;
 
 #if RES_SCALE_IN_PROJ
-	Proj.m[2][0] = 1.0f		/ m_sceneNodeX;//(FLOAT)m_sceneNodeX;
-	Proj.m[2][1] = -1.0f	/ m_sceneNodeY;//(FLOAT)m_sceneNodeY;
+	FrameShaderVars.Proj.m[2][0] = 1.0f		/ m_sceneNodeX;//(FLOAT)m_sceneNodeX;
+	FrameShaderVars.Proj.m[2][1] = -1.0f	/ m_sceneNodeY;//(FLOAT)m_sceneNodeY;
 #else
-	Proj.m[2][0] = 1.0f		/ ScaledSceneNodeX;//(FLOAT)m_sceneNodeX;
-	Proj.m[2][1] = -1.0f	/ ScaledSceneNodeY;//(FLOAT)m_sceneNodeY;
+	FrameShaderVars.Proj.m[2][0] = 1.0f		/ ScaledSceneNodeX;//(FLOAT)m_sceneNodeX;
+	FrameShaderVars.Proj.m[2][1] = -1.0f	/ ScaledSceneNodeY;//(FLOAT)m_sceneNodeY;
 #endif
-	Proj.m[2][2] = zScaleVal * (zFar * invNearMinusFar);
-	Proj.m[2][3] = -1.0f;
+	FrameShaderVars.Proj.m[2][2] = zScaleVal * (zFar * invNearMinusFar);
+	FrameShaderVars.Proj.m[2][3] = -1.0f;
 
-	Proj.m[3][0] = 0.0f;
-	Proj.m[3][1] = 0.0f;
-	Proj.m[3][2] = zScaleVal * zScaleVal * (zNear * zFar * invNearMinusFar);
-	Proj.m[3][3] = 0.0f;
+	FrameShaderVars.Proj.m[3][0] = 0.0f;
+	FrameShaderVars.Proj.m[3][1] = 0.0f;
+	FrameShaderVars.Proj.m[3][2] = zScaleVal * zScaleVal * (zNear * zFar * invNearMinusFar);
+	FrameShaderVars.Proj.m[3][3] = 0.0f;
 
 #if RES_SCALE_IN_PROJ
-	//Proj *= DirectX::XMMatrixScaling(1.0f / ResolutionScale, 1.0f / ResolutionScale, 1.0f);
+	//FrameShaderVars.Proj *= DirectX::XMMatrixScaling(1.0f / ResolutionScale, 1.0f / ResolutionScale, 1.0f);
 #endif
 
-	//Proj = DirectX::XMMatrixPerspectiveFovLH(m_RProjZ, ((FLOAT)m_sceneNodeX) / ((FLOAT)m_sceneNodeY), zScaleVal * zNear, zScaleVal * zFar);
+	//FrameShaderVars.Proj = DirectX::XMMatrixPerspectiveFovLH(m_RProjZ, ((FLOAT)m_sceneNodeX) / ((FLOAT)m_sceneNodeY), zScaleVal * zNear, zScaleVal * zFar);
 
-	//Proj = DirectX::XMMatrixPerspectiveOffCenterLH(0.0f, m_sceneNodeX, m_sceneNodeY, 0.0f, zNear * zScaleVal, zFar * zScaleVal);//DirectX::XMMatrixPerspectiveFovLH(m_RProjZ, m_Aspect, zNear * zScaleVal, zFar * zScaleVal);
+	//FrameShaderVars.Proj = DirectX::XMMatrixPerspectiveOffCenterLH(0.0f, m_sceneNodeX, m_sceneNodeY, 0.0f, zNear * zScaleVal, zFar * zScaleVal);//DirectX::XMMatrixPerspectiveFovLH(m_RProjZ, m_Aspect, zNear * zScaleVal, zFar * zScaleVal);
 	// Metallicafan212:	Transpose???
 	FLOAT Temp[4][4];
-	Temp[0][0]	= Proj.m[0][0];
-	Temp[0][1]	= -Proj.m[1][0];
-	Temp[0][2]	= -Proj.m[2][0];
-	Temp[0][3]	= Proj.m[3][0];
-	Temp[1][0]	= Proj.m[0][1];
-	Temp[1][1]	= -Proj.m[1][1];
-	Temp[1][2]	= -Proj.m[2][1];
-	Temp[1][3]	= Proj.m[3][1];
-	Temp[2][0]	= Proj.m[0][2];
-	Temp[2][1]	= -Proj.m[1][2];
-	Temp[2][2]  = -Proj.m[2][2];
-	Temp[2][3]  = Proj.m[3][2];
-	Temp[3][0]  = Proj.m[0][3];
-	Temp[3][1]  = -Proj.m[1][3];
-	Temp[3][2]  = -Proj.m[2][3];
-	Temp[3][3]  = Proj.m[3][3];
+	Temp[0][0]	= FrameShaderVars.Proj.m[0][0];
+	Temp[0][1]	= -FrameShaderVars.Proj.m[1][0];
+	Temp[0][2]	= -FrameShaderVars.Proj.m[2][0];
+	Temp[0][3]	= FrameShaderVars.Proj.m[3][0];
+	Temp[1][0]	= FrameShaderVars.Proj.m[0][1];
+	Temp[1][1]	= -FrameShaderVars.Proj.m[1][1];
+	Temp[1][2]	= -FrameShaderVars.Proj.m[2][1];
+	Temp[1][3]	= FrameShaderVars.Proj.m[3][1];
+	Temp[2][0]	= FrameShaderVars.Proj.m[0][2];
+	Temp[2][1]	= -FrameShaderVars.Proj.m[1][2];
+	Temp[2][2]  = -FrameShaderVars.Proj.m[2][2];
+	Temp[2][3]  = FrameShaderVars.Proj.m[3][2];
+	Temp[3][0]  = FrameShaderVars.Proj.m[0][3];
+	Temp[3][1]  = -FrameShaderVars.Proj.m[1][3];
+	Temp[3][2]  = -FrameShaderVars.Proj.m[2][3];
+	Temp[3][3]  = FrameShaderVars.Proj.m[3][3];
 
 	// Metallicafan212:	Now back????
-	appMemcpy(&Proj.m[0][0], &Temp[0][0], sizeof(FLOAT[4][4]));
+	appMemcpy(&FrameShaderVars.Proj.m[0][0], &Temp[0][0], sizeof(FLOAT[4][4]));
+
+	// Metallicafan212:	Now update the bind
+	UpdateGlobalShaderVars();
 }
 
 void UICBINDx11RenderDevice::PrecacheTexture(FTextureInfo& Info, FPLAG PolyFlags)

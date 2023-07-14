@@ -4,14 +4,14 @@
 
 
 // Metallicafan212:	Constant buffer, but with the added NumAASamples
-shared cbuffer CommonBuffer : register (b0)
+shared cbuffer CommonBuffer : register (START_CONST_NUM)
 {
 	COMMON_VARS;
 	
 	// Metallicafan212:	The info we use for this specific shader	
-	float	ResolutionScale				: packoffset(c12.x);
+	float	ResolutionScale				: packoffset(c6.x);
 	//float	Gamma						: packoffset(c12.y);
-	float3	Pad3						: packoffset(c12.y);
+	float3	Pad3						: packoffset(c6.y);
 };
 
 // Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling

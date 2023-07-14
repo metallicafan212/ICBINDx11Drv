@@ -918,14 +918,17 @@ void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 			if (Flags & PF_Translucent && !(Flags & (PF_AlphaBlend | PF_Highlighted)))
 			{
 				GlobalShaderVars.DistanceFogColor = GlobalShaderVars.TransFogColor;
+				UpdateFogSettings();
 			}
 			else if (Flags & PF_Modulated)
 			{
 				GlobalShaderVars.DistanceFogColor = GlobalShaderVars.ModFogColor;
+				UpdateFogSettings();
 			}
 			else
 			{
 				GlobalShaderVars.DistanceFogColor = GlobalShaderVars.DistanceFogFinal;
+				UpdateFogSettings();
 			}
 		}
 #endif

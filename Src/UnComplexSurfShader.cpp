@@ -3,7 +3,6 @@
 struct FSurfMatrixDef : FShaderVarCommon
 {
 	FPlane	XAxis, YAxis;
-	//FPlane LPanScale, MPanScale, FPanScale;
 	FPlane	PanScale[5];
 	FPlane	LightandFogScale;
 	FLOAT	SurfAlpha;
@@ -11,7 +10,6 @@ struct FSurfMatrixDef : FShaderVarCommon
 
 	// Metallicafan212:	Keep it aligned along register bounds
 	FLOAT	Pad2[2];
-	//FLOAT	Pad3[3];
 };
 
 // Metallicafan212:	This file defines the mesh (one texture???) rendering shader

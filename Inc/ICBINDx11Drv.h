@@ -440,7 +440,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	FLOAT						ResolutionScale;
 
 	// Metallicafan212:	Gamma correction value for the final output
+#if DX11_HP2
 	FLOAT						Gamma;
+#endif
 
 
 	// Metallicafan212:	Versions to check on lock if they changed
@@ -600,7 +602,19 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	FD3DShader*							CurrentShader;
 
+	// Metallicafan212:	Holds onto values that the shaders (and renderer) code will be interested in
+	//					This does not directly map to variables in the shader itself, as there's copies used to do fading
 	FGlobalShaderVars					GlobalShaderVars;
+
+	// Metallicafan212:	Holds onto global variables for the shaders, so we're not uploading so much info all the time
+	FFrameShaderVars					FrameShaderVars;
+
+	// Metallicafan212:	Constant buffer for global info
+	ID3D11Buffer*						FrameConstantsBuffer;
+
+	// Metallicafan212:	Distance fog settings
+	FDistFogVars						GlobalDistFogSettings;
+	ID3D11Buffer*						GlobalDistFogBuffer;
 
 	// Metallicafan212:	Blending map
 	//					We have to keep around blend objects (rather than setting render states directly) so they're mapped to the polyflag that it represents
@@ -702,7 +716,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	FCoords								SurfCoords;
 
 	// Metallicafan212:	Projection matrix
-	DirectX::XMMATRIX					Proj;
+	//DirectX::XMMATRIX					Proj;
 
 	// Metallicafan212:	Vertex buffer stuff
 	//					Per M$:
@@ -1012,6 +1026,12 @@ class UICBINDx11RenderDevice : public URenderDevice
 		m_CurrentBuff = inBuff;
 	}
 
+	// Metallicafan212:	Update the global constant buffer in the shaders
+	inline void UpdateGlobalShaderVars()
+	{
+		m_D3DDeviceContext->UpdateSubresource(FrameConstantsBuffer, 0, nullptr, &FrameShaderVars, sizeof(FFrameShaderVars), 0);
+	}
+
 	// Metallicafan212:	From the DX9 driver since I'm a fucking lazy bastard
 	static QSORT_RETURN CDECL CompareRes(const FPlane* A, const FPlane* B)
 	{
@@ -1230,6 +1250,15 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	Tick the current fog values
 	//					We use this to fade the values from one setting to another
 	void TickDistanceFog();
+
+	inline void UpdateFogSettings()
+	{
+		// Metallicafan212:	Now set the vars
+		GlobalDistFogSettings.DistanceFogColor		= GlobalShaderVars.DistanceFogFinal;
+		GlobalDistFogSettings.DistanceFogSettings	= GlobalShaderVars.DistanceFogSettings;
+
+		m_D3DDeviceContext->UpdateSubresource(GlobalDistFogBuffer, 0, nullptr, &GlobalDistFogSettings, sizeof(FDistFogVars), 0);
+	}
 
 	// Metallicafan212:	Force the current fog color to a specific value
 	void ForceSetFogColor(FPlane FogColor);

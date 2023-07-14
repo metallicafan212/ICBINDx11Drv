@@ -10,14 +10,38 @@
 #define SHADER_FOLDER TEXT("..\\Shaders\\")
 #endif
 
+// Metallicafan212:	Common draw vars that should only be uploaded once per frame (if we can get away with it, that is)
+//					These are GLOBAL to the render device, not per-shader
+//					The renderer will deal with updating them and writing them out
+struct FFrameShaderVars
+{
+	DirectX::XMMATRIX	Proj;
+	FLOAT				Gamma;
+	FLOAT				ViewX;
+	FLOAT				ViewY;
+	FLOAT				Pad;
+
+	// Metallicafan212:	TODO! More settings!!!
+};
+
+// Metallicafan212:	Just a buffer for fog settings
+//					Only used in HP2
+struct FDistFogVars
+{
+	FPlane	DistanceFogColor;
+	FPlane	DistanceFogSettings;
+	UBOOL	bDistanceFogEnabled;
+	FLOAT	Pad[3];
+};
+
 // Metallicafan212:	Common shader variables
 struct FShaderVarCommon
 {
-	DirectX::XMMATRIX Proj;
+	//DirectX::XMMATRIX Proj;
 
 	// Metallicafan212:	Other needed shader vars
 	UBOOL	bColorMasked;
-	UBOOL	bDistanceFogEnabled;
+	//UBOOL	bDistanceFogEnabled;
 	UBOOL	bSelection;
 	FLOAT	AlphaReject;
 	FLOAT	BWPercent;
@@ -30,12 +54,12 @@ struct FShaderVarCommon
 
 	// Metallicafan212:	Pad it!!!!
 	//FLOAT	Pad[2];
-	FLOAT	Gamma;
-	FLOAT	Pad;
+	//FLOAT	Gamma;
+	FLOAT	Pad[3];
 
 	// Metallicafan212:	Now fog settings
-	FPlane	DistanceFogColor;
-	FPlane	DistanceFogSettings;
+	//FPlane	DistanceFogColor;
+	//FPlane	DistanceFogSettings;
 
 	// Metallicafan212:	TODO! Make this a #define
 	UBOOL	BoundTextures[MAX_TEXTURES];
@@ -290,9 +314,9 @@ public:
 	virtual void Init();
 	virtual void Bind();
 
-	virtual void SetupConstantBuffer();
+	//virtual void SetupConstantBuffer();
 
-	virtual void WriteConstantBuffer(void* InMem);
+	//virtual void WriteConstantBuffer(void* InMem);
 };
 
 // Metallicafan212:	Mesh shader (with texturing!)
