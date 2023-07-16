@@ -4,13 +4,12 @@
 
 
 // Metallicafan212:	Constant buffer, but with the added NumAASamples
-shared cbuffer CommonBuffer : register (START_CONST_NUM)
+cbuffer CommonBuffer : register (START_CONST_NUM)
 {
 	COMMON_VARS;
 	
 	// Metallicafan212:	The info we use for this specific shader	
 	float	ResolutionScale				: packoffset(c6.x);
-	//float	Gamma						: packoffset(c12.y);
 	float3	Pad3						: packoffset(c6.y);
 };
 

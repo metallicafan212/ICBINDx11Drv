@@ -26,7 +26,7 @@ float3	Pad										: packoffset(c1.y); \
 int4	bTexturesBound[MAX_TEX_NUM / 4]			: packoffset(c2);
 
 #if DO_STANDARD_BUFFER
-shared cbuffer CommonBuffer : register (START_CONST_NUM)
+cbuffer CommonBuffer : register (START_CONST_NUM)
 {
     COMMON_VARS;
 };
@@ -34,7 +34,7 @@ shared cbuffer CommonBuffer : register (START_CONST_NUM)
 #ifdef DO_FINAL_COLOR
 
 // Metallicafan212:	Define the base constant buffer!!!!
-shared cbuffer FrameVariables : register (b0)
+cbuffer FrameVariables : register (b0)
 {
 	matrix 	Proj		: packoffset(c0);
 	float	Gamma		: packoffset(c4.x);
@@ -95,6 +95,9 @@ float4 DoPixelFog(float DistFog, float4 Color)
 
 float4 DoGammaCorrection(float4 ColorIn)
 {
+	if(Gamma == 1.0f)
+		return ColorIn;
+	
 	float OverGamma = 1.0f / Gamma;
 	ColorIn.xyz = pow(ColorIn.xyz, float3(OverGamma, OverGamma, OverGamma));
 	

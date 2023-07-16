@@ -1029,7 +1029,17 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	Update the global constant buffer in the shaders
 	inline void UpdateGlobalShaderVars()
 	{
+#if 0
 		m_D3DDeviceContext->UpdateSubresource(FrameConstantsBuffer, 0, nullptr, &FrameShaderVars, sizeof(FFrameShaderVars), 0);
+#else
+		D3D11_MAPPED_SUBRESOURCE Map;
+
+		m_D3DDeviceContext->Map(FrameConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
+
+		appMemcpy(Map.pData, &FrameShaderVars, sizeof(FFrameShaderVars));
+
+		m_D3DDeviceContext->Unmap(FrameConstantsBuffer, 0);
+#endif
 	}
 
 	// Metallicafan212:	From the DX9 driver since I'm a fucking lazy bastard
@@ -1257,7 +1267,18 @@ class UICBINDx11RenderDevice : public URenderDevice
 		GlobalDistFogSettings.DistanceFogColor		= GlobalShaderVars.DistanceFogFinal;
 		GlobalDistFogSettings.DistanceFogSettings	= GlobalShaderVars.DistanceFogSettings;
 
+#if 0
 		m_D3DDeviceContext->UpdateSubresource(GlobalDistFogBuffer, 0, nullptr, &GlobalDistFogSettings, sizeof(FDistFogVars), 0);
+#else
+		D3D11_MAPPED_SUBRESOURCE Map;
+
+		m_D3DDeviceContext->Map(GlobalDistFogBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
+
+		//*((FDistFogVars*)Map.pData) = GlobalDistFogSettings;
+		appMemcpy(Map.pData, &GlobalDistFogSettings, sizeof(FDistFogVars));
+
+		m_D3DDeviceContext->Unmap(GlobalDistFogBuffer, 0);
+#endif
 	}
 
 	// Metallicafan212:	Force the current fog color to a specific value

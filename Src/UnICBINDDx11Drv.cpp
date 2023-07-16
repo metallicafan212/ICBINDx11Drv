@@ -373,7 +373,8 @@ MAKE_DEVICE:
 	FrameShaderVars		= FFrameShaderVars();
 
 	// Metallicafan212:	Recreate the constant buffer as well
-	D3D11_BUFFER_DESC ConstDesc = { sizeof(FFrameShaderVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
+	//D3D11_BUFFER_DESC ConstDesc = { sizeof(FFrameShaderVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
+	D3D11_BUFFER_DESC ConstDesc = { sizeof(FFrameShaderVars), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
 
 	hr = m_D3DDevice->CreateBuffer(&ConstDesc, nullptr, &FrameConstantsBuffer);
 
@@ -386,7 +387,8 @@ MAKE_DEVICE:
 	m_D3DDeviceContext->CSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
 
 	// Metallicafan212:	Now create one for the distance fog settings
-	D3D11_BUFFER_DESC DistConst = { sizeof(FDistFogVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
+	//D3D11_BUFFER_DESC DistConst = { sizeof(FDistFogVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
+	D3D11_BUFFER_DESC DistConst = { sizeof(FDistFogVars), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
 	hr = m_D3DDevice->CreateBuffer(&DistConst, nullptr, &GlobalDistFogBuffer);
 
 	ThrowIfFailed(hr);
@@ -765,8 +767,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	Check and log what vendor it is
 		if (AdDesc.VendorId == 0x1002 || AdDesc.VendorId == 0x1022)
 		{
-			bIsAMD = 1;
 			debugf(TEXT("D3D adapter vendor      : AMD"));
+			bIsAMD = 1;
 		}
 		else if (AdDesc.VendorId == 0x10DE)
 		{

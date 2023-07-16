@@ -2,7 +2,7 @@
 #include "ShaderGlobals.h"
 
 // Metallicafan212:	Constant buffer, but with the added tile rotation values
-shared cbuffer CommonBuffer : register (START_CONST_NUM)
+cbuffer CommonBuffer : register (START_CONST_NUM)
 {
 	COMMON_VARS;
 	
