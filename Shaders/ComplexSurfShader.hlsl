@@ -17,6 +17,8 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 	
 	// Metallicafan212:	And for the fogmap...
 	float2 	FogScale	: packoffset(c13.z);
+	
+	/*
 	float 	SurfAlpha	: packoffset(c14.x);
 	
 	int		bIsInvis	: packoffset(c14.y);
@@ -24,6 +26,7 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 	// Metallicafan212:	TODO! If we're rendering an occlusion plane (we write to the hacked depth buffer and check collisions)
 	//float3	Pad3		: packoffset(c20.y);
 	float2	Pad2		: packoffset(c14.z);
+	*/
 };
 
 // Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling
@@ -219,7 +222,7 @@ PSOutput PxShader(PSInput input)
 	}
 	
 	// Metallicafan212:	Set our alpha for lumos
-	DiffColor.w *= SurfAlpha;
+	//DiffColor.w *= SurfAlpha;
 	
 	// Metallicafan212:	TODO! This also sets the selection color for the editor! This should be re-evaluated
 	CLIP_PIXEL(DiffColor);

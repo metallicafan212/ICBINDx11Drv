@@ -292,7 +292,7 @@ void FD3DComputeShader::Bind()
 	FD3DShader::Bind();
 
 	// Metallicafan212:	Update the pointer so that the device knows that we need to cleanup
-	ParentDevice->CurrentShader = this;
+	//ParentDevice->CurrentShader = this;
 
 	// Metallicafan212:	Bind the compute shader
 	//					We'll do the actual variable layout and input binding in the children

@@ -80,6 +80,8 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_DELETE(FP8ToRGBAShader);
 #endif
 
+	CurrentShader = nullptr;
+
 	FlushRasterStates();
 
 #if USE_COMPUTE_SHADER
@@ -130,7 +132,8 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	// Metallicafan212:	Make it single threaded for more performance?
 	UINT Flags =	D3D11_CREATE_DEVICE_BGRA_SUPPORT
-				//|	D3D11_CREATE_DEVICE_SINGLETHREADED
+	//					TODO! Reeval if we need to use child threads in the future
+				|	D3D11_CREATE_DEVICE_SINGLETHREADED
 				|	D3D11_CREATE_DEVICE_DEBUG
 				;
 	
@@ -159,7 +162,7 @@ MAKE_DEVICE:
 	else
 	*/
 	{
-	NORMAL_DX11:
+	//NORMAL_DX11:
 		hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, FLPtr, FLCount, D3D11_SDK_VERSION, &m_D3DDevice, &m_FeatureLevel, &m_D3DDeviceContext);
 	}
 
@@ -1296,24 +1299,38 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 {
 	guard(UICBINDx11RenderDevice::SetRes);
 
-	// Metallicafan212:	Save the values
-	//					We also have to clamp here since unreal could pass bad values (the editor opening, for example)
-	SizeX			= Max(NewX, 2);
-	SizeY			= Max(NewY, 2);
+	INT TestX = Max(NewX, 2);
+	INT TestY = Max(NewY, 2);
 
-	bFullscreen		= Fullscreen;
-
-	if (Viewport != nullptr)
+	//if (TestX != SizeX || TestY != SizeY || Fullscreen != bFullscreen)
 	{
-		Viewport->ResizeViewport(BLIT_HardwarePaint | BLIT_Direct3D, SizeX, SizeY, NewColorBytes);
+		bFullscreen = Fullscreen;
+
+		if (Viewport != nullptr)
+		{
+			// Metallicafan212:	Force 32bit color at all times????
+			if (!Viewport->ResizeViewport(BLIT_HardwarePaint | BLIT_Direct3D | (bFullscreen ? BLIT_Fullscreen : BLIT_HardwarePaint), SizeX, SizeY, 4))
+			{
+				return 0;
+			}
+		}
+
+		// Metallicafan212:	Resetup resources that need to be sized
+		if (TestX != SizeX || TestY != SizeY || Fullscreen != bFullscreen)
+		{
+			SetupResources();
+
+			// Metallicafan212:	Set the viewport now
+			//D3D11_VIEWPORT viewport = { 0.0f, 0.0f, static_cast<FLOAT>(SizeX), static_cast<FLOAT>(SizeY), 0.f, 1.f };
+			//m_D3DDeviceContext->RSSetViewports(1, &viewport);
+			SetSceneNode(nullptr);
+		}
+
+		// Metallicafan212:	Save the values
+		//					We also have to clamp here since unreal could pass bad values (the editor opening, for example)
+		SizeX = TestX;
+		SizeY = TestY;
 	}
-
-	// Metallicafan212:	Set the viewport now
-	D3D11_VIEWPORT viewport = {0.0f, 0.0f, static_cast<FLOAT>(SizeX), static_cast<FLOAT>(SizeY), 0.f, 1.f };
-	m_D3DDeviceContext->RSSetViewports(1, &viewport);
-
-	// Metallicafan212:	Resetup resources that need to be sized
-	SetupResources();
 
 	return 1;
 

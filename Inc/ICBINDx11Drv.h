@@ -182,6 +182,12 @@ struct FD3DVert
 
 	FPlane	Color;
 	FPlane	Fog;
+	
+	// Metallicafan212:	Used to mark a vert as fake!!!!!
+	//					This is a HIGHLY experimental approach to allow shaders to provide additional information to a shader
+	//					TODO! Align this around the index buffer as well!!!!
+	//UBOOL	bFakeVert;
+	//INT		FakeVertMode;
 };
 
 // Metallicafan212:	Cache stuff

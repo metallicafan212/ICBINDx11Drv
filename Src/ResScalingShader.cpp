@@ -1,7 +1,8 @@
 #include "ICBINDx11Drv.h"
 
-struct FResScaleVars : FShaderVarCommon
+class FResScaleVars : FShaderVarCommon
 {
+public:
 	// Metallicafan212:	The info we use for this specific shader	
 	FLOAT	ResolutionScale;
 	//FLOAT	Gamma;

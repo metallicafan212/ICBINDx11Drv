@@ -1,7 +1,8 @@
 #include "ICBINDx11Drv.h"
 
-struct FMSAAVars : FShaderVarCommon
+class FMSAAVars : FShaderVarCommon
 {
+public:
 	// Metallicafan212:	The info we use for this specific shader	
 	FLOAT	FilterSize;
 	FLOAT	GaussianSigma;

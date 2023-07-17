@@ -122,20 +122,30 @@ void FD3DShader::Bind()
 {
 	guard(FD3DShader::Bind);
 
+	UBOOL bShaderIsUs = 1;
+
 	if (ParentDevice->CurrentShader != this)
+	{
 		ParentDevice->EndBuffering();
 
-	ParentDevice->CurrentShader = this;
+		ParentDevice->CurrentShader = this;
 
-	// Metallicafan212:	Setup this shader for rendering
-	ParentDevice->m_D3DDeviceContext->VSSetShader(VertexShader, nullptr, 0);
+		bShaderIsUs = 0;
+	}
 
-	// Metallicafan212:	Bind the optional geometry shader
-	ParentDevice->m_D3DDeviceContext->GSSetShader(GeoShader, nullptr, 0);
+	// Metallicafan212:	Only do this if the current shader isn't ours!!!!!
+	if (!bShaderIsUs)
+	{
+		// Metallicafan212:	Setup this shader for rendering
+		ParentDevice->m_D3DDeviceContext->VSSetShader(VertexShader, nullptr, 0);
 
-	ParentDevice->m_D3DDeviceContext->PSSetShader(PixelShader, nullptr, 0);
+		// Metallicafan212:	Bind the optional geometry shader
+		ParentDevice->m_D3DDeviceContext->GSSetShader(GeoShader, nullptr, 0);
 
-	ParentDevice->m_D3DDeviceContext->IASetInputLayout(InputLayout);
+		ParentDevice->m_D3DDeviceContext->PSSetShader(PixelShader, nullptr, 0);
+
+		ParentDevice->m_D3DDeviceContext->IASetInputLayout(InputLayout);
+	}
 
 	// Metallicafan212:	Map the matrix(s)
 	D3D11_MAPPED_SUBRESOURCE Map;
@@ -187,42 +197,21 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 
 	// Metallicafan212:	Copy over
 	FShaderVarCommon* MDef			= ((FShaderVarCommon*)InMem);
-	
-	//MDef->Proj					= ParentDevice->Proj;
-	/*
-	MDef->ViewX					= ParentDevice->m_sceneNodeX;
-	MDef->ViewY					= ParentDevice->m_sceneNodeY;
-	MDef->Aspect				= ParentDevice->m_Aspect;
-	MDef->ProjZ					= ParentDevice->m_RProjZ;
-	MDef->RFX2					= ParentDevice->m_RFX2;
-	MDef->RFY2					= ParentDevice->m_RFY2;
-	*/
 
 	// Metallicafan212:	Common static information
 	MDef->AlphaReject			= ParentDevice->GlobalShaderVars.AlphaReject;
 	MDef->bColorMasked			= ParentDevice->GlobalShaderVars.bColorMasked;
-	//MDef->bDistanceFogEnabled	= ParentDevice->GlobalShaderVars.bDoDistanceFog;
 	MDef->BWPercent				= ParentDevice->GlobalShaderVars.BWPercent;
 
 	// Metallicafan212:	Automatically tell the shader that it's doing selection testing
 	MDef->bSelection			= (ParentDevice->m_HitData != nullptr);
 	MDef->bAlphaEnabled			= ParentDevice->GlobalShaderVars.bAlphaEnabled;
 
-	// Metallicafan212:	Sample a texture using Texture.Load instead of .Sample to get around a NV specific issue with point filtering...
-	//					TODO! Find out the actual reason this happens!!!
-	//MDef->bNVTileHack			= ParentDevice->GlobalShaderVars.bNVTileHack;
-
-	//MDef->Gamma					= ParentDevice->Gamma;
-
 	// Metallicafan212:	Loop and tell the shader how many textures are bound
 	for (INT i = 0; i < MAX_TEXTURES; i++)
 	{
 		MDef->BoundTextures[i] = (ParentDevice->BoundTextures[i].TexInfo != nullptr || ParentDevice->BoundTextures[i].bIsRT);
 	}
-
-	// Metallicafan212:	Fog stuff
-	//MDef->DistanceFogColor		= ParentDevice->GlobalShaderVars.DistanceFogColor;
-	//MDef->DistanceFogSettings	= ParentDevice->GlobalShaderVars.DistanceFogSettings;
 
 	unguard;
 }

@@ -223,7 +223,7 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 	// Metallicafan212:	Now make sure it's the lower of the request (if it's odd)
 	//					TODO! Rewrite this, if the user specifies 6, we return 8 due to the mod 2 not working since 6 isn't odd
 	//					I'm too tired for this shit right now lol....
-	if (NumAASamples > 1 && NumAASamples < SampleCount)
+	if (NumAASamples > 1 && NumAASamples < static_cast<INT>(SampleCount))
 	{
 		NumAASamples = appPow(2.0, appCeilLogTwo(NumAASamples) - (NumAASamples % 2));
 	}

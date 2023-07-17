@@ -1,15 +1,16 @@
 #include "ICBINDx11Drv.h"
 
-struct FSurfMatrixDef : FShaderVarCommon
+class FSurfMatrixDef : FShaderVarCommon
 {
+public:
 	FPlane	XAxis, YAxis;
 	FPlane	PanScale[5];
 	FPlane	LightandFogScale;
-	FLOAT	SurfAlpha;
-	UBOOL	bDrawOpacity;
+	//FLOAT	SurfAlpha;
+	//UBOOL	bDrawOpacity;
 
 	// Metallicafan212:	Keep it aligned along register bounds
-	FLOAT	Pad2[2];
+	//FLOAT	Pad2[2];
 };
 
 // Metallicafan212:	This file defines the mesh (one texture???) rendering shader
@@ -84,8 +85,8 @@ void FD3DSurfShader::WriteConstantBuffer(void* InMem)
 	FLOAT VDot				= ParentDevice->SurfCoords.YAxis | ParentDevice->SurfCoords.Origin;
 	SDef->XAxis				= FPlane(ParentDevice->SurfCoords.XAxis, UDot);
 	SDef->YAxis				= FPlane(ParentDevice->SurfCoords.YAxis, VDot);
-	SDef->SurfAlpha			= SurfAlpha;
-	SDef->bDrawOpacity		= bSurfInvisible;
+	//SDef->SurfAlpha			= SurfAlpha;
+	//SDef->bDrawOpacity		= bSurfInvisible;
 
 
 	// Metallicafan212:	Now the pan info

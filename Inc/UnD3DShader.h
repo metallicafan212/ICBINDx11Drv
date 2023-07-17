@@ -35,13 +35,11 @@ struct FDistFogVars
 };
 
 // Metallicafan212:	Common shader variables
-struct FShaderVarCommon
+class FShaderVarCommon
 {
-	//DirectX::XMMATRIX Proj;
-
+public:
 	// Metallicafan212:	Other needed shader vars
 	UBOOL	bColorMasked;
-	//UBOOL	bDistanceFogEnabled;
 	UBOOL	bSelection;
 	FLOAT	AlphaReject;
 	FLOAT	BWPercent;
@@ -49,19 +47,10 @@ struct FShaderVarCommon
 	// Metallicafan212:	If alpha is currently enabled
 	UBOOL	bAlphaEnabled;
 
-	// Metallicafan212:	If a texture is PF_NoSmooth AND have 1 mip level!!!
-	//UBOOL	bNVTileHack;
-
 	// Metallicafan212:	Pad it!!!!
-	//FLOAT	Pad[2];
-	//FLOAT	Gamma;
 	FLOAT	Pad[3];
 
-	// Metallicafan212:	Now fog settings
-	//FPlane	DistanceFogColor;
-	//FPlane	DistanceFogSettings;
-
-	// Metallicafan212:	TODO! Make this a #define
+	// Metallicafan212:	What textures are currently bound
 	UBOOL	BoundTextures[MAX_TEXTURES];
 };
 
@@ -104,18 +93,6 @@ public:
 	// Metallicafan212:	The geometry shader function to find (on compile). OPTIONAL!!!
 	FString						GeoFunc;
 
-
-	// Metallicafan212:	TODO! Defined struct for vertex input per shader?
-	//					IDK how I'm going to dynamically handle it.... Each thing is going to need to know what each input is I guess.....
-	//					Or I go with a very generic input?
-
-	/*
-	// Metallicafan212:	TODO! Vertex definition for this shader????
-	virtual D3D11_INPUT_ELEMENT_DESC* GetVertexDefinition() = 0;
-
-	virtual D3D11_INPUT_ELEMENT_DESC* GetPixelDefinition() = 0;
-	*/
-
 	FD3DShader() :
 		ParentDevice(nullptr),
 		PixelShader(nullptr),
@@ -150,6 +127,27 @@ public:
 		SAFE_RELEASE(GeoShader);
 	}
 
+	// Metallicafan212:	TEST! For speed reasons, override this to just check the address!!!
+	bool operator==(const FD3DShader* Other)
+	{
+		return ((SIZE_T)Other) == ((SIZE_T)this);
+	}
+
+	//bool operator==(const FD3DShader& Other)
+	//{
+	//	return ((SIZE_T)&Other) == ((SIZE_T)this);
+	//}
+
+	bool operator!=(const FD3DShader* Other)
+	{
+		return ((SIZE_T)Other) != ((SIZE_T)this);
+	}
+
+	//bool operator!=(const FD3DShader& Other)
+	//{
+	//	return ((SIZE_T)&Other) != ((SIZE_T)this);
+	//}
+
 	// Metallicafan212:	TODO! Shader interface?
 	virtual void Init();
 
@@ -160,6 +158,7 @@ public:
 
 	virtual void WriteConstantBuffer(void* InMem);
 
+	//virtual void UpdateConstantBuffer();
 };
 
 // Metallicafan212:	Compute shader interface
@@ -345,10 +344,10 @@ class FD3DSurfShader : public FD3DShader
 public:
 
 	// Metallicafan212:	The alpha of the surface
-	FLOAT				SurfAlpha;
+	//FLOAT				SurfAlpha;
 
 	// Metallicafan212:	If the surface we're rendering is invisible
-	UBOOL				bSurfInvisible;
+	//UBOOL				bSurfInvisible;
 
 	FD3DSurfShader() :
 		FD3DShader()

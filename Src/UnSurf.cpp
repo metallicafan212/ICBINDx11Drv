@@ -81,16 +81,18 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 #if DX11_HP2
 	// Metallicafan212:	Copy over the surface alpha
-	FSurfShader->SurfAlpha = cAlpha / 255.0f;
+	//FSurfShader->SurfAlpha = cAlpha / 255.0f;
+
+	FLOAT AlphaMult = cAlpha / 255.0f;
 
 	// Metallicafan212:	I've hacked lumos as DX11's reverse alpha mode doesn't go to 100% alpha, causing lumos to not occlude things behind it (when it's undescovered)
 	if (PolyFlags & PF_LumosAffected)
 	{
-		FSurfShader->SurfAlpha = 1.0f - FSurfShader->SurfAlpha;
+		AlphaMult = 1.0f - AlphaMult;
 
 		// Metallicafan212:	If we have lumos, but the alpha is maxed, we need to turn on occlusion!!!
 
-		if (FSurfShader->SurfAlpha >= 1.0f)
+		if (AlphaMult >= 1.0f)
 		{
 			PolyFlags |= PF_Occlude;
 		}
@@ -101,38 +103,6 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	FSurfShader->SurfAlpha = 1.0f;
 */
 #endif
-
-	/*
-	// Metallicafan212:	HACK!!!!
-	if (PolyFlags & PF_Invisible && BoundRT == nullptr)
-	{
-		FSurfShader->bSurfInvisible = 1;
-
-		// Metallicafan212: Unset it as the texture
-		m_D3DDeviceContext->PSSetShaderResources(16, 0, nullptr);
-
-		ID3D11RenderTargetView* RTs[2] = { m_D3DScreenRTV, m_D3DScreenOpacityRTV };
-
-		// Metallicafan212:	Now set
-		m_D3DDeviceContext->OMSetRenderTargets(2, RTs, m_D3DScreenDSV);
-
-		PolyFlags &= ~(PF_Invisible | PF_Occlude);
-		PolyFlags |= PF_NoOcclude;
-	}
-	else
-	{
-		FSurfShader->bSurfInvisible = 0;
-
-		if (BoundRT == nullptr)
-		{
-			// Metallicafan212:	Reset it
-			m_D3DDeviceContext->OMSetRenderTargets(1, &m_D3DScreenRTV, m_D3DScreenDSV);
-
-			// Metallicafan212:	Set it as the texture
-			m_D3DDeviceContext->PSSetShaderResources(16, 1, &m_ScreenOpacityRTSRV);
-		}
-	}
-	*/
 
 	SetBlend(PolyFlags);
 
@@ -171,6 +141,10 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 	// Metallicafan212:	Just use the lightmap for color?
 	FPlane TestColor = FPlane(1.f, 1.f, 1.f, 1.f);
+
+#if DX11_HP2
+	TestColor.W *= AlphaMult;
+#endif
 
 	// Metallicafan212:	Selection testing!!!!
 	if (m_HitData != nullptr)
@@ -238,12 +212,10 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		// Metallicafan212:	Reject invalid number of verts lmao
 		if (Poly->NumPts < 3)
 			continue;
-		VertRequest		+= (Poly->NumPts);
+
+		VertRequest		+= Poly->NumPts;
 		IndexRequest	+= (Poly->NumPts - 2) * 3;
 	}
-
-	//LockVertexBuffer(sizeof(FD3DVert) * VertRequest);
-	//LockIndexBuffer(IndexRequest);
 
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_BSP);
@@ -252,13 +224,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 	BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices);
 
-	//UnlockIndexBuffer();
-	//UnlockVertexBuffer();
-
-	//UnlockBuffers();
 
 	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	AdvanceVertPos();//VertRequest, sizeof(FD3DVert), IndexRequest);
+	AdvanceVertPos();
 
 #endif
 
@@ -300,19 +268,19 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 				if (PolyFlags & PF_Selected)
 				{
 					TestColor = (Surface.FlatColor.Plane() * 1.5f);
-					FSurfShader->SurfAlpha = 1.0f;
+					TestColor.W = 1.0f;
 				}
 				else
 				{
 					TestColor = Surface.FlatColor.Plane();
-					TestColor.W = 0.75f;
-					FSurfShader->SurfAlpha = 0.75f;
+					TestColor.W = 0.75f * 0.75f;//0.75f;
+					//FSurfShader->SurfAlpha = 0.75f;
 				}
 			}
 			else
 			{
-				TestColor = FPlane(0.0f, 0.0f, 1.0f, 1.0f);
-				FSurfShader->SurfAlpha = 0.5f;
+				TestColor = FPlane(0.0f, 0.0f, 1.0f, 0.5f);
+				//FSurfShader->SurfAlpha = 0.5f;
 			}
 		}
 

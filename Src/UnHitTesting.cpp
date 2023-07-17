@@ -379,16 +379,16 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 	DWORD* Ptr		= (DWORD*)Map.pData;
 	INT LineSize	= Map.RowPitch / sizeof(DWORD);
 
-	INT PHitNum = PixelHitInfo.Num();
+	DWORD PHitNum	= PixelHitInfo.Num();
 
-	INT HitYL = Viewport->HitYL * ResolutionScale;//Viewport->HitY + Viewport->HitYL;
-	INT HitXL = Viewport->HitXL * ResolutionScale;//Viewport->HitX + Viewport->HitXL;
+	INT HitYL		= Viewport->HitYL * ResolutionScale;
+	INT HitXL		= Viewport->HitXL * ResolutionScale;
 
-	for (INT y = 0; y < HitYL; y++)//Viewport->HitY; y < HitYL; y++)
+	for (INT y = 0; y < HitYL; y++)
 	{
 		DWORD* RealP = Ptr + (y * LineSize);
 
-		for (INT x = 0; x < HitXL; x++)//Viewport->HitY; x < HitXL; x++)
+		for (INT x = 0; x < HitXL; x++)
 		{
 			DWORD Pix = RealP[x];
 

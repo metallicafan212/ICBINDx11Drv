@@ -1,7 +1,8 @@
 #include "ICBINDx11Drv.h"
 
-struct FTileMatrixDef : FShaderVarCommon
+class FTileMatrixDef : FShaderVarCommon
 {
+public:
 	FPlane	XAxis;
 	FPlane	YAxis;
 	FPlane	ZAxis;
