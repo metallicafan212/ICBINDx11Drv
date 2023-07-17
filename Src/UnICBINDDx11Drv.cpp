@@ -1304,32 +1304,35 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 
 	//if (TestX != SizeX || TestY != SizeY || Fullscreen != bFullscreen)
 	{
-		bFullscreen = Fullscreen;
-
 		if (Viewport != nullptr)
 		{
 			// Metallicafan212:	Force 32bit color at all times????
-			if (!Viewport->ResizeViewport(BLIT_HardwarePaint | BLIT_Direct3D | (bFullscreen ? BLIT_Fullscreen : BLIT_HardwarePaint), SizeX, SizeY, 4))
+			if (!Viewport->ResizeViewport(BLIT_Direct3D | (Fullscreen ? BLIT_Fullscreen : BLIT_HardwarePaint), TestX, TestY, 4))
 			{
 				return 0;
 			}
 		}
 
+		// Metallicafan212:	Save the values
+		//					We also have to clamp here since unreal could pass bad values (the editor opening, for example)
+		//INT OldX	= SizeX;
+		//INT OldY	= SizeY;
+		SizeX		= TestX;
+		SizeY		= TestY;
+
 		// Metallicafan212:	Resetup resources that need to be sized
-		if (TestX != SizeX || TestY != SizeY || Fullscreen != bFullscreen)
+		//if (OldX != SizeX || OldY != SizeY || Fullscreen != bFullscreen)
 		{
+			bFullscreen = Fullscreen;
 			SetupResources();
+
+
 
 			// Metallicafan212:	Set the viewport now
 			//D3D11_VIEWPORT viewport = { 0.0f, 0.0f, static_cast<FLOAT>(SizeX), static_cast<FLOAT>(SizeY), 0.f, 1.f };
 			//m_D3DDeviceContext->RSSetViewports(1, &viewport);
 			SetSceneNode(nullptr);
 		}
-
-		// Metallicafan212:	Save the values
-		//					We also have to clamp here since unreal could pass bad values (the editor opening, for example)
-		SizeX = TestX;
-		SizeY = TestY;
 	}
 
 	return 1;
