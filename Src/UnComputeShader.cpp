@@ -80,7 +80,7 @@ FTransTexture* UICBINDx11RenderDevice::InitMeshComputeShader(INT VertCount)
 
 	D3D11_MAPPED_SUBRESOURCE	VertDataMap = { nullptr, 0, 0 };
 
-	m_D3DDeviceContext->Map(FMshLghtCompShader->VertBuffer, 0, D3D11_MAP_WRITE, 0, &VertDataMap);
+	m_RenderContext->Map(FMshLghtCompShader->VertBuffer, 0, D3D11_MAP_WRITE, 0, &VertDataMap);
 
 	return (FTransTexture*)VertDataMap.pData;
 #else
@@ -95,7 +95,7 @@ void UICBINDx11RenderDevice::FinishMeshComputeShader()
 	guard(UICBINDx11RenderDevice::FinishMeshComputeShader);
 #if USE_COMPUTE_SHADER
 	// Metallicafan212:	Unmap for future use
-	m_D3DDeviceContext->Unmap(FMshLghtCompShader->VertBuffer, 0);
+	m_RenderContext->Unmap(FMshLghtCompShader->VertBuffer, 0);
 #endif
 
 	unguard;
@@ -111,7 +111,7 @@ void UICBINDx11RenderDevice::ExecuteMeshLightShader(FSceneNode* Frame, INT VertC
 	// Metallicafan212:	Now get the data for each input buffer
 	D3D11_MAPPED_SUBRESOURCE	CommDataMap = { nullptr, 0, 0 };
 
-	m_D3DDeviceContext->Map(FMshLghtCompShader->ShaderConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &CommDataMap);
+	m_RenderContext->Map(FMshLghtCompShader->ShaderConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &CommDataMap);
 
 	FLightingData* CommData = (FLightingData*)CommDataMap.pData;
 	// Metallicafan212:	A HUGE amount of data copying...
@@ -134,12 +134,12 @@ void UICBINDx11RenderDevice::ExecuteMeshLightShader(FSceneNode* Frame, INT VertC
 	CommData->TransformedOwnerLocation	= Actor->Location.TransformPointBy(Frame->Coords);
 
 	// Metallicafan212:	Now unmap
-	m_D3DDeviceContext->Unmap(FMshLghtCompShader->ShaderConstantsBuffer, 0);
+	m_RenderContext->Unmap(FMshLghtCompShader->ShaderConstantsBuffer, 0);
 
 	// Metallicafan212:	Map the input lights
 	D3D11_MAPPED_SUBRESOURCE	LightDataMap = { nullptr, 0, 0 };
 
-	m_D3DDeviceContext->Map(FMshLghtCompShader->LightBuffer, 0, D3D11_MAP_WRITE, 0, &LightDataMap);
+	m_RenderContext->Map(FMshLghtCompShader->LightBuffer, 0, D3D11_MAP_WRITE, 0, &LightDataMap);
 
 	FActorLightCommon* Lght = (FActorLightCommon*)LightDataMap.pData;
 
@@ -165,55 +165,55 @@ void UICBINDx11RenderDevice::ExecuteMeshLightShader(FSceneNode* Frame, INT VertC
 	}
 
 	// Metallicafan212:	Now unmap
-	m_D3DDeviceContext->Unmap(FMshLghtCompShader->LightBuffer, 0);
+	m_RenderContext->Unmap(FMshLghtCompShader->LightBuffer, 0);
 
 	/*
 	// Metallicafan212:	Finally, the verts
 	D3D11_MAPPED_SUBRESOURCE	VertDataMap = { nullptr, 0, 0 };
 
-	m_D3DDeviceContext->Map(FMshLghtCompShader->VertBuffer, 0, D3D11_MAP_WRITE, 0, &VertDataMap);
+	m_RenderContext->Map(FMshLghtCompShader->VertBuffer, 0, D3D11_MAP_WRITE, 0, &VertDataMap);
 
 	FTransSample* Verts = (FTransSample*)VertDataMap.pData;
 
 	appMemcpy(Verts, MeshVerts, sizeof(FTransSample) * VertCount);
 
 	// Metallicafan212:	Now unmap
-	m_D3DDeviceContext->Unmap(FMshLghtCompShader->VertBuffer, 0);
+	m_RenderContext->Unmap(FMshLghtCompShader->VertBuffer, 0);
 	*/
 
 	// Metallicafan212:	We need to unmap it to execute
-	m_D3DDeviceContext->Unmap(FMshLghtCompShader->VertBuffer, 0);
+	m_RenderContext->Unmap(FMshLghtCompShader->VertBuffer, 0);
 
 	// Metallicafan212:	Execute the shader
-	//m_D3DDeviceContext->Begin(m_D3DQuery);
+	//m_RenderContext->Begin(m_D3DQuery);
 
-	m_D3DDeviceContext->Dispatch(VertCount, 1, 1);
+	m_RenderContext->Dispatch(VertCount, 1, 1);
 
-	m_D3DDeviceContext->End(m_D3DQuery);
+	m_RenderContext->End(m_D3DQuery);
 
 	// Metallicafan212:	Wait for it
 	BOOL bDone = 0;
 
-	while (m_D3DDeviceContext->GetData(m_D3DQuery, &bDone, sizeof(BOOL), 0) != S_OK);
+	while (m_RenderContext->GetData(m_D3DQuery, &bDone, sizeof(BOOL), 0) != S_OK);
 
 	// Metallicafan212:	Unmap?
-	m_D3DDeviceContext->CSSetShader(nullptr, nullptr, 0);
-	m_D3DDeviceContext->CSSetUnorderedAccessViews(0, 0, nullptr, nullptr);
-	m_D3DDeviceContext->CSSetShaderResources(0, 0, nullptr);
+	m_RenderContext->CSSetShader(nullptr, nullptr, 0);
+	m_RenderContext->CSSetUnorderedAccessViews(0, 0, nullptr, nullptr);
+	m_RenderContext->CSSetShaderResources(0, 0, nullptr);
 
 	//m_D3DDevice->CreateQuery()
 
 	/*
 	// Metallicafan212:	Copy back
-	m_D3DDeviceContext->Map(FMshLghtCompShader->VertBuffer, 0, D3D11_MAP_READ, 0, &VertDataMap);
+	m_RenderContext->Map(FMshLghtCompShader->VertBuffer, 0, D3D11_MAP_READ, 0, &VertDataMap);
 	appMemcpy(MeshVerts, VertDataMap.pData, sizeof(FTransSample) * VertCount);
 	*/
 
 	//D3D11_MAPPED_SUBRESOURCE	VertDataMap = { nullptr, 0, 0 };
-	//m_D3DDeviceContext->Map(FMshLghtCompShader->VertBuffer, 0, D3D11_MAP_READ, 0, &VertDataMap);
+	//m_RenderContext->Map(FMshLghtCompShader->VertBuffer, 0, D3D11_MAP_READ, 0, &VertDataMap);
 
 	// Metallicafan212:	Now unmap
-	//m_D3DDeviceContext->Unmap(FMshLghtCompShader->VertBuffer, 0);
+	//m_RenderContext->Unmap(FMshLghtCompShader->VertBuffer, 0);
 #endif
 
 	unguard;
@@ -285,21 +285,21 @@ void FD3DComputeShader::Init()
 	unguard;
 }
 
-void FD3DComputeShader::Bind()
+void FD3DComputeShader::Bind(ID3D11DeviceContext* UseContext)
 {
 	guard(FD3DComputeShader::Bind);
 
-	FD3DShader::Bind();
+	FD3DShader::Bind(UseContext);
 
 	// Metallicafan212:	Update the pointer so that the device knows that we need to cleanup
 	//ParentDevice->CurrentShader = this;
 
 	// Metallicafan212:	Bind the compute shader
 	//					We'll do the actual variable layout and input binding in the children
-	ParentDevice->m_D3DDeviceContext->CSSetShader(ComputeShader, nullptr, 0);
+	UseContext->CSSetShader(ComputeShader, nullptr, 0);
 
 	// Metallicafan212:	Bind the constant buffer as well
-	ParentDevice->m_D3DDeviceContext->CSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
+	UseContext->CSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
 
 	unguard;
 }
@@ -418,9 +418,9 @@ void FD3DLghtMshCompShader::Bind()
 	FD3DComputeShader::Bind();
 
 	// Metallicafan212:	Setup the input streams
-	ParentDevice->m_D3DDeviceContext->CSSetShaderResources(0, 1, &LightShaderView);
-	ParentDevice->m_D3DDeviceContext->CSSetUnorderedAccessViews(0, 1, &VertUnorderedView, nullptr);
-	ParentDevice->m_D3DDeviceContext->CSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
+	ParentDevice->m_RenderContext->CSSetShaderResources(0, 1, &LightShaderView);
+	ParentDevice->m_RenderContext->CSSetUnorderedAccessViews(0, 1, &VertUnorderedView, nullptr);
+	ParentDevice->m_RenderContext->CSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
 
 	unguard;
 }

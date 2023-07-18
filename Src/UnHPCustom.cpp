@@ -310,8 +310,20 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 		// Metallicafan212:	PF_Invisible says to just calc the rect
 		if (!(Flags & PF_Invisible))
 		{
+			/*
+			// Metallicafan212:	Render NOW!!!!
+			if (m_D3DDeferredContext != nullptr)
+			{
+				m_D3DDeferredContext->FinishCommandList(FALSE, &m_D3DCommandList);
+
+				m_D3DDeviceContext->ExecuteCommandList(m_D3DCommandList, FALSE);
+
+				SAFE_RELEASE(m_D3DCommandList);
+			}
+			*/
+
 			// Metallicafan212:	IMPORTANT!!!! D2D seems to actually somewhat RESPECT the current shaders, so we need to use a generic shader for this
-			FGenShader->Bind();
+			FGenShader->Bind(m_RenderContext);
 
 			// Metallicafan212:	Actually draw it now
 			m_CurrentD2DRT->BeginDraw();
@@ -685,11 +697,11 @@ void UICBINDx11RenderDevice::SetRenderTargetTexture(UTexture* Tex)
 		}
 
 		// Metallicafan212:	Set the RT and DT to the ones we want
-		m_D3DDeviceContext->OMSetRenderTargets(1, RT->RTView.GetAddressOf(), RT->DTView.Get());
+		m_RenderContext->OMSetRenderTargets(1, RT->RTView.GetAddressOf(), RT->DTView.Get());
 
 		// Metallicafan212:	Clear both!!!
-		//m_D3DDeviceContext->ClearRenderTargetView(RT->RTView.Get(), DirectX::Colors::Black);
-		m_D3DDeviceContext->ClearDepthStencilView(RT->DTView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		//m_RenderContext->ClearRenderTargetView(RT->RTView.Get(), DirectX::Colors::Black);
+		m_RenderContext->ClearDepthStencilView(RT->DTView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 		BoundRT = RT;
 
@@ -715,7 +727,7 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 	EndBuffering();
 
 	// Metallicafan212:	Reset
-	m_D3DDeviceContext->OMSetRenderTargets(1, &m_D3DScreenRTV, m_D3DScreenDSV);
+	m_RenderContext->OMSetRenderTargets(1, &m_D3DScreenRTV, m_D3DScreenDSV);
 
 	// Metallicafan212:	Check if our RT is bound???
 	if (BoundRT != nullptr)

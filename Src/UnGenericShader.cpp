@@ -16,22 +16,3 @@ FD3DGenericShader::FD3DGenericShader(UICBINDx11RenderDevice* InParent)
 
 	unguard;
 }
-
-// Metallicafan212:	Shader interface
-void FD3DGenericShader::Init()
-{
-	guard(FD3DGenericShader::Init);
-
-	FD3DShader::Init();
-
-	unguard;
-}
-
-void FD3DGenericShader::Bind()
-{
-	guard(FD3DGenericShader::Bind);
-
-	FD3DShader::Bind();
-
-	unguard;
-}

@@ -24,24 +24,6 @@ FD3DP8ToRGBAShader::FD3DP8ToRGBAShader(UICBINDx11RenderDevice* InParent): FD3DCo
 }
 
 // Metallicafan212:	Shader interface
-void FD3DP8ToRGBAShader::Init()
-{
-	guard(FD3DP8ToRGBAShader::Init);
-
-	FD3DComputeShader::Init();
-
-	unguard;
-}
-
-void FD3DP8ToRGBAShader::Bind()
-{
-	guard(FD3DP8ToRGBAShader::Bind);
-
-	FD3DComputeShader::Bind();
-
-	unguard;
-}
-
 void FD3DP8ToRGBAShader::SetupConstantBuffer()
 {
 	guard(FD3DP8ToRGBAShader::SetupConstantBuffer);

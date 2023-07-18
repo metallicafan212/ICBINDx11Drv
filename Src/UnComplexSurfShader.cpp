@@ -31,23 +31,6 @@ FD3DSurfShader::FD3DSurfShader(UICBINDx11RenderDevice* InParent)
 }
 
 // Metallicafan212:	Shader interface
-void FD3DSurfShader::Init()
-{
-	guard(FD3DSurfShader::Init);
-
-	FD3DShader::Init();
-
-	unguard;
-}
-
-void FD3DSurfShader::Bind()
-{
-	guard(FD3DSurfShader::Bind);
-
-	FD3DShader::Bind();
-
-	unguard;
-}
 
 // Metallicafan212:	Made this generic so we can copy vars into shaders
 void FD3DSurfShader::SetupConstantBuffer()

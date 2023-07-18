@@ -125,7 +125,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	}
 
 	// Metallicafan212:	Bind the tile shader
-	FTileShader->Bind();
+	FTileShader->Bind(m_RenderContext);
 
 	FLOAT PX1 = X - Frame->FX2;
 	FLOAT PX2 = PX1 + XL;
@@ -242,7 +242,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	//UnlockBuffers();
 
 	// Metallicafan212:	Now draw
-	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	AdvanceVertPos();//6);
 

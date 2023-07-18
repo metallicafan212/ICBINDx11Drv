@@ -477,6 +477,13 @@ class UICBINDx11RenderDevice : public URenderDevice
 	IDXGISwapChain1*			m_D3DSwapChain;
 	ID3D11DeviceContext*		m_D3DDeviceContext;
 
+	// Metallicafan212:	Deferred command list support
+	ID3D11DeviceContext*		m_D3DDeferredContext;
+	ID3D11CommandList*			m_D3DCommandList;
+
+	// Metallicafan212:	Pointer to use for rendering, so that we can swap in and out of the experimental mode
+	ID3D11DeviceContext*		m_RenderContext;
+
 	ID3D11Query*				m_D3DQuery;
 
 	// Metallicafan212:	The current feature level, so we know if we support specific features
@@ -880,6 +887,43 @@ class UICBINDx11RenderDevice : public URenderDevice
 		}
 	}
 
+	inline void SetupDeferredRender()
+	{
+		if (m_D3DDeferredContext != nullptr)
+		{
+			UINT Stride = sizeof(FD3DVert);
+			UINT Offset = 0;
+			m_D3DDeferredContext->IASetIndexBuffer(IndexBuffer, INDEX_FORMAT, 0);
+			m_D3DDeferredContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+
+			// Metallicafan212:	Set the constant buffers as well
+			m_RenderContext->VSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
+			m_RenderContext->GSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
+			m_RenderContext->PSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
+			m_RenderContext->CSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
+
+			m_RenderContext->VSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+			m_RenderContext->GSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+			m_RenderContext->PSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+			m_RenderContext->CSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+		}
+	}
+
+	inline void DoDeferredRender()
+	{
+		// Metallicafan212:	Render now!
+		if (m_D3DDeferredContext != nullptr)
+		{
+			HRESULT hr = m_D3DDeferredContext->FinishCommandList(TRUE, &m_D3DCommandList);
+
+			m_D3DDeviceContext->ExecuteCommandList(m_D3DCommandList, FALSE);
+			SAFE_RELEASE(m_D3DCommandList);
+
+			// Metallicafan212:	Keep the vertex buffer bound!!!!
+			SetupDeferredRender();
+		}
+	}
+
 	// Metallicafan212:	TODO! Replace ALL non-indexed drawing with this....
 	inline void DoStandardIBuff(INT VertNum)
 	{
@@ -946,12 +990,12 @@ class UICBINDx11RenderDevice : public URenderDevice
 		{
 			D3D11_MAP MType = bNoOverwrite ? D3D11_MAP_WRITE_NO_OVERWRITE : D3D11_MAP_WRITE_DISCARD;
 
-			HRESULT hr		= m_D3DDeviceContext->Map(VertexBuffer, 0, MType, 0, &VertexBuffMap);
+			HRESULT hr		= m_RenderContext->Map(VertexBuffer, 0, MType, 0, &VertexBuffMap);
 
 			ThrowIfFailed(hr);
 
 			// Metallicafan212:	Now lock the IBuff
-			hr				= m_D3DDeviceContext->Map(IndexBuffer, 0, MType, 0, &IndexBuffMap);
+			hr				= m_RenderContext->Map(IndexBuffer, 0, MType, 0, &IndexBuffMap);
 
 			ThrowIfFailed(hr);
 		}
@@ -964,12 +1008,12 @@ class UICBINDx11RenderDevice : public URenderDevice
 	inline void UnlockBuffers()
 	{
 		if (m_VertexBuff != nullptr)
-			m_D3DDeviceContext->Unmap(VertexBuffer, 0);
+			m_RenderContext->Unmap(VertexBuffer, 0);
 
 		m_VertexBuff = nullptr;
 
 		if (m_IndexBuff != nullptr)
-			m_D3DDeviceContext->Unmap(IndexBuffer, 0);
+			m_RenderContext->Unmap(IndexBuffer, 0);
 
 		m_IndexBuff = nullptr;
 	}
@@ -1007,11 +1051,16 @@ class UICBINDx11RenderDevice : public URenderDevice
 			{
 				appErrorf(TEXT("Metallicafan212, you fucking idiot, the index buffer is fucked. DrawnIndices: %lu, BufferedIndices: %lu"), m_DrawnIndices, m_BufferedIndices);
 			}
-			m_D3DDeviceContext->DrawIndexed(m_BufferedIndices, m_DrawnIndices, m_DrawnVerts);
+			m_RenderContext->DrawIndexed(m_BufferedIndices, m_DrawnIndices, m_DrawnVerts);
 
 			// Metallicafan212:	Increment the buffer counters
 			m_DrawnIndices	+= m_BufferedIndices;
 			m_DrawnVerts	+= m_BufferedVerts;
+
+			// Metallicafan212:	I guess it unmaps after each draw????
+			//SetupDeferredRender();
+
+			DoDeferredRender();
 		}
 
 		// Metallicafan212:	Init the values
@@ -1036,15 +1085,15 @@ class UICBINDx11RenderDevice : public URenderDevice
 	inline void UpdateGlobalShaderVars()
 	{
 #if 0
-		m_D3DDeviceContext->UpdateSubresource(FrameConstantsBuffer, 0, nullptr, &FrameShaderVars, sizeof(FFrameShaderVars), 0);
+		m_RenderContext->UpdateSubresource(FrameConstantsBuffer, 0, nullptr, &FrameShaderVars, sizeof(FFrameShaderVars), 0);
 #else
 		D3D11_MAPPED_SUBRESOURCE Map;
 
-		m_D3DDeviceContext->Map(FrameConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
+		m_RenderContext->Map(FrameConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
 
 		appMemcpy(Map.pData, &FrameShaderVars, sizeof(FFrameShaderVars));
 
-		m_D3DDeviceContext->Unmap(FrameConstantsBuffer, 0);
+		m_RenderContext->Unmap(FrameConstantsBuffer, 0);
 #endif
 	}
 
@@ -1160,7 +1209,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 		}
 
 		// Metallicafan212:	Set the blend state
-		m_D3DDeviceContext->OMSetBlendState(bState, nullptr, 0xffffffff);
+		m_RenderContext->OMSetBlendState(bState, nullptr, 0xffffffff);
 	}
 
 	// Metallicafan212:	Blend state
@@ -1274,16 +1323,16 @@ class UICBINDx11RenderDevice : public URenderDevice
 		GlobalDistFogSettings.DistanceFogSettings	= GlobalShaderVars.DistanceFogSettings;
 
 #if 0
-		m_D3DDeviceContext->UpdateSubresource(GlobalDistFogBuffer, 0, nullptr, &GlobalDistFogSettings, sizeof(FDistFogVars), 0);
+		m_RenderContext->UpdateSubresource(GlobalDistFogBuffer, 0, nullptr, &GlobalDistFogSettings, sizeof(FDistFogVars), 0);
 #else
 		D3D11_MAPPED_SUBRESOURCE Map;
 
-		m_D3DDeviceContext->Map(GlobalDistFogBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
+		m_RenderContext->Map(GlobalDistFogBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
 
 		//*((FDistFogVars*)Map.pData) = GlobalDistFogSettings;
 		appMemcpy(Map.pData, &GlobalDistFogSettings, sizeof(FDistFogVars));
 
-		m_D3DDeviceContext->Unmap(GlobalDistFogBuffer, 0);
+		m_RenderContext->Unmap(GlobalDistFogBuffer, 0);
 #endif
 	}
 

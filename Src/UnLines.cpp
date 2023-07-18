@@ -97,7 +97,7 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		SetBlend(PF_Highlighted | PF_Occlude);
 
 		// Metallicafan212:	TODO! Line specific shader for making the lines thiccc
-		FLineShader->Bind();
+		FLineShader->Bind(m_RenderContext);
 
 		// Metallicafan212:	Start buffering now
 		StartBuffering(BT_Lines);
@@ -126,7 +126,7 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 
 		//UnlockBuffers();
 
-		m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
 		AdvanceVertPos();//2);
 	}
@@ -190,7 +190,7 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	}
 
 	// Metallicafan212:	TODO! Line specific shader
-	FLineShader->Bind();
+	FLineShader->Bind(m_RenderContext);
 
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Lines);
@@ -248,7 +248,7 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	//UnlockVertexBuffer();
 	//UnlockBuffers();
 	
-	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
 	AdvanceVertPos();//2);
 
@@ -303,7 +303,7 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 		SetProjectionStateNoCheck(false);
 	}
 
-	FGenShader->Bind();
+	FGenShader->Bind(m_RenderContext);
 
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Points);
@@ -393,7 +393,7 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 
 	//UnlockBuffers();
 
-	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	AdvanceVertPos();//6);
 

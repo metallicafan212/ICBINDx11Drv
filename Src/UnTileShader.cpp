@@ -37,24 +37,6 @@ FD3DTileShader::FD3DTileShader(UICBINDx11RenderDevice* InParent)
 }
 
 // Metallicafan212:	Shader interface
-void FD3DTileShader::Init()
-{
-	guard(FD3DTileShader::Init);
-
-	FD3DShader::Init();
-
-	unguard;
-}
-
-void FD3DTileShader::Bind()
-{
-	guard(FD3DTileShader::Bind);
-
-	FD3DShader::Bind();
-
-	unguard;
-}
-
 void FD3DTileShader::SetupConstantBuffer()
 {
 	guard(FD3DTileShader::SetupConstantBuffer);

@@ -36,32 +36,6 @@ FD3DResScalingShader::FD3DResScalingShader(UICBINDx11RenderDevice* InParent)
 }
 
 // Metallicafan212:	Shader interface
-void FD3DResScalingShader::Init()
-{
-	guard(FD3DResScalingShader::Init);
-
-#if USE_RES_COMPUTE
-	FD3DComputeShader::Init();
-#else
-	FD3DShader::Init();
-#endif
-
-	unguard;
-}
-
-void FD3DResScalingShader::Bind()
-{
-	guard(FD3DResScalingShader::Bind);
-
-#if USE_RES_COMPUTE
-	FD3DComputeShader::Bind();
-#else
-	FD3DShader::Bind();
-#endif
-
-	unguard;
-}
-
 void FD3DResScalingShader::SetupConstantBuffer()
 {
 	guard(FD3DResScalingShader::SetupConstantBuffer);

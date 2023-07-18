@@ -18,23 +18,3 @@ FD3DLineShader::FD3DLineShader(UICBINDx11RenderDevice* InParent)
 
 	unguard;
 }
-
-// Metallicafan212:	Shader interface
-void FD3DLineShader::Init()
-{
-	guard(FD3DLineShader::Init);
-
-	FD3DShader::Init();
-
-	unguard;
-}
-
-void FD3DLineShader::Bind()
-{
-	guard(FD3DLineShader::Bind);
-
-	FD3DShader::Bind();
-
-	unguard;
-}
-

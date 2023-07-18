@@ -45,34 +45,6 @@ FD3DMSAAShader::FD3DMSAAShader(UICBINDx11RenderDevice* InParent)
 }
 
 // Metallicafan212:	Shader interface
-void FD3DMSAAShader::Init()
-{
-	guard(FD3DMSAAShader::Init);
-
-#if USE_MSAA_COMPUTE
-	FD3DComputeShader::Init();
-#else
-	FD3DShader::Init();
-#endif
-
-	// Metallicafan212:	Create the view based on the old texture???
-
-	unguard;
-}
-
-void FD3DMSAAShader::Bind()
-{
-	guard(FD3DMSAAShader::Bind);
-
-#if USE_MSAA_COMPUTE
-	FD3DComputeShader::Bind();
-#else
-	FD3DShader::Bind();
-#endif
-
-	unguard;
-}
-
 void FD3DMSAAShader::SetupConstantBuffer()
 {
 	guard(FD3DMSAAShader::SetupConstantBuffer);

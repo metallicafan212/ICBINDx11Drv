@@ -151,7 +151,7 @@ public:
 	// Metallicafan212:	TODO! Shader interface?
 	virtual void Init();
 
-	virtual void Bind();
+	virtual void Bind(ID3D11DeviceContext* UseContext);
 
 	// Metallicafan212:	Made this generic so we can copy vars into shaders
 	virtual void SetupConstantBuffer();
@@ -186,7 +186,7 @@ public:
 
 	virtual void Init();
 
-	virtual void Bind();
+	virtual void Bind(ID3D11DeviceContext* UseContext);
 
 };
 
@@ -259,9 +259,6 @@ public:
 	FD3DTileShader(class UICBINDx11RenderDevice* InParent);
 
 	// Metallicafan212:	Shader interface
-	virtual void Init();
-	virtual void Bind();
-
 	virtual void SetupConstantBuffer();
 
 	virtual void WriteConstantBuffer(void* InMem);
@@ -285,8 +282,6 @@ public:
 	FD3DGenericShader(class UICBINDx11RenderDevice* InParent);
 
 	// Metallicafan212:	Shader interface
-	virtual void Init();
-	virtual void Bind();
 };
 
 #define INSTANCED_LINES 0
@@ -309,10 +304,6 @@ public:
 	// Metallicafan212:	Constructor that inits the device pointer
 	FD3DLineShader(class UICBINDx11RenderDevice* InParent);
 
-	// Metallicafan212:	Shader interface
-	virtual void Init();
-	virtual void Bind();
-
 	//virtual void SetupConstantBuffer();
 
 	//virtual void WriteConstantBuffer(void* InMem);
@@ -333,10 +324,6 @@ public:
 
 	// Metallicafan212:	Constructor that inits the device pointer
 	FD3DMeshShader(class UICBINDx11RenderDevice* InParent);
-
-	// Metallicafan212:	Shader interface
-	virtual void Init();
-	virtual void Bind();
 };
 
 class FD3DSurfShader : public FD3DShader
@@ -360,10 +347,6 @@ public:
 
 	// Metallicafan212:	Constructor that inits the device pointer
 	FD3DSurfShader(class UICBINDx11RenderDevice* InParent);
-
-	// Metallicafan212:	Shader interface
-	virtual void Init();
-	virtual void Bind();
 
 	virtual void SetupConstantBuffer();
 
@@ -402,10 +385,6 @@ public:
 
 	// Metallicafan212:	Constructor that inits the device pointer
 	FD3DResScalingShader(class UICBINDx11RenderDevice* InParent);
-
-	// Metallicafan212:	Shader interface
-	virtual void Init();
-	virtual void Bind();
 
 	virtual void SetupConstantBuffer();
 
@@ -447,10 +426,6 @@ public:
 	// Metallicafan212:	Constructor that inits the device pointer
 	FD3DMSAAShader(class UICBINDx11RenderDevice* InParent);
 
-	// Metallicafan212:	Shader interface
-	virtual void Init();
-	virtual void Bind();
-
 	virtual void SetupConstantBuffer();
 
 	virtual void WriteConstantBuffer(void* InMem);
@@ -471,10 +446,6 @@ public:
 
 	// Metallicafan212:	Constructor that inits the device pointer
 	FD3DP8ToRGBAShader(class UICBINDx11RenderDevice* InParent);
-
-	// Metallicafan212:	Shader interface
-	virtual void Init();
-	virtual void Bind();
 
 	virtual void SetupConstantBuffer();
 

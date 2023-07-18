@@ -135,7 +135,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	//					It would allow us to buffer surfaces
 	SurfCoords = Facet.MapCoords;
 
-	FSurfShader->Bind();
+	FSurfShader->Bind(m_RenderContext);
 
 	checkSlow(Surface.Texture);
 
@@ -200,8 +200,8 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	}
 
 	UnlockVertexBuffer();
-	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_D3DDeviceContext->Draw(VertRequest, m_DrawnVerts);
+	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_RenderContext->Draw(VertRequest, m_DrawnVerts);
 	AdvanceVertPos();//VertRequest);
 
 #else
@@ -225,7 +225,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices);
 
 
-	m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	AdvanceVertPos();
 
 #endif
@@ -284,7 +284,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 			}
 		}
 
-		FSurfShader->Bind();
+		FSurfShader->Bind(m_RenderContext);
 
 		// Metallicafan212:	Rebuffer the verts (again)
 		BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices);

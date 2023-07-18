@@ -15,8 +15,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 		BoundTextures[TexNum].TexInfo	= nullptr;
 		BoundTextures[TexNum].m_SRV		= BlankResourceView;
 
-		m_D3DDeviceContext->PSSetShaderResources(TexNum, 1, &BlankResourceView);
-		m_D3DDeviceContext->PSSetSamplers(TexNum, 1, &BlankSampler);
+		m_RenderContext->PSSetShaderResources(TexNum, 1, &BlankResourceView);
+		m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
 
 		return;
 	}
@@ -121,13 +121,13 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 		// Metallicafan212:	If we have MSAA we need to RESOLVE!!!!!
 		if (NumAASamples > 1)
 		{
-			m_D3DDeviceContext->ResolveSubresource(TexTemp->NonMSAATex.Get(), 0, TexTemp->RTTex.Get(), 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+			m_RenderContext->ResolveSubresource(TexTemp->NonMSAATex.Get(), 0, TexTemp->RTTex.Get(), 0, DXGI_FORMAT_B8G8R8A8_UNORM);
 		}
 		
-		m_D3DDeviceContext->PSSetShaderResources(TexNum, 1, TexTemp->RTSRView.GetAddressOf());
+		m_RenderContext->PSSetShaderResources(TexNum, 1, TexTemp->RTSRView.GetAddressOf());
 
 		ID3D11SamplerState* Temp = GetSamplerState(0);
-		m_D3DDeviceContext->PSSetSamplers(TexNum, 1, &Temp);
+		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
 
 		// Metallicafan212:	So we can find whatever is still bound as the RT when we call OMSetRenderTargets
 		BoundTextures[TexNum].m_SRV = TexTemp->RTSRView.Get();
@@ -145,10 +145,10 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	}
 	*/
 
-	m_D3DDeviceContext->PSSetShaderResources(TexNum, 1, &DaTex->m_View);
+	m_RenderContext->PSSetShaderResources(TexNum, 1, &DaTex->m_View);
 
 	ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0));
-	m_D3DDeviceContext->PSSetSamplers(TexNum, 1, &Temp);
+	m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
 
 	unguard;
 }
@@ -564,7 +564,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 					if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch))
 					{
-						m_D3DDeviceContext->UpdateSubresource(DaTex->P8ConvTex, i, nullptr, MipData, MipPitch, 0);
+						m_RenderContext->UpdateSubresource(DaTex->P8ConvTex, i, nullptr, MipData, MipPitch, 0);
 					}
 				}
 
@@ -592,14 +592,14 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 				{
 					((DWORD*)ConversionMemory)[i] = GET_COLOR_DWORD(Info.Palette[i]);
 				}
-				//m_D3DDeviceContext->UpdateSubresource(PaletteTexture, 0, nullptr, (void*)Info.Palette, 256 * 4, 0);
-				m_D3DDeviceContext->UpdateSubresource(PaletteTexture, 0, nullptr, ConversionMemory, 256 * 4, 0);
+				//m_RenderContext->UpdateSubresource(PaletteTexture, 0, nullptr, (void*)Info.Palette, 256 * 4, 0);
+				m_RenderContext->UpdateSubresource(PaletteTexture, 0, nullptr, ConversionMemory, 256 * 4, 0);
 
 				// Metallicafan212:	Now bind the input
 				ID3D11ShaderResourceView* InSRV[2] = { DaTex->P8ConvSRV, PaletteSRV };
-				m_D3DDeviceContext->CSSetShaderResources(0, 2, InSRV);
+				m_RenderContext->CSSetShaderResources(0, 2, InSRV);
 
-				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, Info.NumMips, (ID3D11UnorderedAccessView**)DaTex->UAVMips.GetData(), nullptr);
+				m_RenderContext->CSSetUnorderedAccessViews(0, Info.NumMips, (ID3D11UnorderedAccessView**)DaTex->UAVMips.GetData(), nullptr);
 
 				// Metallicafan212:	Bind the P8 upload shader
 				FP8ToRGBAShader->USize	= Info.USize;
@@ -607,21 +607,21 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 				FP8ToRGBAShader->Bind();
 
 				// Metallicafan212:	Now execute
-				m_D3DDeviceContext->Dispatch(X, Y, Info.NumMips);
+				m_RenderContext->Dispatch(X, Y, Info.NumMips);
 
 				// Metallicafan212:	Wait for it to complete...
-				m_D3DDeviceContext->End(m_D3DQuery);
+				m_RenderContext->End(m_D3DQuery);
 
 				// Metallicafan212:	Wait for it
 				BOOL bDone = 0;
 
-				while (m_D3DDeviceContext->GetData(m_D3DQuery, &bDone, sizeof(BOOL), 0) != S_OK && bDone == 0);
+				while (m_RenderContext->GetData(m_D3DQuery, &bDone, sizeof(BOOL), 0) != S_OK && bDone == 0);
 
 				// Metallicafan212:	Clear the render resources!!!
 				constexpr ID3D11ShaderResourceView* SRVTemp[2] = { nullptr, nullptr };
-				m_D3DDeviceContext->CSSetShaderResources(0, 2, SRVTemp);
+				m_RenderContext->CSSetShaderResources(0, 2, SRVTemp);
 
-				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, Info.NumMips, (ID3D11UnorderedAccessView**)DaTex->UAVBlank.GetData(), nullptr);
+				m_RenderContext->CSSetUnorderedAccessViews(0, Info.NumMips, (ID3D11UnorderedAccessView**)DaTex->UAVBlank.GetData(), nullptr);
 
 				Info.bRealtimeChanged = 0;
 
@@ -689,7 +689,7 @@ void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void
 	guard(MemcpyTexUpload);
 
 	// Metallicafan212:	Just copy over, todo!!!!
-	inDev->m_D3DDeviceContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, Source, SourcePitch, 0);
+	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, Source, SourcePitch, 0);
 
 	unguard;
 }
@@ -746,7 +746,7 @@ void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 	}
 
 	// Metallicafan212:	Now update
-	inDev->m_D3DDeviceContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, ConversionMem, SourcePitch, 0);
+	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, ConversionMem, SourcePitch, 0);
 	unguard;
 }
 
@@ -775,7 +775,7 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 
 
 	// Metallicafan212:	Now update
-	inDev->m_D3DDeviceContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, ConversionMem, SourcePitch, 0);
+	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, ConversionMem, SourcePitch, 0);
 
 	unguard;
 }
@@ -984,11 +984,11 @@ void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 		{
 			if ((blendFlags & PF_Occlude))
 			{
-				m_D3DDeviceContext->OMSetDepthStencilState(m_DefaultZState, 0);
+				m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);
 			}
 			else
 			{
-				m_D3DDeviceContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
 			}
 		}
 	}

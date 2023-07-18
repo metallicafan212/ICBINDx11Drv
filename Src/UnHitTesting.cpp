@@ -112,13 +112,13 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 
 	m_D3DScreenRTV->GetResource(&RTResource);
 
-	m_D3DDeviceContext->ResolveSubresource(Resolved, 0, RTResource, 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+	m_RenderContext->ResolveSubresource(Resolved, 0, RTResource, 0, DXGI_FORMAT_B8G8R8A8_UNORM);
 
 	// Metallicafan212:	Now release that copy
 	RTResource->Release();
 
 	// Metallicafan212:	Copy to a staging texture...
-	m_D3DDeviceContext->CopySubresourceRegion(Stage, 0, 0, 0, 0, Resolved, 0, nullptr);
+	m_RenderContext->CopySubresourceRegion(Stage, 0, 0, 0, 0, Resolved, 0, nullptr);
 
 	SAFE_RELEASE(Resolved);
 
@@ -146,7 +146,7 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 		};
 
 		D3D11_MAPPED_SUBRESOURCE Map;
-		hr = m_D3DDeviceContext->Map(Stage, 0, D3D11_MAP_READ, 0, &Map);
+		hr = m_RenderContext->Map(Stage, 0, D3D11_MAP_READ, 0, &Map);
 
 		ThrowIfFailed(hr);
 
@@ -169,7 +169,7 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 			}
 		}
 
-		m_D3DDeviceContext->Unmap(Stage, 0);
+		m_RenderContext->Unmap(Stage, 0);
 
 		SAFE_RELEASE(Stage);
 	}
@@ -202,7 +202,7 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Copy to a staging texture...
-	m_D3DDeviceContext->CopySubresourceRegion(Stage, 0, 0, 0, 0, m_BackBuffTex, 0, nullptr);
+	m_RenderContext->CopySubresourceRegion(Stage, 0, 0, 0, 0, m_BackBuffTex, 0, nullptr);
 
 	struct ColorHack
 	{
@@ -220,7 +220,7 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	};
 
 	D3D11_MAPPED_SUBRESOURCE Map;
-	hr = m_D3DDeviceContext->Map(Stage, 0, D3D11_MAP_READ, 0, &Map);
+	hr = m_RenderContext->Map(Stage, 0, D3D11_MAP_READ, 0, &Map);
 
 	ThrowIfFailed(hr);
 
@@ -243,7 +243,7 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 		}
 	}
 
-	m_D3DDeviceContext->Unmap(Stage, 0);
+	m_RenderContext->Unmap(Stage, 0);
 
 	SAFE_RELEASE(Stage);
 
@@ -328,7 +328,7 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 
 	// Metallicafan212:	Make sure it's bound!!!!
 	ID3D11RenderTargetView* test = nullptr;
-	m_D3DDeviceContext->OMGetRenderTargets(1, &test, nullptr);
+	m_RenderContext->OMGetRenderTargets(1, &test, nullptr);
 
 	// Metallicafan212:	If it's not the current RT, we need to return
 	if (test != m_D3DScreenRTV)
@@ -353,14 +353,14 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 	Box.bottom				= Box.top + (Viewport->HitYL * ResolutionScale);
 	Box.back				= 1;
 	
-	m_D3DDeviceContext->ResolveSubresource(Resolved, 0, RTResource, 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+	m_RenderContext->ResolveSubresource(Resolved, 0, RTResource, 0, DXGI_FORMAT_B8G8R8A8_UNORM);
 
 	// Metallicafan212:	Now copy
-	m_D3DDeviceContext->CopySubresourceRegion(ScreenCopy, 0, 0, 0, 0, Resolved, 0, &Box);
+	m_RenderContext->CopySubresourceRegion(ScreenCopy, 0, 0, 0, 0, Resolved, 0, &Box);
 
 	SAFE_RELEASE(Resolved);
 
-	//m_D3DDeviceContext->Flush();
+	//m_RenderContext->Flush();
 
 	// Metallicafan212:	Now release that copy
 	RTResource->Release();
@@ -371,7 +371,7 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 
 	// Metallicafan212:	Now lock it
 	D3D11_MAPPED_SUBRESOURCE Map;
-	hr = m_D3DDeviceContext->Map(ScreenCopy, 0, D3D11_MAP_READ, 0, &Map);
+	hr = m_RenderContext->Map(ScreenCopy, 0, D3D11_MAP_READ, 0, &Map);
 
 	ThrowIfFailed(hr);
 
@@ -431,7 +431,7 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 	}
 
 	// Metallicafan212:	Free the DX resources
-	m_D3DDeviceContext->Unmap(ScreenCopy, 0);
+	m_RenderContext->Unmap(ScreenCopy, 0);
 
 	ScreenCopy->Release();
 

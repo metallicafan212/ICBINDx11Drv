@@ -118,7 +118,7 @@ void FD3DShader::Init()
 	unguard;
 }
 
-void FD3DShader::Bind()
+void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 {
 	guard(FD3DShader::Bind);
 
@@ -137,19 +137,19 @@ void FD3DShader::Bind()
 	if (!bShaderIsUs)
 	{
 		// Metallicafan212:	Setup this shader for rendering
-		ParentDevice->m_D3DDeviceContext->VSSetShader(VertexShader, nullptr, 0);
+		UseContext->VSSetShader(VertexShader, nullptr, 0);
 
 		// Metallicafan212:	Bind the optional geometry shader
-		ParentDevice->m_D3DDeviceContext->GSSetShader(GeoShader, nullptr, 0);
+		UseContext->GSSetShader(GeoShader, nullptr, 0);
 
-		ParentDevice->m_D3DDeviceContext->PSSetShader(PixelShader, nullptr, 0);
+		UseContext->PSSetShader(PixelShader, nullptr, 0);
 
-		ParentDevice->m_D3DDeviceContext->IASetInputLayout(InputLayout);
+		UseContext->IASetInputLayout(InputLayout);
 	}
 
 	// Metallicafan212:	Map the matrix(s)
 	D3D11_MAPPED_SUBRESOURCE Map;
-	HRESULT hr = ParentDevice->m_D3DDeviceContext->Map(ShaderConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
+	HRESULT hr = UseContext->Map(ShaderConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
 
 	// Metallicafan212:	IDK, do something here?
 	ParentDevice->ThrowIfFailed(hr);
@@ -159,17 +159,17 @@ void FD3DShader::Bind()
 	WriteConstantBuffer(Map.pData);
 
 	// Metallicafan212:	Now unmap it
-	ParentDevice->m_D3DDeviceContext->Unmap(ShaderConstantsBuffer, 0);
+	UseContext->Unmap(ShaderConstantsBuffer, 0);
 
 	// Metallicafan212:	Now finally set it as a resource
 	if(VertexShader != nullptr)
-		ParentDevice->m_D3DDeviceContext->VSSetConstantBuffers(2, 1, &ShaderConstantsBuffer);
+		UseContext->VSSetConstantBuffers(2, 1, &ShaderConstantsBuffer);
 
 	if(GeoShader != nullptr)
-		ParentDevice->m_D3DDeviceContext->GSSetConstantBuffers(2, 1, &ShaderConstantsBuffer);
+		UseContext->GSSetConstantBuffers(2, 1, &ShaderConstantsBuffer);
 
 	if(PixelShader != nullptr)
-		ParentDevice->m_D3DDeviceContext->PSSetConstantBuffers(2, 1, &ShaderConstantsBuffer);
+		UseContext->PSSetConstantBuffers(2, 1, &ShaderConstantsBuffer);
 
 	unguard;
 }

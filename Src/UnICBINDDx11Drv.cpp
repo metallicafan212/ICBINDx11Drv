@@ -106,6 +106,8 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	SAFE_RELEASE(m_D3DDeviceContext);
 	SAFE_RELEASE(m_D3DDevice);
+	SAFE_RELEASE(m_D3DDeferredContext);
+	SAFE_RELEASE(m_D3DCommandList);
 
 	SAFE_RELEASE(FrameConstantsBuffer);
 	SAFE_RELEASE(GlobalDistFogBuffer);
@@ -240,6 +242,21 @@ MAKE_DEVICE:
 			break;
 		}
 	}
+
+	m_RenderContext = m_D3DDeviceContext;
+
+	/*
+	if (m_FeatureLevel >= D3D_FEATURE_LEVEL_11_0)
+	{
+		// Metallicafan212:	Create a deferred context and command list
+		hr = m_D3DDevice->CreateDeferredContext(0, &m_D3DDeferredContext);
+
+		if (SUCCEEDED(hr))
+		{
+			GLog->Logf(TEXT("DX11: Using deferred rendering! This is expirimental!"));
+		}
+	}
+	*/
 
 	GLog->Logf(TEXT("DX11: Using feature level %s"), FLStr);
 
@@ -384,10 +401,10 @@ MAKE_DEVICE:
 	// Metallicafan212:	IDK, do something here?
 	ThrowIfFailed(hr);
 
-	m_D3DDeviceContext->VSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
-	m_D3DDeviceContext->GSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
-	m_D3DDeviceContext->PSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
-	m_D3DDeviceContext->CSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
+	m_RenderContext->VSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
+	m_RenderContext->GSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
+	m_RenderContext->PSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
+	m_RenderContext->CSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
 
 	// Metallicafan212:	Now create one for the distance fog settings
 	//D3D11_BUFFER_DESC DistConst = { sizeof(FDistFogVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
@@ -396,10 +413,17 @@ MAKE_DEVICE:
 
 	ThrowIfFailed(hr);
 
-	m_D3DDeviceContext->VSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
-	m_D3DDeviceContext->GSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
-	m_D3DDeviceContext->PSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
-	m_D3DDeviceContext->CSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+	m_RenderContext->VSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+	m_RenderContext->GSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+	m_RenderContext->PSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+	m_RenderContext->CSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+
+	// Metallicafan212:	If we're using deferred rendering, we HAVE to map with discard first!!!!
+	if (m_D3DDeferredContext != nullptr)
+	{
+		LockVertAndIndexBuffer(0, 0, 0);
+		UnlockBuffers();
+	}
 
 	unguard;
 }
@@ -472,7 +496,7 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 
 		// Metallicafan212:	Set it
 		if(m_s != nullptr)
-			m_D3DDeviceContext->RSSetState(m_s);
+			m_RenderContext->RSSetState(m_s);
 
 		CurrentRasterState = State;
 	}
@@ -565,7 +589,7 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	Viewport			= InViewport;
 
 	// Metallicafan212:	Get the style now!!!
-	ViewExtendedStyle = GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_EXSTYLE);
+	//ViewExtendedStyle = GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_EXSTYLE);
 
 	// Metallicafan212:	Save the values
 	//					We also have to clamp here since unreal could pass bad values (the editor opening, for example)
@@ -662,8 +686,8 @@ void UICBINDx11RenderDevice::SetupResources()
 	for (INT i = 0; i < MAX_TEXTURES; i++)
 	{
 		//SetTexture(0, nullptr, 0);
-		m_D3DDeviceContext->PSSetShaderResources(i, 0, nullptr);
-		m_D3DDeviceContext->PSSetSamplers(i, 0, nullptr);
+		m_RenderContext->PSSetShaderResources(i, 0, nullptr);
+		m_RenderContext->PSSetSamplers(i, 0, nullptr);
 	}
 
 	// Metallicafan212:	CATCH RT TEXTURES!!!!
@@ -673,12 +697,12 @@ void UICBINDx11RenderDevice::SetupResources()
 	ClearRTTextures();
 
 	// Metallicafan212:	Clear any set RT/DC
-	m_D3DDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);	
+	m_RenderContext->OMSetRenderTargets(0, nullptr, nullptr);	
 
 	// Metallicafan212:	Reset the raster state
 	CurrentRasterState = DXRS_MAX;
 
-	//m_D3DDeviceContext->RSSetState(m_DefaultRasterState);
+	//m_RenderContext->RSSetState(m_DefaultRasterState);
 	SetRasterState(0);
 
 	// Metallicafan212:	Render target and back buffer texture
@@ -1021,27 +1045,10 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	ThrowIfFailed(hr);
 
-	/*
-	// Metallicafan212:	Now the hacked texture for opacity checking
-	//					We only need one color
-	RTMSAA.SampleDesc.Count		= 1;
-	RTMSAA.Format				= DXGI_FORMAT_R32_FLOAT;
-
-	hr = m_D3DDevice->CreateTexture2D(&RTMSAA, nullptr, &m_ScreenOpacityTex);
-
-	ThrowIfFailed(hr);
-	*/
-
 	// Metallicafan212:	Now create the views
 	hr = m_D3DDevice->CreateRenderTargetView(m_ScreenBuffTex, nullptr, &m_D3DScreenRTV);
 
 	ThrowIfFailed(hr);
-
-	/*
-	hr = m_D3DDevice->CreateRenderTargetView(m_ScreenOpacityTex, nullptr, &m_D3DScreenOpacityRTV);
-
-	ThrowIfFailed(hr);
-	*/
 
 	// Metallicafan212:	Create a shader resource view for MSAA resolving
 	CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = CD3D11_SHADER_RESOURCE_VIEW_DESC();
@@ -1053,17 +1060,6 @@ void UICBINDx11RenderDevice::SetupResources()
 	hr = m_D3DDevice->CreateShaderResourceView(m_ScreenBuffTex, &srvDesc, &m_ScreenRTSRV);
 
 	ThrowIfFailed(hr);
-
-	/*
-	// Metallicafan212:	Now the shader resource for the opacity texture
-	srvDesc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Format						= DXGI_FORMAT_R32_FLOAT;
-
-	hr = m_D3DDevice->CreateShaderResourceView(m_ScreenOpacityTex, &srvDesc, &m_ScreenOpacityRTSRV);
-
-	ThrowIfFailed(hr);
-	*/
-
 
 	// Metallicafan212:	Make the depth and stencil buffer
 	//					TODO! Possibly use a higher quality format????
@@ -1274,7 +1270,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Set it
-	m_D3DDeviceContext->OMSetDepthStencilState(m_DefaultZState, 1);
+	m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 1);
 
 	// Metallicafan212:	And now a version with no z writing
 	dsDesc.DepthWriteMask					= D3D11_DEPTH_WRITE_MASK_ZERO;
@@ -1283,10 +1279,20 @@ void UICBINDx11RenderDevice::SetupResources()
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Set the index and vertex buffers now (since we don't swap them in and out)
-	m_D3DDeviceContext->IASetIndexBuffer(IndexBuffer, INDEX_FORMAT, 0);
 	UINT Stride = sizeof(FD3DVert);
 	UINT Offset = 0;
-	m_D3DDeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+	
+	if (m_D3DDeferredContext != nullptr)
+	{
+		m_D3DDeferredContext->IASetIndexBuffer(IndexBuffer, INDEX_FORMAT, 0);
+		m_D3DDeferredContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+	}
+	else
+	{
+		m_D3DDeviceContext->IASetIndexBuffer(IndexBuffer, INDEX_FORMAT, 0);
+		m_D3DDeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+	}
+	
 
 	// Metallicafan212:	Keep the lock version updated
 	LastAASamples		= NumAASamples;
@@ -1447,6 +1453,8 @@ void UICBINDx11RenderDevice::Exit()
 	m_D3DDeviceContext->Flush();
 
 	SAFE_RELEASE(m_D3DDeviceContext);
+	SAFE_RELEASE(m_D3DDeferredContext);
+	SAFE_RELEASE(m_D3DCommandList);
 	SAFE_RELEASE(m_D3DDevice);
 
 	// Metallicafan212:	Fix the window and make it compatible with other renderers
@@ -1627,10 +1635,10 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	// Metallicafan212:	Only clear if we're in the editor
 	if (1)//GIsEditor || (RenderLockFlags & LOCKR_ClearScreen))
 	{
-		m_D3DDeviceContext->ClearRenderTargetView(m_D3DScreenRTV, &ScreenClear.X);
+		m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, &ScreenClear.X);
 	}
 	// Metallicafan212:	TODO! Only do this in the editor?
-	m_D3DDeviceContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	m_RenderContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	// Metallicafan212:	Clear to max Z
 	//m_D3DDeviceContext->ClearRenderTargetView(m_D3DScreenOpacityRTV, DirectX::Colors::White);
@@ -1679,6 +1687,9 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	// Metallicafan212:	Update the shader variables
 	UpdateGlobalShaderVars();
 
+	// Metallicafan212:	If we're using deferred rendering, we have to constantly set our buffers....
+	SetupDeferredRender();
+
 	unguard;
 }
 
@@ -1691,6 +1702,11 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 	// Metallicafan212:	Restore our render target (as it may have been changed due to RT textures)
 	RestoreRenderTarget();
+
+	// Metallicafan212:	Render now!
+	DoDeferredRender();
+
+	// Metallicafan212:	
 
 	// Metallicafan212:	Get the selection
 	if (m_HitData != nullptr)
@@ -1709,12 +1725,6 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			Blit = 1;
 	}
 
-	// Metallicafan212:	TODO! Sample code
-
-	// The first argument instructs DXGI to block until VSync, putting the application
-	// to sleep until the next VSync. This ensures we don't waste any cycles rendering
-	// frames that will never be displayed to the screen.
-
 	if (Blit)
 	{
 		// Metallicafan212:	Copy to the screen
@@ -1732,13 +1742,13 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 				m_D3DDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
 				m_D3DDeviceContext->CSSetShaderResources(0, 1, &m_ScreenRTSRV);
-				//m_D3DDeviceContext->CSSetShaderResources(1, 1, &m_ScreenDTSRV);
+				//m_RenderContext->CSSetShaderResources(1, 1, &m_ScreenDTSRV);
 
 				// Metallicafan212:	Now bind the output
 				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, 1, &m_BackBuffUAV, nullptr);
 
 				// Metallicafan212:	Bind the shader
-				FMSAAShader->Bind();
+				FMSAAShader->Bind(m_D3DDeviceContext);
 
 				// Metallicafan212:	Now execute!
 				m_D3DDeviceContext->Dispatch(MSAAThreadX, MSAAThreadY, 1);
@@ -1772,9 +1782,9 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 				SetTexture(1, nullptr, 0);
 
 				// Metallicafan212:	Manually setup the vars...
-				m_D3DDeviceContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
-				m_D3DDeviceContext->PSSetShaderResources(0, 1, &m_ScreenRTSRV);
-				m_D3DDeviceContext->PSSetShaderResources(1, 1, &m_ScreenDTSRV);
+				m_RenderContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
+				m_RenderContext->PSSetShaderResources(0, 1, &m_ScreenRTSRV);
+				m_RenderContext->PSSetShaderResources(1, 1, &m_ScreenDTSRV);
 
 				FMSAAShader->Bind();
 
@@ -1810,12 +1820,12 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 				// Metallicafan212:	Disable depth lmao
 				//ID3D11DepthStencilState* CurState	= nullptr;
 				//UINT Sten							= 0;
-				//m_D3DDeviceContext->OMGetDepthStencilState(&CurState, &Sten);
-				//m_D3DDeviceContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+				//m_RenderContext->OMGetDepthStencilState(&CurState, &Sten);
+				//m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
 
 				LockVertexBuffer(6 * sizeof(FD3DVert));
 
-				//m_D3DDeviceContext->IASetInputLayout(nullptr);
+				//m_RenderContext->IASetInputLayout(nullptr);
 
 				// Metallicafan212:	Start buffering now
 				StartBuffering(BT_ScreenFlash);
@@ -1858,14 +1868,14 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 				UnlockVertexBuffer();
 
-				m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				AdvanceVertPos();//6);
 
 				// Metallicafan212:	Draw
 				EndBuffering();
 
 				// Metallicafan212:	Reset Z state
-				//m_D3DDeviceContext->OMSetDepthStencilState(CurState, Sten);
+				//m_RenderContext->OMSetDepthStencilState(CurState, Sten);
 
 				SetTexture(0, nullptr, 0);
 				SetTexture(1, nullptr, 0);
@@ -1876,7 +1886,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			else
 #endif
 			{
-				m_D3DDeviceContext->ResolveSubresource(m_BackBuffTex, 0, m_ScreenBuffTex, 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+				m_D3DDeviceContext->ResolveSubresource(m_BackBuffTex, 0, m_ScreenBuffTex, 0, ScreenFormat);
 			}
 		}
 		// Metallicafan212:	Always use the resolution scaling shader, so we can do final effects on the screen
@@ -1890,7 +1900,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			m_D3DDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
 			m_D3DDeviceContext->CSSetShaderResources(0, 1, &m_ScreenRTSRV);
-			//m_D3DDeviceContext->CSSetShaderResources(1, 1, &m_ScreenDTSRV);
+			//m_RenderContext->CSSetShaderResources(1, 1, &m_ScreenDTSRV);
 
 			// Metallicafan212:	Now bind the output
 			m_D3DDeviceContext->CSSetUnorderedAccessViews(0, 1, &m_BackBuffUAV, nullptr);
@@ -1973,22 +1983,22 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			}
 
 			// Metallicafan212:	Render as a quad 🙃🙃🙃🙃🙃🙃🙃
-			EndBuffering();
+			//EndBuffering();
 
 			// Metallicafan212:	Order of operations, make sure the alpha rejection is set
 			SetBlend(0);
 
 			SetTexture(0, nullptr, 0);
 
-			m_D3DDeviceContext->PSSetSamplers(0, 1, &ScreenSamp);
+			m_RenderContext->PSSetSamplers(0, 1, &ScreenSamp);
 
 			// Metallicafan212:	Manually setup the vars...
-			m_D3DDeviceContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
-			m_D3DDeviceContext->PSSetShaderResources(0, 1, &m_ScreenRTSRV);
+			m_RenderContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
+			m_RenderContext->PSSetShaderResources(0, 1, &m_ScreenRTSRV);
 
 			SetSceneNode(nullptr);
 
-			FResScaleShader->Bind();
+			FResScaleShader->Bind(m_RenderContext);
 
 			FLOAT Z = 0.5f;
 			FLOAT X = 0.0f;
@@ -2069,7 +2079,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			//UnlockVertexBuffer();
 			//UnlockBuffers();
 
-			m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			AdvanceVertPos();//6);
 
 			// Metallicafan212:	Draw
@@ -2078,14 +2088,13 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			SetTexture(0, nullptr, 0);
 
 			RestoreRenderTarget();
+
+			DoDeferredRender();
 #endif
 		}
-		/*
-		else
-		{
-			m_D3DDeviceContext->CopyResource(m_BackBuffTex, m_ScreenBuffTex);
-		}
-		*/
+
+		// Metallicafan212:	Render now!
+		//DoDeferredRender();
 
 		constexpr DXGI_PRESENT_PARAMETERS Parm{ 0, nullptr, nullptr, nullptr };
 		HRESULT hr = m_D3DSwapChain->Present1(bVSync ? 1 : 0, (bAllowTearing && !bFullscreen && !bVSync ? DXGI_PRESENT_ALLOW_TEARING : 0), &Parm);//m_D3DSwapChain->Present(0, 0);
@@ -2157,7 +2166,7 @@ void UICBINDx11RenderDevice::ClearZ(FSceneNode* Frame)
 
 	EndBuffering();
 
-	m_D3DDeviceContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	m_RenderContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	unguard;
 }
@@ -2190,7 +2199,7 @@ void UICBINDx11RenderDevice::EndFlash()
 
 		SetTexture(0, nullptr, 0);
 
-		FGenShader->Bind();
+		FGenShader->Bind(m_RenderContext);
 
 #if DX11_HP2
 		FPlane Color = FPlane(FlashFog.X, FlashFog.Y, FlashFog.Z, 1.0f - Min(FlashScale.W * 2.0f, 1.0f));
@@ -2225,8 +2234,8 @@ void UICBINDx11RenderDevice::EndFlash()
 		// Metallicafan212:	Disable depth lmao
 		ID3D11DepthStencilState* CurState = nullptr;
 		UINT Sten = 0;
-		m_D3DDeviceContext->OMGetDepthStencilState(&CurState, &Sten);
-		m_D3DDeviceContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+		m_RenderContext->OMGetDepthStencilState(&CurState, &Sten);
+		m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
 
 		// Metallicafan212:	Start buffering now
 		StartBuffering(BT_ScreenFlash);
@@ -2267,14 +2276,14 @@ void UICBINDx11RenderDevice::EndFlash()
 		//UnlockVertexBuffer();
 		//UnlockBuffers();
 
-		m_D3DDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		AdvanceVertPos();//6);
 
 		// Metallicafan212:	Draw
 		EndBuffering();
 
 		// Metallicafan212:	Reset Z state
-		m_D3DDeviceContext->OMSetDepthStencilState(CurState, Sten);
+		m_RenderContext->OMSetDepthStencilState(CurState, Sten);
 	}
 
 	unguard;
@@ -2311,7 +2320,7 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 			NewX, NewY, 0.f, 1.f
 		};
 
-		m_D3DDeviceContext->RSSetViewports(1, &viewport);
+		m_RenderContext->RSSetViewports(1, &viewport);
 
 		// Metallicafan212:	All of this is copied from the DX9 driver
 		// Precompute stuff.
@@ -2377,7 +2386,7 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 			NewX, NewY, 0.f, 1.f
 		};
 
-		m_D3DDeviceContext->RSSetViewports(1, &viewport);
+		m_RenderContext->RSSetViewports(1, &viewport);
 
 		SizeX = Frame->X;
 		SizeY = Frame->Y;
