@@ -317,13 +317,6 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 #else
 	DaTex->RealtimeChangeCount = 0;
 #endif
-
-	if (m_FeatureLevel != D3D_FEATURE_LEVEL_11_1)
-	{
-		INT MinSize = Info.Format == TEXF_BC1 || (Info.Format >= TEXF_BC2 && Info.Format <= TEXF_BC6H) ? 4 : 0;
-		DaTex->USize	= Clamp(DaTex->USize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
-		DaTex->VSize	= Clamp(DaTex->VSize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
-	}
 	
 	//DaTex->UMult		= 1.0f / (Info.UScale * Info.USize);
 	//DaTex->VMult		= 1.0f / (Info.VScale * Info.VSize);
@@ -364,12 +357,28 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	if (Type == nullptr)
 		appErrorf(TEXT("Metallicafan212 you idiot, you forgot to add a descriptor for %d"), DaTex->Format);
 
+	if (m_FeatureLevel != D3D_FEATURE_LEVEL_11_1)
+	{
+		/*
+#if DX11_UT469
+		INT MinSize = (FIsS3TCFormat(Info.Format) || FIsRGTCFormat(Info.Format) || FIsBPTCFormat(Info.Format)) ? 4 : 0;
+#else
+		INT MinSize = Info.Format == TEXF_BC1 || (Info.Format >= TEXF_BC2 && Info.Format <= TEXF_BC6H) ? 4 : 0;
+#endif
+		*/
+
+		// Metallicafan212:	Natively embed the check
+		INT MinSize		= Type->bIsCompressed ? 4 : 0;
+		DaTex->USize	= Clamp(DaTex->USize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		DaTex->VSize	= Clamp(DaTex->VSize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+	}
+
 	FD3DTexType::GetPitch P = Type->GetTexturePitch;
-	BYTE* MipData = nullptr;
+	BYTE* MipData			= nullptr;
 	INT MipSize = 0, MipPitch = 0;
 
 	// Metallicafan212:	Create the conversion mem
-//					TODO! Hardcoded size!!!!
+	//					TODO! Hardcoded size!!!!
 	SIZE_T MemRequest = Info.USize * Info.VSize * 4;
 
 	// Metallicafan212:	Resize as needed
@@ -403,7 +412,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		Desc.Height				= DaTex->VSize;
 		Desc.MipLevels			= Info.NumMips;
 		Desc.Usage				= D3D11_USAGE_DEFAULT;
-		Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE | (Info.Format == TEXF_P8 ? D3D11_BIND_UNORDERED_ACCESS : 0);
+		Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE; //| (Info.Format == TEXF_P8 ? D3D11_BIND_UNORDERED_ACCESS : 0);
 		Desc.ArraySize			= 1;
 		Desc.CPUAccessFlags		= 0;//D3D11_CPU_ACCESS_WRITE;
 		Desc.SampleDesc.Count	= 1;
@@ -546,13 +555,15 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 			guard(ConvertTexture);
 
 			// Metallicafan212:	Convert the mip (could be P8 or RGBA7)
-			UBOOL bMaskedHack = (Info.Format == TEXF_P8 && PolyFlags & PF_Masked);
+			UBOOL bMaskedHack	= (Info.Format == TEXF_P8 && PolyFlags & PF_Masked);
 
 			// Metallicafan212:	TODO! Mask hack it!!
-			FColor OldMasked = bMaskedHack ? Info.Palette[0] : FColor(0, 0, 0, 0);
+			FColor OldMasked	= (Info.Palette != nullptr ? Info.Palette[0] : FColor(0, 0, 0, 0));
 
 			if (bMaskedHack)
 				Info.Palette[0] = FColor(0, 0, 0, 0);
+			else if(Info.Palette != nullptr)
+				Info.Palette[0].A = 255;
 
 #if P8_COMPUTE_SHADER
 			// Metallicafan212:	TODO! Move this around to allow the child convert functions to loop
@@ -652,7 +663,8 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 			}
 
 			// Metallicafan212:	Restore
-			if (bMaskedHack)
+			//if (bMaskedHack)
+			if(Info.Palette != nullptr)
 				Info.Palette[0] = OldMasked;
 
 			unguard;
@@ -664,7 +676,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 // Metallicafan212:	Function to register supported texture types
 //					The device will query first to see what's supported, while some hand-fed types will be provided
-void UICBINDx11RenderDevice::RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, INT ByteOrBlockSize, FD3DTexType::GetPitch PitchFunc, FD3DTexType::UploadFunc UFunc, FD3DTexType::ConversionFunc UConv)
+void UICBINDx11RenderDevice::RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, UBOOL bIsCompressed, INT ByteOrBlockSize, FD3DTexType::GetPitch PitchFunc, FD3DTexType::UploadFunc UFunc, FD3DTexType::ConversionFunc UConv)
 {
 	guard(UICBINDx11RenderDevice::RegisterTextureFormat);
 
@@ -674,6 +686,7 @@ void UICBINDx11RenderDevice::RegisterTextureFormat(ETextureFormat Format, DXGI_F
 	Type.Format				= Format;
 	Type.DXFormat			= DXFormat;
 	Type.bSupported			= !bRequiresConversion;
+	Type.bIsCompressed		= bIsCompressed;
 	Type.TexUploadFunc		= UFunc;
 	Type.TexConvFunc		= UConv;
 	Type.GetTexturePitch	= PitchFunc;
@@ -770,6 +783,12 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 #else
 		(*DBytes) = GET_COLOR_DWORD(Palette[*Bytes]);
 #endif
+		// Metallicafan212:	Fix broken palettes on specific textures in UT!!!
+		if (*Bytes != 0)
+		{
+			// Metallicafan212:	This forces colors that aren't 0 to be full alpha on P8, while the 0th entry is taken care of above
+			(*DBytes) |= 0xFF000000;
+		}
 
 		Bytes++;
 		DBytes++;

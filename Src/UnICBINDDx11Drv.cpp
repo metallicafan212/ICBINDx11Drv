@@ -624,49 +624,49 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 
 	// Metallicafan212:	Assemble the supported texture types
 #if P8_COMPUTE_SHADER
-	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
+	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, 1, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
 #else
-	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 4, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
+	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, 4, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
 #endif
 
-	RegisterTextureFormat(TEXF_RGBA7, DXGI_FORMAT_B8G8R8A8_UNORM, 1, 4, &FD3DTexType::RawPitch, nullptr, RGBA7To8);
+	RegisterTextureFormat(TEXF_RGBA7, DXGI_FORMAT_B8G8R8A8_UNORM, 1, 1, 4, &FD3DTexType::RawPitch, nullptr, RGBA7To8);
 	
 	// Metallicafan212:	I have standardized the TEXF enum between UT469 and HP2 (since BC6H is currently unused and RGBA8 was already called ARGB in the editor/implemented as BGRA8)
 
 	// Metallicafan212:	Raw BGRA texture
 #if DX11_UT_469 || DX11_HP2
-	RegisterTextureFormat(TEXF_BGRA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 4, &FD3DTexType::RawPitch);
+	RegisterTextureFormat(TEXF_BGRA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 1, 4, &FD3DTexType::RawPitch);
 #else
-	RegisterTextureFormat(TEXF_RGBA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 4, &FD3DTexType::RawPitch);
+	RegisterTextureFormat(TEXF_RGBA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 1, 4, &FD3DTexType::RawPitch);
 #endif
 
 	// Metallicafan212:	These are all supported by DX11.1
 	//					In the future, I will query for support (or use the DX feature level???)
 #if DX11_UT_469
-	RegisterTextureFormat(TEXF_DXT1, DXGI_FORMAT_BC1_UNORM_SRGB, 0, 8, &FD3DTexType::BlockCompressionPitch);
+	RegisterTextureFormat(TEXF_DXT1, DXGI_FORMAT_BC1_UNORM_SRGB, 0, 1, 8, &FD3DTexType::BlockCompressionPitch);
 #else
 	// Metallicafan212:	HP2 uses non-SRGB DXT1, so we need to break that off, otherwise the color will be half'd
-	RegisterTextureFormat(TEXF_DXT1, DXGI_FORMAT_BC1_UNORM, 0, 8, &FD3DTexType::BlockCompressionPitch);
+	RegisterTextureFormat(TEXF_DXT1, DXGI_FORMAT_BC1_UNORM, 0, 1, 8, &FD3DTexType::BlockCompressionPitch);
 #endif
 
-	RegisterTextureFormat(TEXF_DXT3, DXGI_FORMAT_BC2_UNORM, 0, 16, &FD3DTexType::BlockCompressionPitch);
+	RegisterTextureFormat(TEXF_DXT3, DXGI_FORMAT_BC2_UNORM, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
 
-	RegisterTextureFormat(TEXF_DXT5, DXGI_FORMAT_BC3_UNORM, 0, 16, &FD3DTexType::BlockCompressionPitch);
+	RegisterTextureFormat(TEXF_DXT5, DXGI_FORMAT_BC3_UNORM, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
 
-	RegisterTextureFormat(TEXF_BC4, DXGI_FORMAT_BC4_UNORM, 0, 8, &FD3DTexType::BlockCompressionPitch);
+	RegisterTextureFormat(TEXF_BC4, DXGI_FORMAT_BC4_UNORM, 0, 1, 8, &FD3DTexType::BlockCompressionPitch);
 
-	RegisterTextureFormat(TEXF_BC5, DXGI_FORMAT_BC5_UNORM, 0, 16, &FD3DTexType::BlockCompressionPitch);
+	RegisterTextureFormat(TEXF_BC5, DXGI_FORMAT_BC5_UNORM, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
 
 	// Metallicafan212:	I'll take whatever need to be done for BC6, as it's currently unimplemented in HP2
 	//					So, if the format needs to be changed, just change it and I'll make it match when I finally finish implementing it
 	//					AMD compressonator wasn't producing this correctly (which is why I disabled it)
 #if DX11_UT_469 || DX11_HP2
-	RegisterTextureFormat(TEXF_BC6H, DXGI_FORMAT_BC6H_UF16, 0, 16, &FD3DTexType::BlockCompressionPitch);
+	RegisterTextureFormat(TEXF_BC6H, DXGI_FORMAT_BC6H_UF16, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
 //#else
 //	RegisterTextureFormat(TEXF_BC6H, DXGI_FORMAT_BC6H_UF16, 0, 16, &FD3DTexType::BlockCompressionPitch);
 #endif
 
-	RegisterTextureFormat(TEXF_BC7, DXGI_FORMAT_BC7_UNORM, 0, 16, &FD3DTexType::BlockCompressionPitch);
+	RegisterTextureFormat(TEXF_BC7, DXGI_FORMAT_BC7_UNORM, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
 
 	return 1;
 
@@ -1596,8 +1596,13 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 {
 	guard(UICBINDx11RenderDevice::Lock);
 
+	// Metallicafan212:	Check gamma as well
+#if !DX11_HP2
+	Gamma = Viewport->GetOuterUClient()->Brightness * 2.0f;
+#endif
+
 	// Metallicafan212:	Check if our lock flags changed
-	if (LastAASamples != NumAASamples || LastAFSamples != NumAFSamples || LastResolutionScale != ResolutionScale)
+	if (Gamma != LastGamma || LastAASamples != NumAASamples || LastAFSamples != NumAFSamples || LastResolutionScale != ResolutionScale)
 	{
 		if (LastAASamples != NumAASamples || LastResolutionScale != ResolutionScale)
 		{
@@ -1608,14 +1613,13 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 		{
 			FlushTextureSamplers();
 		}
+
+		LastGamma = Gamma;
 	}
 
 	// Metallicafan212:	Gamma is disabled in HP2 because a speedrunning trick involves messing with the brighness bar
-#if !DX11_HP2
-	FrameShaderVars.Gamma = Viewport->GetOuterUClient()->Brightness * 2.0f;
-#else
+	//					So, to account for that, there's a manual gamma value (for the time being...)
 	FrameShaderVars.Gamma = Gamma;
-#endif
 
 #if DX11_HP2
 	// Metallicafan212:	Check for wireframe

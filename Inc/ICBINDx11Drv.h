@@ -370,6 +370,9 @@ struct FD3DTexType
 
 	UBOOL			bSupported;
 
+	// Metallicafan212:	If this is a compressed texture type. These need clamping in FL 11.0
+	UBOOL			bIsCompressed;
+
 	INT				BytesPerPixel;
 	INT				BlockSize;
 
@@ -446,9 +449,13 @@ class UICBINDx11RenderDevice : public URenderDevice
 	FLOAT						ResolutionScale;
 
 	// Metallicafan212:	Gamma correction value for the final output
-#if DX11_HP2
+//#if DX11_HP2
 	FLOAT						Gamma;
-#endif
+//#endif
+
+	// Metallicafan212:	Selection color
+	//					TODO! Add it to the config and actually use it....
+	FColor						SurfSelectionColor;
 
 
 	// Metallicafan212:	Versions to check on lock if they changed
@@ -456,6 +463,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	INT							LastAFSamples;
 
 	FLOAT						LastResolutionScale;
+
+	// Metallicafan212:	Version to check gamma
+	FLOAT						LastGamma;
 
 	// Metallicafan212:	If the GPU is AMD/ATI, Intel, or NVidia
 	UBOOL						bIsNV;
@@ -1103,7 +1113,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 		return (QSORT_RETURN)(((A->X - B->X) != 0.0f) ? (A->X - B->X) : (A->Y - B->Y));
 	}
 
-	void RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, INT ByteOrBlockSize = 4, FD3DTexType::GetPitch PitchFunc = &FD3DTexType::RawPitch, FD3DTexType::UploadFunc UFunc = MemcpyTexUpload, FD3DTexType::ConversionFunc UConv = nullptr);
+	void RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, UBOOL bIsCompressed = 0, INT ByteOrBlockSize = 4, FD3DTexType::GetPitch PitchFunc = &FD3DTexType::RawPitch, FD3DTexType::UploadFunc UFunc = MemcpyTexUpload, FD3DTexType::ConversionFunc UConv = nullptr);
 
 	// Metallicafan212:	Texture setting code
 	void SetTexture(INT TexNum, FTextureInfo* Info, FPLAG PolyFlags);

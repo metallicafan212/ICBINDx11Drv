@@ -186,7 +186,7 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 	guard(UICBINDx11RenderDevice::ClampUserOptions);
 
 	// Metallicafan212:	TODO! Add some way to automatically clamp these options!!!
-	NumAFSamples = Clamp(NumAFSamples, 0, D3D11_REQ_MAXANISOTROPY);
+	NumAFSamples			= Clamp(NumAFSamples, 0, D3D11_REQ_MAXANISOTROPY);
 
 	ThreeDeeLineThickness	= Clamp(ThreeDeeLineThickness, 1.0f, FLT_MAX);
 	OrthoLineThickness		= Clamp(OrthoLineThickness, 1.0f, FLT_MAX);
@@ -228,7 +228,8 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 		NumAASamples = appPow(2.0, appCeilLogTwo(NumAASamples) - (NumAASamples % 2));
 	}
 
-	GLog->Logf(TEXT("DX11: Requesting %d AA samples"), NumAASamples);
+	if(LastAASamples != NumAASamples)
+		GLog->Logf(TEXT("DX11: Requesting %d AA samples"), NumAASamples);
 
 	// Metallicafan212:	TODO! Hard-coded offsets to make tiles not look like ass....
 	switch (NumAASamples)
@@ -257,7 +258,10 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 			TileAAUVMove = 0.2f;
 			break;
 		}
-	}	
+	}
+
+	// Metallicafan212:	Set this here now
+	LastGamma = Gamma;
 
 	unguard;
 }

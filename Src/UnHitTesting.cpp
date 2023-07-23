@@ -1,4 +1,4 @@
-#include "ICBINDx11Drv.h"
+﻿#include "ICBINDx11Drv.h"
 
 // Metallicafan212:	Functions relating to testing mouse clicks on the render target
 //					I've coped and modified all the hit testing stuff from my version of the DX9 driver
@@ -68,6 +68,36 @@ void UICBINDx11RenderDevice::PopHit(INT Count, UBOOL bForce)
 
 	unguard;
 }
+
+struct ColorHack
+{
+	union
+	{
+		DWORD Int4;
+		struct
+		{
+			BYTE R;
+			BYTE G;
+			BYTE B;
+			BYTE A;
+		};
+	};
+};
+
+struct ColorHackRGBA
+{
+	union
+	{
+		DWORD Int4;
+		struct
+		{
+			BYTE B;
+			BYTE G;
+			BYTE R;
+			BYTE A;
+		};
+	};
+};
 
 void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 {
@@ -186,7 +216,7 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 
 	D3D11_TEXTURE2D_DESC StageDesc;
 
-	StageDesc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
+	StageDesc.Format				= ScreenFormat;
 	StageDesc.Width					= SizeX;
 	StageDesc.Height				= SizeY;
 	StageDesc.CPUAccessFlags		= D3D11_CPU_ACCESS_READ;
@@ -204,42 +234,41 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	// Metallicafan212:	Copy to a staging texture...
 	m_RenderContext->CopySubresourceRegion(Stage, 0, 0, 0, 0, m_BackBuffTex, 0, nullptr);
 
-	struct ColorHack
-	{
-		union
-		{
-			DWORD P;
-			struct
-			{
-				BYTE R;
-				BYTE G;
-				BYTE B;
-				BYTE A;
-			};
-		};
-	};
-
 	D3D11_MAPPED_SUBRESOURCE Map;
 	hr = m_RenderContext->Map(Stage, 0, D3D11_MAP_READ, 0, &Map);
 
 	ThrowIfFailed(hr);
 
-	//appMemcpy(Pixels, )
+#if DX11_HP2
+#define CONVERT_PX(H) P->Int4 = H->Int4; 
+#else
+#define CONVERT_PX(H) *P = FColor(H->R, H->G, H->B, 255); 
+#endif
+	
+	// Metallicafan212:	Copy over the whole image
 	for (INT y = 0; y < SizeY; y++)
 	{
-		INT Row = SizeX * y;
-		ColorHack* H = ((ColorHack*)Map.pData) + Row;
-		FColor* P = Pixels + Row;
+		// Metallicafan212:	Define the current row of pixels
+		INT				Row	= SizeX * y;
+		ColorHack*		H	= ((ColorHack*)Map.pData) + Row;
+		ColorHackRGBA*	HR	= ((ColorHackRGBA*)Map.pData) + Row;
+		FColor* P			= Pixels + Row;
 
 		for (INT x = 0; x < SizeX; x++)
 		{
-#if DX11_HP2
-			P->Int4 = H->P;
-#else
-			* P = FColor(H->R, H->G, H->B, 255);
-#endif
+			// Metallicafan212:	Check if we're in RGBA mode, not BGRA
+			if (bForceRGBA)
+			{
+				CONVERT_PX(HR);
+			}
+			else
+			{
+				CONVERT_PX(H);
+			}
+
 			P++;
 			H++;
+			HR++;
 		}
 	}
 
@@ -260,6 +289,20 @@ struct FPixelIndex
 		struct
 		{
 			BYTE B, G, R, A;
+		};
+	};
+};
+
+// Metallicafan212:	Specifically for Windows 7 and FL 11.0 (and Buggie in particular 😂)
+//					Only used when bForceRGBA
+struct FPixelIndexRGBA
+{
+	union
+	{
+		DWORD Int4;
+		struct
+		{
+			BYTE R, G, B, A;
 		};
 	};
 };
@@ -289,16 +332,16 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 	//					Because of that, we need to resolve to a temp texture....
 	D3D11_TEXTURE2D_DESC ResolveDesc;
 
-	ResolveDesc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
+	ResolveDesc.Format				= ScreenFormat;
 	ResolveDesc.Width				= ScaledSizeX;
 	ResolveDesc.Height				= ScaledSizeY;
-	ResolveDesc.CPUAccessFlags		= 0;//D3D11_CPU_ACCESS_READ;
+	ResolveDesc.CPUAccessFlags		= 0;
 	ResolveDesc.MipLevels			= 1;
 	ResolveDesc.ArraySize			= 1;
 	ResolveDesc.SampleDesc.Count	= 1;
 	ResolveDesc.SampleDesc.Quality	= 0;
 	ResolveDesc.Usage				= D3D11_USAGE_DEFAULT;
-	ResolveDesc.BindFlags			= 0;//D3D11_BIND_SHADER_RESOURCE;
+	ResolveDesc.BindFlags			= 0;
 	ResolveDesc.MiscFlags			= 0;
 
 	hr = m_D3DDevice->CreateTexture2D(&ResolveDesc, nullptr, &Resolved);
@@ -307,7 +350,7 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 
 	D3D11_TEXTURE2D_DESC Desc;
 
-	Desc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
+	Desc.Format				= ScreenFormat;
 	Desc.Width				= Viewport->HitXL * ResolutionScale;
 	Desc.Height				= Viewport->HitYL * ResolutionScale;
 	Desc.CPUAccessFlags		= D3D11_CPU_ACCESS_READ;
@@ -353,7 +396,7 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 	Box.bottom				= Box.top + (Viewport->HitYL * ResolutionScale);
 	Box.back				= 1;
 	
-	m_RenderContext->ResolveSubresource(Resolved, 0, RTResource, 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+	m_RenderContext->ResolveSubresource(Resolved, 0, RTResource, 0, ScreenFormat);
 
 	// Metallicafan212:	Now copy
 	m_RenderContext->CopySubresourceRegion(ScreenCopy, 0, 0, 0, 0, Resolved, 0, &Box);
@@ -384,48 +427,53 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 	INT HitYL		= Viewport->HitYL * ResolutionScale;
 	INT HitXL		= Viewport->HitXL * ResolutionScale;
 
+	// Metallicafan212:	Declare here
+	FPixelIndex		BGRAIndex;
+	FPixelIndexRGBA	RGBAIndex;
+
+#define TEST_PIXEL(InStruct) \
+	/* Metallicafan212:	Bad pixel*/ \
+	if(InStruct.A != 255 && InStruct.Int4 != 0) \
+		continue; \
+	InStruct.A = 0; \
+	/* Metallicafan212:	I moved it out by 100 to detect bad hits*/ \
+	if(InStruct.Int4 % 100 != 0) \
+		continue; \
+	InStruct.Int4 /= 100; \
+	/* Metallicafan212:	Make sure it's in range, don't want it to be causing crashes*/ \
+	if (InStruct.Int4 < PHitNum) \
+	{ \
+		INT* Val = HitAppear.Find(InStruct.Int4); \
+		if (Val == nullptr) \
+		{ \
+			HitAppear.Set(InStruct.Int4, 0); \
+			Val = HitAppear.Find(InStruct.Int4); \
+			/* Metallicafan212:	Spurious, but still safe, check if it got hashed*/ \
+			if (Val == nullptr) \
+				continue; \
+		} \
+		/* Metallicafan212:	Priority is done when the hit is pushed*/ \
+		HitAppear.Set(InStruct.Int4, *Val + PixelHitInfo(InStruct.Int4).Priority); \
+	}
+	
+
 	for (INT y = 0; y < HitYL; y++)
 	{
 		DWORD* RealP = Ptr + (y * LineSize);
 
 		for (INT x = 0; x < HitXL; x++)
 		{
-			DWORD Pix = RealP[x];
-
-			// Metallicafan212:	Convert back
-			FPixelIndex Temp;
-
-			Temp.Int4 = Pix;
-
-			// Metallicafan212:	Bad pixel
-			if (Temp.A != 255 && Temp.Int4 != 0)
-				continue;
-
-			Temp.A = 0;
-
-			// Metallicafan212:	I moved it out by 100 to detect bad hits
-			if (Temp.Int4 % 100 != 0)
-				continue;
-
-			Temp.Int4 /= 100;
-
-			// Metallicafan212:	Make sure it's in range, don't want it to be causing crashes
-			if (Temp.Int4 < PHitNum)
+			// Metallicafan212:	Check what mode the screen is in!
+			if (bForceRGBA)
 			{
-				INT* Val = HitAppear.Find(Temp.Int4);
+				RGBAIndex = *(FPixelIndexRGBA*)&RealP[x];
 
-				if (Val == nullptr)
-				{
-					HitAppear.Set(Temp.Int4, 0);
-					Val = HitAppear.Find(Temp.Int4);
-
-					// Metallicafan212:	Spurious, but still safe, check if it got hashed
-					if (Val == nullptr)
-						continue;
-				}
-
-				// Metallicafan212:	Priority is done when the hit is pushed
-				HitAppear.Set(Temp.Int4, *Val + PixelHitInfo(Temp.Int4).Priority);
+				TEST_PIXEL(RGBAIndex);
+			}
+			else
+			{
+				BGRAIndex = *(FPixelIndex*)&RealP[x];
+				TEST_PIXEL(BGRAIndex);
 			}
 		}
 	}
