@@ -260,15 +260,15 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 			if (bForceRGBA)
 			{
 				CONVERT_PX(HR);
+				HR++;
 			}
 			else
 			{
 				CONVERT_PX(H);
+				H++;
 			}
 
 			P++;
-			H++;
-			HR++;
 		}
 	}
 
