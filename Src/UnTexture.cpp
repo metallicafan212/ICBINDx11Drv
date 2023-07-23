@@ -256,8 +256,9 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 
 	if (m_FeatureLevel != D3D_FEATURE_LEVEL_11_1)
 	{
-		DaTex->USize	= Clamp(DaTex->USize, 4, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
-		DaTex->VSize	= Clamp(DaTex->VSize, 4, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		INT MinSize = Info.Format == TEXF_BC1 || (Info.Format >= TEXF_BC2 && Info.Format <= TEXF_BC6H) ? 4 : 0;
+		DaTex->USize	= Clamp(DaTex->USize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		DaTex->VSize	= Clamp(DaTex->VSize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
 	}
 	
 	DaTex->CacheID		= CacheID;
@@ -319,8 +320,9 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 	if (m_FeatureLevel != D3D_FEATURE_LEVEL_11_1)
 	{
-		DaTex->USize	= Clamp(DaTex->USize, 4, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
-		DaTex->VSize	= Clamp(DaTex->VSize, 4, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		INT MinSize = Info.Format == TEXF_BC1 || (Info.Format >= TEXF_BC2 && Info.Format <= TEXF_BC6H) ? 4 : 0;
+		DaTex->USize	= Clamp(DaTex->USize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		DaTex->VSize	= Clamp(DaTex->VSize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
 	}
 	
 	//DaTex->UMult		= 1.0f / (Info.UScale * Info.USize);
