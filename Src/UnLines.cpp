@@ -97,7 +97,8 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		SetBlend(PF_Highlighted | PF_Occlude);
 
 		// Metallicafan212:	TODO! Line specific shader for making the lines thiccc
-		FLineShader->Bind(m_RenderContext);
+		if(CurrentShader != FLineShader)
+			FLineShader->Bind(m_RenderContext);
 
 		// Metallicafan212:	Start buffering now
 		StartBuffering(BT_Lines);
@@ -190,7 +191,8 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	}
 
 	// Metallicafan212:	TODO! Line specific shader
-	FLineShader->Bind(m_RenderContext);
+	if (CurrentShader != FLineShader)
+		FLineShader->Bind(m_RenderContext);
 
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Lines);
