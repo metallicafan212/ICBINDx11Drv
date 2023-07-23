@@ -624,20 +624,20 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 
 	// Metallicafan212:	Assemble the supported texture types
 #if P8_COMPUTE_SHADER
-	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, 1, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
+	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 0, 1, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
 #else
-	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, 4, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
+	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 0, 4, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
 #endif
 
-	RegisterTextureFormat(TEXF_RGBA7, DXGI_FORMAT_B8G8R8A8_UNORM, 1, 1, 4, &FD3DTexType::RawPitch, nullptr, RGBA7To8);
+	RegisterTextureFormat(TEXF_RGBA7, DXGI_FORMAT_B8G8R8A8_UNORM, 1, 0, 4, &FD3DTexType::RawPitch, nullptr, RGBA7To8);
 	
 	// Metallicafan212:	I have standardized the TEXF enum between UT469 and HP2 (since BC6H is currently unused and RGBA8 was already called ARGB in the editor/implemented as BGRA8)
 
 	// Metallicafan212:	Raw BGRA texture
 #if DX11_UT_469 || DX11_HP2
-	RegisterTextureFormat(TEXF_BGRA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 1, 4, &FD3DTexType::RawPitch);
+	RegisterTextureFormat(TEXF_BGRA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 0, 4, &FD3DTexType::RawPitch);
 #else
-	RegisterTextureFormat(TEXF_RGBA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 1, 4, &FD3DTexType::RawPitch);
+	RegisterTextureFormat(TEXF_RGBA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 0, 4, &FD3DTexType::RawPitch);
 #endif
 
 	// Metallicafan212:	These are all supported by DX11.1
