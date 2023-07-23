@@ -557,13 +557,25 @@ void UICBINDx11RenderDevice::SetupPixelHitTest()
 		Index -= 1;
 
 	// Metallicafan212:	Convert implicitly to BGRA, as that's what will be written to the screen (D3DFMT_ARGB)
-	FPixelIndex Temp;
+	FPixelIndex			Temp;
+	FPixelIndexRGBA		RGBTemp;
 
-	// Metallicafan212:	To prevent any kind of banding/averaging, all of them will have to be % 100 == 0 in order to be a real click
-	Temp.Int4 = Index * 100;
+	if (bForceRGBA)
+	{
+		// Metallicafan212:	To prevent any kind of banding/averaging, all of them will have to be % 100 == 0 in order to be a real click
+		RGBTemp.Int4 = Index * 100;
 
-	// Metallicafan212:	Set the global color
-	CurrentHitColor = FPlane(Temp.R / 255.0f, Temp.G / 255.0f, Temp.B / 255.0f, 1.0f);
+		// Metallicafan212:	Set the global color
+		CurrentHitColor = FPlane(RGBTemp.R / 255.0f, RGBTemp.G / 255.0f, RGBTemp.B / 255.0f, 1.0f);
+	}
+	else
+	{
+		// Metallicafan212:	To prevent any kind of banding/averaging, all of them will have to be % 100 == 0 in order to be a real click
+		Temp.Int4 = Index * 100;
+
+		// Metallicafan212:	Set the global color
+		CurrentHitColor = FPlane(Temp.R / 255.0f, Temp.G / 255.0f, Temp.B / 255.0f, 1.0f);
+	}
 
 	unguard;
 }
