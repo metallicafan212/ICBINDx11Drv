@@ -38,6 +38,11 @@
 // Metallicafan212:	32bit check
 #define UNREAL32 !BUILD_64
 
+// Metallicafan212:	DISABLE THE WARNING IF WE'RE IN 32BIT!!!!
+#if UNREAL32
+#define WINDOWS_IGNORE_PACKING_MISMATCH 1
+#endif
+
 #endif
 
 #define INT_INDEX_BUFF 1

@@ -64,6 +64,10 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	// Metallicafan212:	Search for the bind
 	FD3DTexture* DaTex		= TextureMap.Find(Info->CacheID);
 
+	// Metallicafan212:	Using Info->NeedsRealtimeUpdate steals 50fps for some reason.... It's incredibly weird
+//#if DX11_UT_469 
+//	UBOOL bTexChanged = DaTex == nullptr || Info->NeedsRealtimeUpdate(DaTex->RealtimeChangeCount);
+//#elif|| DX11_HP2
 #if DX11_UT_469 || DX11_HP2
 	UBOOL bTexChanged = (Info->Texture != nullptr && DaTex != nullptr ? Info->Texture->RealtimeChangeCount != DaTex->RealtimeChangeCount : Info->bRealtimeChanged);
 #else
@@ -254,12 +258,14 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 	DaTex->USize		= Info.USize;
 	DaTex->VSize		= Info.VSize;
 
+	/*
 	if (m_FeatureLevel != D3D_FEATURE_LEVEL_11_1)
 	{
 		INT MinSize = Info.Format == TEXF_BC1 || (Info.Format >= TEXF_BC2 && Info.Format <= TEXF_BC6H) ? 4 : 0;
 		DaTex->USize	= Clamp(DaTex->USize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
 		DaTex->VSize	= Clamp(DaTex->VSize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
 	}
+	*/
 	
 	DaTex->CacheID		= CacheID;
 
@@ -357,21 +363,16 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	if (Type == nullptr)
 		appErrorf(TEXT("Metallicafan212 you idiot, you forgot to add a descriptor for %d"), DaTex->Format);
 
-	if (m_FeatureLevel != D3D_FEATURE_LEVEL_11_1)
-	{
-		/*
-#if DX11_UT469
-		INT MinSize = (FIsS3TCFormat(Info.Format) || FIsRGTCFormat(Info.Format) || FIsBPTCFormat(Info.Format)) ? 4 : 0;
-#else
-		INT MinSize = Info.Format == TEXF_BC1 || (Info.Format >= TEXF_BC2 && Info.Format <= TEXF_BC6H) ? 4 : 0;
-#endif
-		*/
+	INT MinSize = 0;
 
+	if (m_FeatureLevel < D3D_FEATURE_LEVEL_11_1)
+	{
 		// Metallicafan212:	Natively embed the check
-		INT MinSize		= Type->bIsCompressed ? 4 : 0;
-		DaTex->USize	= Clamp(DaTex->USize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
-		DaTex->VSize	= Clamp(DaTex->VSize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		MinSize		= Type->bIsCompressed ? 4 : 0;
 	}
+
+	DaTex->USize = Clamp(DaTex->USize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+	DaTex->VSize = Clamp(DaTex->VSize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
 
 	FD3DTexType::GetPitch P = Type->GetTexturePitch;
 	BYTE* MipData			= nullptr;
@@ -562,8 +563,8 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 			if (bMaskedHack)
 				Info.Palette[0] = FColor(0, 0, 0, 0);
-			else if(Info.Palette != nullptr)
-				Info.Palette[0].A = 255;
+			//else if(Info.Palette != nullptr)
+			//	Info.Palette[0].A = 255;
 
 #if P8_COMPUTE_SHADER
 			// Metallicafan212:	TODO! Move this around to allow the child convert functions to loop
@@ -784,11 +785,11 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 		(*DBytes) = GET_COLOR_DWORD(Palette[*Bytes]);
 #endif
 		// Metallicafan212:	Fix broken palettes on specific textures in UT!!!
-		if (*Bytes != 0)
-		{
-			// Metallicafan212:	This forces colors that aren't 0 to be full alpha on P8, while the 0th entry is taken care of above
-			(*DBytes) |= 0xFF000000;
-		}
+		//if (*Bytes != 0)
+		//{
+		//	// Metallicafan212:	This forces colors that aren't 0 to be full alpha on P8, while the 0th entry is taken care of above
+		//	(*DBytes) |= 0xFF000000;
+		//}
 
 		Bytes++;
 		DBytes++;
