@@ -61,7 +61,8 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	//if (PolyFlags & PF_Invisible)
 	//	return;
 
-	SetProjectionStateNoCheck(false);
+	if(m_nearZRangeHackProjectionActive)
+		SetProjectionStateNoCheck(false);
 
 	// Metallicafan212:	TODO! Do indexed buffering
 	//					This means that we HAVE to pack the pan information into the verts somehow...

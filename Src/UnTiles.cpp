@@ -30,7 +30,8 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 
 	ExtraRasterFlags = OldFlags;
 
-	SetProjectionStateNoCheck(false);
+	if(m_nearZRangeHackProjectionActive)
+		SetProjectionStateNoCheck(false);
 
 	// Metallicafan212:	Reset the tile state (if needed)
 	if (!(PolyFlags & PF_RenderFog))
@@ -40,7 +41,8 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 #else
 	SetRasterState(DXRS_Normal);
 
-	SetProjectionStateNoCheck(false);
+	if(m_nearZRangeHackProjectionActive)
+		SetProjectionStateNoCheck(false);
 #endif
 
 

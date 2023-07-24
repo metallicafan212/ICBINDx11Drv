@@ -86,12 +86,14 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 #if DX11_HP2
 		if (LineFlags & LINE_DrawOver || Viewport->Actor->ShowFlags & SHOW_Lines)
 		{
-			SetProjectionStateNoCheck(true);
+			if (!m_nearZRangeHackProjectionActive)
+				SetProjectionStateNoCheck(true);
 		}
 		else
 #endif
 		{
-			SetProjectionStateNoCheck(false);
+			if (m_nearZRangeHackProjectionActive)
+				SetProjectionStateNoCheck(false);
 		}
 
 		SetBlend(PF_Highlighted | PF_Occlude);
@@ -139,8 +141,6 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD LineFlags, FVector P1, FVector P2)
 {
 	guard(UICBINDx11RenderDevice::Draw2DLine);
-	
-	SetBlend(PF_Highlighted | PF_Occlude);
 
 #if !RES_SCALE_IN_PROJ
 	FLOAT ExtraScale = (BoundRT == nullptr ? ResolutionScale : 1.0f);
@@ -178,16 +178,20 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 
 #endif
 
+	SetBlend(PF_Highlighted | PF_Occlude);
+
 	// Metallicafan212:	TODO! Same as above, HP2 has a button on the viewport to toggle on line hack projection
 #if DX11_HP2
 	if (LineFlags & LINE_DrawOver || Viewport->Actor->ShowFlags & SHOW_Lines)
 	{
-		SetProjectionStateNoCheck(true);
+		if(!m_nearZRangeHackProjectionActive)
+			SetProjectionStateNoCheck(true);
 	}
 	else
 #endif
 	{
-		SetProjectionStateNoCheck(false);
+		if(m_nearZRangeHackProjectionActive)
+			SetProjectionStateNoCheck(false);
 	}
 
 	// Metallicafan212:	TODO! Line specific shader
@@ -298,11 +302,13 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 
 	if (LineFlags & LINE_DrawOver || Viewport->Actor->ShowFlags & SHOW_Lines)
 	{
-		SetProjectionStateNoCheck(true);
+		if(!m_nearZRangeHackProjectionActive)
+			SetProjectionStateNoCheck(true);
 	}
 	else
 	{
-		SetProjectionStateNoCheck(false);
+		if(m_nearZRangeHackProjectionActive)
+			SetProjectionStateNoCheck(false);
 	}
 
 	FGenShader->Bind(m_RenderContext);

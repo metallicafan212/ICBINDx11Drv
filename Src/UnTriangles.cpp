@@ -76,11 +76,13 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	if((GUglyHackFlags & 0x1))
 #endif
 	{
-		SetProjectionStateNoCheck(true);
+		if(!m_nearZRangeHackProjectionActive)
+			SetProjectionStateNoCheck(true);
 	}
 	else
 	{
-		SetProjectionStateNoCheck(false);
+		if(m_nearZRangeHackProjectionActive)
+			SetProjectionStateNoCheck(false);
 	}
 
 	// Metallicafan212:	TODO!
@@ -176,11 +178,13 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	// Metallicafan212:	HP2 is HF_Weapon, UT 469 is HACKFLAGS_PostRender
 	if ((GUglyHackFlags & HACKFLAGS_PostRender))
 	{
-		SetProjectionStateNoCheck(true);
+		if(!m_nearZRangeHackProjectionActive)
+			SetProjectionStateNoCheck(true);
 	}
 	else
 	{
-		SetProjectionStateNoCheck(false);
+		if(m_nearZRangeHackProjectionActive)
+			SetProjectionStateNoCheck(false);
 	}
 
 	// Metallicafan212:	TODO!
@@ -268,11 +272,13 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	// Metallicafan212:	HP2 is HF_Weapon, UT 469 is HACKFLAGS_PostRender
 	if ((GUglyHackFlags & HACKFLAGS_PostRender))
 	{
-		SetProjectionStateNoCheck(true);
+		if(!m_nearZRangeHackProjectionActive)
+			SetProjectionStateNoCheck(true);
 	}
 	else
 	{
-		SetProjectionStateNoCheck(false);
+		if(m_nearZRangeHackProjectionActive)
+			SetProjectionStateNoCheck(false);
 	}
 
 	// Metallicafan212:	TODO!
