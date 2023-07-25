@@ -239,19 +239,23 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 
 	ThrowIfFailed(hr);
 
-#if DX11_HP2
+#if 0//DX11_HP2
 #define CONVERT_PX(H) P->Int4 = H->Int4; 
 #else
 #define CONVERT_PX(H) *P = FColor(H->R, H->G, H->B, 255); 
 #endif
+
+	BYTE* MappedSrc = (BYTE*)Map.pData;
 	
 	// Metallicafan212:	Copy over the whole image
 	for (INT y = 0; y < SizeY; y++)
 	{
 		// Metallicafan212:	Define the current row of pixels
 		INT				Row	= SizeX * y;
-		ColorHack*		H	= ((ColorHack*)Map.pData) + Row;
-		ColorHackRGBA*	HR	= ((ColorHackRGBA*)Map.pData) + Row;
+
+		// Metallicafan212:	Calculate this a bit differently
+		ColorHack*		H	= (ColorHack*)(MappedSrc		+ (y * Map.RowPitch));
+		ColorHackRGBA*	HR	= (ColorHackRGBA*)(MappedSrc	+ (y * Map.RowPitch));
 		FColor* P			= Pixels + Row;
 
 		for (INT x = 0; x < SizeX; x++)

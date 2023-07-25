@@ -32,7 +32,7 @@ FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, FPLAG PolyFlags, UBO
 		// Set selection stuff
 		if (GIsEditor && (PolyFlags & PF_Selected))
 		{
-			m_Vert->Color	= FPlane(0.0f, 1.0f, 0.0f, 1);
+			m_Vert->Color	= FPlane(0.0f, 1.0f, 0.0f, 1.0f);
 			m_Vert->Fog		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 		else if (PolyFlags & PF_Modulated)
