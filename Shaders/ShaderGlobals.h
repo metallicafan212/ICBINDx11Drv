@@ -22,7 +22,10 @@ int		bDoSelection							: packoffset(c0.y);	\
 float	AlphaReject								: packoffset(c0.z); \
 float	BWPercent								: packoffset(c0.w);	\
 int		bAlphaEnabled							: packoffset(c1.x); \
-float3	Pad										: packoffset(c1.y); \
+/*float3	Pad										: packoffset(c1.y); */ \
+/* Metallicafan212: Temp hack until I recode gamma to be screen-based again, using a different algo */ \
+int		bModulated								: packoffset(c1.y); \
+float2	Pad										: packoffset(c1.z); \
 int4	bTexturesBound[MAX_TEX_NUM / 4]			: packoffset(c2);
 
 #if DO_STANDARD_BUFFER
@@ -95,7 +98,7 @@ float4 DoPixelFog(float DistFog, float4 Color)
 
 float4 DoGammaCorrection(float4 ColorIn)
 {
-	if(Gamma == 1.0f)
+	if(Gamma == 1.0f || bModulated)
 		return ColorIn;
 	
 	float OverGamma = 1.0f / Gamma;

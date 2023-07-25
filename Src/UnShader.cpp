@@ -207,6 +207,9 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 	MDef->bSelection			= (ParentDevice->m_HitData != nullptr);
 	MDef->bAlphaEnabled			= ParentDevice->GlobalShaderVars.bAlphaEnabled;
 
+	// Metallicafan212:	Temp hack to just get modulated rendering right. It'll disable gamma correction
+	MDef->bModulated			= (ParentDevice->CurrentPolyFlags & PF_Modulated);
+
 	// Metallicafan212:	Loop and tell the shader how many textures are bound
 	for (INT i = 0; i < MAX_TEXTURES; i++)
 	{

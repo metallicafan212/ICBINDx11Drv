@@ -47,8 +47,12 @@ public:
 	// Metallicafan212:	If alpha is currently enabled
 	UBOOL	bAlphaEnabled;
 
+	// Metallicafan212:	Temp hack for modulation until I recode gamma again....
+	UBOOL	bModulated;
+
 	// Metallicafan212:	Pad it!!!!
-	FLOAT	Pad[3];
+	//FLOAT	Pad[3];
+	FLOAT	Pad[2];
 
 	// Metallicafan212:	What textures are currently bound
 	UBOOL	BoundTextures[MAX_TEXTURES];
