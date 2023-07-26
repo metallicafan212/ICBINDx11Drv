@@ -200,6 +200,8 @@ typedef QWORD D3DCacheId;
 
 struct FGlobalShaderVars
 {
+	UBOOL				bDoDistanceFog;
+	/*
 	UBOOL				bColorMasked;
 	UBOOL				bDoDistanceFog;
 
@@ -208,6 +210,7 @@ struct FGlobalShaderVars
 
 	UBOOL				bAlphaEnabled;
 	UBOOL				bNVTileHack;
+	*/
 
 	// Metallicafan212:	Distance fog related stuff
 	//					These are the values that get sent to the shader immediately
@@ -241,10 +244,10 @@ struct FGlobalShaderVars
 
 	// Metallicafan212:	Constructor
 	FGlobalShaderVars() :
-		bColorMasked(0),
-		bDoDistanceFog(0),
-		AlphaReject(1e-6f),
-		BWPercent(0.0f),
+		//bColorMasked(0),
+		//bDoDistanceFog(0),
+		//AlphaReject(1e-6f),
+		//BWPercent(0.0f),
 		DistanceFogColor(0.0f, 0.0f, 0.0f, 0.0f),
 		DistanceFogSettings(1.0f / 32767.0f, 1.0f, 0.0f, 0.0f),
 		DistanceFogFinal(0.0f, 0.0f, 0.0f, 0.0f),
@@ -644,6 +647,10 @@ class UICBINDx11RenderDevice : public URenderDevice
 	FDistFogVars						GlobalDistFogSettings;
 	ID3D11Buffer*						GlobalDistFogBuffer;
 
+	// Metallicafan212:	The global vars JUST for flags
+	FPolyflagVars						GlobalPolyflagVars;
+	ID3D11Buffer*						GlobalPolyflagsBuffer;
+
 	// Metallicafan212:	Blending map
 	//					We have to keep around blend objects (rather than setting render states directly) so they're mapped to the polyflag that it represents
 	TMap<FPLAG, ID3D11BlendState*>		BlendMap;
@@ -921,6 +928,12 @@ class UICBINDx11RenderDevice : public URenderDevice
 			m_RenderContext->GSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
 			m_RenderContext->PSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
 			m_RenderContext->CSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+
+			m_RenderContext->VSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
+			m_RenderContext->GSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
+			m_RenderContext->PSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
+			m_RenderContext->CSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
+
 		}
 	}
 
@@ -1059,13 +1072,14 @@ class UICBINDx11RenderDevice : public URenderDevice
 			// Metallicafan212:	We only lock once to save on performance 
 			UnlockBuffers();
 
-			// Metallicafan212:	TODO! It looks like m_BufferedIndices is overflowing somewhere, but I can't find out where....
-			//					Last crash had it at 4294967293
+			// Metallicafan212:	This detection is probably not needed anymore
+			/*
 			QWORD ITest = ((QWORD)m_BufferedIndices) + m_DrawnIndices;
 			if (ITest >= IBUFF_SIZE)
 			{
 				appErrorf(TEXT("Metallicafan212, you fucking idiot, the index buffer is fucked. DrawnIndices: %lu, BufferedIndices: %lu"), m_DrawnIndices, m_BufferedIndices);
 			}
+			*/
 			m_RenderContext->DrawIndexed(m_BufferedIndices, m_DrawnIndices, m_DrawnVerts);
 
 			// Metallicafan212:	Increment the buffer counters
@@ -1109,6 +1123,21 @@ class UICBINDx11RenderDevice : public URenderDevice
 		appMemcpy(Map.pData, &FrameShaderVars, sizeof(FFrameShaderVars));
 
 		m_RenderContext->Unmap(FrameConstantsBuffer, 0);
+#endif
+	}
+
+	inline void UpdatePolyflagsVars()
+	{
+#if 0
+		m_RenderContext->UpdateSubresource(GlobalPolyflagsBuffer, 0, nullptr, &GlobalPolyflagVars, sizeof(FPolyflagVars), 0);
+#else
+		D3D11_MAPPED_SUBRESOURCE Map;
+
+		m_RenderContext->Map(GlobalPolyflagsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
+
+		appMemcpy(Map.pData, &GlobalPolyflagVars, sizeof(FPolyflagVars));
+
+		m_RenderContext->Unmap(GlobalPolyflagsBuffer, 0);
 #endif
 	}
 

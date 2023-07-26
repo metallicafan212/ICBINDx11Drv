@@ -1,8 +1,7 @@
 #include "ICBINDx11Drv.h"
 
-class FSurfMatrixDef : FShaderVarCommon
+struct FSurfMatrixDef : FShaderVarCommon
 {
-public:
 	FPlane	XAxis, YAxis;
 	FPlane	PanScale[5];
 	FPlane	LightandFogScale;

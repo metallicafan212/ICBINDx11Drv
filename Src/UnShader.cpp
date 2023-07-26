@@ -118,6 +118,8 @@ void FD3DShader::Init()
 	unguard;
 }
 
+// Metallicafan212:	TODO! This should be re-evalled and the bound textures moved to another constant buffer
+//					Probably causing a lot of issues having multiple, but I'll combine more of them together later
 void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 {
 	guard(FD3DShader::Bind);
@@ -163,13 +165,13 @@ void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 
 	// Metallicafan212:	Now finally set it as a resource
 	if(VertexShader != nullptr)
-		UseContext->VSSetConstantBuffers(2, 1, &ShaderConstantsBuffer);
+		UseContext->VSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
 
 	if(GeoShader != nullptr)
-		UseContext->GSSetConstantBuffers(2, 1, &ShaderConstantsBuffer);
+		UseContext->GSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
 
 	if(PixelShader != nullptr)
-		UseContext->PSSetConstantBuffers(2, 1, &ShaderConstantsBuffer);
+		UseContext->PSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
 
 	unguard;
 }
@@ -198,6 +200,7 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 	// Metallicafan212:	Copy over
 	FShaderVarCommon* MDef			= ((FShaderVarCommon*)InMem);
 
+	/*
 	// Metallicafan212:	Common static information
 	MDef->AlphaReject			= ParentDevice->GlobalShaderVars.AlphaReject;
 	MDef->bColorMasked			= ParentDevice->GlobalShaderVars.bColorMasked;
@@ -209,6 +212,7 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 
 	// Metallicafan212:	Temp hack to just get modulated rendering right. It'll disable gamma correction
 	MDef->bModulated			= (ParentDevice->CurrentPolyFlags & PF_Modulated);
+	*/
 
 	// Metallicafan212:	Loop and tell the shader how many textures are bound
 	for (INT i = 0; i < MAX_TEXTURES; i++)

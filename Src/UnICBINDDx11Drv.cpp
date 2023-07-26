@@ -111,6 +111,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	SAFE_RELEASE(FrameConstantsBuffer);
 	SAFE_RELEASE(GlobalDistFogBuffer);
+	SAFE_RELEASE(GlobalPolyflagsBuffer);
 
 	// Metallicafan212:	Set the raster state to an invalid value
 	CurrentRasterState = DXRS_MAX;
@@ -418,6 +419,18 @@ MAKE_DEVICE:
 	m_RenderContext->PSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
 	m_RenderContext->CSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
 
+	// Metallicafan212:	And now the dynamic polyflags buffer
+	D3D11_BUFFER_DESC PolyConst = { sizeof(FPolyflagVars), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+	hr = m_D3DDevice->CreateBuffer(&PolyConst, nullptr, &GlobalPolyflagsBuffer);
+
+	ThrowIfFailed(hr);
+
+	m_RenderContext->VSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
+	m_RenderContext->GSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
+	m_RenderContext->PSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
+	m_RenderContext->CSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
+
+
 	// Metallicafan212:	If we're using deferred rendering, we HAVE to map with discard first!!!!
 	if (m_D3DDeferredContext != nullptr)
 	{
@@ -582,8 +595,9 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	m_BufferedIndices	= 0;
 	m_BufferedVerts		= 0;
 
-	FrameConstantsBuffer = nullptr;
-	GlobalDistFogBuffer = nullptr;
+	FrameConstantsBuffer	= nullptr;
+	GlobalDistFogBuffer		= nullptr;
+	GlobalPolyflagsBuffer	= nullptr;
 	
 
 	Viewport			= InViewport;
@@ -1632,6 +1646,9 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 		ExtraRasterFlags = 0;
 	}
 #endif
+
+	// Metallicafan212:	Set this ONCE!
+	FrameShaderVars.bDoSelection = HitData != nullptr;
 
 	// Metallicafan212:	Make sure the RT is set?
 	RestoreRenderTarget();

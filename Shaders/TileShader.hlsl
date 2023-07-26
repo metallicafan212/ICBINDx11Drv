@@ -7,12 +7,12 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 	COMMON_VARS;
 	
 	// Metallicafan212:	The info we use for this specific shader
-	float4		XAxis		: packoffset(c6);
-	float4		YAxis		: packoffset(c7);
-	float4		ZAxis		: packoffset(c8);
-	int			bDoRot		: packoffset(c9.x);
-	int			bDoUVHack	: packoffset(c9.y);
-	float2		Pad3		: packoffset(c9.z);
+	float4		XAxis		: packoffset(c4);
+	float4		YAxis		: packoffset(c5);
+	float4		ZAxis		: packoffset(c6);
+	int			bDoRot		: packoffset(c7.x);
+	int			bDoUVHack	: packoffset(c7.y);
+	float2		Pad3		: packoffset(c7.z);
 	//float3		Pad3		: packoffset(c15.y);
 };
 

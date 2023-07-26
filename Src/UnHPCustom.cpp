@@ -511,13 +511,14 @@ void UICBINDx11RenderDevice::SetBWPercent(FLOAT Percent)
 
 	Percent = Clamp(Percent, 0.0f, 1.0f);
 
-	if (Percent != GlobalShaderVars.BWPercent)
+	if (Percent != GlobalPolyflagVars.BWPercent)//GlobalShaderVars.BWPercent)
 	{
 		// Metallicafan212:	End any buffering now
 		EndBuffering();
 
 		// Metallicafan212:	Update it
-		GlobalShaderVars.BWPercent = Percent;
+		//GlobalShaderVars.BWPercent = Percent;
+		GlobalPolyflagVars.BWPercent = Percent;
 	}
 
 	unguard;

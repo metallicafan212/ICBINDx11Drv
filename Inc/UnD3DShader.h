@@ -3,6 +3,8 @@
 #define USE_MSAA_COMPUTE 1
 #define USE_RES_COMPUTE 0
 
+#define FIRST_USER_CONSTBUFF 3
+
 // Metallicafan212:	Shader folder
 //					Some people may not want to have shaders next to Textures, Sounds, etc.
 //					So, this allows you to redefine the path
@@ -19,7 +21,7 @@ struct FFrameShaderVars
 	FLOAT				Gamma;
 	FLOAT				ViewX;
 	FLOAT				ViewY;
-	FLOAT				Pad;
+	UBOOL				bDoSelection;
 
 	// Metallicafan212:	TODO! More settings!!!
 };
@@ -34,10 +36,37 @@ struct FDistFogVars
 	FLOAT	Pad[3];
 };
 
-// Metallicafan212:	Common shader variables
-class FShaderVarCommon
+struct FPolyflagVars
 {
-public:
+	UBOOL	bColorMasked;
+	FLOAT	AlphaReject;
+	FLOAT	BWPercent;
+
+	// Metallicafan212:	If alpha is currently enabled
+	UBOOL	bAlphaEnabled;
+
+	// Metallicafan212:	Temp hack for modulation until I recode gamma again....
+	UBOOL	bModulated;
+
+	// Metallicafan212:	Ending padding
+	FLOAT	Pad[3];
+
+	FPolyflagVars()
+		:
+		bColorMasked(0),
+		AlphaReject(1e-6f),
+		BWPercent(0.0f),
+		bAlphaEnabled(0),
+		bModulated(0)
+	{
+
+	}
+};
+
+// Metallicafan212:	Common shader variables
+struct FShaderVarCommon
+{
+	/*
 	// Metallicafan212:	Other needed shader vars
 	UBOOL	bColorMasked;
 	UBOOL	bSelection;
@@ -53,6 +82,7 @@ public:
 	// Metallicafan212:	Pad it!!!!
 	//FLOAT	Pad[3];
 	FLOAT	Pad[2];
+	*/
 
 	// Metallicafan212:	What textures are currently bound
 	UBOOL	BoundTextures[MAX_TEXTURES];

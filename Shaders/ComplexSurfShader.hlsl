@@ -7,26 +7,16 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 	COMMON_VARS;
 	
 	// Metallicafan212:	The info we use for this specific shader
-	float4 	XAxis 		: packoffset(c6);
-	float4 	YAxis 		: packoffset(c7);
+	float4 	XAxis 		: packoffset(c4);
+	float4 	YAxis 		: packoffset(c5);
 	
-	float4 	PanScale[5]	: packoffset(c8);
+	float4 	PanScale[5]	: packoffset(c6);
 	
 	// Metallicafan212:	We need the original values passed in for the lightmap scale...
-	float2 	LightScale 	: packoffset(c13.x);
+	float2 	LightScale 	: packoffset(c11.x);
 	
 	// Metallicafan212:	And for the fogmap...
-	float2 	FogScale	: packoffset(c13.z);
-	
-	/*
-	float 	SurfAlpha	: packoffset(c14.x);
-	
-	int		bIsInvis	: packoffset(c14.y);
-	
-	// Metallicafan212:	TODO! If we're rendering an occlusion plane (we write to the hacked depth buffer and check collisions)
-	//float3	Pad3		: packoffset(c20.y);
-	float2	Pad2		: packoffset(c14.z);
-	*/
+	float2 	FogScale	: packoffset(c11.z);
 };
 
 // Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling

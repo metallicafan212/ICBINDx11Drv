@@ -1,8 +1,7 @@
 #include "ICBINDx11Drv.h"
 
-class FP8Vars : FShaderVarCommon
+struct FP8Vars : FShaderVarCommon
 {
-public:
 	// Metallicafan212:	The info we use for this specific shader	
 	INT		USize;
 	INT		VSize;

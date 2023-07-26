@@ -2,7 +2,7 @@
 
 #define PI 					(3.1415926535897932f)
 
-#define START_CONST_NUM		b2
+#define START_CONST_NUM		b3
 
 // Metallicafan212:	If to define the "final" color function
 //					The complex surface shader redefines the input buffer (as I don't want to keep track of multiple independant buffers)
@@ -15,18 +15,24 @@
 
 #define MAX_TEX_NUM 16
 
-#define COMMON_VARS \
-/* Metallicafan212:	New vars for different effects */ 				\
-int		bColorMasked							: packoffset(c0.x); \
-int		bDoSelection							: packoffset(c0.y);	\
-float	AlphaReject								: packoffset(c0.z); \
-float	BWPercent								: packoffset(c0.w);	\
-int		bAlphaEnabled							: packoffset(c1.x); \
-/*float3	Pad										: packoffset(c1.y); */ \
-/* Metallicafan212: Temp hack until I recode gamma to be screen-based again, using a different algo */ \
-int		bModulated								: packoffset(c1.y); \
-float2	Pad										: packoffset(c1.z); \
-int4	bTexturesBound[MAX_TEX_NUM / 4]			: packoffset(c2);
+#if 0
+	#define COMMON_VARS \
+	/* Metallicafan212:	New vars for different effects */ 				\
+	int		bColorMasked							: packoffset(c0.x); \
+	int		bDoSelection							: packoffset(c0.y);	\
+	float	AlphaReject								: packoffset(c0.z); \
+	float	BWPercent								: packoffset(c0.w);	\
+	int		bAlphaEnabled							: packoffset(c1.x); \
+	/*float3	Pad										: packoffset(c1.y); */ \
+	/* Metallicafan212: Temp hack until I recode gamma to be screen-based again, using a different algo */ \
+	int		bModulated								: packoffset(c1.y); \
+	float2	Pad										: packoffset(c1.z); \
+	int4	bTexturesBound[MAX_TEX_NUM / 4]			: packoffset(c2);
+#else
+	#define COMMON_VARS \
+		int4	bTexturesBound[MAX_TEX_NUM / 4]			: packoffset(c0);
+	
+#endif
 
 #if DO_STANDARD_BUFFER
 cbuffer CommonBuffer : register (START_CONST_NUM)
@@ -39,18 +45,30 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 // Metallicafan212:	Define the base constant buffer!!!!
 cbuffer FrameVariables : register (b0)
 {
-	matrix 	Proj		: packoffset(c0);
-	float	Gamma		: packoffset(c4.x);
-	float2	ViewSize	: packoffset(c4.y);
-	float	Paddy		: packoffset(c4.w);
+	matrix 	Proj			: packoffset(c0);
+	float	Gamma			: packoffset(c4.x);
+	float2	ViewSize		: packoffset(c4.y);
+	int		bDoSelection	: packoffset(c4.w);
 };
 
-shared cbuffer DFogVariables : register (b1)
+cbuffer DFogVariables : register (b1)
 {
 	float4 	DistanceFogColor 	: packoffset(c0);
 	float4 	DistanceFogSettings	: packoffset(c1);
 	int 	bDoDistanceFog		: packoffset(c2.x);
 	float3	Paddy3				: packoffset(c2.y);
+};
+
+cbuffer PolyflagVars : register (b2)
+{
+	// Metallicafan212:	New vars for different effects			
+	int		bColorMasked		: packoffset(c0.x);
+	float	AlphaReject			: packoffset(c0.y);
+	float	BWPercent			: packoffset(c0.z);
+	int		bAlphaEnabled		: packoffset(c0.w);
+	// Metallicafan212: Temp hack until I recode gamma to be screen-based again, using a different algo
+	int		bModulated			: packoffset(c1.x);
+	float3	Pad					: packoffset(c1.y);
 };
 
 // Metallicafan212:	Distance fog shit

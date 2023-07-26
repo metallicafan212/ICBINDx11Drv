@@ -318,16 +318,13 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	DaTex->VSize		= Info.VSize;
 
 	// Metallicafan212:	Implement checking against the new UT469 realtime changed count
+	//					Using the function in Info causes a 50fps loss for some reason... It makes no sense....
 #if DX11_UT_469 || DX11_HP2
 	DaTex->RealtimeChangeCount = Info.Texture != nullptr ? Info.Texture->RealtimeChangeCount : 0;
 #else
 	DaTex->RealtimeChangeCount = 0;
 #endif
-	
-	//DaTex->UMult		= 1.0f / (Info.UScale * Info.USize);
-	//DaTex->VMult		= 1.0f / (Info.VScale * Info.VSize);
-	//DaTex->UScale		= Info.UScale;
-	//DaTex->VScale		= Info.VScale;
+
 	DaTex->CacheID		= CacheID;
 
 	// Metallicafan212:	More texture information
@@ -350,11 +347,6 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		return;
 	}
 #endif
-
-	
-
-	// Metallicafan212:	TODO! Would it be better to have static memory for this? Or to hold onto a buffer, and only increase its size as the request gets bigger?
-	//ConversionMemory	= new BYTE[4 * Info.USize * Info.VSize]();
 
 	// Metallicafan212:	Get the format description
 	//					DO THIS FROM THE INFO!!!! THE MAPPED VERSION IS NULL
@@ -832,6 +824,9 @@ void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 
 	if (blendFlags != CurrentPolyFlags)
 	{
+		// Metallicafan212:	We need to render since our flags changed
+		EndBuffering();
+
 		// Metallicafan212:	Check for changes
 		FPLAG Xor = CurrentPolyFlags ^ blendFlags;
 
@@ -844,19 +839,21 @@ void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 #else
 		const FPLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_Invisible;
 #endif
-		EndBuffering();
 
 		if (Xor & (RELEVANT_BLEND_FLAGS))
 		{
+			// Metallicafan212:	Only set when it's actually using it to render (in case of bad flags)
+			GlobalPolyflagVars.bModulated = 0;
+
 			// Metallicafan212:	Find and set the render state
 			if (!(blendFlags & (RELEVANT_BLEND_FLAGS)))
 			{
 				FindAndSetBlend(0, D3D11_BLEND_ONE, D3D11_BLEND_ZERO, D3D11_COLOR_WRITE_ENABLE_ALL, 0);
-				GlobalShaderVars.bAlphaEnabled = 0;
+				GlobalPolyflagVars.bAlphaEnabled = 0;
 			}
 			else
 			{
-				GlobalShaderVars.bAlphaEnabled = 1;
+				GlobalPolyflagVars.bAlphaEnabled = 1;
 
 				// Metallicafan212:	DX9 allows you to completely turn off color drawing. We achieve the same effect here by using a 0 source blend and a 1 dest blend (since it will keep the dst color)
 				if (blendFlags & PF_Invisible)
@@ -881,6 +878,7 @@ void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 				}
 				else if (blendFlags & PF_Modulated)
 				{
+					GlobalPolyflagVars.bModulated = 1;
 					FindAndSetBlend(PF_Modulated, D3D11_BLEND_DEST_COLOR, D3D11_BLEND_SRC_COLOR);
 				}
 #if DX11_HP2
@@ -962,42 +960,42 @@ void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 			if (!(blendFlags & PF_ColorMask))
 			{
 				// Metallicafan212:	Disable masked
-				GlobalShaderVars.bColorMasked = 0;
+				GlobalPolyflagVars.bColorMasked = 0;
 			}
 #endif
 
 			if (blendFlags & PF_AlphaBlend)
 			{
-				GlobalShaderVars.AlphaReject = 1e-6f;
-				GlobalShaderVars.bColorMasked = 0;
-				GlobalShaderVars.bAlphaEnabled = 1;
+				GlobalPolyflagVars.AlphaReject		= 1e-6f;
+				GlobalPolyflagVars.bColorMasked		= 0;
+				GlobalPolyflagVars.bAlphaEnabled	= 1;
 			}
 #if DX11_HP2
 			else if (blendFlags & PF_ColorMask)
 			{
-				GlobalShaderVars.AlphaReject = 0.8f;
-				GlobalShaderVars.bColorMasked = 1;
-				GlobalShaderVars.bAlphaEnabled = 1;
+				GlobalPolyflagVars.AlphaReject		= 0.8f;
+				GlobalPolyflagVars.bColorMasked		= 1;
+				GlobalPolyflagVars.bAlphaEnabled	= 1;
 			}
 #endif
 			else if (blendFlags & PF_Masked)
 			{
-				GlobalShaderVars.AlphaReject = 0.8f;
-				GlobalShaderVars.bColorMasked = 0;
-				GlobalShaderVars.bAlphaEnabled = 1;
+				GlobalPolyflagVars.AlphaReject		= 0.8f;
+				GlobalPolyflagVars.bColorMasked		= 0;
+				GlobalPolyflagVars.bAlphaEnabled	= 1;
 			}
 #if DX11_HP2
 			else if (blendFlags & PF_LumosAffected)
 			{
-				GlobalShaderVars.AlphaReject = 1e-6f;
-				GlobalShaderVars.bColorMasked = 0;
-				GlobalShaderVars.bAlphaEnabled = 1;
+				GlobalPolyflagVars.AlphaReject		= 1e-6f;
+				GlobalPolyflagVars.bColorMasked		= 0;
+				GlobalPolyflagVars.bAlphaEnabled	= 1;
 			}
 #endif
 			else
 			{
-				GlobalShaderVars.AlphaReject = 1e-6f;
-				GlobalShaderVars.bColorMasked = 0;
+				GlobalPolyflagVars.AlphaReject		= 1e-6f;
+				GlobalPolyflagVars.bColorMasked		= 0;
 			}
 		}
 
@@ -1013,6 +1011,9 @@ void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
 			}
 		}
+
+		// Metallicafan212:	Flags changed, update them in the constant buffer
+		UpdatePolyflagsVars();
 	}
 
 	unguard;
