@@ -77,8 +77,9 @@
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>.\..\Lib $(Platform)\$(Configuration)\</OutDir>
+    <OutDir>..\..\System\</OutDir>
     <IntDir>.X86\Release\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>.\..\Lib $(Platform)\$(Configuration)\</OutDir>
@@ -100,30 +101,33 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;WINDOWS_IGNORE_PACKING_MISMATCH;NDEBUG;ICBINDx11Drv_API=__declspec(dllexport);_RELEASE;RELEASE;UTGLR_UT_BUILD;UTGLR_USES_ALPHABLEND=1;ENGINE_ARCHITECTURE="x86";OLDUNREAL_TEXTURE_COMPRESSION=1;_CRT_SECURE_NO_WARNINGS=1;_CRT_NO_VA_START_VALIDATION;UNICODE=1;_UNICODE=1;WIN32=1;CMAKE_INTDIR="Release";ICBINDx11Drv_EXPORTS</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\Core\Inc;..\..\Engine\Inc;..\..\MWindow\Inc;..\Inc;..\..\Render\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <TreatWChar_tAsBuiltInType>false</TreatWChar_tAsBuiltInType>
-      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <StructMemberAlignment>4Bytes</StructMemberAlignment>
+      <UseFullPaths>false</UseFullPaths>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>..\..\System\ICBINDx11Drv.dll</OutputFile>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\..\Core\Lib;..\..\Engine\Lib\;..\..\Render\Lib\</AdditionalLibraryDirectories>
       <AdditionalDependencies>Core.lib;Engine.lib;winmm.lib;advapi32.lib;Dwmapi.lib;D3D11.lib;D3DCompiler.lib;Dwrite.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <LargeAddressAware>true</LargeAddressAware>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
