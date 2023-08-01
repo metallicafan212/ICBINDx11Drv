@@ -991,23 +991,31 @@ void UICBINDx11RenderDevice::SetupResources()
 	bLastFullscreen = bFullscreen;
 
 	// Metallicafan212:	Get the closer value to the DX11 resource limit!!!!
-	if (SizeY > SizeX)
+	if (ResolutionScale == 1.0f)
 	{
-		ScaledSizeY = Clamp(SizeY * ResolutionScale, 1.f, static_cast<FLOAT>(D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION));
-
-		// Metallicafan212:	Now get it back
-		ResolutionScale = ScaledSizeY / SizeY;
-
-		ScaledSizeX = SizeX * ResolutionScale;
+		ScaledSizeY = SizeY;
+		ScaledSizeX = SizeX;
 	}
 	else
 	{
-		ScaledSizeX = Clamp(SizeX * ResolutionScale, 1.f, static_cast<FLOAT>(D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION));
+		if (SizeY > SizeX)
+		{
+			ScaledSizeY = Clamp(SizeY * ResolutionScale, 1.f, static_cast<FLOAT>(D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION));
 
-		// Metallicafan212:	Now get it back
-		ResolutionScale = ScaledSizeX / SizeX;
+			// Metallicafan212:	Now get it back
+			ResolutionScale = ScaledSizeY / SizeY;
 
-		ScaledSizeY = SizeY * ResolutionScale;
+			ScaledSizeX = SizeX * ResolutionScale;
+		}
+		else
+		{
+			ScaledSizeX = Clamp(SizeX * ResolutionScale, 1.f, static_cast<FLOAT>(D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION));
+
+			// Metallicafan212:	Now get it back
+			ResolutionScale = ScaledSizeX / SizeX;
+
+			ScaledSizeY = SizeY * ResolutionScale;
+		}
 	}
 
 	if (ResolutionScale != 1.0f)

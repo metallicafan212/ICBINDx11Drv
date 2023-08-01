@@ -299,7 +299,7 @@ void FD3DComputeShader::Bind(ID3D11DeviceContext* UseContext)
 	UseContext->CSSetShader(ComputeShader, nullptr, 0);
 
 	// Metallicafan212:	Bind the constant buffer as well
-	UseContext->CSSetConstantBuffers(0, 1, &ShaderConstantsBuffer);
+	UseContext->CSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
 
 	unguard;
 }

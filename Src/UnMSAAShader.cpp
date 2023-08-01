@@ -8,7 +8,6 @@ struct FMSAAVars : FShaderVarCommon
 	FLOAT	CubicB;
 	FLOAT 	CubicC;
 	INT		FilterType;
-	//FLOAT	Gamma;
 	FLOAT	Pad3[3];
 	FPlane 	SampleOffsets[8];
 };
