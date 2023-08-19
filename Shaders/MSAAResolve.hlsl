@@ -14,7 +14,6 @@ shared cbuffer CommonBuffer : register (START_CONST_NUM)
 	float	CubicB					: packoffset(c4.z);
 	float 	CubicC					: packoffset(c4.w);
 	int		FilterType				: packoffset(c5.x);
-	//float	Gamma					: packoffset(c13.y);
 	float3	Pad3					: packoffset(c5.y);
 	float4 	SampleOffsets[8]		: packoffset(c6);
 };
