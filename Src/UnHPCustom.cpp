@@ -501,6 +501,8 @@ void UICBINDx11RenderDevice::ForceSetFogColor(FPlane FogColor)
 	// Metallicafan212:	TODO!
 	GlobalShaderVars.DistanceFogColor = FogColor;
 
+	UpdateGlobalShaderVars();
+
 	unguard;
 }
 
@@ -519,6 +521,8 @@ void UICBINDx11RenderDevice::SetBWPercent(FLOAT Percent)
 		// Metallicafan212:	Update it
 		//GlobalShaderVars.BWPercent = Percent;
 		GlobalPolyflagVars.BWPercent = Percent;
+
+		UpdatePolyflagsVars();
 	}
 
 	unguard;
