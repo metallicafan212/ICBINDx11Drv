@@ -147,10 +147,9 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 
 	// Metallicafan212:	TODO! Draw using Direct2D
 
-	//FString RealText = FString(Text);
+	FString RealText = FString(Text);
 
 	// Metallicafan212:	TODO! Probably not needed for Direct2D, since it'll have these special characters that are in the Polish files
-	/*
 	// Metallicafan212:	Replace the invalid characters
 	ReplaceInText(RealText, TEXT("–"), TEXT("--"));
 	ReplaceInText(RealText, TEXT("…"), TEXT("..."));
@@ -166,7 +165,6 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 		// Metallicafan212:	Add a & for sizing
 		LocalText.GetCharArray()[SpaceI] = '|';
 	}
-	*/
 
 	UCanvas* Canvas = Viewport->Canvas;
 
@@ -285,7 +283,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 	{
 		// Metallicafan212:	Create a text format to render it
 		IDWriteTextLayout* layout = nullptr;
-		hr = m_D2DWriteFact->CreateTextLayout(Text, appStrlen(Text), DaFont, Canvas->ClipX, Canvas->ClipY, &layout);//R.right - R.left, rect.bottom - rect.top, &temp);
+		hr = m_D2DWriteFact->CreateTextLayout(/*Text, appStrlen(Text)*/*LocalText, LocalText.Len(), DaFont, Canvas->ClipX, Canvas->ClipY, &layout);//R.right - R.left, rect.bottom - rect.top, &temp);
 		
 		ThrowIfFailed(hr);
 
