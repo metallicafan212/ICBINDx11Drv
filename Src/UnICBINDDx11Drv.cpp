@@ -1,5 +1,9 @@
 ﻿#include "ICBINDx11Drv.h"
 
+#if !DX11_HP2
+UBOOL GWineAndDine = 0;
+#endif
+
 // Metallicafan212:	TODO!
 IMPLEMENT_CLASS(UICBINDx11RenderDevice);
 IMPLEMENT_PACKAGE(ICBINDx11Drv);
@@ -7,6 +11,32 @@ IMPLEMENT_PACKAGE(ICBINDx11Drv);
 void UICBINDx11RenderDevice::SetupDevice()
 {
 	guard(UICBINDx11RenderDevice::SetupDevice);
+
+	// Metallicafan212:	Detect wine
+#if !DX11_HP2
+
+	// Metallicafan212:	Check if wine
+	typedef const char* (CDECL* pwine_get_version)(void);
+
+	pwine_get_version func = nullptr;
+
+	HMODULE hntDLL = GetModuleHandle(TEXT("ntdll.dll"));
+
+	if (hntDLL != nullptr)
+	{
+		func = (pwine_get_version)GetProcAddress(hntDLL, "wine_get_version");
+
+		if (func != nullptr)
+		{
+			GWineAndDine = 1;
+
+			debugf(NAME_Init, TEXT("DX11: Detected, Wine/Proton Windows emulator. WARNING! Wine/Proton emulation is not perfect!"));
+			debugf(NAME_Init, TEXT("DX11: Wine/Proton version: %s"), appFromAnsi(func()));
+		}
+	}
+
+#endif
+
 
 #if DX11_HP2
 	// Metallicafan212:	Release all the fonts
@@ -299,30 +329,33 @@ MAKE_DEVICE:
 
 		hr = m_D3DDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)&m_D3DDebug);
 
-		ThrowIfFailed(hr);
-
-		hr = m_D3DDebug->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&m_D3DQueue);
-
-		ThrowIfFailed(hr);
-
-		// Metallicafan212:	To catch issues, will be removed when the renderer... works...
-		if (!bDisableDebugInterface)
+		// Metallicafan212:	WINE doesn't return a debug interface....
+		if (SUCCEEDED(hr))
 		{
-			m_D3DQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, 1);
-			m_D3DQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, 1);
+			hr = m_D3DDebug->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&m_D3DQueue);
+
+			if (SUCCEEDED(hr))
+			{
+				// Metallicafan212:	To catch issues, will be removed when the renderer... works...
+				if (!bDisableDebugInterface)
+				{
+					m_D3DQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, 1);
+					m_D3DQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, 1);
+				}
+
+				D3D11_MESSAGE_ID hide[] =
+				{
+					D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS,
+					// TODO: Add more message IDs here as needed.
+				};
+				D3D11_INFO_QUEUE_FILTER filter = {};
+				filter.DenyList.NumIDs = static_cast<UINT>(ARRAYSIZE(hide));
+				filter.DenyList.pIDList = hide;
+				hr = m_D3DQueue->AddStorageFilterEntries(&filter);
+
+				ThrowIfFailed(hr);
+			}
 		}
-
-		D3D11_MESSAGE_ID hide[] =
-		{
-			D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS,
-			// TODO: Add more message IDs here as needed.
-		};
-		D3D11_INFO_QUEUE_FILTER filter = {};
-		filter.DenyList.NumIDs = static_cast<UINT>(ARRAYSIZE(hide));
-		filter.DenyList.pIDList = hide;
-		hr = m_D3DQueue->AddStorageFilterEntries(&filter);
-
-		ThrowIfFailed(hr);
 	}
 #endif
 

@@ -127,6 +127,9 @@ public:
 	// Metallicafan212:	The geometry shader function to find (on compile). OPTIONAL!!!
 	FString						GeoFunc;
 
+	// Metallicafan212:	Macro array
+	TArray<D3D_SHADER_MACRO>	Macros;
+
 	FD3DShader() :
 		ParentDevice(nullptr),
 		PixelShader(nullptr),
@@ -137,6 +140,9 @@ public:
 	{
 		InputDesc	= FBasicInLayout;
 		InputCount	= ARRAY_COUNT(FBasicInLayout);
+
+		// Metallicafan212:	There must be a null terminated value here
+		Macros.AddZeroed();
 	}
 
 	// Metallicafan212:	Constructor that inits the device pointer
@@ -150,6 +156,21 @@ public:
 	{
 		InputDesc	= FBasicInLayout;
 		InputCount	= ARRAY_COUNT(FBasicInLayout);
+
+		// Metallicafan212:	Add the wine definition
+#if 1//DX11_HP2
+		if (GWineAndDine)
+		{
+			Macros.AddItem({ "WINE", "1" });
+		}
+		else
+#endif
+		{
+			Macros.AddItem({ "WINE", "0" });
+		}
+
+		// Metallicafan212:	There must be a null terminated value here
+		Macros.AddZeroed();
 	}
 
 	virtual ~FD3DShader()

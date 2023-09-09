@@ -4,7 +4,7 @@
 // Metallicafan212:	Constant buffer, but with the added complex surface info
 cbuffer CommonBuffer : register (START_CONST_NUM)
 {
-	COMMON_VARS;
+	COMMON_VARS
 	
 	// Metallicafan212:	The info we use for this specific shader
 	float4 	XAxis 		: packoffset(c4);
@@ -206,7 +206,7 @@ PSOutput PxShader(PSInput input)
 	if(bTexturesBound[0].w != 0)
 	{
 		float4 FogColor = Fogmap.SampleBias(FogState, input.fUV, 0.0f);
-		DiffColor.xyz 	= mad(DiffColor.xyz, (1.0f - FogColor.w), FogColor.xyz);
+		DiffColor.xyz 	= (DiffColor * (1.0f - FogColor.w)) + FogColor.xyz;//mad(DiffColor.xyz, (1.0f - FogColor.w), FogColor.xyz);
 		//DiffColor.xyz *= FogColor.w;
 		//DiffColor.xyz += FogColor.xyz;
 	}

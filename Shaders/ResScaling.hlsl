@@ -6,7 +6,7 @@
 // Metallicafan212:	Constant buffer, but with the added NumAASamples
 cbuffer CommonBuffer : register (START_CONST_NUM)
 {
-	COMMON_VARS;
+	COMMON_VARS
 	
 	// Metallicafan212:	The info we use for this specific shader	
 	float	ResolutionScale				: packoffset(c4.x);
@@ -88,6 +88,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	return float4(TexColor, 1.0f);
 }
 
+#if 0
 // Metallicafan212:	Compute shader version (slow!!!!)
 RWTexture2D<float4>	Out		: register(u0);
 
@@ -210,3 +211,4 @@ void CSMain( uint3 pixelID : SV_DispatchThreadID )
 	//Out[pixelID.xy]	= Result;
 	Out[pixelID.xy] = float4(Result.xyz, 1.0f);
 }
+#endif

@@ -270,7 +270,7 @@ void FD3DComputeShader::Init()
 	ID3D10Blob* csBuff = nullptr;
 
 	// Metallicafan212:	Compile the shaders
-	HRESULT hr = D3DCompileFromFile(*ComputeFile, nullptr, D3D_CMP_STD_INC, appToAnsi(*ComputeFunc), "cs_5_0", 0, 0, &csBuff, &error);
+	HRESULT hr = D3DCompileFromFile(*ComputeFile, Macros.GetData(), D3D_CMP_STD_INC, appToAnsi(*ComputeFunc), "cs_5_0", 0, 0, &csBuff, &error);
 
 	CheckShader(hr, error);
 

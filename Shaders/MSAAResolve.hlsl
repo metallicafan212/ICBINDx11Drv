@@ -4,9 +4,9 @@
 
 
 // Metallicafan212:	Constant buffer, but with the added NumAASamples
-shared cbuffer CommonBuffer : register (START_CONST_NUM)
+cbuffer CommonBuffer : register (START_CONST_NUM)
 {
-	COMMON_VARS;
+	COMMON_VARS
 	
 	// Metallicafan212:	The info we use for this specific shader	
 	float	FilterSize				: packoffset(c4.x);
@@ -88,12 +88,12 @@ float FilterBox(in float x)
     return 1.0f;
 }
 
-static float FilterTriangle(in float x)
+float FilterTriangle(in float x)
 {
     return saturate(1.0f - x);
 }
 
-static float FilterGaussian(in float x)
+float FilterGaussian(in float x)
 {
     const float sigma = GaussianSigma;
     const float g = 1.0f / sqrt(2.0f * 3.14159f * sigma * sigma);
@@ -144,6 +144,13 @@ float FilterBlackmanHarris(in float x)
 float FilterSmoothstep(in float x)
 {
     return 1.0f - smoothstep(0.0f, 1.0f, x);
+}
+
+#if !WINE
+
+float2 GetSampleOffset(int subSampleIdx)
+{
+	return SampleOffsets[subSampleIdx].xy;
 }
 
 // Metallicafan212:	The original was a defined version, I turned it into a switch so I can change the filter type on the fly
@@ -207,7 +214,94 @@ float Filter(in float x)
 		}
 	}
 }
+#else
 
+float2 GetSampleOffset(int subSampleIdx)
+{
+	if(subSampleIdx == 0)
+	{
+		return SampleOffsets[0].xy;
+	}
+	else if(subSampleIdx == 1)
+	{
+		return SampleOffsets[1].xy;
+	}
+	else if(subSampleIdx == 2)
+	{
+		return SampleOffsets[2].xy;
+	}
+	else if(subSampleIdx == 3)
+	{
+		return SampleOffsets[3].xy;
+	}
+	else if(subSampleIdx == 4)
+	{
+		return SampleOffsets[4].xy;
+	}
+	else if(subSampleIdx == 5)
+	{
+		return SampleOffsets[5].xy;
+	}
+	else if(subSampleIdx == 6)
+	{
+		return SampleOffsets[6].xy;
+	}
+	else
+	{
+		return SampleOffsets[7].xy;
+	}
+}
+
+float Filter(in float x)
+{
+	if(FilterType == 0)
+	{
+		return FilterBox(x);
+	}
+	else if(FilterType == 1)
+	{
+		return FilterTriangle(x);
+	}
+	else if(FilterType == 2)
+	{
+		return FilterGaussian(x);
+	}
+	else if(FilterType == 3)
+	{
+		return FilterBlackmanHarris(x);
+	}
+	else if(FilterType == 4)
+	{
+		return FilterSmoothstep(x);
+	}
+	else if(FilterType == 5)
+	{
+		return FilterCubic(x, 1.0, 0.0f);
+	}
+	else if(FilterType == 6)
+	{
+		return FilterCubic(x, 0, 0.5f);
+	}
+	else if(FilterType == 7)
+	{
+		return FilterCubic(x, 1 / 3.0f, 1 / 3.0f);
+	}
+	else if(FilterType == 8)
+	{
+		return FilterCubic(x, CubicB, CubicC);
+	}
+	else if(FilterType == 9)
+	{
+		return FilterSinc(x);
+	}
+	else
+	{
+		return FilterBox(x);
+	}
+}
+#endif
+
+#if 0
 float4 PxShader(PSInput input) : SV_TARGET
 //float4 PxShader(in float4 Position : SV_Position) : SV_TARGET
 {	
@@ -307,6 +401,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	return float4(pow(sum, float3(OverGamma, OverGamma, OverGamma)), 1.0f);
 	
 }
+#else
 
 // Metallicafan212:	Resolve the MSAA texture to this current pixel
 [numthreads(32, 32, 1)]
@@ -353,14 +448,18 @@ void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
             float2 samplePos = pixelPos + sampleOffset;
             samplePos = clamp(samplePos, 0, TextureSize); //- 1.0f);
 
+// Metallicafan212:	This isn't implemented in wine.....
+#if !WINE
             [unroll]
+#endif
             for(uint subSampleIdx = 0; subSampleIdx < NumAASamples; ++subSampleIdx)
             {
-                sampleOffset += SampleOffsets[subSampleIdx].xy;
+                sampleOffset += GetSampleOffset(subSampleIdx);
 
                 float sampleDist = length(sampleOffset) / (FilterSize / 2.0f);
-
+#if !WINE
                 [branch]
+#endif
                 if(sampleDist <= 1.0f)
                 {
                     float3 sample = RT.Load(uint2(samplePos), subSampleIdx).xyz;
@@ -435,3 +534,4 @@ void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 	// Metallicafan212:	Write it!!!
 	//Out[pixelPos] = float4(sum, 1.0f);
 }
+#endif

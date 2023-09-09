@@ -420,6 +420,10 @@ extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
 // Metallicafan212:	Different shader definitions
 #include "UnD3DShader.h"
 
+#if !DX11_HP2
+extern UBOOL GWineAndDine;
+#endif
+
 // Metallicafan212:	Define an exported renderer
 #if DX11_UT_469
 class UICBINDx11RenderDevice : public URenderDeviceOldUnreal469

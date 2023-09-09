@@ -5,7 +5,7 @@
 // Metallicafan212:	Constant buffer, but with the added NumAASamples
 shared cbuffer CommonBuffer : register (b0)
 {
-	COMMON_VARS;
+	COMMON_VARS
 	
 	// Metallicafan212:	The info we use for this specific shader	
 	int2	TextureSize				: packoffset(c12.x);

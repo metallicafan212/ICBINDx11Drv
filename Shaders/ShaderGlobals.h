@@ -1,8 +1,12 @@
 // Metallicafan212:	TODO! More shader globals
 
+#ifndef PI
 #define PI 					(3.1415926535897932f)
+#endif
 
+#ifndef START_CONST_NUM
 #define START_CONST_NUM		b3
+#endif
 
 // Metallicafan212:	If to define the "final" color function
 //					The complex surface shader redefines the input buffer (as I don't want to keep track of multiple independant buffers)
@@ -13,31 +17,21 @@
 #define DO_FINAL_COLOR 1
 #endif
 
+#ifndef MAX_TEX_NUM
 #define MAX_TEX_NUM 16
+// Metallicafan212:	Proton doesn't like math in definitions.....
+#define TEX_ARRAY_SIZE 4//(MAX_TEX_NUM / 4)
+#endif
 
-#if 0
+#ifndef COMMON_VARS	
 	#define COMMON_VARS \
-	/* Metallicafan212:	New vars for different effects */ 				\
-	int		bColorMasked							: packoffset(c0.x); \
-	int		bDoSelection							: packoffset(c0.y);	\
-	float	AlphaReject								: packoffset(c0.z); \
-	float	BWPercent								: packoffset(c0.w);	\
-	int		bAlphaEnabled							: packoffset(c1.x); \
-	/*float3	Pad										: packoffset(c1.y); */ \
-	/* Metallicafan212: Temp hack until I recode gamma to be screen-based again, using a different algo */ \
-	int		bModulated								: packoffset(c1.y); \
-	float2	Pad										: packoffset(c1.z); \
-	int4	bTexturesBound[MAX_TEX_NUM / 4]			: packoffset(c2);
-#else
-	#define COMMON_VARS \
-		int4	bTexturesBound[MAX_TEX_NUM / 4]			: packoffset(c0);
-	
+		int4	bTexturesBound[TEX_ARRAY_SIZE]			: packoffset(c0);
 #endif
 
 #if DO_STANDARD_BUFFER
 cbuffer CommonBuffer : register (START_CONST_NUM)
 {
-    COMMON_VARS;
+    COMMON_VARS
 };
 #endif
 #ifdef DO_FINAL_COLOR
@@ -109,7 +103,7 @@ float4 DoPixelFog(float DistFog, float4 Color)
 	float3 Temp = DistanceFogColor.xyz - Color.xyz;
 	Temp *= DistanceFogColor.w;
 	
-	Temp = mad(Temp, DistFog, Color);
+	Temp = (Temp * DistFog) + Color;//mad(Temp, DistFog, Color);
 	
 	return float4(Temp, Color.w);
 }
@@ -157,4 +151,3 @@ float4 DoFinalColor(float4 ColorIn)
 	}
 }
 #endif
-

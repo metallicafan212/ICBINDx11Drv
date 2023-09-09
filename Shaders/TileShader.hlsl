@@ -4,7 +4,7 @@
 // Metallicafan212:	Constant buffer, but with the added tile rotation values
 cbuffer CommonBuffer : register (START_CONST_NUM)
 {
-	COMMON_VARS;
+	COMMON_VARS
 	
 	// Metallicafan212:	The info we use for this specific shader
 	float4		XAxis		: packoffset(c4);
@@ -36,13 +36,13 @@ struct VSInput
 
 struct PSInput 
 {
-	float4 pos 				: SV_POSITION0; 
-	float2 uv				: TEXCOORD0;
-	centroid float2 cuv		: TEXCOORD1;
-	float4 color			: COLOR0; 
-	float4 fog				: COLOR1;
-	float  distFog			: COLOR2;
-	bool   bRejectBW		: COLOR3;
+	float4 pos 						: SV_POSITION0; 
+	float2 uv						: TEXCOORD0;
+	/*centroid linear*/ float2 cuv	: TEXCOORD1;
+	float4 color					: COLOR0; 
+	float4 fog						: COLOR1;
+	float  distFog					: COLOR2;
+	int   bRejectBW					: COLOR3;
 };
 
 PSInput VertShader(VSInput input)
