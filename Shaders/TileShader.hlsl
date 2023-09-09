@@ -13,7 +13,6 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 	int			bDoRot		: packoffset(c7.x);
 	int			bDoUVHack	: packoffset(c7.y);
 	float2		Pad3		: packoffset(c7.z);
-	//float3		Pad3		: packoffset(c15.y);
 };
 
 // Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling
@@ -38,7 +37,14 @@ struct PSInput
 {
 	float4 pos 						: SV_POSITION0; 
 	float2 uv						: TEXCOORD0;
-	/*centroid linear*/ float2 cuv	: TEXCOORD1;
+	
+	// Metallicafan212:	The default proton/wine HLSL compiler doesn't support the centroid modifier for some reason..... 
+#if !WINE
+	centroid linear float2 cuv		: TEXCOORD1;
+#else
+	float2 cuv						: TEXCOORD1;
+#endif
+
 	float4 color					: COLOR0; 
 	float4 fog						: COLOR1;
 	float  distFog					: COLOR2;
