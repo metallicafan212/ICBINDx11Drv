@@ -90,6 +90,12 @@ struct FShaderVarCommon
 
 #define D3D_CMP_STD_INC ((ID3DInclude*)(UINT_PTR)1)
 
+#if DX11_HP2
+#define GET_MACRO_PTR(M) M.GetData()
+#else
+#define GET_MACRO_PTR(M) (D3D_SHADER_MACRO*)M.GetData()
+#endif
+
 // Metallicafan212:	Very basic shader definition
 class FD3DShader
 {

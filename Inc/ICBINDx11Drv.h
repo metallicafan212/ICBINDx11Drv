@@ -105,6 +105,10 @@ typedef unsigned short INDEX;
 #define WS_EX_NOREDIRECTIONBITMAP 0x00200000L
 #endif
 
+// Metallicafan212:	For detecting wine.....
+#if !DX11_HP2
+extern UBOOL GWineAndDine;
+#endif
 
 #define MAX_TEXTURES 16
 
@@ -419,10 +423,6 @@ extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
 
 // Metallicafan212:	Different shader definitions
 #include "UnD3DShader.h"
-
-#if !DX11_HP2
-extern UBOOL GWineAndDine;
-#endif
 
 // Metallicafan212:	Define an exported renderer
 #if DX11_UT_469

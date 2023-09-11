@@ -56,7 +56,7 @@ void FD3DShader::Init()
 	// Metallicafan212:	Compile the shaders
 	if (VertexFunc.Len())
 	{
-		hr = D3DCompileFromFile(*VertexFile, Macros.GetData(), D3D_CMP_STD_INC, appToAnsi(*VertexFunc), "vs_5_0", Flags, 0, &vsBuff, &error);
+		hr = D3DCompileFromFile(*VertexFile, GET_MACRO_PTR(Macros), D3D_CMP_STD_INC, appToAnsi(*VertexFunc), "vs_5_0", Flags, 0, &vsBuff, &error);
 
 		CheckShader(hr, error);
 
@@ -70,7 +70,7 @@ void FD3DShader::Init()
 	// Metallicafan212:	Now the pixel shader
 	if (PixelFunc.Len())
 	{
-		hr = D3DCompileFromFile(*PixelFile, Macros.GetData(), D3D_CMP_STD_INC, appToAnsi(*PixelFunc), "ps_5_0", Flags, 0, &psBuff, &error);
+		hr = D3DCompileFromFile(*PixelFile, GET_MACRO_PTR(Macros), D3D_CMP_STD_INC, appToAnsi(*PixelFunc), "ps_5_0", Flags, 0, &psBuff, &error);
 
 		CheckShader(hr, error);
 
@@ -84,7 +84,7 @@ void FD3DShader::Init()
 	// Metallicafan212:	Now the geometry shader
 	if (GeoFunc.Len())
 	{
-		hr = D3DCompileFromFile(*GeoFile, Macros.GetData(), D3D_CMP_STD_INC, appToAnsi(*GeoFunc), "gs_5_0", Flags, 0, &gsBuff, &error);
+		hr = D3DCompileFromFile(*GeoFile, GET_MACRO_PTR(Macros), D3D_CMP_STD_INC, appToAnsi(*GeoFunc), "gs_5_0", Flags, 0, &gsBuff, &error);
 
 		CheckShader(hr, error);
 
