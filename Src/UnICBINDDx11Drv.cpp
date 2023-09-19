@@ -2533,6 +2533,8 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	invTopMinusBottom = 1.0f / (top - bottom);
 	invNearMinusFar = 1.0f / (zNear - zFar);
 
+#if 0
+
 	FrameShaderVars.Proj.m[0][0] = 2.0f * zNear * invRightMinusLeft;
 	FrameShaderVars.Proj.m[0][1] = 0.0f;
 	FrameShaderVars.Proj.m[0][2] = 0.0f;
@@ -2571,14 +2573,17 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	Temp[0][1]	= -FrameShaderVars.Proj.m[1][0];
 	Temp[0][2]	= -FrameShaderVars.Proj.m[2][0];
 	Temp[0][3]	= FrameShaderVars.Proj.m[3][0];
+
 	Temp[1][0]	= FrameShaderVars.Proj.m[0][1];
 	Temp[1][1]	= -FrameShaderVars.Proj.m[1][1];
 	Temp[1][2]	= -FrameShaderVars.Proj.m[2][1];
 	Temp[1][3]	= FrameShaderVars.Proj.m[3][1];
+
 	Temp[2][0]	= FrameShaderVars.Proj.m[0][2];
 	Temp[2][1]	= -FrameShaderVars.Proj.m[1][2];
 	Temp[2][2]  = -FrameShaderVars.Proj.m[2][2];
 	Temp[2][3]  = FrameShaderVars.Proj.m[3][2];
+
 	Temp[3][0]  = FrameShaderVars.Proj.m[0][3];
 	Temp[3][1]  = -FrameShaderVars.Proj.m[1][3];
 	Temp[3][2]  = -FrameShaderVars.Proj.m[2][3];
@@ -2586,6 +2591,31 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 
 	// Metallicafan212:	Now back????
 	appMemcpy(&FrameShaderVars.Proj.m[0][0], &Temp[0][0], sizeof(FLOAT[4][4]));
+#else
+
+	appMemzero(FrameShaderVars.Proj.m, sizeof(FLOAT[4][4]));
+
+	// Metallicafan212:	I've fixed this to the correct order it should be
+	FrameShaderVars.Proj.m[0][0] = 2.0f * zNear * invRightMinusLeft;
+	//FrameShaderVars.Proj.m[0][1] = 0.0f;
+	FrameShaderVars.Proj.m[0][2] = -1.0f / ScaledSceneNodeX;//0.0f;
+	//FrameShaderVars.Proj.m[0][3] = 0.0f;
+
+	//FrameShaderVars.Proj.m[1][0] = 0.0f;
+	FrameShaderVars.Proj.m[1][1] = -2.0f * zNear * invTopMinusBottom;
+	FrameShaderVars.Proj.m[1][2] = 1.0f / ScaledSceneNodeY;
+	//FrameShaderVars.Proj.m[1][3] = 0.0f;
+
+	//FrameShaderVars.Proj.m[2][0] = 0.0f;
+	//FrameShaderVars.Proj.m[2][1] = 0.0f;
+	FrameShaderVars.Proj.m[2][2] = -zScaleVal * (zFar * invNearMinusFar);
+	FrameShaderVars.Proj.m[2][3] = zScaleVal * zScaleVal * (zNear * zFar * invNearMinusFar);
+
+	//FrameShaderVars.Proj.m[3][0] = 0.0f;
+	//FrameShaderVars.Proj.m[3][1] = 0.0f;
+	FrameShaderVars.Proj.m[3][2] = 1.0f;
+	//FrameShaderVars.Proj.m[3][3] = 0.0f;
+#endif
 
 	// Metallicafan212:	Now update the bind
 	UpdateGlobalShaderVars();
