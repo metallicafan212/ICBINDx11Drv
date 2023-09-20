@@ -1512,61 +1512,6 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_RELEASE(m_D3DCommandList);
 	SAFE_RELEASE(m_D3DDevice);
 
-	// Metallicafan212:	Fix the window and make it compatible with other renderers
-	HWND h = (HWND)Viewport->GetWindow();
-	/*
-	LONG_PTR s = GetWindowLongPtr(h, GWL_EXSTYLE);
-
-	//GetWindowRect(h, &r);
-	//GetClientRect(h, &r);
-
-	// Metallicafan212:	Remove WS_EX_NOREDIRECTIONBITMAP, since the freesync mode adds it
-	s &= ~WS_EX_NOREDIRECTIONBITMAP;
-
-	SetWindowLongPtr(h, GWL_EXSTYLE, s);
-	*/
-
-	/*
-	SetWindowLongPtr(h, GWL_EXSTYLE, ViewExtendedStyle);
-
-	SetWindowPos(h, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_DRAWFRAME | SWP_SHOWWINDOW);
-	ShowWindowAsync(h, SW_SHOW);
-	//UpdateWindow(h);
-
-	//MoveWindow(h, r.left, r.top, r.right - r.left, r.bottom - r.top, 1);
-	*/
-
-	/*
-	// Metallicafan212:	Screw it, this is the only way to fix it.... We have to force windows to swap it back to a normal window........
-	HWND hwndButton = CreateWindow(
-		TEXT("BUTTON"),  // Predefined class; Unicode assumed 
-		L"OK",      // Button text 
-		WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
-		10,         // x position 
-		10,         // y position 
-		100,        // Button width
-		100,        // Button height
-		h,     // Parent window
-		NULL,       // No menu.
-		(HINSTANCE)GetWindowLongPtr(h, GWLP_HINSTANCE),
-		NULL);      // Pointer not needed.
-
-	ShowWindow(hwndButton, SW_SHOW);
-	UpdateWindow(hwndButton);
-	UpdateWindow(h);
-
-	DestroyWindow(hwndButton);
-	*/
-
-	/*
-	// Metallicafan212:	Maybe?????????
-	HDC hdc;
-	PAINTSTRUCT ps;
-
-	hdc = BeginPaint(h, &ps);
-	EndPaint(h, &ps);
-	*/
-
 	unguard;
 }
 

@@ -1,5 +1,16 @@
 #include "ICBINDx11Drv.h"
 
+FMipmap* GetBaseMip(FTextureInfo& Info)
+{
+	// Metallicafan212:	Get the 0th mip of this texture
+#if DX11_HP2
+	return Info.Mips[0];
+#elif DX11_UT_469
+	UBOOL Compressed = FIsCompressedFormat(Info.Format);
+	return Info.Texture != nullptr ? (Compressed ? &Info.Texture->CompMips(0) : &Info.Texture->Mips(0)) : nullptr;
+#endif
+}
+
 // Metallicafan212:	Texturing related functions (since there's going to be quite a bit)
 void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG PolyFlags)
 {
@@ -97,16 +108,22 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	}
 	*/
 
+	// Metallicafan212:	Get the size from the base mip!!!!
+	FMipmap* M = GetBaseMip(*Info);
+
+	if(M == nullptr)
+		return;
+
 	BoundTextures[TexNum].TexInfo	= DaTex;
 	BoundTextures[TexNum].UPan		= Info->Pan.X;
 	BoundTextures[TexNum].VPan		= Info->Pan.Y;
 	BoundTextures[TexNum].bIsRT		= DaTex->bIsRT;
 	BoundTextures[TexNum].UScale	= Info->UScale;
 	BoundTextures[TexNum].VScale	= Info->VScale;
-	BoundTextures[TexNum].UMult		= 1.0f / (Info->UScale * Info->USize);
-	BoundTextures[TexNum].VMult		= 1.0f / (Info->VScale * Info->VSize);
+	BoundTextures[TexNum].UMult		= 1.0f / (Info->UScale * Info->USize);//M->USize);//Info->USize);
+	BoundTextures[TexNum].VMult		= 1.0f / (Info->VScale * Info->VSize);//M->VSize);//Info->VSize);
 
-	if (((DaTex->UClamp ^ DaTex->USize) | (DaTex->VClamp ^ DaTex->VSize)) != 0)
+	if (((DaTex->UClamp ^ M->USize) | (DaTex->VClamp ^ M->VSize)) != 0)
 	{
 		DaTex->bShouldUVClamp = 1;
 	}
@@ -307,6 +324,12 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		}
 	}
 
+	// Metallicafan212:	Get the base mip
+	FMipmap* M = GetBaseMip(Info);
+
+	if(M == nullptr)
+		return;
+
 	DaTex->Tex			= Info.Texture;
 
 	// Metallicafan212:	Cache it now!
@@ -314,8 +337,8 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	DaTex->VClamp		= Info.VClamp;
 	DaTex->NumMips		= Info.NumMips;
 	DaTex->PolyFlags	= PolyFlags;
-	DaTex->USize		= Info.USize;
-	DaTex->VSize		= Info.VSize;
+	DaTex->USize		= M->USize;//Info.USize;
+	DaTex->VSize		= M->VSize;//Info.VSize;
 
 	// Metallicafan212:	Implement checking against the new UT469 realtime changed count
 	//					Using the function in Info causes a 50fps loss for some reason... It makes no sense....
@@ -357,7 +380,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 	INT MinSize = 0;
 
-	if (m_FeatureLevel < D3D_FEATURE_LEVEL_11_1)
+	if (1)//m_FeatureLevel < D3D_FEATURE_LEVEL_11_1)
 	{
 		// Metallicafan212:	Natively embed the check
 		MinSize		= Type->bIsCompressed ? 4 : 0;
@@ -372,7 +395,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 	// Metallicafan212:	Create the conversion mem
 	//					TODO! Hardcoded size!!!!
-	SIZE_T MemRequest = Info.USize * Info.VSize * 4;
+	SIZE_T MemRequest = DaTex->USize * DaTex->VSize * 4;
 
 	// Metallicafan212:	Resize as needed
 	if (MemRequest > ConversionMemSize)
