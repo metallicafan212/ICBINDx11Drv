@@ -147,7 +147,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 		
 		m_RenderContext->PSSetShaderResources(TexNum, 1, TexTemp->RTSRView.GetAddressOf());
 
-		ID3D11SamplerState* Temp = GetSamplerState(0);
+		ID3D11SamplerState* Temp = GetSamplerState(0, 0, 0);
 		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
 
 		// Metallicafan212:	So we can find whatever is still bound as the RT when we call OMSetRenderTargets
@@ -168,7 +168,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 
 	m_RenderContext->PSSetShaderResources(TexNum, 1, &DaTex->m_View);
 
-	ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0));
+	ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->bSkipMipZero ? 1 : 0, 0);
 	m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
 
 	unguard;
@@ -192,7 +192,7 @@ void UICBINDx11RenderDevice::MakeTextureSampler(FD3DTexture* Bind, FPLAG PolyFla
 	unguard;
 }
 
-UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch)
+UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch, INT& MipW, INT& MipH)
 {
 #if DX11_HP2
 	FMipmap* Mip = Info.Mips[MipNum];
@@ -213,6 +213,10 @@ UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataP
 	DataPtr = Mip->DataPtr;
 	Size    = Mip->DataArray.Num();
 
+	// Metallicafan212:	Provide out the mip's size
+	MipW	= Mip->USize;
+	MipH	= Mip->VSize;
+
 	// Metallicafan212:	The compiler hates if we reference the pointer directly, so we have to use a variable....
 	//					Doing (Type->*GetTexturePitch)() should work, but MSVC is being a stickler for some reason....
 	FD3DTexType::GetPitch P = Type->GetTexturePitch;
@@ -227,6 +231,10 @@ UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataP
 		DataPtr = Mip->DataPtr;
 		Size    = Mip->DataArray.Num();
 		SourcePitch = FTextureBlockBytes(Info.Format) * FTextureBlockAlignedWidth(Info.Format, Mip->USize) / FTextureBlockWidth(Info.Format);
+
+		// Metallicafan212:	Provide out the mip's size
+		MipW	= Mip->USize;
+		MipH	= Mip->VSize;
 	}	
 	else
 	{	
@@ -235,6 +243,10 @@ UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataP
 		DataPtr = MipBase->DataPtr;
 		Size    = FTextureBytes(Info.Format, MipBase->USize, MipBase->VSize);
 		SourcePitch = FTextureBlockBytes(Info.Format) * FTextureBlockAlignedWidth(Info.Format, MipBase->USize) / FTextureBlockWidth(Info.Format);
+
+		// Metallicafan212:	Provide out the mip's size
+		MipW	= MipBase->USize;
+		MipH	= MipBase->VSize;
 	}
 #else
 #error "Implement Me!"
@@ -339,6 +351,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	DaTex->PolyFlags	= PolyFlags;
 	DaTex->USize		= M->USize;//Info.USize;
 	DaTex->VSize		= M->VSize;//Info.VSize;
+	DaTex->bSkipMipZero	= 0;
 
 	// Metallicafan212:	Implement checking against the new UT469 realtime changed count
 	//					Using the function in Info causes a 50fps loss for some reason... It makes no sense....
@@ -386,12 +399,30 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		MinSize		= Type->bIsCompressed ? 4 : 0;
 	}
 
+	// Metallicafan212:	If we're trying to fix a texture, we need to do an extra mip...
+	if(DaTex->USize < MinSize || DaTex->VSize < MinSize)
+		DaTex->bSkipMipZero = 1;
+
+	if (DaTex->bSkipMipZero)
+	{
+		// Metallicafan212:	Increase the size....
+		//					Exploit powers of 2
+		DaTex->USize	<<= 1;
+		DaTex->VSize	<<= 1;
+		//DaTex->UClamp	<<= 1;
+		//DaTex->VClamp	<<= 1;
+
+		// Metallicafan212:	Remove UV clamping...
+		//DaTex->bShouldUVClamp = 0;
+	}
+
 	DaTex->USize = Clamp(DaTex->USize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
 	DaTex->VSize = Clamp(DaTex->VSize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
 
 	FD3DTexType::GetPitch P = Type->GetTexturePitch;
 	BYTE* MipData			= nullptr;
 	INT MipSize = 0, MipPitch = 0;
+	INT MipW	= 0, MipH = 0;
 
 	// Metallicafan212:	Create the conversion mem
 	//					TODO! Hardcoded size!!!!
@@ -426,7 +457,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		Desc.Format				= Type->DXFormat;
 		Desc.Width				= DaTex->USize;
 		Desc.Height				= DaTex->VSize;
-		Desc.MipLevels			= Info.NumMips;
+		Desc.MipLevels			= DaTex->bSkipMipZero ? Info.NumMips + 1 : Info.NumMips;
 		Desc.Usage				= D3D11_USAGE_DEFAULT;
 		Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE; //| (Info.Format == TEXF_P8 ? D3D11_BIND_UNORDERED_ACCESS : 0);
 		Desc.ArraySize			= 1;
@@ -472,8 +503,8 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		appMemzero(&vDesc, sizeof(vDesc));
 
 		vDesc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
-		vDesc.Texture2D.MipLevels		= Info.NumMips;
-		vDesc.Texture2D.MostDetailedMip = 0;
+		vDesc.Texture2D.MipLevels		= -1;//Info.NumMips;
+		vDesc.Texture2D.MostDetailedMip = DaTex->bSkipMipZero ? 1 : 0;
 		vDesc.BufferEx.FirstElement		= 0;
 		vDesc.Format					= DaTex->TexFormat;
 
@@ -559,8 +590,38 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 			// Metallicafan212:	We need to copy each mip
 			for (INT i = 0; i < Info.NumMips; i++)
 			{	
-				if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch))
-					Type->TexUploadFunc(MipData, MipSize, MipPitch, ConversionMemory, DaTex, this, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
+				INT CurDMip = (DaTex->bSkipMipZero ? i + 1 : i);
+				if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch, MipW, MipH))
+				{
+					/*
+					// Metallicafan212:	If it's lower than 4, fix it....
+					if (Type->bIsCompressed)
+					{
+						MipW = Clamp(MipW, 4, MipW);
+						MipH = Clamp(MipH, 4, MipH);
+					}
+					*/
+
+					Type->TexUploadFunc(MipData, MipSize, MipPitch, DaTex, this, Info.Mips[i]->USize, Info.Mips[i]->VSize, CurDMip, 0, 0, MipW, MipH);
+
+					/*
+					// Metallicafan212:	Handle bad DXT textures
+					//					TODO! This STILL doesn't work, as it can't even update lower than 4x4 pixels.....
+					if (Type->bIsCompressed && ((MipW == 2 && MipH != 2) || (MipH == 2 && MipW != 2)))
+					{
+						if (MipW == 2)
+						{
+							// Metallicafan212:	Stretch to the right
+							Type->TexUploadFunc(MipData, MipSize, MipPitch, DaTex, this, Info.Mips[i]->USize, Info.Mips[i]->VSize, i, 2, 0, MipW + 2, MipH);
+						}
+						else
+						{
+							// Metallicafan212:	Stretch to the bottom
+							Type->TexUploadFunc(MipData, MipSize, MipPitch, DaTex, this, Info.Mips[i]->USize, Info.Mips[i]->VSize, i, 0, 2, MipW, MipH + 2);
+						}
+					}
+					*/
+				}
 			}
 
 			unguard;
@@ -665,14 +726,14 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 				for (INT i = 0; i < Info.NumMips; i++)
 				{
-					if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch))
+					if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch, MipW, MipH))
 					{
 						// Metallicafan212:	Sigh.... We need to map dynamic memory to do this!!!!!
 						// Metallicafan212:	Do the conversion over
 						SIZE_T Size = (MipSize == 0 ? 4 * Info.Mips[i]->USize * Info.Mips[i]->VSize : MipSize);
 						checkSlow(Size <= 4 * Info.USize * Info.VSize);
 
-						Type->TexConvFunc(Info.Palette, MipData, Size, (Type->*P)(Info.Mips[i]->USize), ConversionMemory, DaTex, this, Info.Mips[i]->USize, Info.Mips[i]->VSize, i);
+						Type->TexConvFunc(Info.Palette, MipData, Size, (Type->*P)(Info.Mips[i]->USize), DaTex, this, Info.Mips[i]->USize, Info.Mips[i]->VSize, i, 0, 0, MipW, MipH);
 					}
 
 				}
@@ -715,27 +776,29 @@ void UICBINDx11RenderDevice::RegisterTextureFormat(ETextureFormat Format, DXGI_F
 }
 
 // Metallicafan212:	Texture uploading functions
-void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip)
+void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
 {
 	guard(MemcpyTexUpload);
 
 	// Metallicafan212:	Just copy over, todo!!!!
-	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, Source, SourcePitch, 0);
+	//D3D11_BOX B = { UpdateX, UpdateY, 0, UpdateW, UpdateH, 1 };
+
+	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, /*&B*/nullptr, Source, SourcePitch, 0);
 
 	unguard;
 }
 
-void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip)
+void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
 {
 	guard(RGBA7To8);
 
-	DWORD* pTex = (DWORD*)ConversionMem;
+	DWORD* pTex = (DWORD*)inDev->ConversionMemory;
 
 	// Metallicafan212:	Get each color
 	//					TODO! Support masking????
 	SIZE_T Read		= 0;
 	BYTE* Bytes		= (BYTE*)Source;
-	BYTE* DBytes	= (BYTE*)ConversionMem;
+	BYTE* DBytes	= (BYTE*)inDev->ConversionMemory;
 
 	// Metallicafan212:	Sigh.. We have to clamp!
 	//					Took my recoded RGBA7 upload from the DX9 driver
@@ -777,18 +840,18 @@ void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 	}
 
 	// Metallicafan212:	Now update
-	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, ConversionMem, SourcePitch, 0);
+	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, inDev->ConversionMemory, SourcePitch, 0);
 	unguard;
 }
 
-void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip)
+void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
 {
 	guard(P8ToRGBA);
 
 	// Metallicafan212:	Update each 4 byte block
 	SIZE_T	Read	= 0;
 	BYTE*	Bytes	= (BYTE*)Source;
-	DWORD*	DBytes	= (DWORD*)ConversionMem;
+	DWORD*	DBytes	= (DWORD*)inDev->ConversionMemory;
 
 	// Metallicafan212:	Just read across
 	//					There might be a quicker way to do this, but this was the easiest to write lmao
@@ -812,7 +875,7 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 
 
 	// Metallicafan212:	Now update
-	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, ConversionMem, SourcePitch, 0);
+	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, inDev->ConversionMemory, SourcePitch, 0);
 
 	unguard;
 }

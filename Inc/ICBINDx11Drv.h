@@ -308,6 +308,9 @@ struct FD3DTexture
 	// Metallicafan212:	If this is really a RT texture
 	UBOOL			bIsRT;
 
+	// Metallicafan212:	If mip 0 is "dead"
+	UBOOL			bSkipMipZero;
+
 	// Metallicafan212:	The cache ID Unreal provided us when it was uploaded
 	D3DCacheId		CacheID;
 
@@ -370,8 +373,8 @@ struct FD3DBoundTex
 // Metallicafan212:	Texture support table info
 struct FD3DTexType
 {
-	typedef void (*UploadFunc)(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip);
-	typedef void (*ConversionFunc)(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip);
+	typedef void (*UploadFunc)(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+	typedef void (*ConversionFunc)(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
 	typedef SIZE_T (FD3DTexType::* GetPitch)(INT USize);
 
 	// Metallicafan212:	The UE format
@@ -410,10 +413,10 @@ struct FD3DTexType
 	}
 };
 
-// Metallicafan212:	TODO! Work on this more
-void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip);
-void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip);
-void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, void* ConversionMem, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip);
+// Metallicafan212:	TODO! Refactor so this needs a LOT less arguments
+void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
 
 // Metallicafan212:	Base layout declaration
 extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
@@ -1183,12 +1186,15 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	void SetRasterState(DWORD State);
 
-	inline ID3D11SamplerState* GetSamplerState(FPLAG PolyFlags)
+	inline ID3D11SamplerState* GetSamplerState(FPLAG PolyFlags, INT MinMip, INT MipBias)
 	{
 		guard(UICBINDx11RenderDevice::GetSamplerState);
 
+		// Metallicafan212:	TODO!!!! Tag this better.... This will bite me in the ass....
+		//					Realistically, the key should be a combo of the flags and the biases, since we only care about specific parts, it should be bitpacked
+		
 		// Metallicafan212:	We have to use global sampler, since per-texture won't ever work... It'll force all of the same texture to no smooth (for example)
-		ID3D11SamplerState* S = SampMap.FindRef(PolyFlags & (PF_NoSmooth | PF_ClampUVs));
+		ID3D11SamplerState* S = SampMap.FindRef((PolyFlags & (PF_NoSmooth | PF_ClampUVs)) + MipBias + MinMip);
 
 		if (S == nullptr)
 		{
@@ -1203,9 +1209,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 			SDesc.AddressU			= (PolyFlags & PF_ClampUVs ? D3D11_TEXTURE_ADDRESS_CLAMP : D3D11_TEXTURE_ADDRESS_WRAP);
 			SDesc.AddressV			= SDesc.AddressU;
 			SDesc.AddressW			= D3D11_TEXTURE_ADDRESS_WRAP;//SDesc.AddressU;
-			SDesc.MinLOD			= -D3D11_FLOAT32_MAX;
+			SDesc.MinLOD			= MinMip;//-D3D11_FLOAT32_MAX;
 			SDesc.MaxLOD			= D3D11_FLOAT32_MAX;
-			SDesc.MipLODBias		= 0.0f;
+			SDesc.MipLODBias		= MipBias;//0.0f;
 			SDesc.MaxAnisotropy		= PolyFlags & PF_NoSmooth ? 1 : NumAFSamples;//16;//16;
 			SDesc.ComparisonFunc	= D3D11_COMPARISON_NEVER;
 
@@ -1214,7 +1220,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 			ThrowIfFailed(hr);
 
 			// Metallicafan212:	Now set
-			SampMap.Set((PolyFlags & (PF_NoSmooth | PF_ClampUVs)), S);
+			SampMap.Set((PolyFlags & (PF_NoSmooth | PF_ClampUVs)) + MipBias + MinMip, S);
 		}
 
 		return S;
