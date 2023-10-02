@@ -400,7 +400,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	}
 
 	// Metallicafan212:	If we're trying to fix a texture, we need to do an extra mip...
-	if(DaTex->USize < MinSize || DaTex->VSize < MinSize)
+	if(Type->bIsCompressed && (DaTex->USize < MinSize || DaTex->VSize < MinSize))
 		DaTex->bSkipMipZero = 1;
 
 	if (DaTex->bSkipMipZero)
