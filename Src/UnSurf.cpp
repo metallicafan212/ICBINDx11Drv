@@ -296,6 +296,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		//UnlockBuffers();
 
 		AdvanceVertPos();//VertRequest, sizeof(FD3DVert), IndexRequest);
+
+		// Metallicafan212:	Draw immediately
+		EndBuffering();
 	}
 
 	unguard;

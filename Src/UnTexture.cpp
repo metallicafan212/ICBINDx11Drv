@@ -27,6 +27,9 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 		if (BoundTextures[TexNum].TexInfo != nullptr)
 			EndBuffering();
 
+		BoundTextures[TexNum].bIsRT		= 0;
+		BoundTextures[TexNum].UMult		= 1.0f;
+		BoundTextures[TexNum].VMult		= 1.0f;
 		BoundTextures[TexNum].TexInfo	= nullptr;
 		BoundTextures[TexNum].m_SRV		= BlankResourceView;
 
