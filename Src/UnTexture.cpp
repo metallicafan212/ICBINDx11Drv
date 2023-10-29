@@ -143,6 +143,13 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	{
 		UDX11RenderTargetTexture* TexTemp = (UDX11RenderTargetTexture*)Info->Texture;
 
+		if (BoundRT == TexTemp)
+		{
+			// Metallicafan212:	Bind NO texture!!!!
+			SetTexture(TexNum, nullptr, PolyFlags);
+			return;
+		}
+
 		// Metallicafan212:	If we have MSAA we need to RESOLVE!!!!!
 		if (NumAASamples > 1)
 		{

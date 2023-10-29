@@ -614,6 +614,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	RTTexture currently bound
 	UDX11RenderTargetTexture*			BoundRT;
 
+	// Metallicafan212:	Array representing the stack of RTTextures currently bound (so they can do dumb shit)
+	TArray<UDX11RenderTargetTexture*>	RTStack;
+
 	// Metallicafan212:	Shader list, so we can cleanup
 	//					TODO! Might make each base shader referenced directly rather than an array???
 	TArray<FD3DShader*>					Shaders;

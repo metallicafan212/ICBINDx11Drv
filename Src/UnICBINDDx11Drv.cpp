@@ -1708,7 +1708,8 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 	EndBuffering();
 
 	// Metallicafan212:	Restore our render target (as it may have been changed due to RT textures)
-	RestoreRenderTarget();
+	while(RTStack.Num())
+		RestoreRenderTarget();
 
 	// Metallicafan212:	Render now!
 	DoDeferredRender();

@@ -685,11 +685,13 @@ void UICBINDx11RenderDevice::SetRenderTargetTexture(UTexture* Tex)
 
 		EndBuffering();
 
+		// Metallicafan212:	If there's another RT bound, 
+
 		// Metallicafan212:	Restore from another RT
-		if (BoundRT != nullptr)
-		{
-			RestoreRenderTarget();
-		}
+		//if (BoundRT != nullptr)
+		//{
+		//	RestoreRenderTarget();
+		//}
 
 		// Metallicafan212:	Check if our RT is bound???
 		for (INT i = 0; i < MAX_TEXTURES; i++)
@@ -705,6 +707,9 @@ void UICBINDx11RenderDevice::SetRenderTargetTexture(UTexture* Tex)
 		// Metallicafan212:	Clear both!!!
 		//m_RenderContext->ClearRenderTargetView(RT->RTView.Get(), DirectX::Colors::Black);
 		m_RenderContext->ClearDepthStencilView(RT->DTView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+		// Metallicafan212:	Add it onto the array
+		RTStack.AddItem(RT);
 
 		BoundRT = RT;
 
@@ -729,8 +734,11 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 
 	EndBuffering();
 
-	// Metallicafan212:	Reset
-	m_RenderContext->OMSetRenderTargets(1, &m_D3DScreenRTV, m_D3DScreenDSV);
+	// Metallicafan212:	Pop our RT off the stack
+	if (RTStack.Num())
+	{
+		RTStack.Remove(RTStack.Num() - 1);
+	}
 
 	// Metallicafan212:	Check if our RT is bound???
 	if (BoundRT != nullptr)
@@ -742,12 +750,42 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 		}
 	}
 
-	BoundRT = nullptr;
+	// Metallicafan212:	Reset
+	if (RTStack.Num() == 0)
+	{
+		m_RenderContext->OMSetRenderTargets(1, &m_D3DScreenRTV, m_D3DScreenDSV);
+
+		BoundRT = nullptr;
 
 #if DX11_HP2
-	// Metallicafan212:	Restore the D2D render target
-	m_CurrentD2DRT = m_D2DRT;
+		// Metallicafan212:	Restore the D2D render target
+		m_CurrentD2DRT = m_D2DRT;
 #endif
+	}
+	else
+	{
+		// Metallicafan212:	Set it to the next RT
+		BoundRT = RTStack(RTStack.Num() - 1);
+
+		// Metallicafan212:	Check if our RT is bound???
+		for (INT i = 0; i < MAX_TEXTURES; i++)
+		{
+			//if (BoundTextures[i].TexInfo != nullptr && (BoundTextures[i].TexInfo->Tex == RT) || BoundTextures[i].m_SRV == RT->RTSRView)
+			if (BoundTextures[i].m_SRV == BoundRT->RTSRView.Get())
+				SetTexture(i, nullptr, 0);
+		}
+
+		// Metallicafan212:	Set the RT and DT to the ones we want
+		m_RenderContext->OMSetRenderTargets(1, BoundRT->RTView.GetAddressOf(), BoundRT->DTView.Get());
+
+		// Metallicafan212:	Also set the D2D target
+
+#if DX11_HP2
+		// Metallicafan212:	Set the D2DRT as well
+		m_CurrentD2DRT = BoundRT->RTD2D.Get();
+#endif
+	}
+
 
 	unguard;
 }
