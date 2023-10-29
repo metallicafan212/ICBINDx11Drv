@@ -3,6 +3,10 @@
 FMipmap* GetBaseMip(FTextureInfo& Info)
 {
 	// Metallicafan212:	Get the 0th mip of this texture
+
+	if (Info.NumMips == 0)
+		return nullptr;
+
 #if DX11_HP2
 	return Info.Mips[0];
 #elif DX11_UT_469
@@ -108,11 +112,6 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	}
 	*/
 
-	// Metallicafan212:	Get the size from the base mip!!!!
-	FMipmap* M = GetBaseMip(*Info);
-
-	if(M == nullptr)
-		return;
 
 	BoundTextures[TexNum].TexInfo	= DaTex;
 	BoundTextures[TexNum].UPan		= Info->Pan.X;
@@ -123,7 +122,11 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	BoundTextures[TexNum].UMult		= 1.0f / (Info->UScale * Info->USize);//M->USize);//Info->USize);
 	BoundTextures[TexNum].VMult		= 1.0f / (Info->VScale * Info->VSize);//M->VSize);//Info->VSize);
 
-	if (((DaTex->UClamp ^ M->USize) | (DaTex->VClamp ^ M->VSize)) != 0)
+	// Metallicafan212:	Get the size from the base mip!!!!
+	FMipmap* M = GetBaseMip(*Info);
+
+	// Metallicafan212:	Only try to UV clamp if the base mip is accessable
+	if (M != nullptr && (((DaTex->UClamp ^ M->USize) | (DaTex->VClamp ^ M->VSize)) != 0))
 	{
 		DaTex->bShouldUVClamp = 1;
 	}
@@ -131,6 +134,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	{
 		DaTex->bShouldUVClamp = 0;
 	}
+
 
 #if DX11_HP2
 	// Metallicafan212:	Check if it's a RT texture!!
@@ -339,9 +343,6 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	// Metallicafan212:	Get the base mip
 	FMipmap* M = GetBaseMip(Info);
 
-	if(M == nullptr)
-		return;
-
 	DaTex->Tex			= Info.Texture;
 
 	// Metallicafan212:	Cache it now!
@@ -349,8 +350,19 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	DaTex->VClamp		= Info.VClamp;
 	DaTex->NumMips		= Info.NumMips;
 	DaTex->PolyFlags	= PolyFlags;
-	DaTex->USize		= M->USize;//Info.USize;
-	DaTex->VSize		= M->VSize;//Info.VSize;
+
+	// Metallicafan212:	Fix a crash relating to RT Textures
+	if (M != nullptr)
+	{
+		DaTex->USize	= M->USize;//Info.USize;
+		DaTex->VSize	= M->VSize;//Info.VSize;
+	}
+	else
+	{
+		DaTex->USize	= Info.USize;
+		DaTex->VSize	= Info.VSize;
+	}
+
 	DaTex->bSkipMipZero	= 0;
 
 	// Metallicafan212:	Implement checking against the new UT469 realtime changed count
