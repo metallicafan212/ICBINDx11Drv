@@ -103,6 +103,8 @@ void UDX11RenderTargetTexture::Destroy()
 
 	*RTDXGI.ReleaseAndGetAddressOf() = nullptr;
 
+	*RTTexCopy.ReleaseAndGetAddressOf() = nullptr;
+
 	// Metallicafan212:	Remove us from the list
 	D3DDev->RTTextures.RemoveItem(this);
 
@@ -579,10 +581,17 @@ UTexture* UICBINDx11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL 
 		{
 			bufferDesc.SampleDesc.Count = 1;
 
-			hr = m_D3DDevice->CreateTexture2D(&bufferDesc, nullptr, Tex->NonMSAATex.GetAddressOf());
+			//hr = m_D3DDevice->CreateTexture2D(&bufferDesc, nullptr, Tex->NonMSAATex.GetAddressOf());
 
-			ThrowIfFailed(hr);
+			//ThrowIfFailed(hr);
 		}
+
+		bufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+		// Metallicafan212:	Create a duplicate texture for setting on surfaces/meshes
+		hr = m_D3DDevice->CreateTexture2D(&bufferDesc, nullptr, Tex->RTTexCopy.GetAddressOf());
+
+		ThrowIfFailed(hr);
 
 		// Metallicafan212:	Now a render target view from this
 		CD3D11_RENDER_TARGET_VIEW_DESC rtVDesc = CD3D11_RENDER_TARGET_VIEW_DESC();
@@ -601,6 +610,7 @@ UTexture* UICBINDx11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL 
 		srvDesc.Texture2D.MostDetailedMip	= 0;
 		srvDesc.Texture2D.MipLevels			= 1;
 
+		/*
 		// Metallicafan212:	We do a resolve to render this texture in
 		if (NumAASamples > 1)
 		{
@@ -610,6 +620,10 @@ UTexture* UICBINDx11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL 
 		{
 			hr = m_D3DDevice->CreateShaderResourceView(Tex->RTTex.Get(), &srvDesc, Tex->RTSRView.GetAddressOf());
 		}
+		*/
+
+		// Metallicafan212:	Use the copy
+		hr = m_D3DDevice->CreateShaderResourceView(Tex->RTTexCopy.Get(), &srvDesc, Tex->RTSRView.GetAddressOf());
 		
 		ThrowIfFailed(hr);
 
@@ -693,6 +707,7 @@ void UICBINDx11RenderDevice::SetRenderTargetTexture(UTexture* Tex)
 		//	RestoreRenderTarget();
 		//}
 
+		/*
 		// Metallicafan212:	Check if our RT is bound???
 		for (INT i = 0; i < MAX_TEXTURES; i++)
 		{
@@ -700,6 +715,7 @@ void UICBINDx11RenderDevice::SetRenderTargetTexture(UTexture* Tex)
 			if(BoundTextures[i].m_SRV == RT->RTSRView.Get())
 				SetTexture(i, nullptr, 0);
 		}
+		*/
 
 		// Metallicafan212:	Set the RT and DT to the ones we want
 		m_RenderContext->OMSetRenderTargets(1, RT->RTView.GetAddressOf(), RT->DTView.Get());
@@ -740,6 +756,7 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 		RTStack.Remove(RTStack.Num() - 1);
 	}
 
+	/*
 	// Metallicafan212:	Check if our RT is bound???
 	if (BoundRT != nullptr)
 	{
@@ -749,11 +766,26 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 				SetTexture(i, nullptr, 0);
 		}
 	}
+	*/
 
 	// Metallicafan212:	Reset
 	if (RTStack.Num() == 0)
 	{
 		m_RenderContext->OMSetRenderTargets(1, &m_D3DScreenRTV, m_D3DScreenDSV);
+
+		// Metallicafan212:	Resolve the RT Texture
+		if (BoundRT != nullptr)
+		{
+			//m_RenderContext->Flush();
+			if (NumAASamples > 1)
+			{
+				m_RenderContext->ResolveSubresource(BoundRT->RTTexCopy.Get(), 0, BoundRT->RTTex.Get(), 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+			}
+			else
+			{
+				m_RenderContext->CopyResource(BoundRT->RTTexCopy.Get(), BoundRT->RTTex.Get());
+			}
+		}
 
 		BoundRT = nullptr;
 
@@ -767,6 +799,7 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 		// Metallicafan212:	Set it to the next RT
 		BoundRT = RTStack(RTStack.Num() - 1);
 
+		/*
 		// Metallicafan212:	Check if our RT is bound???
 		for (INT i = 0; i < MAX_TEXTURES; i++)
 		{
@@ -774,9 +807,39 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 			if (BoundTextures[i].m_SRV == BoundRT->RTSRView.Get())
 				SetTexture(i, nullptr, 0);
 		}
+		*/
 
 		// Metallicafan212:	Set the RT and DT to the ones we want
 		m_RenderContext->OMSetRenderTargets(1, BoundRT->RTView.GetAddressOf(), BoundRT->DTView.Get());
+
+		// Metallicafan212:	Resolve the RT Texture
+		if (BoundRT != nullptr)
+		{
+			/*
+			// Metallicafan212:	If it's mapped, unmap it
+			for (INT i = 0; i < MAX_TEXTURES; i++)
+			{
+				//if (BoundTextures[i].TexInfo != nullptr && (BoundTextures[i].TexInfo->Tex == RT) || BoundTextures[i].m_SRV == RT->RTSRView)
+				if (BoundTextures[i].m_SRV == BoundRT->RTSRView.Get())
+					SetTexture(i, nullptr, 0);
+			}
+			*/
+
+			// Metallicafan212:	Resolve the RT Texture
+			if (BoundRT != nullptr)
+			{
+				//m_RenderContext->Flush();
+
+				if (NumAASamples > 1)
+				{
+					m_RenderContext->ResolveSubresource(BoundRT->RTTexCopy.Get(), 0, BoundRT->RTTex.Get(), 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+				}
+				else
+				{
+					m_RenderContext->CopyResource(BoundRT->RTTexCopy.Get(), BoundRT->RTTex.Get());
+				}
+			}
+		}
 
 		// Metallicafan212:	Also set the D2D target
 

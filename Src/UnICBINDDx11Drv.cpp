@@ -1637,15 +1637,22 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	FrameShaderVars.bDoSelection = HitData != nullptr;
 
 	// Metallicafan212:	Make sure the RT is set?
+	//if (RTStack.Num())
+	//{
 	RestoreRenderTarget();
+	//}
 
-	// Metallicafan212:	Only clear if we're in the editor
-	if (1)//GIsEditor || (RenderLockFlags & LOCKR_ClearScreen))
+	// Metallicafan212:	Only clear if we're in the editor?
+	if (//GIsEditor || 
+		//(RenderLockFlags & LOCKR_ClearScreen))
+		1)
 	{
 		m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, &ScreenClear.X);
+
+		// Metallicafan212:	TODO! Only do this in the editor?
+		m_RenderContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
-	// Metallicafan212:	TODO! Only do this in the editor?
-	m_RenderContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	
 
 	// Metallicafan212:	Clear to max Z
 	//m_D3DDeviceContext->ClearRenderTargetView(m_D3DScreenOpacityRTV, DirectX::Colors::White);
@@ -2174,7 +2181,15 @@ void UICBINDx11RenderDevice::ClearZ(FSceneNode* Frame)
 
 	EndBuffering();
 
-	m_RenderContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	// Metallicafan212:	Clear the current DSV instead of the local one
+	if (BoundRT != nullptr)
+	{
+		m_RenderContext->ClearDepthStencilView(BoundRT->DTView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	}
+	else
+	{
+		m_RenderContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	}
 
 	unguard;
 }

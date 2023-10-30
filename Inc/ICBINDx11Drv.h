@@ -140,7 +140,6 @@ class UDX11RenderTargetTexture : public UTexture
 	MS::ComPtr<ID3D11Texture2D>				RTTex;
 	MS::ComPtr<ID3D11Texture2D>				NonMSAATex;
 	MS::ComPtr<ID3D11RenderTargetView>		RTView;
-	MS::ComPtr<ID3D11ShaderResourceView>	RTSRView;
 
 	// Metallicafan212:	Depth info
 	MS::ComPtr<ID3D11Texture2D>				DTTex;
@@ -150,6 +149,11 @@ class UDX11RenderTargetTexture : public UTexture
 	// Metallicafan212:	Direct2D RT
 	MS::ComPtr<ID2D1RenderTarget>			RTD2D;
 	MS::ComPtr<IDXGISurface>				RTDXGI;
+
+	// Metallicafan212:	Copy of the render target, so we can map it to a texture slot without issues
+	MS::ComPtr<ID3D11Texture2D>				RTTexCopy;
+
+	MS::ComPtr<ID3D11ShaderResourceView>	RTSRView;
 
 	// Metallicafan212:	Variable to hold the texture object (for ->SetTexture)
 	UDX11RenderTargetTexture()
@@ -162,7 +166,8 @@ class UDX11RenderTargetTexture : public UTexture
 		DTSRView(nullptr),
 		NonMSAATex(nullptr),
 		RTD2D(nullptr),
-		RTDXGI(nullptr)
+		RTDXGI(nullptr),
+		RTTexCopy(nullptr)
 	{
 
 	}

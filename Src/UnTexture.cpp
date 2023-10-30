@@ -146,18 +146,22 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	{
 		UDX11RenderTargetTexture* TexTemp = (UDX11RenderTargetTexture*)Info->Texture;
 
+		/*
 		if (BoundRT == TexTemp)
 		{
 			// Metallicafan212:	Bind NO texture!!!!
 			SetTexture(TexNum, nullptr, PolyFlags);
 			return;
 		}
+		*/
 
+		/*
 		// Metallicafan212:	If we have MSAA we need to RESOLVE!!!!!
 		if (NumAASamples > 1)
 		{
 			m_RenderContext->ResolveSubresource(TexTemp->NonMSAATex.Get(), 0, TexTemp->RTTex.Get(), 0, DXGI_FORMAT_B8G8R8A8_UNORM);
 		}
+		*/
 		
 		m_RenderContext->PSSetShaderResources(TexNum, 1, TexTemp->RTSRView.GetAddressOf());
 
