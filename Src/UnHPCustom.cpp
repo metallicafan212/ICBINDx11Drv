@@ -688,41 +688,14 @@ void UICBINDx11RenderDevice::SetRenderTargetTexture(UTexture* Tex)
 
 	if (RT != nullptr)
 	{
-		/*
-		// Metallicafan212:	Debugging! Make sure it's in our array
-		if (GIsEditor)
-		{
-			if (RTTextures.FindItemIndex(RT) == INDEX_NONE)
-				appDebugBreak();
-		}
-		*/
-
 		EndBuffering();
-
-		// Metallicafan212:	If there's another RT bound, 
-
-		// Metallicafan212:	Restore from another RT
-		//if (BoundRT != nullptr)
-		//{
-		//	RestoreRenderTarget();
-		//}
-
-		/*
-		// Metallicafan212:	Check if our RT is bound???
-		for (INT i = 0; i < MAX_TEXTURES; i++)
-		{
-			//if (BoundTextures[i].TexInfo != nullptr && (BoundTextures[i].TexInfo->Tex == RT) || BoundTextures[i].m_SRV == RT->RTSRView)
-			if(BoundTextures[i].m_SRV == RT->RTSRView.Get())
-				SetTexture(i, nullptr, 0);
-		}
-		*/
 
 		// Metallicafan212:	Set the RT and DT to the ones we want
 		m_RenderContext->OMSetRenderTargets(1, RT->RTView.GetAddressOf(), RT->DTView.Get());
 
 		// Metallicafan212:	Clear both!!!
 		//m_RenderContext->ClearRenderTargetView(RT->RTView.Get(), DirectX::Colors::Black);
-		m_RenderContext->ClearDepthStencilView(RT->DTView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		//m_RenderContext->ClearDepthStencilView(RT->DTView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 		// Metallicafan212:	Add it onto the array
 		RTStack.AddItem(RT);
@@ -756,18 +729,6 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 		RTStack.Remove(RTStack.Num() - 1);
 	}
 
-	/*
-	// Metallicafan212:	Check if our RT is bound???
-	if (BoundRT != nullptr)
-	{
-		for (INT i = 0; i < MAX_TEXTURES; i++)
-		{
-			if (BoundTextures[i].m_SRV == BoundRT->RTSRView.Get())
-				SetTexture(i, nullptr, 0);
-		}
-	}
-	*/
-
 	// Metallicafan212:	Reset
 	if (RTStack.Num() == 0)
 	{
@@ -796,50 +757,27 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 	}
 	else
 	{
-		// Metallicafan212:	Set it to the next RT
-		BoundRT = RTStack(RTStack.Num() - 1);
-
-		/*
-		// Metallicafan212:	Check if our RT is bound???
-		for (INT i = 0; i < MAX_TEXTURES; i++)
-		{
-			//if (BoundTextures[i].TexInfo != nullptr && (BoundTextures[i].TexInfo->Tex == RT) || BoundTextures[i].m_SRV == RT->RTSRView)
-			if (BoundTextures[i].m_SRV == BoundRT->RTSRView.Get())
-				SetTexture(i, nullptr, 0);
-		}
-		*/
+		// Metallicafan212:	Get the next RT
+		UDX11RenderTargetTexture* NewRT = RTStack(RTStack.Num() - 1);
 
 		// Metallicafan212:	Set the RT and DT to the ones we want
-		m_RenderContext->OMSetRenderTargets(1, BoundRT->RTView.GetAddressOf(), BoundRT->DTView.Get());
+		m_RenderContext->OMSetRenderTargets(1, NewRT->RTView.GetAddressOf(), NewRT->DTView.Get());
 
-		// Metallicafan212:	Resolve the RT Texture
+		// Metallicafan212:	Resolve the currently bound RT Texture
 		if (BoundRT != nullptr)
 		{
-			/*
-			// Metallicafan212:	If it's mapped, unmap it
-			for (INT i = 0; i < MAX_TEXTURES; i++)
+			if (NumAASamples > 1)
 			{
-				//if (BoundTextures[i].TexInfo != nullptr && (BoundTextures[i].TexInfo->Tex == RT) || BoundTextures[i].m_SRV == RT->RTSRView)
-				if (BoundTextures[i].m_SRV == BoundRT->RTSRView.Get())
-					SetTexture(i, nullptr, 0);
+				m_RenderContext->ResolveSubresource(BoundRT->RTTexCopy.Get(), 0, BoundRT->RTTex.Get(), 0, DXGI_FORMAT_B8G8R8A8_UNORM);
 			}
-			*/
-
-			// Metallicafan212:	Resolve the RT Texture
-			if (BoundRT != nullptr)
+			else
 			{
-				//m_RenderContext->Flush();
-
-				if (NumAASamples > 1)
-				{
-					m_RenderContext->ResolveSubresource(BoundRT->RTTexCopy.Get(), 0, BoundRT->RTTex.Get(), 0, DXGI_FORMAT_B8G8R8A8_UNORM);
-				}
-				else
-				{
-					m_RenderContext->CopyResource(BoundRT->RTTexCopy.Get(), BoundRT->RTTex.Get());
-				}
+				m_RenderContext->CopyResource(BoundRT->RTTexCopy.Get(), BoundRT->RTTex.Get());
 			}
 		}
+
+		// Metallicafan212:	Set it to the next RT
+		BoundRT = NewRT;
 
 		// Metallicafan212:	Also set the D2D target
 
