@@ -2181,6 +2181,9 @@ void UICBINDx11RenderDevice::ClearZ(FSceneNode* Frame)
 
 	EndBuffering();
 
+	// Metallicafan212:	Turn back on Z buffering
+	SetBlend(PF_Occlude);
+
 	// Metallicafan212:	Clear the current DSV instead of the local one
 	if (BoundRT != nullptr)
 	{

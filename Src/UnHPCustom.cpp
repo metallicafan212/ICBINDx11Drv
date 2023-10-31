@@ -686,6 +686,10 @@ void UICBINDx11RenderDevice::SetRenderTargetTexture(UTexture* Tex)
 
 	UDX11RenderTargetTexture* RT = Cast<UDX11RenderTargetTexture>(Tex);
 
+	// Metallicafan212:	Error check
+	if(RT != nullptr && RT == BoundRT)
+		return;
+
 	if (RT != nullptr)
 	{
 		EndBuffering();
