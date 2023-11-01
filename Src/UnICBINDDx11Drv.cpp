@@ -1647,11 +1647,20 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 		//(RenderLockFlags & LOCKR_ClearScreen))
 		1)
 	{
-		m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, &ScreenClear.X);
+		SetBlend(PF_Occlude);
 
-		// Metallicafan212:	TODO! Only do this in the editor?
+		// Metallicafan212:	Only clear if we have the screen clear set
+		if (RenderLockFlags & LOCKR_ClearScreen)
+		{
+			m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, &ScreenClear.X);
+		}
+
+		// Metallicafan212:	However, always clear depth
 		m_RenderContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
+
+	// Metallicafan212:	Make sure Z buffering is ALWAYS on
+	m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);
 	
 
 	// Metallicafan212:	Clear to max Z
