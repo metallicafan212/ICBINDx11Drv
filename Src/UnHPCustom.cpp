@@ -84,6 +84,18 @@ void UDX11RenderTargetTexture::Lock(FTextureInfo& Info, FTime InTime, INT LOD, U
 void UDX11RenderTargetTexture::Destroy()
 {
 	guard(UDX11RenderTargetTexture::Destroy);
+
+	// Metallicafan212:	Make sure it's not bound?
+	if (D3DDev != nullptr)
+	{
+		for (INT i = 0; i < MAX_TEXTURES; i++)
+		{
+			if (D3DDev->BoundTextures[i].m_SRV == RTSRView.Get())
+			{
+				D3DDev->SetTexture(i, nullptr, 0);
+			}
+		}
+	}
 	
 	*RTTex.ReleaseAndGetAddressOf() = nullptr;
 
@@ -106,7 +118,10 @@ void UDX11RenderTargetTexture::Destroy()
 	*RTTexCopy.ReleaseAndGetAddressOf() = nullptr;
 
 	// Metallicafan212:	Remove us from the list
-	D3DDev->RTTextures.RemoveItem(this);
+	if (D3DDev != nullptr)
+	{
+		D3DDev->RTTextures.RemoveItem(this);
+	}
 
 	Super::Destroy();
 
