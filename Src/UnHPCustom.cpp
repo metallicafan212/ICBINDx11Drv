@@ -736,6 +736,22 @@ void UICBINDx11RenderDevice::SetRenderTargetTexture(UTexture* Tex)
 	unguard;
 }
 
+void UICBINDx11RenderDevice::ClearRenderTargetTexture(UTexture* Tex, FPlane ClearColor)
+{
+	guard(UICBINDx11RenderDevice::ClearRenderTargetTexture);
+
+	// Metallicafan212:	Allow for clearing the RT to a specific color
+	UDX11RenderTargetTexture* RT = Cast<UDX11RenderTargetTexture>(Tex);
+
+	// Metallicafan212:	Error check
+	if (RT != nullptr)
+	{
+		m_RenderContext->ClearRenderTargetView(RT->RTView.Get(), &ClearColor.X);
+	}
+
+	unguard;
+}
+
 void UICBINDx11RenderDevice::RestoreRenderTarget()
 {
 	guard(UICBINDx11RenderDevice::RestoreRenderTarget);

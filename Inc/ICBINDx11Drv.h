@@ -1410,6 +1410,8 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	virtual void SetRenderTargetTexture(UTexture* Tex);
 
+	virtual void ClearRenderTargetTexture(UTexture* Tex, FPlane ClearColor);
+
 	virtual void RestoreRenderTarget();
 
 	virtual struct FTransTexture* InitMeshComputeShader(INT VertCount);
