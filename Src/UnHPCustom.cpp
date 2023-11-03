@@ -180,7 +180,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 	if (SpaceI == LocalText.Len() - 1)
 	{
 		// Metallicafan212:	Add a & for sizing
-		LocalText.GetCharArray()[SpaceI] = '|';
+		LocalText.GetCharArray()[SpaceI] = L' ';
 	}
 
 	UCanvas* Canvas = Viewport->Canvas;
