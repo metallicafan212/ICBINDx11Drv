@@ -49,8 +49,8 @@ void UDX11RenderTargetTexture::Lock(FTextureInfo& Info, FTime InTime, INT LOD, U
 #endif
 
 	// Metallicafan212:	TODO! Cache ID is probably not needed!
-	//Info.CacheID			= MakeCacheID((ECacheIDBase)(CID_RenderTexture), this);
-	Info.CacheID			= 0;
+	Info.CacheID			= MakeCacheID((ECacheIDBase)(CID_RenderTexture), this);
+	//Info.CacheID			= 0;
 	
 	Info.Pan				= FVector(0.0f, 0.0f, 0.0f);
 	//Info.MaxColor			= &MaxColor;
