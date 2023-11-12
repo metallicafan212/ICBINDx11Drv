@@ -1650,7 +1650,9 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 		SetBlend(PF_Occlude);
 
 		// Metallicafan212:	Only clear if we have the screen clear set
-		if (RenderLockFlags & LOCKR_ClearScreen)
+		//if (RenderLockFlags & LOCKR_ClearScreen)
+		// Metallicafan212:	TODO! Figure out why this fucks up with the loading screen
+		if(1)
 		{
 			m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, &ScreenClear.X);
 		}
@@ -2491,8 +2493,9 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	zNear	= 1.0f		* zNearVal;
 
 	//Set zFar
-#if DX11_HP2 || DX11_UNREAL_227
-	zFar = 49152.0f;
+#if DX11_HP2 || DX11_UNREAL_227 || DX11_UT_469
+	// Metallicafan212:	Increased to the next power of two
+	zFar = 65535.0f;//49152.0f;
 #else
 	zFar = 32768.0f;
 #endif
