@@ -202,6 +202,7 @@
   <ItemGroup>
     <ClInclude Include="..\Inc\ICBINDx11Drv.h" />
     <ClInclude Include="..\Inc\UnD3DShader.h" />
+    <ClInclude Include="..\Inc\UnTexCache.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ResScalingShader.cpp" />
@@ -219,6 +220,7 @@
     <ClCompile Include="UnP8ToRGBAShader.cpp" />
     <ClCompile Include="UnShader.cpp" />
     <ClCompile Include="UnSurf.cpp" />
+    <ClCompile Include="UnTexCache.cpp" />
     <ClCompile Include="UnTexture.cpp" />
     <ClCompile Include="UnTiles.cpp" />
     <ClCompile Include="UnTileShader.cpp" />

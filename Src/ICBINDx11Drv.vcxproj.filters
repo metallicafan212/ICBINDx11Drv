@@ -27,6 +27,9 @@
     <ClInclude Include="..\Inc\UnD3DShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Inc\UnTexCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="UnICBINDDx11Drv.cpp">
@@ -85,6 +88,9 @@
     </ClCompile>
     <ClCompile Include="UnP8ToRGBAShader.cpp">
       <Filter>Source Files\Shaders\ComputeShaders</Filter>
+    </ClCompile>
+    <ClCompile Include="UnTexCache.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

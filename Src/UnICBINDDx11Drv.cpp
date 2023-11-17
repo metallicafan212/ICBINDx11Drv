@@ -1531,6 +1531,7 @@ void UICBINDx11RenderDevice::Flush(UBOOL AllowPrecache)
 {
 	guard(UICBINDx11RenderDevice::Flush);
 
+	/*
 	// Metallicafan212:	Loop and flush out the textures
 	//					TODO! There might be a more efficient way to do this!
 	for (TMap<DWORD, FD3DTexture>::TIterator It(TextureMap); It; ++It)
@@ -1552,6 +1553,9 @@ void UICBINDx11RenderDevice::Flush(UBOOL AllowPrecache)
 	}
 
 	TextureMap.Empty();
+	*/
+
+	TextureMap.Flush();
 
 	appMemzero(BoundTextures, sizeof(BoundTextures));
 

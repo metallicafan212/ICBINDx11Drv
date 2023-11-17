@@ -122,7 +122,6 @@ enum ERasterFlags
 
 class UICBINDx11RenderDevice;
 
-
 // Metallicafan212:	Just cutting down on the needed typing
 namespace MS = Microsoft::WRL;
 
@@ -290,7 +289,7 @@ static inline DWORD GetTypeHash(const D3DCacheId& A)
 
 static inline DWORD GetCacheHash(const QWORD& A)
 {
-	QWORD Value		= (QWORD)A;
+	QWORD Value			= (QWORD)A;
 	return (DWORD)Value ^ ((DWORD)(Value >> 16)) ^ ((DWORD)(Value >> 32));
 }
 
@@ -363,9 +362,14 @@ struct FD3DTexture
 	ID3D11ShaderResourceView* P8ConvSRV;
 };
 
+
+// Metallicafan212:	Start of a cache manager class
+//					This way, it's generically used in the renderer code, and can be changed without changing other game's definitions
+#include "UnTexCache.h"
+
 struct FD3DBoundTex
 {
-	DWORD						TexInfoHash;
+	D3DCacheId					TexInfoHash;
 
 	UBOOL						bIsRT;
 
@@ -754,7 +758,8 @@ class UICBINDx11RenderDevice : public URenderDevice
 	ID3D11ShaderResourceView*			BlankResourceView;
 	ID3D11SamplerState*					BlankSampler;
 
-	TMap<DWORD, FD3DTexture>			TextureMap;
+	//TMap<DWORD, FD3DTexture>			TextureMap;
+	FTextureCache						TextureMap;
 
 	TMap<ETextureFormat, FD3DTexType>	SupportedTextures;
 

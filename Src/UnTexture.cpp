@@ -27,11 +27,11 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 		if (BoundTextures[TexNum].TexInfoHash != 0)
 			EndBuffering();
 
-		BoundTextures[TexNum].bIsRT		= 0;
-		BoundTextures[TexNum].UMult		= 1.0f;
-		BoundTextures[TexNum].VMult		= 1.0f;
-		BoundTextures[TexNum].TexInfoHash = 0;
-		BoundTextures[TexNum].m_SRV		= BlankResourceView;
+		BoundTextures[TexNum].bIsRT			= 0;
+		BoundTextures[TexNum].UMult			= 1.0f;
+		BoundTextures[TexNum].VMult			= 1.0f;
+		BoundTextures[TexNum].TexInfoHash	= 0;
+		BoundTextures[TexNum].m_SRV			= BlankResourceView;
 
 		m_RenderContext->PSSetShaderResources(TexNum, 1, &BlankResourceView);
 		m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
@@ -73,15 +73,15 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 
 	// Metallicafan212:	End buffering if the input texture doesn't match!!!
 	UBOOL bSetTex = 0;
-	DWORD CacheHash = GetCacheHash(Info->CacheID);
-	if ((BoundTextures[TexNum].TexInfoHash != 0 && BoundTextures[TexNum].TexInfoHash != CacheHash))
+	//DWORD CacheHash = GetCacheHash(Info->CacheID);
+	if ((BoundTextures[TexNum].TexInfoHash != 0 && BoundTextures[TexNum].TexInfoHash != Info->CacheID))//CacheHash))
 	{
 		bSetTex = 1;
 		EndBuffering();
 	}
 
 	// Metallicafan212:	Search for the bind
-	FD3DTexture* DaTex		= TextureMap.Find(CacheHash);
+	FD3DTexture* DaTex		= TextureMap.Find(Info->CacheID, PolyFlags);//TextureMap.Find(Info->CacheID);//CacheHash);
 
 	// Metallicafan212:	Using Info->NeedsRealtimeUpdate steals 50fps for some reason.... It's incredibly weird
 //#if DX11_UT_469 
@@ -104,8 +104,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 		CacheTextureInfo(*Info, PolyFlags);
 
 		// Metallicafan212:	Get the new bind, if it's changed
-		CacheHash = GetCacheHash(Info->CacheID);
-		DaTex = TextureMap.Find(CacheHash);
+		//CacheHash = GetCacheHash(Info->CacheID);
+		DaTex = TextureMap.Find(Info->CacheID, PolyFlags);//TextureMap.Find(Info->CacheID);//CacheHash);
 
 		// Metallicafan212:	Already did the sample update
 		//bDoSampUpdate = 0;
@@ -118,14 +118,14 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	*/
 
 
-	BoundTextures[TexNum].TexInfoHash = CacheHash;
-	BoundTextures[TexNum].UPan		= Info->Pan.X;
-	BoundTextures[TexNum].VPan		= Info->Pan.Y;
-	BoundTextures[TexNum].bIsRT		= DaTex->bIsRT;
-	BoundTextures[TexNum].UScale	= Info->UScale;
-	BoundTextures[TexNum].VScale	= Info->VScale;
-	BoundTextures[TexNum].UMult		= 1.0f / (Info->UScale * Info->USize);//M->USize);//Info->USize);
-	BoundTextures[TexNum].VMult		= 1.0f / (Info->VScale * Info->VSize);//M->VSize);//Info->VSize);
+	BoundTextures[TexNum].TexInfoHash	= Info->CacheID;//CacheHash;
+	BoundTextures[TexNum].UPan			= Info->Pan.X;
+	BoundTextures[TexNum].VPan			= Info->Pan.Y;
+	BoundTextures[TexNum].bIsRT			= DaTex->bIsRT;
+	BoundTextures[TexNum].UScale		= Info->UScale;
+	BoundTextures[TexNum].VScale		= Info->VScale;
+	BoundTextures[TexNum].UMult			= 1.0f / (Info->UScale * Info->USize);//M->USize);//Info->USize);
+	BoundTextures[TexNum].VMult			= 1.0f / (Info->VScale * Info->VSize);//M->VSize);//Info->VSize);
 
 	// Metallicafan212:	Get the size from the base mip!!!!
 	FMipmap* M = GetBaseMip(*Info);
@@ -285,12 +285,12 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 	QWORD CacheID = Info.CacheID;
 
 	// Metallicafan212:	TODO! Create the texture
-	DWORD CacheHash = GetCacheHash(CacheID);
-	FD3DTexture* DaTex = TextureMap.Find(CacheHash);
+	//DWORD CacheHash = GetCacheHash(CacheID);
+	FD3DTexture* DaTex = TextureMap.Find(CacheId, 0);//TextureMap.Find(CacheHash);
 
 	if (DaTex == nullptr)
 	{
-		DaTex = &TextureMap.Set(CacheHash, FD3DTexture());
+		DaTex = TextureMap.Set(CacheID, 0);//&TextureMap.Set(CacheHash, FD3DTexture());
 
 		if (DaTex == nullptr)
 		{
@@ -345,12 +345,12 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	//}
 
 	// Metallicafan212:	TODO! Create the texture
-	DWORD CacheHash = GetCacheHash(CacheID);
-	FD3DTexture* DaTex = TextureMap.Find(CacheHash);
+	//DWORD CacheHash = GetCacheHash(CacheID);
+	FD3DTexture* DaTex = TextureMap.Find(CacheID, PolyFlags);//TextureMap.Find(CacheHash);
 
 	if (DaTex == nullptr)
 	{
-		DaTex = &TextureMap.Set(CacheHash, FD3DTexture());
+		DaTex = TextureMap.Set(CacheID, PolyFlags);//&TextureMap.Set(CacheHash, FD3DTexture());
 
 		if (DaTex == nullptr)
 		{
