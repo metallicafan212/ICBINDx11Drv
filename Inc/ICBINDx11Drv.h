@@ -276,10 +276,13 @@ struct FGlobalShaderVars
 	}
 };
 
+// Metallicafan212:	We're not using TMap now, std::unorded_map completely nukes it in terms of performance
+//					Until I write my own datastructure, this will do for now
+
 // Metallicafan212:	Thanks to CacoFFF from OldUnreal for pointing this out for me!
 //					If you don't change the default TMap hashing, it'll place half the textures in one bin....
 //					TODO! This may only be a problem when compiling for UT99/227. I changed out the GetTypeHash to a QWORD in HP2
-#if !DX11_HP2 //&& !DX11_UT_469
+#if 0//!DX11_HP2 //&& !DX11_UT_469
 static inline DWORD GetTypeHash(const D3DCacheId& A)
 {
 	D3DCacheId Value		= (D3DCacheId)A;

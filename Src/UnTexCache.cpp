@@ -10,8 +10,8 @@ void FTextureCache::Flush()
 {
 	guard(FTextureCache::Flush);
 
+#if 0
 	// Metallicafan212:	TODO! Loop our maps and clear the textures
-
 #define CLEAR_MAP(ittType, Map) \
 	for (ittType It(Map); It; ++It) \
 	{ \
@@ -34,6 +34,31 @@ void FTextureCache::Flush()
 
 	CLEAR_MAP(QWORD_MAP::TIterator, QWORDMap);
 	CLEAR_MAP(QWORD_MAP::TIterator, QWORDMaskedMap);
+#else
+
+#define CLEAR_MAP(Map) \
+	for(auto i = Map.begin(); i != Map.end(); i++) \
+	{ \
+		/* Metallicafan212:	Release all this info */ \
+		FD3DTexture& Tex = i->second; \
+		SAFE_RELEASE(Tex.m_View); \
+		SAFE_RELEASE(Tex.m_Tex); \
+		/* Metallicafan212: UAVs for each mip (unused) */ \
+		for (INT i = 0; i < Tex.UAVMips.Num(); i++) \
+		{ \
+			SAFE_RELEASE(Tex.UAVMips(i)); \
+		} \
+		SAFE_RELEASE(Tex.P8ConvSRV); \
+		SAFE_RELEASE(Tex.P8ConvTex); \
+	} \
+	Map.clear();
+
+	CLEAR_MAP(DWORDMap);
+	CLEAR_MAP(DWORDMaskedMap);
+	CLEAR_MAP(QWORDMap);
+	CLEAR_MAP(QWORDMaskedMap);
+
+#endif
 
 	unguard;
 }
@@ -55,7 +80,8 @@ FD3DTexture* FTextureCache::Find(D3DCacheId InID, QWORD PolyFlags)
 			case PF_Masked:
 			{
 				// Metallicafan212:	See if it's in the map
-				return DWORDMaskedMap.Find(Truncated);
+				auto	f = DWORDMaskedMap.find(Truncated);
+				return	f != DWORDMaskedMap.end() ? &f->second : nullptr;
 
 				break;
 			}
@@ -63,7 +89,8 @@ FD3DTexture* FTextureCache::Find(D3DCacheId InID, QWORD PolyFlags)
 			default:
 			{
 				// Metallicafan212:	See if it's in the map
-				return DWORDMap.Find(Truncated);
+				auto	f  = DWORDMap.find(Truncated);
+				return	f != DWORDMap.end() ? &f->second : nullptr;
 
 				break;
 			}
@@ -79,7 +106,8 @@ FD3DTexture* FTextureCache::Find(D3DCacheId InID, QWORD PolyFlags)
 			case PF_Masked:
 			{
 				// Metallicafan212:	See if it's in the map
-				return QWORDMaskedMap.Find(InID);
+				auto	f  = QWORDMaskedMap.find(InID);
+				return	f != QWORDMaskedMap.end() ? &f->second : nullptr;
 
 				break;
 			}
@@ -87,7 +115,8 @@ FD3DTexture* FTextureCache::Find(D3DCacheId InID, QWORD PolyFlags)
 			default:
 			{
 				// Metallicafan212:	See if it's in the map
-				return QWORDMap.Find(InID);
+				auto	f  = QWORDMap.find(InID);
+				return	f != QWORDMap.end() ? &f->second : nullptr;
 
 				break;
 			}
@@ -114,7 +143,8 @@ FD3DTexture* FTextureCache::Set(D3DCacheId InID, QWORD PolyFlags)
 			case PF_Masked:
 			{
 				// Metallicafan212:	See if it's in the map
-				return &DWORDMaskedMap.Set(Truncated, FD3DTexture());
+				//return &DWORDMaskedMap.Set(Truncated, FD3DTexture());
+				return &(DWORDMaskedMap[Truncated] = FD3DTexture());
 
 				break;
 			}
@@ -122,7 +152,7 @@ FD3DTexture* FTextureCache::Set(D3DCacheId InID, QWORD PolyFlags)
 			default:
 			{
 				// Metallicafan212:	See if it's in the map
-				return &DWORDMap.Set(Truncated, FD3DTexture());
+				return &(DWORDMap[Truncated] = FD3DTexture());
 
 				break;
 			}
@@ -138,7 +168,7 @@ FD3DTexture* FTextureCache::Set(D3DCacheId InID, QWORD PolyFlags)
 			case PF_Masked:
 			{
 				// Metallicafan212:	See if it's in the map
-				return &QWORDMaskedMap.Set(InID, FD3DTexture());
+				return &(QWORDMaskedMap[InID] = FD3DTexture());
 
 				break;
 			}
@@ -146,7 +176,7 @@ FD3DTexture* FTextureCache::Set(D3DCacheId InID, QWORD PolyFlags)
 			default:
 			{
 				// Metallicafan212:	See if it's in the map
-				return &QWORDMap.Set(InID, FD3DTexture());
+				return &(QWORDMap[InID] = FD3DTexture());
 
 				break;
 			}
