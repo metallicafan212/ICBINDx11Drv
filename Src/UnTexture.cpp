@@ -24,13 +24,13 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	if (Info == nullptr)
 	{
 		// Metallicafan212:	Only end buffering if the slot wasn't null before!!!
-		if (BoundTextures[TexNum].TexInfo != nullptr)
+		if (BoundTextures[TexNum].TexInfoHash != 0)
 			EndBuffering();
 
 		BoundTextures[TexNum].bIsRT		= 0;
 		BoundTextures[TexNum].UMult		= 1.0f;
 		BoundTextures[TexNum].VMult		= 1.0f;
-		BoundTextures[TexNum].TexInfo	= nullptr;
+		BoundTextures[TexNum].TexInfoHash = 0;
 		BoundTextures[TexNum].m_SRV		= BlankResourceView;
 
 		m_RenderContext->PSSetShaderResources(TexNum, 1, &BlankResourceView);
@@ -73,14 +73,15 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 
 	// Metallicafan212:	End buffering if the input texture doesn't match!!!
 	UBOOL bSetTex = 0;
-	if ((BoundTextures[TexNum].TexInfo != nullptr && BoundTextures[TexNum].TexInfo->CacheID != CacheID))
+	DWORD CacheHash = GetCacheHash(Info->CacheID);
+	if ((BoundTextures[TexNum].TexInfoHash != 0 && BoundTextures[TexNum].TexInfoHash != CacheHash))
 	{
 		bSetTex = 1;
 		EndBuffering();
 	}
 
 	// Metallicafan212:	Search for the bind
-	FD3DTexture* DaTex		= TextureMap.Find(Info->CacheID);
+	FD3DTexture* DaTex		= TextureMap.Find(CacheHash);
 
 	// Metallicafan212:	Using Info->NeedsRealtimeUpdate steals 50fps for some reason.... It's incredibly weird
 //#if DX11_UT_469 
@@ -103,7 +104,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 		CacheTextureInfo(*Info, PolyFlags);
 
 		// Metallicafan212:	Get the new bind, if it's changed
-		DaTex = TextureMap.Find(CacheID);
+		CacheHash = GetCacheHash(Info->CacheID);
+		DaTex = TextureMap.Find(CacheHash);
 
 		// Metallicafan212:	Already did the sample update
 		//bDoSampUpdate = 0;
@@ -116,7 +118,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 	*/
 
 
-	BoundTextures[TexNum].TexInfo	= DaTex;
+	BoundTextures[TexNum].TexInfoHash = CacheHash;
 	BoundTextures[TexNum].UPan		= Info->Pan.X;
 	BoundTextures[TexNum].VPan		= Info->Pan.Y;
 	BoundTextures[TexNum].bIsRT		= DaTex->bIsRT;
@@ -283,11 +285,12 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 	QWORD CacheID = Info.CacheID;
 
 	// Metallicafan212:	TODO! Create the texture
-	FD3DTexture* DaTex = TextureMap.Find(CacheID);
+	DWORD CacheHash = GetCacheHash(CacheID);
+	FD3DTexture* DaTex = TextureMap.Find(CacheHash);
 
 	if (DaTex == nullptr)
 	{
-		DaTex = &TextureMap.Set(CacheID, FD3DTexture());
+		DaTex = &TextureMap.Set(CacheHash, FD3DTexture());
 
 		if (DaTex == nullptr)
 		{
@@ -342,11 +345,12 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 	//}
 
 	// Metallicafan212:	TODO! Create the texture
-	FD3DTexture* DaTex = TextureMap.Find(CacheID);
+	DWORD CacheHash = GetCacheHash(CacheID);
+	FD3DTexture* DaTex = TextureMap.Find(CacheHash);
 
 	if (DaTex == nullptr)
 	{
-		DaTex = &TextureMap.Set(CacheID, FD3DTexture());
+		DaTex = &TextureMap.Set(CacheHash, FD3DTexture());
 
 		if (DaTex == nullptr)
 		{

@@ -217,7 +217,7 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 	// Metallicafan212:	Loop and tell the shader how many textures are bound
 	for (INT i = 0; i < MAX_TEXTURES; i++)
 	{
-		MDef->BoundTextures[i] = (ParentDevice->BoundTextures[i].TexInfo != nullptr || ParentDevice->BoundTextures[i].bIsRT);
+		MDef->BoundTextures[i] = (ParentDevice->BoundTextures[i].TexInfoHash != 0 || ParentDevice->BoundTextures[i].bIsRT);
 	}
 
 	unguard;
