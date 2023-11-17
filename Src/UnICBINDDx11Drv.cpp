@@ -167,7 +167,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 	UINT Flags =	D3D11_CREATE_DEVICE_BGRA_SUPPORT
 	//					TODO! Reeval if we need to use child threads in the future
 				|	D3D11_CREATE_DEVICE_SINGLETHREADED
-				|	D3D11_CREATE_DEVICE_DEBUG
+				|	(!bDisableSDKLayers ? D3D11_CREATE_DEVICE_DEBUG : 0)
 				;
 	
 	GLog->Logf(TEXT("DX11: Creating device with the maximum feature level"));
@@ -204,6 +204,9 @@ MAKE_DEVICE:
 	{
 		GLog->Logf(TEXT("DX11: Removing the debug layer from the device flags"));
 		Flags &= ~D3D11_CREATE_DEVICE_DEBUG;
+
+		// Metallicafan212:	Don't try again on the next run
+		bDisableSDKLayers = 0;
 
 		goto MAKE_DEVICE;
 	}
@@ -750,7 +753,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	CurrentRasterState = DXRS_MAX;
 
 	//m_RenderContext->RSSetState(m_DefaultRasterState);
-	SetRasterState(0);
+	SetRasterState(DXRS_Normal);
 
 	// Metallicafan212:	Render target and back buffer texture
 	SAFE_RELEASE(m_BackBuffTex);
@@ -1352,6 +1355,15 @@ void UICBINDx11RenderDevice::SetupResources()
 	// Metallicafan212:	Keep the lock version updated
 	LastAASamples		= NumAASamples;
 	LastResolutionScale = ResolutionScale;
+
+	// Metallicafan212:	Make all the samplers that should be needed
+	for (INT i = 0; i < 2; i++)
+	{
+		GetSamplerState(PF_NoSmooth, i, 0);
+		GetSamplerState(PF_ClampUVs, i, 0);
+
+		GetSamplerState(PF_NoSmooth | PF_ClampUVs, i, 0);
+	}
 
 	unguard;
 }

@@ -115,6 +115,7 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	AddIntProp(CPP_PROP(MSAAFilterType), 8);
 
 	AddBoolProp(CPP_PROP(bDisableDebugInterface), 1);
+	AddBoolProp(CPP_PROP(bDisableSDKLayers), 1);
 	AddBoolProp(CPP_PROP(bVSync), 0);
 
 	// Metallicafan212:	TODO! Should this be 1.2f by default? I'll leave it all alone in case there's some user out there that will complain lol

@@ -452,6 +452,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	UBOOL						bUseD3D11On12;
 	UBOOL						bUseMSAAComputeShader;
 	UBOOL						bDisableDebugInterface;
+	UBOOL						bDisableSDKLayers;
 	UBOOL						bVSync;
 
 	// Metallicafan212:	TODO! MSAA resolving vars
@@ -1082,7 +1083,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	inline void EndBuffering()
 	{
-		if (m_CurrentBuff != BT_None && m_BufferedVerts != 0)
+		if (m_BufferedVerts != 0 && m_CurrentBuff != BT_None)
 		{
 			// Metallicafan212:	We only lock once to save on performance 
 			UnlockBuffers();
@@ -1105,12 +1106,12 @@ class UICBINDx11RenderDevice : public URenderDevice
 			//SetupDeferredRender();
 
 			DoDeferredRender();
-		}
 
-		// Metallicafan212:	Init the values
-		//m_CurrentBuff		= BT_None;
-		m_BufferedIndices	= 0;
-		m_BufferedVerts		= 0;
+			// Metallicafan212:	Init the values
+			//m_CurrentBuff		= BT_None;
+			m_BufferedIndices = 0;
+			m_BufferedVerts = 0;
+		}
 	}
 
 	// Metallicafan212:	Start and end buffering (for different types)
@@ -1202,7 +1203,11 @@ class UICBINDx11RenderDevice : public URenderDevice
 		//					Realistically, the key should be a combo of the flags and the biases, since we only care about specific parts, it should be bitpacked
 		
 		// Metallicafan212:	We have to use global sampler, since per-texture won't ever work... It'll force all of the same texture to no smooth (for example)
-		ID3D11SamplerState* S = SampMap.FindRef((PolyFlags & (PF_NoSmooth | PF_ClampUVs)) + MipBias + MinMip);
+
+		// Metallicafan212:	Shift the mipbias by 4 to bitpack this. It'll max be like 2 anyways, so a bitshift of 4 is 32
+		//					MinMip is (usually) always 0, so I'm not worried. This leaves the rest for polyflags
+		QWORD Key = (PolyFlags & (PF_NoSmooth | PF_ClampUVs)) + (MipBias << 4) + MinMip;
+		ID3D11SamplerState* S = SampMap.FindRef(Key);
 
 		if (S == nullptr)
 		{
@@ -1228,7 +1233,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 			ThrowIfFailed(hr);
 
 			// Metallicafan212:	Now set
-			SampMap.Set((PolyFlags & (PF_NoSmooth | PF_ClampUVs)) + MipBias + MinMip, S);
+			SampMap.Set(Key, S);
 		}
 
 		return S;

@@ -120,6 +120,14 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		}
 	}
 
+	/*
+	SetTexture(0, nullptr, 0);
+	SetTexture(1, nullptr, 0);
+	SetTexture(2, nullptr, 0);
+	SetTexture(3, nullptr, 0);
+	SetTexture(4, nullptr, 0);
+	*/
+
 	// Metallicafan212:	Set the textures
 	SetTexture(0, Surface.Texture, PolyFlags);
 
