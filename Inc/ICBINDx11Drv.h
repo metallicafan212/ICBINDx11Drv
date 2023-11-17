@@ -204,7 +204,7 @@ struct FD3DVert
 };
 
 // Metallicafan212:	Cache stuff
-typedef QWORD D3DCacheId;
+typedef unsigned long long D3DCacheId;
 
 struct FGlobalShaderVars
 {
@@ -279,19 +279,21 @@ struct FGlobalShaderVars
 // Metallicafan212:	Thanks to CacoFFF from OldUnreal for pointing this out for me!
 //					If you don't change the default TMap hashing, it'll place half the textures in one bin....
 //					TODO! This may only be a problem when compiling for UT99/227. I changed out the GetTypeHash to a QWORD in HP2
-#if !DX11_HP2 && !DX11_UT_469
+#if !DX11_HP2 //&& !DX11_UT_469
 static inline DWORD GetTypeHash(const D3DCacheId& A)
 {
-	QWORD Value		= (QWORD)A;
+	D3DCacheId Value		= (D3DCacheId)A;
 	return (DWORD)Value ^ ((DWORD)(Value >> 16)) ^ ((DWORD)(Value >> 32));
 }
 #endif
 
+/*
 static inline DWORD GetCacheHash(const QWORD& A)
 {
 	QWORD Value			= (QWORD)A;
 	return (DWORD)Value ^ ((DWORD)(Value >> 16)) ^ ((DWORD)(Value >> 32));
 }
+*/
 
 // Metallicafan212:	Texture bind definition
 struct FD3DTexture

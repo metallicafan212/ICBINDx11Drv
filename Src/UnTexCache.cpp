@@ -31,6 +31,7 @@ void FTextureCache::Flush()
 
 	CLEAR_MAP(DWORD_MAP::TIterator, DWORDMap);
 	CLEAR_MAP(DWORD_MAP::TIterator, DWORDMaskedMap);
+
 	CLEAR_MAP(QWORD_MAP::TIterator, QWORDMap);
 	CLEAR_MAP(QWORD_MAP::TIterator, QWORDMaskedMap);
 
