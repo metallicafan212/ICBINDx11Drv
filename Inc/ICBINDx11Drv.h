@@ -288,6 +288,12 @@ static inline DWORD GetTypeHash(const D3DCacheId& A)
 }
 #endif
 
+static inline DWORD GetCacheHash(const QWORD& A)
+{
+	QWORD Value		= (QWORD)A;
+	return (DWORD)Value ^ ((DWORD)(Value >> 16)) ^ ((DWORD)(Value >> 32));
+}
+
 // Metallicafan212:	Texture bind definition
 struct FD3DTexture
 {
@@ -359,7 +365,7 @@ struct FD3DTexture
 
 struct FD3DBoundTex
 {
-	FD3DTexture*				TexInfo;
+	DWORD						TexInfoHash;
 
 	UBOOL						bIsRT;
 
@@ -748,7 +754,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	ID3D11ShaderResourceView*			BlankResourceView;
 	ID3D11SamplerState*					BlankSampler;
 
-	TMap<D3DCacheId, FD3DTexture>		TextureMap;
+	TMap<DWORD, FD3DTexture>			TextureMap;
 
 	TMap<ETextureFormat, FD3DTexType>	SupportedTextures;
 
