@@ -286,7 +286,7 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 
 	// Metallicafan212:	TODO! Create the texture
 	//DWORD CacheHash = GetCacheHash(CacheID);
-	FD3DTexture* DaTex = TextureMap.Find(CacheId, 0);//TextureMap.Find(CacheHash);
+	FD3DTexture* DaTex = TextureMap.Find(CacheID, 0);//TextureMap.Find(CacheHash);
 
 	if (DaTex == nullptr)
 	{
