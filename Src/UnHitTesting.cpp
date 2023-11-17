@@ -64,6 +64,12 @@ void UICBINDx11RenderDevice::PopHit(INT Count, UBOOL bForce)
 		PixelTopIndex = -1;
 	}
 
+	// Metallicafan212:	If it's a forced pop, copy over
+	if (bForce)
+	{
+		DetectPixelHit();
+	}
+
 	SetupPixelHitTest();
 
 	unguard;

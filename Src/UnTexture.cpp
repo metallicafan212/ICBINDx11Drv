@@ -165,8 +165,9 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 		
 		m_RenderContext->PSSetShaderResources(TexNum, 1, TexTemp->RTSRView.GetAddressOf());
 
-		ID3D11SamplerState* Temp = GetSamplerState(0, 0, 0);
+		ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->bSkipMipZero ? 1 : 0, 0);
 		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
+		//m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
 
 		// Metallicafan212:	So we can find whatever is still bound as the RT when we call OMSetRenderTargets
 		BoundTextures[TexNum].m_SRV = TexTemp->RTSRView.Get();
@@ -970,7 +971,7 @@ void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 				// Metallicafan212:	DX9 allows you to completely turn off color drawing. We achieve the same effect here by using a 0 source blend and a 1 dest blend (since it will keep the dst color)
 				if (blendFlags & PF_Invisible)
 				{
-					FindAndSetBlend(PF_Invisible, D3D11_BLEND_ZERO, D3D11_BLEND_ONE);
+					FindAndSetBlend(PF_Invisible, D3D11_BLEND_ZERO, D3D11_BLEND_ONE, D3D11_COLOR_WRITE_ENABLE_ALPHA);
 				}
 				else if (blendFlags == PF_Highlighted)
 				{
@@ -1066,7 +1067,7 @@ void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 #endif
 
 		// Metallicafan212:	TODO! Allow the user to specify the alpha reject values
-		if (Xor & (PF_Masked | PF_AlphaBlend | PF_LumosAffected | PF_ColorMask))
+		if (Xor & (PF_Masked | PF_AlphaBlend | PF_LumosAffected | PF_ColorMask | PF_Invisible))
 		{
 #if DX11_HP2
 			if (!(blendFlags & PF_ColorMask))
@@ -1075,8 +1076,14 @@ void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 				GlobalPolyflagVars.bColorMasked = 0;
 			}
 #endif
-
-			if (blendFlags & PF_AlphaBlend)
+			// Metallicafan212:	Set a fair alpha reject
+			if (blendFlags & PF_Invisible)
+			{
+				GlobalPolyflagVars.AlphaReject		= 1e-6f;
+				GlobalPolyflagVars.bColorMasked		= 0;
+				GlobalPolyflagVars.bAlphaEnabled	= 1;
+			}
+			else if (blendFlags & PF_AlphaBlend)
 			{
 				GlobalPolyflagVars.AlphaReject		= 1e-6f;
 				GlobalPolyflagVars.bColorMasked		= 0;
