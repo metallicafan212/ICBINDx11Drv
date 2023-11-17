@@ -204,7 +204,14 @@ struct FD3DVert
 };
 
 // Metallicafan212:	Cache stuff
-typedef unsigned long long D3DCacheId;
+typedef struct D3DCacheId
+{
+	QWORD Value;
+	UBOOL operator==(const D3DCacheId& Other) const
+	{
+		return Value == Other.Value;
+	}
+};
 
 struct FGlobalShaderVars
 {
@@ -282,7 +289,7 @@ struct FGlobalShaderVars
 #if !DX11_HP2 //&& !DX11_UT_469
 static inline DWORD GetTypeHash(const D3DCacheId& A)
 {
-	D3DCacheId Value		= (D3DCacheId)A;
+	QWORD Value		= A.Value;
 	return (DWORD)Value ^ ((DWORD)(Value >> 16)) ^ ((DWORD)(Value >> 32));
 }
 #endif

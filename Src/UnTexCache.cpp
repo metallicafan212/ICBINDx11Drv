@@ -43,9 +43,9 @@ FD3DTexture* FTextureCache::Find(D3DCacheId InID, QWORD PolyFlags)
 	guard(FTextureCache::Find);
 
 	// Metallicafan212:	Figure out what map this should be in
-	DWORD Truncated = (DWORD)InID;
+	DWORD Truncated = (DWORD)InID.Value;
 
-	if (Truncated == InID)
+	if (0 && Truncated == InID.Value)
 	{
 		// Metallicafan212:	DWORD map
 
@@ -102,9 +102,9 @@ FD3DTexture* FTextureCache::Set(D3DCacheId InID, QWORD PolyFlags)
 	guard(FTextureCache::Set);
 
 	// Metallicafan212:	Figure out what map this should be in
-	DWORD Truncated = (DWORD)InID;
+	DWORD Truncated = (DWORD)InID.Value;
 
-	if (Truncated == InID)
+	if (0 && Truncated == InID.Value)
 	{
 		// Metallicafan212:	DWORD map
 
