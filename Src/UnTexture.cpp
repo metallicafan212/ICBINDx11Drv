@@ -94,8 +94,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 #endif
 
 	// Metallicafan212:	Check if we need to upload it to the GPU
-	//					I also check masked as we need to rehack the palette when mask changes
-	UBOOL bUpload			= DaTex == nullptr || bTexChanged || ( ((PolyFlags & PF_Masked) ^ (DaTex->PolyFlags & PF_Masked)) == PF_Masked);
+	//					(REMOVED, DUE TO MULTIPLE MAPS) I also check masked as we need to rehack the palette when mask changes
+	UBOOL bUpload			= DaTex == nullptr || bTexChanged; //|| ( ((PolyFlags & PF_Masked) ^ (DaTex->PolyFlags & PF_Masked)) == PF_Masked);
 
 	//UBOOL bDoSampUpdate = 0;
 
