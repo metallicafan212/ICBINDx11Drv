@@ -269,11 +269,11 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 
 	// Metallicafan212:	We have to implement specific effects ourselves when using this
 	//					Detect them here
-	UBOOL bMirrored = Frame->Mirror < 0.0f;
+	UBOOL bMirror = Frame->Mirror < 0.0f;
 
 	UBOOL bEnv		= PolyFlags & PF_Environment;
 
-	UBOOL bTwoSide	= PolyFlags & PF_TwoSided;
+	UBOOL bTwoSided	= PolyFlags & PF_TwoSided;
 
 	FLOAT UScale	= Info.UScale * Info.USize / 256.0f;
 	FLOAT VScale	= Info.VScale * Info.VSize / 256.0f;
@@ -327,7 +327,7 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 
 	// Metallicafan212:	Process a whole triangle at a time
 	INT M = 0;
-	for (INT i = 0; i < NumPts; i += 3//i++)
+	for (INT i = 0; i < NumPts; i += 3)//i++)
 	{
 		// Metallicafan212:	TODO! This should be done in the shader, not here!
 		//if (bNoOpacity)
