@@ -492,9 +492,11 @@ class UICBINDx11RenderDevice : public URenderDevice
 	FLOAT						Gamma;
 //#endif
 
-	// Metallicafan212:	Selection color
-	//					TODO! Add it to the config and actually use it....
+	// Metallicafan212:	Surface selection color
 	FColor						SurfSelectionColor;
+
+	// Metallicafan212:	Actor selection color
+	FColor						ActorSelectionColor;
 
 
 	// Metallicafan212:	Versions to check on lock if they changed
@@ -1320,6 +1322,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	void AddBoolProp(const TCHAR* Name, UBOOL& InParam, ECppProperty CPP, INT Offset, UBOOL bDefaultVal);
 	void AddFloatProp(const TCHAR* Name, FLOAT& InParam, ECppProperty CPP, INT Offset, FLOAT fDefaultVal);
 	void AddIntProp(const TCHAR* Name, INT& InParam, ECppProperty CPP, INT Offset, INT iDefaultVal);
+	void AddColorProp(const TCHAR* Name, FColor& InParam, ECppProperty CPP, INT Offset, FColor iDefaultVal);
 
 	void ClampUserOptions();
 

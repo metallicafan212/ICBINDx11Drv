@@ -126,10 +126,37 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	AddFloatProp(CPP_PROP(Gamma), 1.0f);
 #endif
 
+	// Metallicafan212:	Surface selection color
+	//					Default is blue with a alpha of 0.5f
+	AddColorProp(CPP_PROP(SurfSelectionColor), FColor(FPlane(0.0f, 0.0f, 1.0f, 0.5f)));
+
+	// Metallicafan212:	Actor selection color
+	//					Default is green with a alpha of 1.0f
+	AddColorProp(CPP_PROP(ActorSelectionColor), FColor(FPlane(0.0f, 1.0f, 0.0f, 1.0f)));
+
 	unguard;
 }
 
 #undef CPP_PROP
+
+void UICBINDx11RenderDevice::AddColorProp(const TCHAR* Name, FColor& InParam, ECppProperty CPP, INT Offset, FColor DefaultVal)
+{
+	guard(UICBINDx11RenderDevice::AddColorProp);
+
+	// Metallicafan212:	Set the default
+	InParam = DefaultVal;
+
+	// Metallicafan212:	Find the Object.uc Color struct (adapted from DX9)
+	UStruct* ColorS = FindObject<UStruct>(UObject::StaticClass(), TEXT("Color"));
+
+	if (ColorS == nullptr)
+		ColorS = new(UObject::StaticClass(), TEXT("Color")) UStruct(NULL);
+
+	ColorS->PropertiesSize = sizeof(FColor);
+	new(GetClass(), Name, RF_Public)UStructProperty(CPP, Offset, TEXT("Options"), CPF_Config, ColorS);
+
+	unguard;
+}
 
 void UICBINDx11RenderDevice::AddBoolProp(const TCHAR* Name, UBOOL& InParam, ECppProperty CPP, INT Offset, UBOOL bDefaultVal)
 {

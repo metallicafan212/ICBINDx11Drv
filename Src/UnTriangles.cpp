@@ -32,7 +32,7 @@ FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, FPLAG PolyFlags, UBO
 		// Set selection stuff
 		if (GIsEditor && (PolyFlags & PF_Selected))
 		{
-			m_Vert->Color	= FPlane(0.0f, 1.0f, 0.0f, 1.0f);
+			m_Vert->Color	= SelectionColor;//FPlane(0.0f, 1.0f, 0.0f, 1.0f);
 			m_Vert->Fog		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 		else if (PolyFlags & PF_Modulated)
@@ -125,9 +125,12 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	}
 #endif
 
+	// Metallicafan212:	Allow the selection color to be set by the user
+	FPlane ColorOverride = (m_HitData != nullptr ? CurrentHitColor : ActorSelectionColor.Plane());
+
 	for (INT i = 0; i < NumPts; i++)
 	{
-		DoVert(Pts[i],  &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
+		DoVert(Pts[i],  &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);//CurrentHitColor);
 	}
 
 	//UnlockVertexBuffer();
@@ -213,6 +216,9 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 
 	INDEX baseVIndex = m_BufferedVerts;
 
+	// Metallicafan212:	Allow the selection color to be set by the user
+	FPlane ColorOverride = (m_HitData != nullptr ? CurrentHitColor : ActorSelectionColor.Plane());
+
 #if DX11_HP2
 	if (bNoOpacity)
 #endif
@@ -221,8 +227,8 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 		Pts[1]->Light.W = 1.0f;
 	}
 
-	DoVert(Pts[0], &Mshy[0], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
-	DoVert(Pts[1], &Mshy[1], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
+	DoVert(Pts[0], &Mshy[0], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
+	DoVert(Pts[1], &Mshy[1], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
 
 	// Metallicafan212:	First two verts, then we fan out
 
@@ -305,13 +311,16 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 
 	FD3DVert* Mshy = (FD3DVert*)m_VertexBuff;
 
+	// Metallicafan212:	Allow the selection color to be set by the user
+	FPlane ColorOverride = (m_HitData != nullptr ? CurrentHitColor : ActorSelectionColor.Plane());
+
 	for (INT i = 0; i < NumPts; i++)
 	{
 		// Metallicafan212:	TODO! This should be done in the shader, not here!
 		//if (bNoOpacity)
 		Pts[i].Light.W = 1.0f;
 
-		DoVert(&Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
+		DoVert(&Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
 	}
 
 	//UnlockVertexBuffer();
