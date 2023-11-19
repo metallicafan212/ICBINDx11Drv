@@ -493,7 +493,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 //#endif
 
 	// Metallicafan212:	Surface selection color
-	FColor						SurfSelectionColor;
+	FColor						SurfaceSelectionColor;
 
 	// Metallicafan212:	Actor selection color
 	FColor						ActorSelectionColor;

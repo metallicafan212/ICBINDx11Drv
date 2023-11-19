@@ -128,7 +128,7 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	// Metallicafan212:	Surface selection color
 	//					Default is blue with a alpha of 0.5f
-	AddColorProp(CPP_PROP(SurfSelectionColor), FColor(FPlane(0.0f, 0.0f, 1.0f, 0.5f)));
+	AddColorProp(CPP_PROP(SurfaceSelectionColor), FColor(FPlane(0.0f, 0.0f, 1.0f, 0.5f)));
 
 	// Metallicafan212:	Actor selection color
 	//					Default is green with a alpha of 1.0f
