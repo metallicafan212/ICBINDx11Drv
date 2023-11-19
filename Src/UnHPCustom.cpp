@@ -199,7 +199,13 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 	FString FontKey = *FString::Printf(TEXT("%s %d"), *Font->FontName, fontScale);
 
 	// Metallicafan212:	See if the font has been created before
+#if !USE_UNODERED_MAP_EVERYWHERE
 	IDWriteTextFormat* DaFont = FontMap.FindRef(FontKey);
+#else
+	auto f = FontMap.find(FontKey);
+
+	IDWriteTextFormat* DaFont = f != FontMap.end() ? f->second : nullptr;
+#endif
 
 	HRESULT hr = S_OK;
 
@@ -291,7 +297,11 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 
 		if (SUCCEEDED(hr))
 		{
+#if !USE_UNODERED_MAP_EVERYWHERE
 			FontMap.Set(*FontKey, DaFont);
+#else
+			FontMap[FontKey] = DaFont;
+#endif
 			//FontMap.Set(*RealCopy, DaFont);
 		}
 	}

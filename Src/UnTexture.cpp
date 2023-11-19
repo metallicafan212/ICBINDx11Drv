@@ -1065,7 +1065,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 		//					TODO! This can be a bit glitchy in the editor, where it turns all fog into modulated fog
 		if ((GlobalShaderVars.bDoDistanceFog || GlobalShaderVars.bFadeFogValues) && (Xor & (PF_Translucent | PF_Modulated | PF_AlphaBlend | PF_Highlighted)))
 		{
-			FPLAG Flags = (blendFlags & RELEVANT_BLEND_FLAGS);
+			PFLAG Flags = (blendFlags & RELEVANT_BLEND_FLAGS);
 
 			// Metallicafan212:	Translucent gets combined with a few other flags to set a specific hack
 			//					Sigh.... If only they just added a alpha flag instead of reusing flags, it makes it extremely annoying

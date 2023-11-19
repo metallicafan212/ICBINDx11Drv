@@ -76,7 +76,7 @@ typedef unsigned short INDEX;
 
 #define DX11_USE_MSAA_SHADER 1
 
-#define D3D_DRIVER_VERSION TEXT("0.57 Alpha")
+#define D3D_DRIVER_VERSION TEXT("0.69 Alpha")
 
 // Metallicafan212:	Compile time
 #define COMPILED_AT			*FString::Printf(TEXT("%s @ %s"), appFromAnsi(__DATE__), appFromAnsi(__TIME__))
@@ -449,6 +449,22 @@ extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
 
 #define SAFE_RELEASE(ptr) if(ptr != nullptr){ptr->Release(); ptr = nullptr;}
 #define SAFE_DELETE(ptr) if(ptr != nullptr){delete ptr; ptr = nullptr;}
+
+#if DX11_HP2 && USE_UNODERED_MAP_EVERYWHERE
+template <>
+struct std::hash<FString>
+{
+	std::size_t operator()(const FString& k) const
+	{
+		// Metallicafan212:	Use the default string hashing
+#if UNICODE
+		return hash<std::wstring>()(*k);
+#else
+		return hash<std::string>()(*k);
+#endif
+	}
+};
+#endif
 
 // Metallicafan212:	Different shader definitions
 #include "UnD3DShader.h"

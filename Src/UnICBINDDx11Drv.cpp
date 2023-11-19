@@ -39,12 +39,20 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 
 #if DX11_HP2
-	// Metallicafan212:	Release all the fonts
+#if !USE_UNODERED_MAP_EVERYWHERE
+	// Metallicafan212:	Cleanup all the fonts
 	for (TMap<FString, IDWriteTextFormat*>::TIterator It(FontMap); It; ++It)
 	{
 		It.Value()->Release();
 	}
 	FontMap.Empty();
+#else
+	for (auto i = FontMap.begin(); i != FontMap.end(); i++)
+	{
+		i->second->Release();
+	}
+	FontMap.clear();
+#endif
 #endif
 
 	// Metallicafan212:	Cleanout the texture cache
@@ -1467,13 +1475,20 @@ void UICBINDx11RenderDevice::Exit()
 #endif
 
 #if DX11_HP2
+#if !USE_UNODERED_MAP_EVERYWHERE
 	// Metallicafan212:	Cleanup all the fonts
 	for (TMap<FString, IDWriteTextFormat*>::TIterator It(FontMap); It; ++It)
 	{
 		It.Value()->Release();
 	}
-
 	FontMap.Empty();
+#else
+	for (auto i = FontMap.begin(); i != FontMap.end(); i++)
+	{
+		i->second->Release();
+	}
+	FontMap.clear();
+#endif
 #endif
 
 	// Metallicafan212:	Cleanup the blend states
