@@ -324,7 +324,10 @@ struct FD3DTexture
 	UBOOL			bIsRT;
 
 	// Metallicafan212:	If mip 0 is "dead"
-	UBOOL			bSkipMipZero;
+	//UBOOL			bSkipMipZero;
+
+	// Metallicafan212:	Number of mips to skip
+	INT				MipSkip;
 
 	// Metallicafan212:	The cache ID Unreal provided us when it was uploaded
 	D3DCacheId		CacheID;

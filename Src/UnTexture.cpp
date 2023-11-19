@@ -167,7 +167,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 		
 		m_RenderContext->PSSetShaderResources(TexNum, 1, TexTemp->RTSRView.GetAddressOf());
 
-		ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->bSkipMipZero ? 1 : 0, 0);
+		ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->MipSkip, 0);//DaTex->bSkipMipZero ? 1 : 0, 0);
 		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
 		//m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
 
@@ -189,7 +189,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 
 	m_RenderContext->PSSetShaderResources(TexNum, 1, &DaTex->m_View);
 
-	ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->bSkipMipZero ? 1 : 0, 0);
+	ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->MipSkip, 0);//DaTex->bSkipMipZero ? 1 : 0, 0);
 	m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
 
 	unguard;
@@ -382,7 +382,8 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		DaTex->VSize	= Info.VSize;
 	}
 
-	DaTex->bSkipMipZero	= 0;
+	//DaTex->bSkipMipZero	= 0;
+	DaTex->MipSkip = 0;
 
 	// Metallicafan212:	Implement checking against the new UT469 realtime changed count
 	//					Using the function in Info causes a 50fps loss for some reason... It makes no sense....
@@ -424,27 +425,33 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 	INT MinSize = 0;
 
-	if (1)//m_FeatureLevel < D3D_FEATURE_LEVEL_11_1)
-	{
-		// Metallicafan212:	Natively embed the check
-		MinSize		= Type->bIsCompressed ? 4 : 0;
-	}
+	//if (1)//m_FeatureLevel < D3D_FEATURE_LEVEL_11_1)
+	//{
+	// Metallicafan212:	Natively embed the check
+	MinSize		= Type->bIsCompressed ? 4 : 0;
+	//}
 
 	// Metallicafan212:	If we're trying to fix a texture, we need to do an extra mip...
-	if(Type->bIsCompressed && (DaTex->USize < MinSize || DaTex->VSize < MinSize))
-		DaTex->bSkipMipZero = 1;
+	if (Type->bIsCompressed && (DaTex->USize < MinSize || DaTex->VSize < MinSize))
+	{
+		//DaTex->bSkipMipZero = 1;
+		DaTex->MipSkip = 1;
+	}
 
-	if (DaTex->bSkipMipZero)
+	if (DaTex->MipSkip)//DaTex->bSkipMipZero)
 	{
 		// Metallicafan212:	Increase the size....
 		//					Exploit powers of 2
+	SHIFT_TEX:
 		DaTex->USize	<<= 1;
 		DaTex->VSize	<<= 1;
-		//DaTex->UClamp	<<= 1;
-		//DaTex->VClamp	<<= 1;
 
-		// Metallicafan212:	Remove UV clamping...
-		//DaTex->bShouldUVClamp = 0;
+		// Metallicafan212:	Do it as many times as needed
+		if (DaTex->USize < MinSize || DaTex->VSize < MinSize)
+		{
+			DaTex->MipSkip++;
+			goto SHIFT_TEX;
+		}
 	}
 
 	DaTex->USize = Clamp(DaTex->USize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
@@ -488,7 +495,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 		Desc.Format				= Type->DXFormat;
 		Desc.Width				= DaTex->USize;
 		Desc.Height				= DaTex->VSize;
-		Desc.MipLevels			= DaTex->bSkipMipZero ? Info.NumMips + 1 : Info.NumMips;
+		Desc.MipLevels			= Info.NumMips + DaTex->MipSkip;//DaTex->bSkipMipZero ? Info.NumMips + 1 : Info.NumMips;
 		Desc.Usage				= D3D11_USAGE_DEFAULT;
 		Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE; //| (Info.Format == TEXF_P8 ? D3D11_BIND_UNORDERED_ACCESS : 0);
 		Desc.ArraySize			= 1;
@@ -535,7 +542,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 		vDesc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
 		vDesc.Texture2D.MipLevels		= -1;//Info.NumMips;
-		vDesc.Texture2D.MostDetailedMip = DaTex->bSkipMipZero ? 1 : 0;
+		vDesc.Texture2D.MostDetailedMip = DaTex->MipSkip;//DaTex->bSkipMipZero ? 1 : 0;
 		vDesc.BufferEx.FirstElement		= 0;
 		vDesc.Format					= DaTex->TexFormat;
 
@@ -621,7 +628,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 			// Metallicafan212:	We need to copy each mip
 			for (INT i = 0; i < Info.NumMips; i++)
 			{	
-				INT CurDMip = (DaTex->bSkipMipZero ? i + 1 : i);
+				INT CurDMip = i + DaTex->MipSkip;//(DaTex->bSkipMipZero ? i + 1 : i);
 				if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch, MipW, MipH))
 				{
 					/*
