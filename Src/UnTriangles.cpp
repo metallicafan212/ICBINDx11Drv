@@ -334,6 +334,13 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	INT M = 0;
 	for (INT i = 0; i < NumPts; i += 3)//i++)
 	{
+		// Metallicafan212:	Check if it's outcoded
+		if (Pts[i].Flags & Pts[i + 1].Flags & Pts[i + 2].Flags)
+		{
+			// Metallicafan212:	TODO! XOpenGL continues to draw if it's drawn some of them
+			continue;
+		}
+
 		// Metallicafan212:	TODO! This should be done in the shader, not here!
 		//if (bNoOpacity)
 		Pts[i].Light.W = 1.0f;
