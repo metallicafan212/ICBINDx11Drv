@@ -267,6 +267,17 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 {
 	guard(UICBINDx11RenderDevice::DrawTriangles);
 
+	// Metallicafan212:	We have to implement specific effects ourselves when using this
+	//					Detect them here
+	UBOOL bMirrored = Frame->Mirror < 0.0f;
+
+	UBOOL bEnv		= PolyFlags & PF_Environment;
+
+	UBOOL bTwoSide	= PolyFlags & PF_TwoSided;
+
+	FLOAT UScale	= Info.UScale * Info.USize / 256.0f;
+	FLOAT VScale	= Info.VScale * Info.VSize / 256.0f;
+
 	SetBlend(PolyFlags);
 
 	// Metallicafan212:	Request normal raster state
@@ -314,13 +325,43 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	// Metallicafan212:	Allow the selection color to be set by the user
 	FPlane ColorOverride = (m_HitData != nullptr ? CurrentHitColor : ActorSelectionColor.Plane());
 
-	for (INT i = 0; i < NumPts; i++)
+	// Metallicafan212:	Process a whole triangle at a time
+	INT M = 0;
+	for (INT i = 0; i < NumPts; i += 3//i++)
 	{
 		// Metallicafan212:	TODO! This should be done in the shader, not here!
 		//if (bNoOpacity)
 		Pts[i].Light.W = 1.0f;
 
-		DoVert(&Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
+		if (bMirror)
+		{
+			// Metallicafan212:	Swap
+			Exchange(Pts[i + 2], Pts[i]);
+		}
+
+		// Metallicafan212:	Shamelessly copied and modified from the XOpenGL driver
+		//					TODO! Implement these as hardware effects in the shader
+		if (bEnv)
+		{
+			FTransTexture* pTemp = &Pts[i];
+			for (INT j = 0; j < 3; j++)
+			{
+				FVector T = Pts[i + j].Point.UnsafeNormal().MirrorByVector(Pts[i + j].Normal).TransformVectorBy(Frame->Uncoords);
+				Pts[i + j].U = (T.X + 1.0f) * 0.5f * 256.0f * UScale;
+				Pts[i + j].V = (T.Y + 1.0f) * 0.5f * 256.0f * VScale;
+			}
+		}
+
+		// Metallicafan212:	Per the XOpenGL driver, check for two sided
+		if (bTwoSided && FTriple(Pts[i].Point, Pts[i + 1].Point, Pts[i + 2].Point) <= 0.0)
+		{
+			// Metallicafan212:	Swap, it's mirrored
+			Exchange(Pts[i + 2], Pts[i]);
+		}
+
+		DoVert(&Pts[i],		&Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
+		DoVert(&Pts[i + 1], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
+		DoVert(&Pts[i + 2], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
 	}
 
 	//UnlockVertexBuffer();
