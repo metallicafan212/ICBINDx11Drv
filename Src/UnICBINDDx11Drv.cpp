@@ -51,11 +51,19 @@ void UICBINDx11RenderDevice::SetupDevice()
 	Flush(0);
 
 	// Metallicafan212:	Cleanup the blend states
-	for (TMap<FPLAG, ID3D11BlendState*>::TIterator It(BlendMap); It; ++It)
+#if !USE_UNODERED_MAP_EVERYWHERE
+	for (TMap<PFLAG, ID3D11BlendState*>::TIterator It(BlendMap); It; ++It)
 	{
 		It.Value()->Release();
 	}
 	BlendMap.Empty();
+#else
+	for (auto i = BlendMap.begin(); i != BlendMap.end(); i++)
+	{
+		i->second->Release();
+	}
+	BlendMap.clear();
+#endif
 
 	// Metallicafan212:	Cleanup the sampler map
 	FlushTextureSamplers();
@@ -64,8 +72,6 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 #if DX11_HP2
 	// Metallicafan212:	HP2 specific
-
-
 	SAFE_RELEASE(m_D2DRT);
 	SAFE_RELEASE(m_D2DFact);
 	SAFE_RELEASE(m_D2DWriteFact);
@@ -499,7 +505,13 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 		EndBuffering();
 
 		// Metallicafan212:	Find what needs to be added on to make it, if it doesn't exist yet
+#if !USE_UNODERED_MAP_EVERYWHERE
 		ID3D11RasterizerState* m_s = RasterMap.FindRef(State);
+#else
+		auto f = RasterMap.find(State);
+
+		ID3D11RasterizerState* m_s = f != RasterMap.end() ? f->second : nullptr;
+#endif
 
 		if (m_s == nullptr)
 		{
@@ -540,7 +552,11 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 			ThrowIfFailed(hr);
 
 			// Metallicafan212:	Now set it on the map
+#if !USE_UNODERED_MAP_EVERYWHERE
 			RasterMap.Set(State, m_s);
+#else
+			RasterMap[State] = m_s;
+#endif
 		}
 
 		// Metallicafan212:	Set it
@@ -1461,11 +1477,19 @@ void UICBINDx11RenderDevice::Exit()
 #endif
 
 	// Metallicafan212:	Cleanup the blend states
+#if !USE_UNODERED_MAP_EVERYWHERE
 	for (TMap<FPLAG, ID3D11BlendState*>::TIterator It(BlendMap); It; ++It)
 	{
 		It.Value()->Release();
 	}
 	BlendMap.Empty();
+#else
+	for (auto i = BlendMap.begin(); i != BlendMap.end(); i++)
+	{
+		i->second->Release();
+	}
+	BlendMap.clear();
+#endif
 
 	// Metallicafan212:	Cleanup the sampler map
 	FlushTextureSamplers();
@@ -2613,7 +2637,7 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	UpdateGlobalShaderVars();
 }
 
-void UICBINDx11RenderDevice::PrecacheTexture(FTextureInfo& Info, FPLAG PolyFlags)
+void UICBINDx11RenderDevice::PrecacheTexture(FTextureInfo& Info, PFLAG PolyFlags)
 {
 	guard(UICBINDx11RenderDevice::PrecacheTexture);
 

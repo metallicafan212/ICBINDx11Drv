@@ -3,6 +3,9 @@
 #include "UnBuild.h"
 #include "UnObjVer.h"
 
+// Metallicafan212:	TODO! Eventually, I should swap back to TMap, but it's really slow when we're doing a lot of lookups
+#define USE_UNODERED_MAP_EVERYWHERE 1
+
 // Metallicafan212:	EXPLICIT HP2 new engine check
 //					Modify this to add in more game macros
 //					This is (currently) ONLY used to turn off specific code blocks, not to redefine the functions
@@ -58,9 +61,9 @@ typedef unsigned short INDEX;
 // Metallicafan212:	Define the Polyflags datatype...
 //					I made polyflags a QWORD in HP2, all other UE1 games are DWORD
 #if DX11_HP2
-#define FPLAG QWORD
+#define PFLAG QWORD
 #else
-#define FPLAG DWORD
+#define PFLAG DWORD
 #endif
 
 
@@ -315,7 +318,7 @@ struct FD3DTexture
 
 	// Metallicafan212:	Flags this was uploaded as
 	//					This only matters if Masked is toggled on or off
-	FPLAG			PolyFlags;
+	PFLAG			PolyFlags;
 
 	// Metallicafan212:	If this texture should have UVs clamped (UClamp == USize && VClamp == VSize)
 	UBOOL			bShouldUVClamp;
@@ -602,7 +605,11 @@ class UICBINDx11RenderDevice : public URenderDevice
 	ID3D11DepthStencilState*	m_DefaultNoZState;
 
 	// Metallicafan212:	Raster states
+#if !USE_UNODERED_MAP_EVERYWHERE
 	TMap<DWORD, ID3D11RasterizerState*> RasterMap;
+#else
+	std::unordered_map<DWORD, ID3D11RasterizerState*> RasterMap;
+#endif
 
 	DWORD						CurrentRasterState;
 
@@ -631,7 +638,11 @@ class UICBINDx11RenderDevice : public URenderDevice
 	IDWriteRenderingParams*		m_TextParams;
 
 	// Metallicafan212:	Holder for the different font types
+#if !USE_UNODERED_MAP_EVERYWHERE
 	TMap<FString, IDWriteTextFormat*>	FontMap;
+#else
+	std::unordered_map<FString, IDWriteTextFormat*>	FontMap;
+#endif
 #endif
 
 	// Metallicafan212:	Array of RT textures
@@ -689,17 +700,25 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	Blending map
 	//					We have to keep around blend objects (rather than setting render states directly) so they're mapped to the polyflag that it represents
+#if !USE_UNODERED_MAP_EVERYWHERE
 	TMap<FPLAG, ID3D11BlendState*>		BlendMap;
+#else
+	std::unordered_map<PFLAG, ID3D11BlendState*> BlendMap;
+#endif
 
 	// Metallicafan212:	Sampler map
 	//					This is required since you can't just on the fly update sampler objects....
 	//					Sucks, but it is what it is
-	TMap<FPLAG, ID3D11SamplerState*>	SampMap;
+#if !USE_UNODERED_MAP_EVERYWHERE
+	TMap<PFLAG, ID3D11SamplerState*>	SampMap;
+#else
+	std::unordered_map<PFLAG, ID3D11SamplerState*> SampMap;
+#endif
 
 	// Metallicafan212:	Sampler for drawing the scaled screen (using ResolutionScale)
 	ID3D11SamplerState*					ScreenSamp;
 
-	FPLAG								CurrentPolyFlags;
+	PFLAG								CurrentPolyFlags;
 
 	// Metallicafan212:	If we're using a Freesync/GSync mode
 	UBOOL								bAllowTearing;
@@ -771,7 +790,11 @@ class UICBINDx11RenderDevice : public URenderDevice
 	//TMap<DWORD, FD3DTexture>			TextureMap;
 	FTextureCache						TextureMap;
 
+#if !USE_UNODERED_MAP_EVERYWHERE
 	TMap<ETextureFormat, FD3DTexType>	SupportedTextures;
+#else
+	std::unordered_map<ETextureFormat, FD3DTexType> SupportedTextures;
+#endif
 
 	// Metallicafan212:	Copied variables from the DX9 renderer
 	UBOOL								m_nearZRangeHackProjectionActive;
@@ -1187,36 +1210,57 @@ class UICBINDx11RenderDevice : public URenderDevice
 	void RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, UBOOL bIsCompressed = 0, INT ByteOrBlockSize = 4, FD3DTexType::GetPitch PitchFunc = &FD3DTexType::RawPitch, FD3DTexType::UploadFunc UFunc = MemcpyTexUpload, FD3DTexType::ConversionFunc UConv = nullptr);
 
 	// Metallicafan212:	Texture setting code
-	void SetTexture(INT TexNum, FTextureInfo* Info, FPLAG PolyFlags);
+	void SetTexture(INT TexNum, FTextureInfo* Info, PFLAG PolyFlags);
 
-	void CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, UBOOL bJustSampler = 0);
+	void CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlags, UBOOL bJustSampler = 0);
 
-	void MakeTextureSampler(FD3DTexture* Bind, FPLAG PolyFlags);
+	void MakeTextureSampler(FD3DTexture* Bind, PFLAG PolyFlags);
 
 	inline void FlushTextureSamplers()
 	{
+#if !USE_UNODERED_MAP_EVERYWHERE
 		for (TMap<FPLAG, ID3D11SamplerState*>::TIterator It(SampMap); It; ++It)
 		{
-			It.Value()->Release();
+				It.Value()->Release();
 		}
+
 		SampMap.Empty();
+#else
+		for (auto i = SampMap.begin(); i != SampMap.end(); i++)
+		{
+			i->second->Release();
+	}
+
+		SampMap.clear();
+#endif
 
 		SAFE_RELEASE(ScreenSamp);
 	}
 
 	inline void FlushRasterStates()
 	{
+#if !USE_UNODERED_MAP_EVERYWHERE
 		for (TMap<DWORD, ID3D11RasterizerState*>::TIterator It(RasterMap); It; ++It)
 		{
 			It.Value()->Release();
 		}
 
 		RasterMap.Empty();
+#else
+		for (auto i = RasterMap.begin(); i != RasterMap.end(); i++)
+		{
+			i->second->Release();
+		}
+
+		RasterMap.clear();
+#endif
+
+		
 	}
 
 	void SetRasterState(DWORD State);
 
-	inline ID3D11SamplerState* GetSamplerState(FPLAG PolyFlags, INT MinMip, INT MipBias)
+	inline ID3D11SamplerState* GetSamplerState(PFLAG PolyFlags, INT MinMip, INT MipBias)
 	{
 		guard(UICBINDx11RenderDevice::GetSamplerState);
 
@@ -1228,7 +1272,13 @@ class UICBINDx11RenderDevice : public URenderDevice
 		// Metallicafan212:	Shift the mipbias by 4 to bitpack this. It'll max be like 2 anyways, so a bitshift of 4 is 32
 		//					MinMip is (usually) always 0, so I'm not worried. This leaves the rest for polyflags
 		QWORD Key = (PolyFlags & (PF_NoSmooth | PF_ClampUVs)) + (MipBias << 4) + MinMip;
+
+#if !USE_UNODERED_MAP_EVERYWHERE
 		ID3D11SamplerState* S = SampMap.FindRef(Key);
+#else
+		auto f = SampMap.find(Key);
+		ID3D11SamplerState* S = f != SampMap.end() ? f->second : nullptr;
+#endif
 
 		if (S == nullptr)
 		{
@@ -1254,7 +1304,11 @@ class UICBINDx11RenderDevice : public URenderDevice
 			ThrowIfFailed(hr);
 
 			// Metallicafan212:	Now set
+#if !USE_UNODERED_MAP_EVERYWHERE
 			SampMap.Set(Key, S);
+#else
+			SampMap[Key] = S;
+#endif
 		}
 
 		return S;
@@ -1262,11 +1316,17 @@ class UICBINDx11RenderDevice : public URenderDevice
 		unguard;
 	}
 
-	inline void FindAndSetBlend(FPLAG PolyFlag, D3D11_BLEND SrcBlend, D3D11_BLEND DstBlend,
+	inline void FindAndSetBlend(PFLAG PolyFlag, D3D11_BLEND SrcBlend, D3D11_BLEND DstBlend,
 		UINT8 RTWrite = D3D11_COLOR_WRITE_ENABLE_ALL, BOOL bEnableBlending = 1, BOOL bAlphaToCov = 0, D3D11_BLEND_OP BldOp = D3D11_BLEND_OP_ADD, D3D11_BLEND_OP BldOpAlh = D3D11_BLEND_OP_ADD,
 		D3D11_BLEND SrcBlendAlpha = D3D11_BLEND_ONE, D3D11_BLEND DstBlendAlpha = D3D11_BLEND_ZERO)
 	{
+#if !USE_UNODERED_MAP_EVERYWHERE
 		ID3D11BlendState* bState = BlendMap.FindRef(PolyFlag);
+#else
+		auto f = BlendMap.find(PolyFlag);
+
+		ID3D11BlendState* bState = f != BlendMap.end() ? f->second : nullptr;
+#endif
 
 		if (bState == nullptr)
 		{
@@ -1293,7 +1353,11 @@ class UICBINDx11RenderDevice : public URenderDevice
 			ThrowIfFailed(hr);
 
 			// Metallicafan212:	Now set it in the map
+#if !USE_UNODERED_MAP_EVERYWHERE
 			BlendMap.Set(PolyFlag, bState);
+#else
+			BlendMap[PolyFlag] = bState;
+#endif
 		}
 
 		// Metallicafan212:	Set the blend state
@@ -1301,7 +1365,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	}
 
 	// Metallicafan212:	Blend state
-	void SetBlend(FPLAG PolyFlags);
+	void SetBlend(PFLAG PolyFlags);
 
 	// Metallicafan212:	For detecting the hit after the scene is rendered
 	void DetectPixelHit();
@@ -1396,7 +1460,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	virtual void SetSceneNode(FSceneNode* Frame);
 
-	virtual void PrecacheTexture(FTextureInfo& Info, FPLAG PolyFlags);
+	virtual void PrecacheTexture(FTextureInfo& Info, PFLAG PolyFlags);
 
 	// Metallicafan212:	Viewer-based zone fog
 	virtual void SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FPlane Color, FLOAT FadeRate);

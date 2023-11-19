@@ -53,7 +53,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 #else
 void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet)
 {
-	FPLAG PolyFlags = Surface.PolyFlags;
+	PFLAG PolyFlags = Surface.PolyFlags;
 #endif
 	guard(UICBINDx11RenderDevice::DrawComplexSurface);
 

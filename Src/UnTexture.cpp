@@ -16,7 +16,7 @@ FMipmap* GetBaseMip(FTextureInfo& Info)
 }
 
 // Metallicafan212:	Texturing related functions (since there's going to be quite a bit)
-void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG PolyFlags)
+void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG PolyFlags)
 {
 	guard(UICBINDx11RenderDevice::SetTexture);
 
@@ -197,7 +197,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, FPLAG Po
 
 // Metallicafan212:	TODO! Since I've redone the way samplers are made, this is pretty redundant now
 //					The only check is for UV clamp
-void UICBINDx11RenderDevice::MakeTextureSampler(FD3DTexture* Bind, FPLAG PolyFlags)
+void UICBINDx11RenderDevice::MakeTextureSampler(FD3DTexture* Bind, PFLAG PolyFlags)
 {
 	guard(UICBINDx11RenderDevice::MakeTextureSampler);
 
@@ -326,7 +326,7 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 }
 #endif
 
-void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlags, UBOOL bJustSampler)
+void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlags, UBOOL bJustSampler)
 {
 	guard(UICBINDx11RenderDevice::CacheTextureInfo);
 
@@ -418,7 +418,13 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, FPLAG PolyFlag
 
 	// Metallicafan212:	Get the format description
 	//					DO THIS FROM THE INFO!!!! THE MAPPED VERSION IS NULL
+#if !USE_UNODERED_MAP_EVERYWHERE
 	FD3DTexType* Type = SupportedTextures.Find(Info.Format);
+#else
+	auto f = SupportedTextures.find(Info.Format);
+
+	FD3DTexType* Type = f != SupportedTextures.end() ? &f->second : nullptr;
+#endif
 
 	if (Type == nullptr)
 		appErrorf(TEXT("Metallicafan212 you idiot, you forgot to add a descriptor for %d"), DaTex->Format);
@@ -808,7 +814,11 @@ void UICBINDx11RenderDevice::RegisterTextureFormat(ETextureFormat Format, DXGI_F
 	Type.BytesPerPixel		= ByteOrBlockSize;
 	Type.BlockSize			= ByteOrBlockSize;
 
+#if !USE_UNODERED_MAP_EVERYWHERE
 	SupportedTextures.Set(Format, Type);
+#else
+	SupportedTextures[Format] = Type;
+#endif
 
 	unguard;
 }
@@ -919,7 +929,7 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 }
 
 // Metallicafan212:	Based on the DX9 version, but HEAVILY modified
-void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
+void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 {
 	guard(UICBINDx11RenderDevice::SetBlend);
 
@@ -941,9 +951,9 @@ void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 
 	// Metallicafan212:	Check if the input blend flags are relevant
 #if DX11_HP2
-	FPLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage);
+	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage);
 #else
-	FPLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_RenderFog | PF_AlphaBlend);
+	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_RenderFog | PF_AlphaBlend);
 #endif
 
 	if (blendFlags != CurrentPolyFlags)
@@ -952,16 +962,16 @@ void UICBINDx11RenderDevice::SetBlend(FPLAG PolyFlags)
 		EndBuffering();
 
 		// Metallicafan212:	Check for changes
-		FPLAG Xor = CurrentPolyFlags ^ blendFlags;
+		PFLAG Xor = CurrentPolyFlags ^ blendFlags;
 
 		// Metallicafan212:	Save the blend flags now
 		CurrentPolyFlags = blendFlags;
 
 		// Metallicafan212:	Again, the DX9 driver saves the day
 #if DX11_HP2
-		const FPLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_Invisible | PF_AlphaBlend | PF_AlphaToCoverage | PF_Masked | PF_ColorMask;
+		const PFLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_Invisible | PF_AlphaBlend | PF_AlphaToCoverage | PF_Masked | PF_ColorMask;
 #else
-		const FPLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_Invisible;
+		const PFLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_Invisible;
 #endif
 
 		if (Xor & (RELEVANT_BLEND_FLAGS))
