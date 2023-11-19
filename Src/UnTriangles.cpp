@@ -323,7 +323,12 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	FD3DVert* Mshy = (FD3DVert*)m_VertexBuff;
 
 	// Metallicafan212:	Allow the selection color to be set by the user
-	FPlane ColorOverride = (m_HitData != nullptr ? CurrentHitColor : ActorSelectionColor.Plane());
+	FPlane ColorOverride = (m_HitData != nullptr ? CurrentHitColor 
+#if !DX11_UT_469
+		: ActorSelectionColor.Plane());
+#else
+		: FPlane(ActorSelectionColor.Plane(), 1.0f));
+#endif
 
 	// Metallicafan212:	Process a whole triangle at a time
 	INT M = 0;
