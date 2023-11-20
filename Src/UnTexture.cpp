@@ -979,10 +979,17 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			// Metallicafan212:	Only set when it's actually using it to render (in case of bad flags)
 			GlobalPolyflagVars.bModulated = 0;
 
+			ID3D11BlendState* bState = nullptr;
+
 			// Metallicafan212:	Find and set the render state
 			if (!(blendFlags & (RELEVANT_BLEND_FLAGS)))
 			{
-				FindAndSetBlend(0, D3D11_BLEND_ONE, D3D11_BLEND_ZERO, D3D11_COLOR_WRITE_ENABLE_ALL, 0);
+				bState = GetBlendState(0);
+				if (bState == nullptr)
+				{
+					bState = CreateBlend(0, D3D11_BLEND_ONE, D3D11_BLEND_ZERO, D3D11_COLOR_WRITE_ENABLE_ALL, 0);
+				}
+
 				GlobalPolyflagVars.bAlphaEnabled = 0;
 			}
 			else
@@ -992,11 +999,22 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 				// Metallicafan212:	DX9 allows you to completely turn off color drawing. We achieve the same effect here by using a 0 source blend and a 1 dest blend (since it will keep the dst color)
 				if (blendFlags & PF_Invisible)
 				{
-					FindAndSetBlend(PF_Invisible, D3D11_BLEND_ZERO, D3D11_BLEND_ONE, D3D11_COLOR_WRITE_ENABLE_ALPHA);
+					bState = GetBlendState(PF_Invisible);
+
+					if (bState == nullptr)
+					{
+						bState = CreateBlend(PF_Invisible, D3D11_BLEND_ZERO, D3D11_BLEND_ONE, D3D11_COLOR_WRITE_ENABLE_ALPHA);
+					}
 				}
 				else if (blendFlags == PF_Highlighted)
 				{
-					FindAndSetBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
+					//FindAndSetBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
+					bState = GetBlendState(PF_Highlighted);
+
+					if (bState == nullptr)
+					{
+						bState = CreateBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
+					}
 				}
 #if DX11_HP2
 				else if (blendFlags & PF_Translucent && (blendFlags & PF_Highlighted || blendFlags & PF_AlphaBlend))
@@ -1004,23 +1022,47 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 				else if ((blendFlags & (PF_Translucent | PF_Highlighted)) == (PF_Translucent | PF_Highlighted))//blendFlags & PF_Translucent && (blendFlags & PF_Highlighted))
 #endif
 				{
-					FindAndSetBlend(PF_Translucent | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+					//FindAndSetBlend(PF_Translucent | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+					bState = GetBlendState(PF_Translucent | PF_AlphaBlend);
+
+					if (bState == nullptr)
+					{
+						bState = CreateBlend(PF_Translucent | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+					}
 				}
 				else if (blendFlags & PF_Translucent)
 				{
-					FindAndSetBlend(PF_Translucent, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_COLOR);
+					//FindAndSetBlend(PF_Translucent, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_COLOR);
+					bState = GetBlendState(PF_Translucent);
+
+					if (bState == nullptr)
+					{
+						bState = CreateBlend(PF_Translucent, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_COLOR);
+					}
 				}
 				else if (blendFlags & PF_Modulated)
 				{
 					GlobalPolyflagVars.bModulated = 1;
-					FindAndSetBlend(PF_Modulated, D3D11_BLEND_DEST_COLOR, D3D11_BLEND_SRC_COLOR);
+					//FindAndSetBlend(PF_Modulated, D3D11_BLEND_DEST_COLOR, D3D11_BLEND_SRC_COLOR);
+					bState = GetBlendState(PF_Modulated);
+
+					if (bState == nullptr)
+					{
+						bState = CreateBlend(PF_Modulated, D3D11_BLEND_DEST_COLOR, D3D11_BLEND_SRC_COLOR);
+					}
 				}
 #if DX11_HP2
 				// Metallicafan212:	New engine QWORD lumos
 				else if (blendFlags & PF_LumosAffected)
 				{
 					// Metallicafan212:	I've reversed the reversed lumos alpha, as it seems that INV_SRC_ALPHA in DX11 doesn't write full alpha for some reason...
-					FindAndSetBlend(PF_LumosAffected, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);//D3D11_BLEND_INV_SRC_ALPHA, D3D11_BLEND_SRC_ALPHA);
+					//FindAndSetBlend(PF_LumosAffected, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);//D3D11_BLEND_INV_SRC_ALPHA, D3D11_BLEND_SRC_ALPHA);
+					bState = GetBlendState(PF_LumosAffected);
+
+					if (bState == nullptr)
+					{
+						bState = CreateBlend(PF_LumosAffected, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+					}
 				}
 #endif
 				else if (blendFlags & PF_Highlighted)
@@ -1028,12 +1070,24 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #if DX11_HP2
 					if (blendFlags & PF_AlphaBlend)
 					{
-						FindAndSetBlend(PF_Highlighted | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+						//FindAndSetBlend(PF_Highlighted | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+						bState = GetBlendState(PF_Highlighted | PF_AlphaBlend);
+
+						if (bState == nullptr)
+						{
+							bState = CreateBlend(PF_Highlighted | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+						}
 					}
 					else
 #endif
 					{
-						FindAndSetBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
+						//FindAndSetBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
+						bState = GetBlendState(PF_Highlighted);
+
+						if (bState == nullptr)
+						{
+							bState = CreateBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
+						}
 					}
 				}
 #if DX11_HP2
@@ -1041,21 +1095,51 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 				//					TODO! Maybe re-evaluate this????
 				else if (blendFlags & PF_AlphaToCoverage)
 				{
-					FindAndSetBlend(PF_AlphaBlend | PF_AlphaToCoverage, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
+					//FindAndSetBlend(PF_AlphaBlend | PF_AlphaToCoverage, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
+					bState = GetBlendState(PF_AlphaBlend | PF_AlphaToCoverage);
+
+					if (bState == nullptr)
+					{
+						bState = CreateBlend(PF_AlphaBlend | PF_AlphaToCoverage, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
+					}
 				}
 				else if (blendFlags & PF_AlphaBlend)
 				{
-					FindAndSetBlend(PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+					//FindAndSetBlend(PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+					bState = GetBlendState(PF_AlphaBlend);
+
+					if (bState == nullptr)
+					{
+						bState = CreateBlend(PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+					}
 				}
 				else if (blendFlags & PF_ColorMask)
 				{
-					FindAndSetBlend(PF_ColorMask, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+					//FindAndSetBlend(PF_ColorMask, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+					bState = GetBlendState(PF_ColorMask);
+
+					if (bState == nullptr)
+					{
+						bState = CreateBlend(PF_ColorMask, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+					}
 				}
 #endif
 				else if (blendFlags & PF_Masked)
 				{
-					FindAndSetBlend(PF_Masked, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+					//FindAndSetBlend(PF_Masked, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+					bState = GetBlendState(PF_Masked);
+
+					if (bState == nullptr)
+					{
+						bState = CreateBlend(PF_Masked, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+					}
 				}
+			}
+
+			// Metallicafan212:	If we got a valid blend state, set it
+			if (bState != nullptr)
+			{
+				m_RenderContext->OMSetBlendState(bState, nullptr, 0xFFFFFFFF);
 			}
 		}
 

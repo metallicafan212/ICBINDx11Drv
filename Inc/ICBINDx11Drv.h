@@ -1332,7 +1332,20 @@ class UICBINDx11RenderDevice : public URenderDevice
 		unguard;
 	}
 
-	inline void FindAndSetBlend(PFLAG PolyFlag, D3D11_BLEND SrcBlend, D3D11_BLEND DstBlend,
+	inline ID3D11BlendState* GetBlendState(PFLAG PolyFlag)
+	{
+#if !USE_UNODERED_MAP_EVERYWHERE
+		ID3D11BlendState* bState = BlendMap.FindRef(PolyFlag);
+#else
+		auto f = BlendMap.find(PolyFlag);
+
+		ID3D11BlendState* bState = f != BlendMap.end() ? f->second : nullptr;
+#endif
+
+		return bState;
+	}
+
+	inline ID3D11BlendState* CreateBlend(PFLAG PolyFlag, D3D11_BLEND SrcBlend, D3D11_BLEND DstBlend,
 		UINT8 RTWrite = D3D11_COLOR_WRITE_ENABLE_ALL, BOOL bEnableBlending = 1, BOOL bAlphaToCov = 0, D3D11_BLEND_OP BldOp = D3D11_BLEND_OP_ADD, D3D11_BLEND_OP BldOpAlh = D3D11_BLEND_OP_ADD,
 		D3D11_BLEND SrcBlendAlpha = D3D11_BLEND_ONE, D3D11_BLEND DstBlendAlpha = D3D11_BLEND_ZERO)
 	{
@@ -1376,8 +1389,10 @@ class UICBINDx11RenderDevice : public URenderDevice
 #endif
 		}
 
+		return bState;
+
 		// Metallicafan212:	Set the blend state
-		m_RenderContext->OMSetBlendState(bState, nullptr, 0xffffffff);
+		//m_RenderContext->OMSetBlendState(bState, nullptr, 0xffffffff);
 	}
 
 	// Metallicafan212:	Blend state
