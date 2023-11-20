@@ -490,7 +490,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	UBOOL						bUseMSAAComputeShader;
 	UBOOL						bDisableDebugInterface;
 	UBOOL						bDisableSDKLayers;
-	UBOOL						bVSync;
+	UBOOL						UseVSync;
 
 	// Metallicafan212:	TODO! MSAA resolving vars
 	FLOAT						MSAAFilterSize;
