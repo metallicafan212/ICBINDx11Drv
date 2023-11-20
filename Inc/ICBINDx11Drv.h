@@ -179,7 +179,7 @@ class UDX11RenderTargetTexture : public UTexture
 	void Lock(FTextureInfo& TextureInfo, FTime CurrentTime, INT LOD, URenderDevice* RenDev);
 };
 
-#define VBUFF_SIZE 50000//20000//200000
+#define VBUFF_SIZE 1000000//50000//20000//200000
 #define IBUFF_SIZE (VBUFF_SIZE * 2)//20000//200000
 
 // Metallicafan212:	Base vertex definition
