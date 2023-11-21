@@ -374,17 +374,28 @@ public:
 class FD3DMeshShader : public FD3DShader
 {
 public:
+
+	UBOOL bNoMeshOpacity;
+	UBOOL bPrevMeshOpacity;
+
 	FD3DMeshShader() :
 		FD3DShader()
 	{
-		VertexFile		= SHADER_FOLDER TEXT("MeshShader.hlsl");
-		PixelFile		= SHADER_FOLDER TEXT("MeshShader.hlsl");
-		VertexFunc		= TEXT("VertShader");
-		PixelFunc		= TEXT("PxShader");
+		VertexFile			= SHADER_FOLDER TEXT("MeshShader.hlsl");
+		PixelFile			= SHADER_FOLDER TEXT("MeshShader.hlsl");
+		VertexFunc			= TEXT("VertShader");
+		PixelFunc			= TEXT("PxShader");
+		bNoMeshOpacity		= 0;
+		bPrevMeshOpacity	= 0;
 	}
 
 	// Metallicafan212:	Constructor that inits the device pointer
 	FD3DMeshShader(class UICBINDx11RenderDevice* InParent);
+
+	// Metallicafan212:	Shader interface
+	virtual void SetupConstantBuffer();
+
+	virtual void WriteConstantBuffer(void* InMem);
 };
 
 class FD3DSurfShader : public FD3DShader

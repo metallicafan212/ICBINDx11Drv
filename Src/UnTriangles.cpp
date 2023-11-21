@@ -86,6 +86,8 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	}
 
 	// Metallicafan212:	TODO!
+	FMeshShader->bNoMeshOpacity = 0;
+
 	FMeshShader->Bind(m_RenderContext);
 
 	// Metallicafan212:	Start buffering now
@@ -191,6 +193,9 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	}
 
 	// Metallicafan212:	TODO!
+
+	FMeshShader->bNoMeshOpacity = 1;
+
 	FMeshShader->Bind(m_RenderContext);
 
 	// Metallicafan212:	Start buffering now
@@ -220,12 +225,12 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	FPlane ColorOverride = (m_HitData != nullptr ? CurrentHitColor : ActorSelectionColor.Plane());
 
 #if DX11_HP2
-	if (bNoOpacity)
+	//if (bNoOpacity)
 #endif
-	{
-		Pts[0]->Light.W = 1.0f;
-		Pts[1]->Light.W = 1.0f;
-	}
+	//{
+	//	Pts[0]->Light.W = 1.0f;
+	//	Pts[1]->Light.W = 1.0f;
+	//}
 
 	DoVert(Pts[0], &Mshy[0], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
 	DoVert(Pts[1], &Mshy[1], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
@@ -299,6 +304,8 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	}
 
 	// Metallicafan212:	TODO!
+	FMeshShader->bNoMeshOpacity = 1;
+
 	FMeshShader->Bind(m_RenderContext);
 
 	//LockVertexBuffer(NumPts * sizeof(FD3DVert));
@@ -343,7 +350,9 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 
 		// Metallicafan212:	TODO! This should be done in the shader, not here!
 		//if (bNoOpacity)
-		Pts[i].Light.W = 1.0f;
+		//Pts[i].Light.W		= 1.0f;
+		//Pts[i + 1].Light.W	= 1.0f;
+		//Pts[i + 2].Light.W	= 1.0f;
 
 		if (bMirror)
 		{
