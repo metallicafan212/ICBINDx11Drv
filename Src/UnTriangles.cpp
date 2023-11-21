@@ -53,6 +53,7 @@ FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, PFLAG PolyFlags, UBO
 	}
 }
 
+#if DX11_HP2
 // Metallicafan212:	Functions relating to mesh/particle drawing
 //					TODO! Add in a config option to turn off and on "corrected fog", where it can completely fog actor verts!
 void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, INT NumPts, _WORD* Indices, INT NumIndices, QWORD PolyFlags, FSpanBuffer* Span)
@@ -140,7 +141,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 #if !DX11_UT_469
 		ColorOverride = ActorSelectionColor.Plane();
 #else
-		ColorOverride = FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f));
+		ColorOverride = FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f);
 #endif
 	}
 
@@ -176,6 +177,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 
 	unguard;
 }
+#endif
 
 #if !DX11_HP2
 void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, int NumPts, DWORD PolyFlags, FSpanBuffer* Span)
@@ -248,7 +250,7 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 #if !DX11_UT_469
 		ColorOverride = ActorSelectionColor.Plane();
 #else
-		ColorOverride = FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f));
+		ColorOverride = FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f);
 #endif
 	}
 
@@ -372,7 +374,7 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 #if !DX11_UT_469
 		ColorOverride = ActorSelectionColor.Plane();
 #else
-		ColorOverride = FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f));
+		ColorOverride = FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f);
 #endif
 	}
 
