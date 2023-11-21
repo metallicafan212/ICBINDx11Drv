@@ -2,7 +2,7 @@
 Metallicafan212’s Farm-Raised Open Source DirectX 11 Renderer.
 ![image](https://github.com/metallicafan212/D3D11Drv/assets/5996243/787208bd-fe10-4f51-a7e6-675cc8a5fc3c)
 
-This repository contains a working (albeit unoptimized and a bit messy) DX11 renderer for HP2 New Engine, Old Unreal UT 469, and in the future, for more UE1 games as well.
+This repository contains a working (albeit a bit messy) DX11 renderer for HP2 New Engine, Old Unreal UT 469, and in the future, for more UE1 games as well.
 Currently in an alpha stage, as I need to implement more user configurables, more features, add a custom MSAA resolve to fix blurry tile rendering, etc.
 Parts are based on how the DX9 renderer works, but have been heavily modified by myself. The only part copied "wholesale" from DX9 is the projection setup, as it actually works.
 Eventually, I will be recoding the projection setup so that it uses the standard DirectX math libraries, but for now, this works.
@@ -11,9 +11,7 @@ Eventually, I will be recoding the projection setup so that it uses the standard
 https://github.com/metallicafan212/ICBINDx11Drv/releases/latest
 
 ## Current state
-This renderer works great, but it's about 10% slower than DX9 in the most optimal of scenes, and up to 50% slower than DX9 in the least optimal scenes (tons of actors, for example).
-I plan on improving performance in the future, but for games other than HP2, I don't anticipate it running better than DX9 unless the god of FPS bestows onto me some crack-brain scheme.
-~~Additionally: the additional textures for BSP surfaces (detail texture, macro texture, etc.) aren't supported right now, but will be in the future.~~ I've implemented those, but the detail texture min z should be a user configurable, not a constant in the shader...
+This renderer works great, and on specific systems or games, runs 10% to 30% faster than the DX9 renderer.
 
 ## What this renderer does
 Everything the DX9 renderer does in HP2 (RT textures, distance fog, all standard rendering, on-screen fast string drawing using D2D, etc.).
@@ -24,8 +22,6 @@ Raytracing, external texture loading, support other games (yet).
 
 ## What's missing to support other games?
 This is now implemented. The full (base) UE1 rendering interface is implemented and working. Specific game extensions (Rune, DX) are not implemented.
-~~Generally, some features may be missing right now like Gouraud triangle drawing. In HP1/2, Epic updated the base engine to do indexed triangle drawing for meshes, so the interface slightly changed.
-Theoretically, the code can work just fine as long as the Gouraud triangles are unfanned (using an index list), but no support has been written as of right now.~~
 
 ## Building
 ```
@@ -43,8 +39,6 @@ Theoretically, the code can work just fine as long as the Gouraud triangles are 
 This will require the Windows 10 SDK for building, but should run under Windows 7 SP1 (with the platform update).
 
 Tools I used: Visual Studio 2022 (for the C++ code), Notepad++ for HLSL. Any syntax errors in the HLSL code is an instant crash in this driver right now, be warned. In the future, I'll handle errors more gracefully.
-
-~~Currently, this will NOT be able to be built. It’s written for the HP2 new engine, and none of those headers/libs are included. In the future, when more games are supported, it will be buildable as long as you have the SDK for those games and define the right preprocessor macro.~~
 
 Currently, this is only able to be built for UT 469 only, other games are unimplemented and the HP2 new engine does not have public headers to allow for support. My recommendation, if you want to help improve it, is use the UT469 public SDK as a stable development platform.
 
