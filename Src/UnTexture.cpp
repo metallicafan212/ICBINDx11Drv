@@ -11,7 +11,7 @@ FMipmap* GetBaseMip(FTextureInfo& Info)
 	return Info.Mips[0];
 #elif DX11_UT_469
 	UBOOL Compressed = FIsCompressedFormat(Info.Format);
-	return Info.Texture != nullptr ? (Compressed ? &Info.Texture->CompMips(0) : &Info.Texture->Mips(0)) : nullptr;
+	return Info.Texture != nullptr ? (Compressed ? &Info.Texture->CompMips(Info.LOD) : &Info.Texture->Mips(Info.LOD)) : nullptr;
 #endif
 }
 
@@ -244,6 +244,11 @@ UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataP
 
 	SourcePitch = (Type->*P)(Mip->USize);
 #elif DX11_UT_469
+
+	// Metallicafan212:	Add on the texture LOD setting
+	if(Info.Texture != nullptr)
+		MipNum += Info.LOD;
+
 	UBOOL Compressed = FIsCompressedFormat(Info.Format);
 	FMipmap* Mip = Info.Texture ? (Compressed ? &Info.Texture->CompMips(MipNum) : &Info.Texture->Mips(MipNum)) : nullptr;
 	if (Mip)
@@ -360,7 +365,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlag
 	}
 
 	// Metallicafan212:	Get the base mip
-	FMipmap* M = GetBaseMip(Info);
+	FMipmap* M			= GetBaseMip(Info);
 
 	DaTex->Tex			= Info.Texture;
 
@@ -383,7 +388,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlag
 	}
 
 	//DaTex->bSkipMipZero	= 0;
-	DaTex->MipSkip = 0;
+	DaTex->MipSkip = 0;//Info.LOD;
 
 	// Metallicafan212:	Implement checking against the new UT469 realtime changed count
 	//					Using the function in Info causes a 50fps loss for some reason... It makes no sense....
@@ -436,6 +441,9 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlag
 	// Metallicafan212:	Natively embed the check
 	MinSize		= Type->bIsCompressed ? 4 : 0;
 	//}
+
+	// Metallicafan212:	TODO! Do this better
+	//UBOOL bNeedsMoreMipSkip = 0;
 
 	// Metallicafan212:	If we're trying to fix a texture, we need to do an extra mip...
 	if (Type->bIsCompressed && (DaTex->USize < MinSize || DaTex->VSize < MinSize))
@@ -632,6 +640,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlag
 		CopyTexture:
 			guard(DirectTexCopy);
 			// Metallicafan212:	We need to copy each mip
+
 			for (INT i = 0; i < Info.NumMips; i++)
 			{	
 				INT CurDMip = i + DaTex->MipSkip;//(DaTex->bSkipMipZero ? i + 1 : i);
