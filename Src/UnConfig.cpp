@@ -117,6 +117,7 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	AddBoolProp(CPP_PROP(bDisableDebugInterface), 1);
 	AddBoolProp(CPP_PROP(bDisableSDKLayers), 1);
 
+	/*
 	// Metallicafan212:	Load the old setting, if it's available
 	UseVSync = 0;
 	UBOOL bTest = 0;
@@ -125,8 +126,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	{
 		UseVSync = bTest;
 	}
+	*/
 
-	AddBoolProp(CPP_PROP(UseVSync), UseVSync);
+	AddBoolProp(CPP_PROP(UseVSync), 0);
 
 	// Metallicafan212:	TODO! Should this be 1.2f by default? I'll leave it all alone in case there's some user out there that will complain lol
 	AddFloatProp(CPP_PROP(ResolutionScale), 1.0f);

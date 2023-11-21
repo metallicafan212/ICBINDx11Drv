@@ -1020,6 +1020,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	inline void DoDeferredRender()
 	{
+		/*
 		// Metallicafan212:	Render now!
 		if (m_D3DDeferredContext != nullptr)
 		{
@@ -1031,6 +1032,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 			// Metallicafan212:	Keep the vertex buffer bound!!!!
 			SetupDeferredRender();
 		}
+		*/
 	}
 
 	// Metallicafan212:	TODO! Replace ALL non-indexed drawing with this....
