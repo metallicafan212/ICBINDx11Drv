@@ -222,7 +222,12 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	INDEX baseVIndex = m_BufferedVerts;
 
 	// Metallicafan212:	Allow the selection color to be set by the user
-	FPlane ColorOverride = (m_HitData != nullptr ? CurrentHitColor : ActorSelectionColor.Plane());
+	FPlane ColorOverride = (m_HitData != nullptr ? CurrentHitColor
+#if !DX11_UT_469
+		: ActorSelectionColor.Plane());
+#else
+		: FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f));
+#endif
 
 #if DX11_HP2
 	//if (bNoOpacity)
@@ -239,11 +244,13 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 
 	for (INT i = 2; i < NumPts; i++)
 	{
+		/*
 #if DX11_HP2
 		// Metallicafan212:	TODO! This should be done in the shader, not here!
 		if (bNoOpacity)
 #endif
-			Pts[i]->Light.W = 1.0f;
+		Pts[i]->Light.W = 1.0f;
+		*/
 
 		DoVert(Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
 
@@ -325,16 +332,16 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	UBOOL drawFog = (((PolyFlags & (PF_RenderFog | PF_Translucent | PF_Modulated)) == PF_RenderFog));
 
 	// Metallicafan212:	Turn off Light A if we're missing the required flags for opacity
-	UBOOL bNoOpacity = ((PolyFlags & (PF_Highlighted | PF_Translucent)) != (PF_Highlighted | PF_Translucent));
+	//UBOOL bNoOpacity	= ((PolyFlags & (PF_Highlighted | PF_Translucent)) != (PF_Highlighted | PF_Translucent));
 
-	FD3DVert* Mshy = (FD3DVert*)m_VertexBuff;
+	FD3DVert* Mshy		= (FD3DVert*)m_VertexBuff;
 
 	// Metallicafan212:	Allow the selection color to be set by the user
 	FPlane ColorOverride = (m_HitData != nullptr ? CurrentHitColor 
 #if !DX11_UT_469
 		: ActorSelectionColor.Plane());
 #else
-		: FPlane(ActorSelectionColor.Plane(), 1.0f));
+		: FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f));
 #endif
 
 	// Metallicafan212:	Process a whole triangle at a time

@@ -291,7 +291,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 #if !DX11_UT_469
 				TestColor = SurfaceSelectionColor.Plane();//FPlane(0.0f, 0.0f, 1.0f, 0.5f);
 #else
-				TestColor = FPlane(SurfaceSelectionColor.Plane(), 0.5f);
+				TestColor = FPlane(SurfaceSelectionColor.R / 255.0f, SurfaceSelectionColor.G / 255.0f, SurfaceSelectionColor.B / 255.0f, SurfaceSelectionColor.A / 255.0f);//FPlane(SurfaceSelectionColor.Plane(), 0.5f);
 #endif
 				//FSurfShader->SurfAlpha = 0.5f;
 			}
