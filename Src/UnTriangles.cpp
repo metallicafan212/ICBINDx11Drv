@@ -128,7 +128,21 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 #endif
 
 	// Metallicafan212:	Allow the selection color to be set by the user
-	FPlane ColorOverride = (m_HitData != nullptr ? CurrentHitColor : ActorSelectionColor.Plane());
+	FPlane ColorOverride;
+
+	if (m_HitData != nullptr)
+	{
+		ColorOverride = CurrentHitColor;
+	}
+	// Metallicafan212:	Only do this if we're in the editor, no reason to keep passing in the selection color
+	else if (GIsEditor)
+	{
+#if !DX11_UT_469
+		ColorOverride = ActorSelectionColor.Plane();
+#else
+		ColorOverride = FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f));
+#endif
+	}
 
 	for (INT i = 0; i < NumPts; i++)
 	{
@@ -222,12 +236,21 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	INDEX baseVIndex = m_BufferedVerts;
 
 	// Metallicafan212:	Allow the selection color to be set by the user
-	FPlane ColorOverride = (m_HitData != nullptr ? CurrentHitColor
+	FPlane ColorOverride;
+
+	if (m_HitData != nullptr)
+	{
+		ColorOverride = CurrentHitColor;
+	}
+	// Metallicafan212:	Only do this if we're in the editor, no reason to keep passing in the selection color
+	else if (GIsEditor)
+	{
 #if !DX11_UT_469
-		: ActorSelectionColor.Plane());
+		ColorOverride = ActorSelectionColor.Plane();
 #else
-		: FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f));
+		ColorOverride = FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f));
 #endif
+	}
 
 #if DX11_HP2
 	//if (bNoOpacity)
@@ -337,12 +360,21 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	FD3DVert* Mshy		= (FD3DVert*)m_VertexBuff;
 
 	// Metallicafan212:	Allow the selection color to be set by the user
-	FPlane ColorOverride = (m_HitData != nullptr ? CurrentHitColor 
+	FPlane ColorOverride;
+
+	if (m_HitData != nullptr)
+	{
+		ColorOverride = CurrentHitColor;
+	}
+	// Metallicafan212:	Only do this if we're in the editor, no reason to keep passing in the selection color
+	else if (GIsEditor)
+	{
 #if !DX11_UT_469
-		: ActorSelectionColor.Plane());
+		ColorOverride = ActorSelectionColor.Plane();
 #else
-		: FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f));
+		ColorOverride = FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f));
 #endif
+	}
 
 	// Metallicafan212:	Process a whole triangle at a time
 	INT M = 0;
