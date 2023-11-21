@@ -179,7 +179,8 @@ class UDX11RenderTargetTexture : public UTexture
 	void Lock(FTextureInfo& TextureInfo, FTime CurrentTime, INT LOD, URenderDevice* RenDev);
 };
 
-#define VBUFF_SIZE 1000000//50000//20000//200000
+// Metallicafan212:	Reset back to 50,000 verts, as that's the performance sweetspot apparently
+#define VBUFF_SIZE 50000//1000000//50000//20000//200000
 #define IBUFF_SIZE (VBUFF_SIZE * 2)//20000//200000
 
 // Metallicafan212:	Base vertex definition
@@ -904,6 +905,10 @@ class UICBINDx11RenderDevice : public URenderDevice
 	INT							m_VLockCount;
 	INT							m_ILockCount;
 
+	// Metallicafan212:	A pre-defined array containing indicies to copy from
+	//					TODO! Redefine the max size, right now (for consistency and preventing memory issues) it matches the iBuffer length
+	INT							IndexValueArray[IBUFF_SIZE];
+
 	// Metallicafan212:	Line buffer?
 	ID3D11Buffer*				LineBuffer;
 
@@ -1031,11 +1036,15 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	TODO! Replace ALL non-indexed drawing with this....
 	inline void DoStandardIBuff(INT VertNum)
 	{
+		/*
 		// Metallicafan212:	This'll fill the index buffer with just a standard indices pointing to the raw triangle list we have
 		for (INT i = 0; i < VertNum; i++)
 		{
 			m_IndexBuff[i] = i + m_BufferedVerts;
 		}
+		*/
+
+		appMemcpy(m_IndexBuff, &IndexValueArray[m_BufferedVerts], sizeof(INDEX) * VertNum);
 	}
 
 	inline void LockVertAndIndexBuffer(SIZE_T VertCount, SIZE_T IndexCount = 0, UBOOL bNoOverwrite = 1)

@@ -480,6 +480,11 @@ MAKE_DEVICE:
 	m_RenderContext->PSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
 	m_RenderContext->CSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
 
+	// Metallicafan212:	Setup the pre-defined index values array
+	for (INT i = 0; i < IBUFF_SIZE; i++)
+	{
+		IndexValueArray[i] = i;
+	}
 
 	// Metallicafan212:	If we're using deferred rendering, we HAVE to map with discard first!!!!
 	if (m_D3DDeferredContext != nullptr)
