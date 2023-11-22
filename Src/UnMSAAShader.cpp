@@ -61,7 +61,7 @@ void FD3DMSAAShader::SetupConstantBuffer()
 
 void FD3DMSAAShader::WriteConstantBuffer(void* InMem)
 {
-	guard(FD3DMSAAShader::WriteConstantBuffer);
+	guardSlow(FD3DMSAAShader::WriteConstantBuffer);
 
 	// Metallicafan212:	Copy over
 #if USE_MSAA_COMPUTE
@@ -121,5 +121,5 @@ void FD3DMSAAShader::WriteConstantBuffer(void* InMem)
 		SDef->SampleOffsets[i] -= FPlane(0.5f, 0.5f, 0.0f, 0.0f);
 	}
 
-	unguard;
+	unguardSlow;
 }

@@ -41,7 +41,7 @@ void FD3DP8ToRGBAShader::SetupConstantBuffer()
 
 void FD3DP8ToRGBAShader::WriteConstantBuffer(void* InMem)
 {
-	guard(FD3DP8ToRGBAShader::WriteConstantBuffer);
+	guardSlow(FD3DP8ToRGBAShader::WriteConstantBuffer);
 
 	// Metallicafan212:	Copy over
 	//FD3DComputeShader::WriteConstantBuffer(InMem);
@@ -52,5 +52,5 @@ void FD3DP8ToRGBAShader::WriteConstantBuffer(void* InMem)
 	SDef->USize		= USize;
 	SDef->VSize		= VSize;
 
-	unguard;
+	unguardSlow;
 }

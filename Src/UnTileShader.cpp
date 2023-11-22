@@ -53,7 +53,7 @@ void FD3DTileShader::SetupConstantBuffer()
 
 void FD3DTileShader::WriteConstantBuffer(void* InMem)
 {
-	guard(FD3DTileShader::WriteConstantBuffer);
+	guardSlow(FD3DTileShader::WriteConstantBuffer);
 
 	// Metallicafan212:	Get the parent info first
 	FD3DShader::WriteConstantBuffer(InMem);
@@ -74,5 +74,5 @@ void FD3DTileShader::WriteConstantBuffer(void* InMem)
 		Def->ZAxis			= TileCoords.ZAxis;
 	}
 
-	unguard;
+	unguardSlow;
 }

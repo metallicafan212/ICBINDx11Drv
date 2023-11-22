@@ -1241,7 +1241,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	void CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlags, UBOOL bJustSampler = 0);
 
-	void MakeTextureSampler(FD3DTexture* Bind, PFLAG PolyFlags);
+	//void MakeTextureSampler(FD3DTexture* Bind, PFLAG PolyFlags);
 
 	inline void FlushTextureSamplers()
 	{
@@ -1289,7 +1289,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	inline ID3D11SamplerState* GetSamplerState(PFLAG PolyFlags, INT MinMip, INT MipBias)
 	{
-		guard(UICBINDx11RenderDevice::GetSamplerState);
+		guardSlow(UICBINDx11RenderDevice::GetSamplerState);
 
 		// Metallicafan212:	TODO!!!! Tag this better.... This will bite me in the ass....
 		//					Realistically, the key should be a combo of the flags and the biases, since we only care about specific parts, it should be bitpacked
@@ -1340,7 +1340,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 		return S;
 
-		unguard;
+		unguardSlow;
 	}
 
 	inline ID3D11BlendState* GetBlendState(PFLAG PolyFlag)

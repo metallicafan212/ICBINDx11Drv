@@ -195,11 +195,12 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 	unguard;
 }
 
+/*
 // Metallicafan212:	TODO! Since I've redone the way samplers are made, this is pretty redundant now
 //					The only check is for UV clamp
 void UICBINDx11RenderDevice::MakeTextureSampler(FD3DTexture* Bind, PFLAG PolyFlags)
 {
-	guard(UICBINDx11RenderDevice::MakeTextureSampler);
+	guardSlow(UICBINDx11RenderDevice::MakeTextureSampler);
 
 	if (((Bind->UClamp ^ Bind->USize) | (Bind->VClamp ^ Bind->VSize)) != 0)
 	{
@@ -210,8 +211,9 @@ void UICBINDx11RenderDevice::MakeTextureSampler(FD3DTexture* Bind, PFLAG PolyFla
 		Bind->bShouldUVClamp = 0;
 	}
 
-	unguard;
+	unguardSlow;
 }
+*/
 
 UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch, INT& MipW, INT& MipH)
 {
@@ -333,7 +335,7 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 
 void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlags, UBOOL bJustSampler)
 {
-	guard(UICBINDx11RenderDevice::CacheTextureInfo);
+	guardSlow(UICBINDx11RenderDevice::CacheTextureInfo)
 
 	HRESULT hr = S_OK;
 
@@ -497,7 +499,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlag
 	// Metallicafan212:	Check if we need to make it
 	if (DaTex->m_Tex == nullptr)
 	{
-		guard(CreateTexture);
+		//guardSlow(CreateTexture);
 		// Metallicafan212:	Check for the info
 		DaTex->Format		= Info.Format;
 		DaTex->TexFormat	= Type->DXFormat;
@@ -548,7 +550,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlag
 
 		ThrowIfFailed(hr);
 
-		guard(CreateSRV);
+		//guard(CreateSRV);
 
 		// Metallicafan212:	Create the view
 		D3D11_SHADER_RESOURCE_VIEW_DESC vDesc;
@@ -564,10 +566,10 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlag
 
 		ThrowIfFailed(hr);
 
-		unguard;
+		//unguardSlow;
 
 #if P8_COMPUTE_SHADER
-		guard(CreateUAVViews);
+		guardSlow(CreateUAVViews);
 
 		if (Info.Format == TEXF_P8)
 		{
@@ -614,10 +616,20 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlag
 			ThrowIfFailed(hr);
 		}
 
-		unguard;
+		unguardSlow;
 #endif
 
-		MakeTextureSampler(DaTex, PolyFlags);
+		//MakeTextureSampler(DaTex, PolyFlags);
+
+		// Metallicafan212:	Check if the texture needs UV clamping
+		if (((DaTex->UClamp ^ DaTex->USize) | (DaTex->VClamp ^ DaTex->VSize)) != 0)
+		{
+			DaTex->bShouldUVClamp = 1;
+		}
+		else
+		{
+			DaTex->bShouldUVClamp = 0;
+		}
 
 		// Metallicafan212:	Now process it
 		if (!Type->bSupported)
@@ -630,7 +642,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlag
 			goto CopyTexture;
 		}
 
-		unguard;
+		//unguardSlow
 	}
 	else
 	{
@@ -638,7 +650,7 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlag
 		if (Type->bSupported)
 		{
 		CopyTexture:
-			guard(DirectTexCopy);
+			guardSlow(DirectTexCopy);
 			// Metallicafan212:	We need to copy each mip
 
 			for (INT i = 0; i < Info.NumMips; i++)
@@ -677,12 +689,12 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlag
 				}
 			}
 
-			unguard;
+			unguardSlow;
 		}
 		else
 		{
 		ConvertTexture:	
-			guard(ConvertTexture);
+			guardSlow(ConvertTexture);
 
 			// Metallicafan212:	Convert the mip (could be P8 or RGBA7)
 			UBOOL bMaskedHack	= (Info.Format == TEXF_P8 && PolyFlags & PF_Masked);
@@ -797,11 +809,11 @@ void UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlag
 			if(Info.Palette != nullptr)
 				Info.Palette[0] = OldMasked;
 
-			unguard;
+			unguardSlow;
 		}
 	}
 
-	unguard;
+	unguardSlow;
 }
 
 // Metallicafan212:	Function to register supported texture types
@@ -835,19 +847,19 @@ void UICBINDx11RenderDevice::RegisterTextureFormat(ETextureFormat Format, DXGI_F
 // Metallicafan212:	Texture uploading functions
 void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
 {
-	guard(MemcpyTexUpload);
+	guardSlow(MemcpyTexUpload);
 
 	// Metallicafan212:	Just copy over, todo!!!!
 	//D3D11_BOX B = { UpdateX, UpdateY, 0, UpdateW, UpdateH, 1 };
 
 	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, /*&B*/nullptr, Source, SourcePitch, 0);
 
-	unguard;
+	unguardSlow;
 }
 
 void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
 {
-	guard(RGBA7To8);
+	guardSlow(RGBA7To8);
 
 	DWORD* pTex = (DWORD*)inDev->ConversionMemory;
 
@@ -898,12 +910,12 @@ void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 
 	// Metallicafan212:	Now update
 	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, inDev->ConversionMemory, SourcePitch, 0);
-	unguard;
+	unguardSlow;
 }
 
 void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
 {
-	guard(P8ToRGBA);
+	guardSlow(P8ToRGBA);
 
 	// Metallicafan212:	Update each 4 byte block
 	SIZE_T	Read	= 0;
@@ -934,7 +946,7 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 	// Metallicafan212:	Now update
 	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, inDev->ConversionMemory, SourcePitch, 0);
 
-	unguard;
+	unguardSlow;
 }
 
 // Metallicafan212:	Based on the DX9 version, but HEAVILY modified

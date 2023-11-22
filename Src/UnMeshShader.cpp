@@ -46,7 +46,7 @@ void FD3DMeshShader::SetupConstantBuffer()
 
 void FD3DMeshShader::WriteConstantBuffer(void* InMem)
 {
-	guard(FD3DMeshShader::WriteConstantBuffer);
+	guardSlow(FD3DMeshShader::WriteConstantBuffer);
 
 	if (bPrevMeshOpacity != bNoMeshOpacity)
 	{
@@ -64,5 +64,5 @@ void FD3DMeshShader::WriteConstantBuffer(void* InMem)
 
 	Def->bNoOpacity = bNoMeshOpacity;
 
-	unguard;
+	unguardSlow;
 }

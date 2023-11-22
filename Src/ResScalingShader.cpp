@@ -53,7 +53,7 @@ void FD3DResScalingShader::SetupConstantBuffer()
 
 void FD3DResScalingShader::WriteConstantBuffer(void* InMem)
 {
-	guard(FD3DResScalingShader::WriteConstantBuffer);
+	guardSlow(FD3DResScalingShader::WriteConstantBuffer);
 
 	// Metallicafan212:	Copy over
 #if USE_RES_COMPUTE
@@ -68,5 +68,5 @@ void FD3DResScalingShader::WriteConstantBuffer(void* InMem)
 	SDef->ResolutionScale	= ParentDevice->ResolutionScale;
 	//SDef->Gamma				= ParentDevice->Gamma;
 
-	unguard;
+	unguardSlow;
 }

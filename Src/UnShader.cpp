@@ -122,7 +122,7 @@ void FD3DShader::Init()
 //					Probably causing a lot of issues having multiple, but I'll combine more of them together later
 void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 {
-	guard(FD3DShader::Bind);
+	guardSlow(FD3DShader::Bind);
 
 	UBOOL bShaderIsUs = 1;
 
@@ -173,7 +173,7 @@ void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 	if(PixelShader != nullptr)
 		UseContext->PSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
 
-	unguard;
+	unguardSlow;
 }
 
 // Metallicafan212:	Made this generic so we can copy vars into shaders
@@ -195,7 +195,7 @@ void FD3DShader::SetupConstantBuffer()
 
 void FD3DShader::WriteConstantBuffer(void* InMem)
 {
-	guard(FD3DShader::WriteConstantBuffer);
+	guardSlow(FD3DShader::WriteConstantBuffer);
 
 	// Metallicafan212:	Copy over
 	FShaderVarCommon* MDef			= ((FShaderVarCommon*)InMem);
@@ -220,5 +220,5 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 		MDef->BoundTextures[i] = (ParentDevice->BoundTextures[i].TexInfoHash != 0 || ParentDevice->BoundTextures[i].bIsRT);
 	}
 
-	unguard;
+	unguardSlow;
 }

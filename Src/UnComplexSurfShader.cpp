@@ -50,7 +50,7 @@ void FD3DSurfShader::SetupConstantBuffer()
 
 void FD3DSurfShader::WriteConstantBuffer(void* InMem)
 {
-	guard(FD3DSurfShader::WriteConstantBuffer);
+	guardSlow(FD3DSurfShader::WriteConstantBuffer);
 
 	// Metallicafan212:	Copy over
 	FD3DShader::WriteConstantBuffer(InMem);
@@ -90,5 +90,5 @@ void FD3DSurfShader::WriteConstantBuffer(void* InMem)
 		SDef->LightandFogScale.W = ParentDevice->BoundTextures[3].VScale;
 	}
 
-	unguard;
+	unguardSlow;
 }
