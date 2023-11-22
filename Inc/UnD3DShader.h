@@ -177,6 +177,11 @@ public:
 
 #if EXTRA_VERT_INFO
 		Macros.AddItem({"EXTRA_VERT_INFO", "1"});
+#if !COMPLEX_SURF_MANUAL_UVs
+		Macros.AddItem({"COMPLEX_SURF_MANUAL_UVs", "0"});
+#else
+		Macros.AddItem({"COMPLEX_SURF_MANUAL_UVs", "1"});
+#endif
 #else
 		Macros.AddItem({"EXTRA_VERT_INFO", "0"});
 #endif

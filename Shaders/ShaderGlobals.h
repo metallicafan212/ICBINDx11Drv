@@ -1,8 +1,6 @@
 // Metallicafan212:	TODO! More shader globals
 
 // Metallicafan212:	Global vertex definition
-#if EXTRA_VERT_INFO
-
 #ifndef DEFINED_VERTEX
 #define DEFINED_VERTEX 1
 struct VSInput 
@@ -13,7 +11,8 @@ struct VSInput
 	float4 fog			: COLOR1;
 	
 	// Metallicafan212:	This is used for complex surfaces
-	//#if EXTRA_VERT_INFO
+	#if EXTRA_VERT_INFO
+	#if !COMPLEX_SURF_MANUAL_UVs
 	float4 XAxis		: TEXCOORD1;
 	float4 YAxis		: TEXCOORD2;
 	float4 PanScale1	: TEXCOORD3;
@@ -22,9 +21,14 @@ struct VSInput
 	float4 PanScale4	: TEXCOORD6;
 	float4 PanScale5	: TEXCOORD7;
 	float4 LFScale		: TEXCOORD8;
-	//#endif
+	#else
+	// Metallicafan212:	Per channel UV info
+	float2 D			: TEXCOORD1;
+	float2 M			: TEXCOORD2;
+	float2 F			: TEXCOORD3;
+	#endif
+	#endif
 };
-#endif
 #endif
 
 #ifndef PI

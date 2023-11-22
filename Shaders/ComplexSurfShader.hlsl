@@ -50,16 +50,6 @@ SamplerState MacroState 	: register(s2);
 SamplerState FogState 		: register(s3);
 SamplerState DetailState	: register(s4);
 
-#if !EXTRA_VERT_INFO
-struct VSInput 
-{ 
-	float4 pos 			: POSITION0;
-	float4 uv			: TEXCOORD0;
-	float4 color		: COLOR0;
-	float4 fog			: COLOR1;
-};
-#endif
-
 struct PSInput 
 {
 	float4 pos 		: SV_POSITION0; 
@@ -92,8 +82,7 @@ PSInput VertShader(VSInput input)
 	output.pos 		= mul(input.pos, Proj);
 	output.color	= input.color;
 	
-	#if EXTRA_VERT_INFO
-	
+	#if EXTRA_VERT_INFO && !COMPLEX_SURF_MANUAL_UVs
 	// Metallicafan212:	TODO! I'm lazy, just define the variables here
 	float4 XAxis 	= input.XAxis;
 	float4 YAxis	= input.YAxis;
@@ -110,6 +99,7 @@ PSInput VertShader(VSInput input)
 	
 	#endif
 	
+	#if !COMPLEX_SURF_MANUAL_UVs
 	// Metallicafan212:	We pre-calcuated the dots
 	float UDot		= XAxis.w;
 	float VDot		= YAxis.w;
@@ -138,6 +128,15 @@ PSInput VertShader(VSInput input)
 	// Metallicafan212:	Detail texture
 	output.dUV.x	= (U - PanScale[4].x) * PanScale[4].z;
 	output.dUV.y	= (V - PanScale[4].y) * PanScale[4].w;
+	#else
+	
+	// Metallicafan212:	Pass UVs through
+	output.uv		= input.uv.xy;
+	output.lUV		= input.uv.zw;
+	output.mUV		= input.M;
+	output.fUV		= input.F;
+	output.dUV.xy	= input.D;
+	#endif
 	
 	// Metallicafan212:	Pass out the original Z
 	output.dUV.z	= input.pos.z;

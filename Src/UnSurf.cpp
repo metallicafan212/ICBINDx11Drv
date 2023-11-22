@@ -103,8 +103,8 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 		m_SecVert[Vert] = TempVert;
 #else
 		// Metallicafan212:	Calculate the UVs of this vertex
-		U = (Poly->Pts[0]->Point | XAxis) - UDot;
-		V = (Poly->Pts[0]->Point | YAxis) - VDot;
+		U = (Poly->Pts[1]->Point | XAxis) - UDot;
+		V = (Poly->Pts[1]->Point | YAxis) - VDot;
 
 		// Metallicafan212:	Write each value out
 
@@ -160,8 +160,8 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 			m_SecVert[Vert]			= TempVert;
 #else
 			// Metallicafan212:	Calculate the UVs of this vertex
-			U = (Poly->Pts[0]->Point | XAxis) - UDot;
-			V = (Poly->Pts[0]->Point | YAxis) - VDot;
+			U = (Poly->Pts[i]->Point | XAxis) - UDot;
+			V = (Poly->Pts[i]->Point | YAxis) - VDot;
 
 			// Metallicafan212:	Write each value out
 
