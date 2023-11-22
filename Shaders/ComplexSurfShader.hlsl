@@ -114,16 +114,16 @@ PSInput VertShader(VSInput input)
 	output.uv.y		= (V - PanScale[0].y) * PanScale[0].w;
 	
 	// Metallicafan212:	Now the lightmap
-	output.lUV.x	= (U - PanScale[1].x + 0.5 * LightScale.x) * PanScale[1].z;
-	output.lUV.y	= (V - PanScale[1].y + 0.5 * LightScale.y) * PanScale[1].w;
+	output.lUV.x	= (U - PanScale[1].x + LightScale.x) * PanScale[1].z;
+	output.lUV.y	= (V - PanScale[1].y + LightScale.y) * PanScale[1].w;
 	
 	// Metallicafan212:	Macro texture
 	output.mUV.x	= (U - PanScale[2].x) * PanScale[2].z;
 	output.mUV.y	= (V - PanScale[2].y) * PanScale[2].w;
 	
 	// Metallicafan212:	Fogmap
-	output.fUV.x	= (U - PanScale[3].x + 0.5 * FogScale.x) * PanScale[3].z;
-	output.fUV.y	= (V - PanScale[3].y + 0.5 * FogScale.x) * PanScale[3].w;
+	output.fUV.x	= (U - PanScale[3].x + FogScale.x) * PanScale[3].z;
+	output.fUV.y	= (V - PanScale[3].y + FogScale.y) * PanScale[3].w;
 	
 	// Metallicafan212:	Detail texture
 	output.dUV.x	= (U - PanScale[4].x) * PanScale[4].z;

@@ -18,16 +18,6 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 #define DO_FINAL_COLOR
 #include "ShaderGlobals.h"
 
-#if !EXTRA_VERT_INFO
-struct VSInput 
-{ 
-	float4 pos 		: POSITION0;
-	float4 uv		: TEXCOORD0;
-	float4 color	: COLOR0;
-	float4 fog		: COLOR1;
-};
-#endif
-
 struct PSInput 
 {
 	float4 pos 		: SV_POSITION0; 

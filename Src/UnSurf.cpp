@@ -1,56 +1,63 @@
 #include "ICBINDx11Drv.h"
 
 // Metallicafan212:	Temp info
-//					TODO! Only calculate the UVs that we need?
-FPlane PanScale[5];
+//					TODO! Store this somewhere else!!!!
+struct FUVInfo
+{
+	FPlane PanScale[5];
 
-UBOOL bEnabledTex[5];
+	UBOOL bEnabledTex[5];
 
-FPlane LFScale;
+	FPlane LFScale;
 
-FVector XAxis;
-FVector YAxis;
+	FVector XAxis;
+	FVector YAxis;
 
-FLOAT UDot;
-FLOAT VDot;
+	FLOAT UDot;
+	FLOAT VDot;
+};
 
-
+#if EXTRA_VERT_INFO && !COMPLEX_SURF_MANUAL_UVs
 // Metallicafan212:	TODO! Temp vertex to keep here to copy data over
 FD3DSecondaryVert TempVert;
+#endif
 
 #define DO_UV_CHANNEL_NO_ADD(chan, uLoc, vLoc) \
 /*Metallicafan212: Each one is checked if we need to even cal it */ \
-if (bEnabledTex[chan]) \
+if (UVInfo.bEnabledTex[chan]) \
 { \
-	uLoc = (U - PanScale[chan].X) * PanScale[chan].Z; \
-	vLoc = (V - PanScale[chan].Y) * PanScale[chan].W; \
+	uLoc = (U - UVInfo.PanScale[chan].X) * UVInfo.PanScale[chan].Z; \
+	vLoc = (V - UVInfo.PanScale[chan].Y) * UVInfo.PanScale[chan].W; \
 } \
 
 #define DO_UV_CHANNEL(chan, uLoc, vLoc, extAddx, extAddy) \
 /*Metallicafan212: Each one is checked if we need to even cal it */ \
-if (bEnabledTex[chan]) \
+if (UVInfo.bEnabledTex[chan]) \
 { \
-	uLoc = (U - PanScale[chan].X + (extAddx)) * PanScale[chan].Z; \
-	vLoc = (V - PanScale[chan].Y + (extAddy)) * PanScale[chan].W; \
+	uLoc = (U - UVInfo.PanScale[chan].X + (extAddx)) * UVInfo.PanScale[chan].Z; \
+	vLoc = (V - UVInfo.PanScale[chan].Y + (extAddy)) * UVInfo.PanScale[chan].W; \
 } \
 
 #define CALC_UV(p) \
 	/* Metallicafan212:	Calculate the UVs of this vertex*/ \
-	U = (Poly->Pts[p]->Point | XAxis) - UDot; \
-	V = (Poly->Pts[p]->Point | YAxis) - VDot; \
+	U = (Poly->Pts[p]->Point | UVInfo.XAxis) - UVInfo.UDot; \
+	V = (Poly->Pts[p]->Point | UVInfo.YAxis) - UVInfo.VDot; \
 	/* Metallicafan212:	Diffuse */ \
 	DO_UV_CHANNEL_NO_ADD(0, m_VertexBuff[Vert].U, m_VertexBuff[Vert].V); \
 	/* Metallicafan212:	Lightmap */ \
-	DO_UV_CHANNEL(1, m_VertexBuff[Vert].UX, m_VertexBuff[Vert].VX, LFScale.X, LFScale.Y); \
+	DO_UV_CHANNEL(1, m_VertexBuff[Vert].UX, m_VertexBuff[Vert].VX, UVInfo.LFScale.X, UVInfo.LFScale.Y); \
 	/* Metallicafan212:	Macro */ \
 	DO_UV_CHANNEL_NO_ADD(2, m_SecVert[Vert].MU, m_SecVert[Vert].MV); \
 	/* Metallicafan212:	Fog */ \
-	DO_UV_CHANNEL(3, m_SecVert[Vert].FU, m_SecVert[Vert].FV, LFScale.Z, LFScale.W); \
+	DO_UV_CHANNEL(3, m_SecVert[Vert].FU, m_SecVert[Vert].FV, UVInfo.LFScale.Z, UVInfo.LFScale.W); \
 	/* Metallicafan212:	Detail */ \
 	DO_UV_CHANNEL_NO_ADD(4, m_SecVert[Vert].DU, m_SecVert[Vert].DV);
 
-
+#if EXTRA_VERT_INFO
+FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_VertexBuff, INDEX* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies, FD3DSecondaryVert* m_SecVert, FUVInfo& UVInfo)
+#else
 FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_VertexBuff, INDEX* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies, FD3DSecondaryVert* m_SecVert)
+#endif
 {
 	SIZE_T vIndex	= 0;
 	SIZE_T Vert		= 0;
@@ -359,8 +366,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	LockSecondaryVertBuffer();
 
 	// Metallicafan212:	Calculate all the extra info
-	/*FLOAT*/ UDot = Facet.MapCoords.XAxis | Facet.MapCoords.Origin;
-	/*FLOAT*/ VDot = Facet.MapCoords.YAxis | Facet.MapCoords.Origin;
+	FUVInfo UVInfo;
+	/*FLOAT*/ UVInfo.UDot = Facet.MapCoords.XAxis | Facet.MapCoords.Origin;
+	/*FLOAT*/ UVInfo.VDot = Facet.MapCoords.YAxis | Facet.MapCoords.Origin;
 #if !COMPLEX_SURF_MANUAL_UVs
 	TempVert.XAxis		= FPlane(Facet.MapCoords.XAxis, UDot);
 	TempVert.YAxis		= FPlane(Facet.MapCoords.YAxis, VDot);
@@ -392,8 +400,8 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		TempVert.LFScale.W = BoundTextures[3].VScale;
 	}
 #else
-	XAxis = Facet.MapCoords.XAxis;
-	YAxis = Facet.MapCoords.YAxis;
+	UVInfo.XAxis = Facet.MapCoords.XAxis;
+	UVInfo.YAxis = Facet.MapCoords.YAxis;
 
 	// Metallicafan212:	Now the pan info
 	for (INT i = 0; i < 5; i++)
@@ -401,34 +409,38 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		// Metallicafan212:	Copy the pan and scale info
 		if (BoundTextures[i].TexInfoHash != 0)
 		{
-			bEnabledTex[i] = 1;
-			PanScale[i] = FPlane(BoundTextures[i].UPan, BoundTextures[i].VPan, BoundTextures[i].UMult, BoundTextures[i].VMult);
+			UVInfo.bEnabledTex[i] = 1;
+			UVInfo.PanScale[i] = FPlane(BoundTextures[i].UPan, BoundTextures[i].VPan, BoundTextures[i].UMult, BoundTextures[i].VMult);
 		}
 		else
 		{
-			bEnabledTex[i] = 0;
+			UVInfo.bEnabledTex[i] = 0;
 		}
 	}
 
 	// Metallicafan212:	And lastly the original lightmap scale
 	if (BoundTextures[1].TexInfoHash != 0)
 	{
-		LFScale.X = BoundTextures[1].UScale * 0.5f;
-		LFScale.Y = BoundTextures[1].VScale * 0.5f;
+		UVInfo.LFScale.X = BoundTextures[1].UScale * 0.5f;
+		UVInfo.LFScale.Y = BoundTextures[1].VScale * 0.5f;
 	}
 
 	// Metallicafan212:	And the fog scale
 	if (BoundTextures[3].TexInfoHash != 0)
 	{
-		LFScale.Z = BoundTextures[3].UScale * 0.5f;
-		LFScale.W = BoundTextures[3].VScale + 0.5f;
+		UVInfo.LFScale.Z = BoundTextures[3].UScale * 0.5f;
+		UVInfo.LFScale.W = BoundTextures[3].VScale + 0.5f;
 	}
 
 #endif
 
 #endif
 
+#if EXTRA_VERT_INFO
+	BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff, UVInfo);
+#else
 	BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff);
+#endif
 
 
 	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -497,7 +509,11 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		FSurfShader->Bind(m_RenderContext);
 
 		// Metallicafan212:	Rebuffer the verts (again)
+#if EXTRA_VERT_INFO
+		BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff, UVInfo);
+#else
 		BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff);
+#endif
 
 		//UnlockVertexBuffer();
 		//UnlockIndexBuffer();

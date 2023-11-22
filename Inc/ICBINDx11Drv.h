@@ -7,7 +7,7 @@
 #define USE_UNODERED_MAP_EVERYWHERE 1
 
 // Metallicafan212:	If complex surface stuff is added to each vert
-#define EXTRA_VERT_INFO 1
+#define EXTRA_VERT_INFO 0
 
 // Metallicafan212:	If we pack the UVs of each texture into each vert instead (when EXTRA_VERT_INFO is on)
 #define COMPLEX_SURF_MANUAL_UVs 1

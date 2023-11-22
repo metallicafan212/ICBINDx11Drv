@@ -82,15 +82,15 @@ void FD3DSurfShader::WriteConstantBuffer(void* InMem)
 	// Metallicafan212:	And lastly the original lightmap scale
 	if (ParentDevice->BoundTextures[1].TexInfoHash != 0)
 	{
-		SDef->LightandFogScale.X	= ParentDevice->BoundTextures[1].UScale;
-		SDef->LightandFogScale.Y	= ParentDevice->BoundTextures[1].VScale;
+		SDef->LightandFogScale.X	= ParentDevice->BoundTextures[1].UScale * 0.5f;
+		SDef->LightandFogScale.Y	= ParentDevice->BoundTextures[1].VScale * 0.5f;
 	}
 
 	// Metallicafan212:	And the fog scale
 	if (ParentDevice->BoundTextures[3].TexInfoHash != 0)
 	{
-		SDef->LightandFogScale.Z = ParentDevice->BoundTextures[3].UScale;
-		SDef->LightandFogScale.W = ParentDevice->BoundTextures[3].VScale;
+		SDef->LightandFogScale.Z = ParentDevice->BoundTextures[3].UScale * 0.5f;
+		SDef->LightandFogScale.W = ParentDevice->BoundTextures[3].VScale * 0.5f;
 	}
 #endif
 
