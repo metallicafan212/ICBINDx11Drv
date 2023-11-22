@@ -133,9 +133,9 @@ PSInput VertShader(VSInput input)
 	// Metallicafan212:	Pass UVs through
 	output.uv		= input.uv.xy;
 	output.lUV		= input.uv.zw;
-	output.mUV		= input.M;
-	output.fUV		= input.F;
-	output.dUV.xy	= input.D;
+	output.mUV		= input.DM.zw;
+	output.fUV		= input.FX.xy;
+	output.dUV.xy	= input.DM.xy;
 	#endif
 	
 	// Metallicafan212:	Pass out the original Z

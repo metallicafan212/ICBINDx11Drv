@@ -477,7 +477,7 @@ void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 #if !COMPLEX_SURF_MANUAL_UVs
 extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[12];
 #else
-extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[7];
+extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[6];
 #endif
 #else
 extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];

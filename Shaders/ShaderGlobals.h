@@ -23,9 +23,11 @@ struct VSInput
 	float4 LFScale		: TEXCOORD8;
 	#else
 	// Metallicafan212:	Per channel UV info
-	float2 D			: TEXCOORD1;
-	float2 M			: TEXCOORD2;
-	float2 F			: TEXCOORD3;
+	float4  DM			: TEXCOORD1;
+	float4	FX			: TEXCOORD2;
+	//float2 D			: TEXCOORD1;
+	//float2 M			: TEXCOORD2;
+	//float2 F			: TEXCOORD3;
 	#endif
 	#endif
 };
