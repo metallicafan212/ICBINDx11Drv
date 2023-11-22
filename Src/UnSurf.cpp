@@ -18,6 +18,38 @@ FLOAT VDot;
 // Metallicafan212:	TODO! Temp vertex to keep here to copy data over
 FD3DSecondaryVert TempVert;
 
+#define DO_UV_CHANNEL_NO_ADD(chan, uLoc, vLoc) \
+/*Metallicafan212: Each one is checked if we need to even cal it */ \
+if (bEnabledTex[chan]) \
+{ \
+	uLoc = (U - PanScale[chan].X) * PanScale[chan].Z; \
+	vLoc = (V - PanScale[chan].Y) * PanScale[chan].W; \
+} \
+
+#define DO_UV_CHANNEL(chan, uLoc, vLoc, extAddx, extAddy) \
+/*Metallicafan212: Each one is checked if we need to even cal it */ \
+if (bEnabledTex[chan]) \
+{ \
+	uLoc = (U - PanScale[chan].X + (extAddx)) * PanScale[chan].Z; \
+	vLoc = (V - PanScale[chan].Y + (extAddy)) * PanScale[chan].W; \
+} \
+
+#define CALC_UV(p) \
+	/* Metallicafan212:	Calculate the UVs of this vertex*/ \
+	U = (Poly->Pts[p]->Point | XAxis) - UDot; \
+	V = (Poly->Pts[p]->Point | YAxis) - VDot; \
+	/* Metallicafan212:	Diffuse */ \
+	DO_UV_CHANNEL_NO_ADD(0, m_VertexBuff[Vert].U, m_VertexBuff[Vert].V); \
+	/* Metallicafan212:	Lightmap */ \
+	DO_UV_CHANNEL(1, m_VertexBuff[Vert].UX, m_VertexBuff[Vert].VX, LFScale.X, LFScale.Y); \
+	/* Metallicafan212:	Macro */ \
+	DO_UV_CHANNEL_NO_ADD(2, m_SecVert[Vert].MU, m_SecVert[Vert].MV); \
+	/* Metallicafan212:	Fog */ \
+	DO_UV_CHANNEL(3, m_SecVert[Vert].FU, m_SecVert[Vert].FV, LFScale.Z, LFScale.W); \
+	/* Metallicafan212:	Detail */ \
+	DO_UV_CHANNEL_NO_ADD(4, m_SecVert[Vert].DU, m_SecVert[Vert].DV);
+
+
 FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_VertexBuff, INDEX* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies, FD3DSecondaryVert* m_SecVert)
 {
 	SIZE_T vIndex	= 0;
@@ -49,12 +81,9 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 		m_SecVert[Vert]			= TempVert;
 #else
 		// Metallicafan212:	Calculate the UVs of this vertex
-		U							= (Poly->Pts[0]->Point | XAxis) - UDot;
-		V							= (Poly->Pts[0]->Point | YAxis) - VDot;
+		CALC_UV(0);
 
-		// Metallicafan212:	Write each value out
-
-		// Metallicafan212:	Diffuse
+		/*
 		if (bEnabledTex[0])
 		{
 			m_VertexBuff[Vert].U	= (U - PanScale[0].X) * PanScale[0].Z;
@@ -88,6 +117,7 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 			m_SecVert[Vert].DU		= (U - PanScale[4].X) * PanScale[4].Z;
 			m_SecVert[Vert].DV		= (V - PanScale[4].Y) * PanScale[4].W;
 		}
+		*/
 #endif
 #endif
 
@@ -103,45 +133,7 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 		m_SecVert[Vert] = TempVert;
 #else
 		// Metallicafan212:	Calculate the UVs of this vertex
-		U = (Poly->Pts[1]->Point | XAxis) - UDot;
-		V = (Poly->Pts[1]->Point | YAxis) - VDot;
-
-		// Metallicafan212:	Write each value out
-
-		// Metallicafan212:	Diffuse
-		if (bEnabledTex[0])
-		{
-			m_VertexBuff[Vert].U = (U - PanScale[0].X) * PanScale[0].Z;
-			m_VertexBuff[Vert].V = (V - PanScale[0].Y) * PanScale[0].W;
-		}
-
-		// Metallicafan212:	Lightmap
-		if (bEnabledTex[1])
-		{
-			m_VertexBuff[Vert].UX = (U - PanScale[1].X + 0.5f * LFScale.X) * PanScale[1].Z;
-			m_VertexBuff[Vert].VX = (V - PanScale[1].Y + 0.5f * LFScale.Y) * PanScale[1].W;
-		}
-
-		// Metallicafan212:	Macro
-		if (bEnabledTex[2])
-		{
-			m_SecVert[Vert].MU = (U - PanScale[2].X) * PanScale[2].Z;
-			m_SecVert[Vert].MV = (V - PanScale[2].Y) * PanScale[2].W;
-		}
-
-		// Metallicafan212:	Fog
-		if (bEnabledTex[3])
-		{
-			m_SecVert[Vert].FU = (U - PanScale[3].X + 0.5f * LFScale.Z) * PanScale[3].Z;
-			m_SecVert[Vert].FV = (V - PanScale[3].Y + 0.5f * LFScale.W) * PanScale[3].W;
-		}
-
-		// Metallicafan212:	Detail
-		if (bEnabledTex[4])
-		{
-			m_SecVert[Vert].DU = (U - PanScale[4].X) * PanScale[4].Z;
-			m_SecVert[Vert].DV = (V - PanScale[4].Y) * PanScale[4].W;
-		}
+		CALC_UV(1);
 #endif
 #endif
 
@@ -160,45 +152,7 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 			m_SecVert[Vert]			= TempVert;
 #else
 			// Metallicafan212:	Calculate the UVs of this vertex
-			U = (Poly->Pts[i]->Point | XAxis) - UDot;
-			V = (Poly->Pts[i]->Point | YAxis) - VDot;
-
-			// Metallicafan212:	Write each value out
-
-			// Metallicafan212:	Diffuse
-			if (bEnabledTex[0])
-			{
-				m_VertexBuff[Vert].U = (U - PanScale[0].X) * PanScale[0].Z;
-				m_VertexBuff[Vert].V = (V - PanScale[0].Y) * PanScale[0].W;
-			}
-
-			// Metallicafan212:	Lightmap
-			if (bEnabledTex[1])
-			{
-				m_VertexBuff[Vert].UX = (U - PanScale[1].X + 0.5f * LFScale.X) * PanScale[1].Z;
-				m_VertexBuff[Vert].VX = (V - PanScale[1].Y + 0.5f * LFScale.Y) * PanScale[1].W;
-			}
-
-			// Metallicafan212:	Macro
-			if (bEnabledTex[2])
-			{
-				m_SecVert[Vert].MU = (U - PanScale[2].X) * PanScale[2].Z;
-				m_SecVert[Vert].MV = (V - PanScale[2].Y) * PanScale[2].W;
-			}
-
-			// Metallicafan212:	Fog
-			if (bEnabledTex[3])
-			{
-				m_SecVert[Vert].FU = (U - PanScale[3].X + 0.5f * LFScale.Z) * PanScale[3].Z;
-				m_SecVert[Vert].FV = (V - PanScale[3].Y + 0.5f * LFScale.W) * PanScale[3].W;
-			}
-
-			// Metallicafan212:	Detail
-			if (bEnabledTex[4])
-			{
-				m_SecVert[Vert].DU = (U - PanScale[4].X) * PanScale[4].Z;
-				m_SecVert[Vert].DV = (V - PanScale[4].Y) * PanScale[4].W;
-			}
+			CALC_UV(i);
 #endif
 #endif
 
@@ -459,15 +413,15 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	// Metallicafan212:	And lastly the original lightmap scale
 	if (BoundTextures[1].TexInfoHash != 0)
 	{
-		LFScale.X = BoundTextures[1].UScale;
-		LFScale.Y = BoundTextures[1].VScale;
+		LFScale.X = BoundTextures[1].UScale * 0.5f;
+		LFScale.Y = BoundTextures[1].VScale * 0.5f;
 	}
 
 	// Metallicafan212:	And the fog scale
 	if (BoundTextures[3].TexInfoHash != 0)
 	{
-		LFScale.Z = BoundTextures[3].UScale;
-		LFScale.W = BoundTextures[3].VScale;
+		LFScale.Z = BoundTextures[3].UScale * 0.5f;
+		LFScale.W = BoundTextures[3].VScale + 0.5f;
 	}
 
 #endif
