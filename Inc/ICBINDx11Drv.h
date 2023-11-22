@@ -9,6 +9,9 @@
 // Metallicafan212:	If complex surface stuff is added to each vert
 #define EXTRA_VERT_INFO 1
 
+// Metallicafan212:	If we pack the UVs of each texture into each vert instead (when EXTRA_VERT_INFO is on)
+#define COMPLEX_SURF_MANUAL_UVs 1
+
 // Metallicafan212:	EXPLICIT HP2 new engine check
 //					Modify this to add in more game macros
 //					This is (currently) ONLY used to turn off specific code blocks, not to redefine the functions
@@ -214,10 +217,21 @@ struct FD3DVert
 //					This is stored in a separate buffer and is only locked/used when needed
 struct FD3DSecondaryVert
 {
+#if !COMPLEX_SURF_MANUAL_UVs
 	FPlane	XAxis;
 	FPlane	YAxis;
 	FPlane	PanScale[5];
 	FPlane	LFScale;
+#else
+	// Metallicafan212:	UV is used for the diffuse, UX and UY is used for the lightmaps
+	//					So, detail, macro, and fog need UVs
+	FLOAT	DU;
+	FLOAT	DV;
+	FLOAT	MU;
+	FLOAT	MV;
+	FLOAT	FU;
+	FLOAT	FV;
+#endif
 };
 
 // Metallicafan212:	Cache stuff
@@ -460,7 +474,11 @@ void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 
 // Metallicafan212:	Base layout declaration
 #if EXTRA_VERT_INFO
+#if !COMPLEX_SURF_MANUAL_UVs
 extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[12];
+#else
+extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[7];
+#endif
 #else
 extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
 #endif

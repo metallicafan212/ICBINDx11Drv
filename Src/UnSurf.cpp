@@ -1,12 +1,29 @@
 #include "ICBINDx11Drv.h"
 
+// Metallicafan212:	Temp info
+//					TODO! Only calculate the UVs that we need?
+FPlane PanScale[5];
+
+UBOOL bEnabledTex[5];
+
+FPlane LFScale;
+
+FVector XAxis;
+FVector YAxis;
+
+FLOAT UDot;
+FLOAT VDot;
+
+
 // Metallicafan212:	TODO! Temp vertex to keep here to copy data over
 FD3DSecondaryVert TempVert;
 
 FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_VertexBuff, INDEX* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies, FD3DSecondaryVert* m_SecVert)
 {
 	SIZE_T vIndex	= 0;
-	SIZE_T V		= 0;
+	SIZE_T Vert		= 0;
+
+	FLOAT U, V;
 
 	INDEX rVIndex	= m_BufferedVerts;
 
@@ -19,50 +36,179 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 
 		// Metallicafan212:	Save the current vertex index
 		//_WORD baseVIndex = V + m_BufferedVerts;
-		INDEX baseVIndex = rVIndex + V;
+		INDEX baseVIndex = rVIndex + Vert;
 
 		// Metallicafan212:	Do the first 2 verts (since we only add on one more vert at a time)
-		m_VertexBuff[V].X		= Poly->Pts[0]->Point.X;
-		m_VertexBuff[V].Y		= Poly->Pts[0]->Point.Y;
-		m_VertexBuff[V].Z		= Poly->Pts[0]->Point.Z;
+		m_VertexBuff[Vert].X		= Poly->Pts[0]->Point.X;
+		m_VertexBuff[Vert].Y		= Poly->Pts[0]->Point.Y;
+		m_VertexBuff[Vert].Z		= Poly->Pts[0]->Point.Z;
 
 		// Metallicafan212:	Pan/Scale info
 #if EXTRA_VERT_INFO
-		m_SecVert[V]			= TempVert;
+#if !COMPLEX_SURF_MANUAL_UVs
+		m_SecVert[Vert]			= TempVert;
+#else
+		// Metallicafan212:	Calculate the UVs of this vertex
+		U							= (Poly->Pts[0]->Point | XAxis) - UDot;
+		V							= (Poly->Pts[0]->Point | YAxis) - VDot;
+
+		// Metallicafan212:	Write each value out
+
+		// Metallicafan212:	Diffuse
+		if (bEnabledTex[0])
+		{
+			m_VertexBuff[Vert].U	= (U - PanScale[0].X) * PanScale[0].Z;
+			m_VertexBuff[Vert].V	= (V - PanScale[0].Y) * PanScale[0].W;
+		}
+
+		// Metallicafan212:	Lightmap
+		if (bEnabledTex[1])
+		{
+			m_VertexBuff[Vert].UX	= (U - PanScale[1].X + 0.5f * LFScale.X) * PanScale[1].Z;
+			m_VertexBuff[Vert].VX	= (V - PanScale[1].Y + 0.5f * LFScale.Y) * PanScale[1].W;
+		}
+
+		// Metallicafan212:	Macro
+		if (bEnabledTex[2])
+		{
+			m_SecVert[Vert].MU		= (U - PanScale[2].X) * PanScale[2].Z;
+			m_SecVert[Vert].MV		= (V - PanScale[2].Y) * PanScale[2].W;
+		}
+
+		// Metallicafan212:	Fog
+		if (bEnabledTex[3])
+		{
+			m_SecVert[Vert].FU		= (U - PanScale[3].X + 0.5f * LFScale.Z) * PanScale[3].Z;
+			m_SecVert[Vert].FV		= (V - PanScale[3].Y + 0.5f * LFScale.W) * PanScale[3].W;
+		}
+
+		// Metallicafan212:	Detail
+		if (bEnabledTex[4])
+		{
+			m_SecVert[Vert].DU		= (U - PanScale[4].X) * PanScale[4].Z;
+			m_SecVert[Vert].DV		= (V - PanScale[4].Y) * PanScale[4].W;
+		}
+#endif
 #endif
 
-		m_VertexBuff[V++].Color = Color;
+		m_VertexBuff[Vert++].Color = Color;
 
-		m_VertexBuff[V].X		= Poly->Pts[1]->Point.X;
-		m_VertexBuff[V].Y		= Poly->Pts[1]->Point.Y;
-		m_VertexBuff[V].Z		= Poly->Pts[1]->Point.Z;
+		m_VertexBuff[Vert].X		= Poly->Pts[1]->Point.X;
+		m_VertexBuff[Vert].Y		= Poly->Pts[1]->Point.Y;
+		m_VertexBuff[Vert].Z		= Poly->Pts[1]->Point.Z;
 
 		// Metallicafan212:	Pan/Scale info
 #if EXTRA_VERT_INFO
-		m_SecVert[V] = TempVert;
+#if !COMPLEX_SURF_MANUAL_UVs
+		m_SecVert[Vert] = TempVert;
+#else
+		// Metallicafan212:	Calculate the UVs of this vertex
+		U = (Poly->Pts[0]->Point | XAxis) - UDot;
+		V = (Poly->Pts[0]->Point | YAxis) - VDot;
+
+		// Metallicafan212:	Write each value out
+
+		// Metallicafan212:	Diffuse
+		if (bEnabledTex[0])
+		{
+			m_VertexBuff[Vert].U = (U - PanScale[0].X) * PanScale[0].Z;
+			m_VertexBuff[Vert].V = (V - PanScale[0].Y) * PanScale[0].W;
+		}
+
+		// Metallicafan212:	Lightmap
+		if (bEnabledTex[1])
+		{
+			m_VertexBuff[Vert].UX = (U - PanScale[1].X + 0.5f * LFScale.X) * PanScale[1].Z;
+			m_VertexBuff[Vert].VX = (V - PanScale[1].Y + 0.5f * LFScale.Y) * PanScale[1].W;
+		}
+
+		// Metallicafan212:	Macro
+		if (bEnabledTex[2])
+		{
+			m_SecVert[Vert].MU = (U - PanScale[2].X) * PanScale[2].Z;
+			m_SecVert[Vert].MV = (V - PanScale[2].Y) * PanScale[2].W;
+		}
+
+		// Metallicafan212:	Fog
+		if (bEnabledTex[3])
+		{
+			m_SecVert[Vert].FU = (U - PanScale[3].X + 0.5f * LFScale.Z) * PanScale[3].Z;
+			m_SecVert[Vert].FV = (V - PanScale[3].Y + 0.5f * LFScale.W) * PanScale[3].W;
+		}
+
+		// Metallicafan212:	Detail
+		if (bEnabledTex[4])
+		{
+			m_SecVert[Vert].DU = (U - PanScale[4].X) * PanScale[4].Z;
+			m_SecVert[Vert].DV = (V - PanScale[4].Y) * PanScale[4].W;
+		}
+#endif
 #endif
 
-		m_VertexBuff[V++].Color = Color;
+		m_VertexBuff[Vert++].Color = Color;
 
 
 		for (INT i = 2; i < NumPts; i++)
 		{
-			m_VertexBuff[V].X		= Poly->Pts[i]->Point.X;
-			m_VertexBuff[V].Y		= Poly->Pts[i]->Point.Y;
-			m_VertexBuff[V].Z		= Poly->Pts[i]->Point.Z;
+			m_VertexBuff[Vert].X		= Poly->Pts[i]->Point.X;
+			m_VertexBuff[Vert].Y		= Poly->Pts[i]->Point.Y;
+			m_VertexBuff[Vert].Z		= Poly->Pts[i]->Point.Z;
 
 			// Metallicafan212:	Pan/Scale info
 #if EXTRA_VERT_INFO
-			m_SecVert[V] = TempVert;
+#if !COMPLEX_SURF_MANUAL_UVs
+			m_SecVert[Vert]			= TempVert;
+#else
+			// Metallicafan212:	Calculate the UVs of this vertex
+			U = (Poly->Pts[0]->Point | XAxis) - UDot;
+			V = (Poly->Pts[0]->Point | YAxis) - VDot;
+
+			// Metallicafan212:	Write each value out
+
+			// Metallicafan212:	Diffuse
+			if (bEnabledTex[0])
+			{
+				m_VertexBuff[Vert].U = (U - PanScale[0].X) * PanScale[0].Z;
+				m_VertexBuff[Vert].V = (V - PanScale[0].Y) * PanScale[0].W;
+			}
+
+			// Metallicafan212:	Lightmap
+			if (bEnabledTex[1])
+			{
+				m_VertexBuff[Vert].UX = (U - PanScale[1].X + 0.5f * LFScale.X) * PanScale[1].Z;
+				m_VertexBuff[Vert].VX = (V - PanScale[1].Y + 0.5f * LFScale.Y) * PanScale[1].W;
+			}
+
+			// Metallicafan212:	Macro
+			if (bEnabledTex[2])
+			{
+				m_SecVert[Vert].MU = (U - PanScale[2].X) * PanScale[2].Z;
+				m_SecVert[Vert].MV = (V - PanScale[2].Y) * PanScale[2].W;
+			}
+
+			// Metallicafan212:	Fog
+			if (bEnabledTex[3])
+			{
+				m_SecVert[Vert].FU = (U - PanScale[3].X + 0.5f * LFScale.Z) * PanScale[3].Z;
+				m_SecVert[Vert].FV = (V - PanScale[3].Y + 0.5f * LFScale.W) * PanScale[3].W;
+			}
+
+			// Metallicafan212:	Detail
+			if (bEnabledTex[4])
+			{
+				m_SecVert[Vert].DU = (U - PanScale[4].X) * PanScale[4].Z;
+				m_SecVert[Vert].DV = (V - PanScale[4].Y) * PanScale[4].W;
+			}
+#endif
 #endif
 
-			m_VertexBuff[V++].Color	= Color;
+			m_VertexBuff[Vert++].Color	= Color;
 
 			// Metallicafan212:	Now assemble this triangle
 			//					It always uses the base vertex, the previous one, and the current one
-			m_IndexBuff[vIndex++] = baseVIndex;
-			m_IndexBuff[vIndex++] = (i - 1) + baseVIndex;
-			m_IndexBuff[vIndex++] = i + baseVIndex;
+			m_IndexBuff[vIndex++]	= baseVIndex;
+			m_IndexBuff[vIndex++]	= (i - 1) + baseVIndex;
+			m_IndexBuff[vIndex++]	= i + baseVIndex;
 		}
 	}
 }
@@ -259,8 +405,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	LockSecondaryVertBuffer();
 
 	// Metallicafan212:	Calculate all the extra info
-	FLOAT	UDot		= Facet.MapCoords.XAxis | Facet.MapCoords.Origin;
-	FLOAT	VDot		= Facet.MapCoords.YAxis | Facet.MapCoords.Origin;
+	/*FLOAT*/ UDot = Facet.MapCoords.XAxis | Facet.MapCoords.Origin;
+	/*FLOAT*/ VDot = Facet.MapCoords.YAxis | Facet.MapCoords.Origin;
+#if !COMPLEX_SURF_MANUAL_UVs
 	TempVert.XAxis		= FPlane(Facet.MapCoords.XAxis, UDot);
 	TempVert.YAxis		= FPlane(Facet.MapCoords.YAxis, VDot);
 	//SDef->SurfAlpha			= SurfAlpha;
@@ -290,6 +437,40 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		TempVert.LFScale.Z = BoundTextures[3].UScale;
 		TempVert.LFScale.W = BoundTextures[3].VScale;
 	}
+#else
+	XAxis = Facet.MapCoords.XAxis;
+	YAxis = Facet.MapCoords.YAxis;
+
+	// Metallicafan212:	Now the pan info
+	for (INT i = 0; i < 5; i++)
+	{
+		// Metallicafan212:	Copy the pan and scale info
+		if (BoundTextures[i].TexInfoHash != 0)
+		{
+			bEnabledTex[i] = 1;
+			PanScale[i] = FPlane(BoundTextures[i].UPan, BoundTextures[i].VPan, BoundTextures[i].UMult, BoundTextures[i].VMult);
+		}
+		else
+		{
+			bEnabledTex[i] = 0;
+		}
+	}
+
+	// Metallicafan212:	And lastly the original lightmap scale
+	if (BoundTextures[1].TexInfoHash != 0)
+	{
+		LFScale.X = BoundTextures[1].UScale;
+		LFScale.Y = BoundTextures[1].VScale;
+	}
+
+	// Metallicafan212:	And the fog scale
+	if (BoundTextures[3].TexInfoHash != 0)
+	{
+		LFScale.Z = BoundTextures[3].UScale;
+		LFScale.W = BoundTextures[3].VScale;
+	}
+
+#endif
 
 #endif
 

@@ -8,7 +8,7 @@ FTextureCache::FTextureCache()
 
 void FTextureCache::Flush()
 {
-	guard(FTextureCache::Flush);
+	guardSlow(FTextureCache::Flush);
 
 #if 0
 	// Metallicafan212:	TODO! Loop our maps and clear the textures
@@ -60,12 +60,12 @@ void FTextureCache::Flush()
 
 #endif
 
-	unguard;
+	unguardSlow;
 }
 
 FD3DTexture* FTextureCache::Find(D3DCacheId InID, QWORD PolyFlags)
 {
-	guard(FTextureCache::Find);
+	guardSlow(FTextureCache::Find);
 
 	// Metallicafan212:	Figure out what map this should be in
 	DWORD Truncated = (DWORD)InID;
@@ -123,12 +123,12 @@ FD3DTexture* FTextureCache::Find(D3DCacheId InID, QWORD PolyFlags)
 		}
 	}
 
-	unguard;
+	unguardSlow;
 }
 
 FD3DTexture* FTextureCache::Set(D3DCacheId InID, QWORD PolyFlags)
 {
-	guard(FTextureCache::Set);
+	guardSlow(FTextureCache::Set);
 
 	// Metallicafan212:	Figure out what map this should be in
 	DWORD Truncated = (DWORD)InID;
@@ -183,5 +183,5 @@ FD3DTexture* FTextureCache::Set(D3DCacheId InID, QWORD PolyFlags)
 		}
 	}
 
-	unguard;
+	unguardSlow;
 }
