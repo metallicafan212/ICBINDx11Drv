@@ -93,6 +93,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_D3DSwapChain);
 	SAFE_RELEASE(VertexBuffer);
 	SAFE_RELEASE(IndexBuffer);
+	SAFE_RELEASE(SecondaryVertexBuffer);
 
 	// Metallicafan212:	Render target and back buffer texture
 	SAFE_RELEASE(m_BackBuffTex);
@@ -377,10 +378,12 @@ MAKE_DEVICE:
 #endif
 
 	// Metallicafan212:	Setup vertex buffers here
-	m_VertexBuffSize			= sizeof(FD3DVert)	* VBUFF_SIZE;
-	m_IndexBuffSize				= sizeof(INDEX)		* IBUFF_SIZE;
-	D3D11_BUFFER_DESC VertDesc	= { m_VertexBuffSize, D3D11_USAGE_DYNAMIC, D3D11_BIND_VERTEX_BUFFER, D3D11_CPU_ACCESS_WRITE, NULL, 0 };
-	D3D11_BUFFER_DESC IndexDesc = { m_IndexBuffSize, D3D11_USAGE_DYNAMIC, D3D11_BIND_INDEX_BUFFER, D3D11_CPU_ACCESS_WRITE, NULL, 0 };
+	m_VertexBuffSize				= sizeof(FD3DVert)			* VBUFF_SIZE;
+	m_IndexBuffSize					= sizeof(INDEX)				* IBUFF_SIZE;
+	m_SecVertexBuffSize				= sizeof(FD3DSecondaryVert) * VBUFF_SIZE;
+	D3D11_BUFFER_DESC VertDesc		= { m_VertexBuffSize,		D3D11_USAGE_DYNAMIC, D3D11_BIND_VERTEX_BUFFER, D3D11_CPU_ACCESS_WRITE, NULL, 0 };
+	D3D11_BUFFER_DESC SecVertDesc	= { m_SecVertexBuffSize,	D3D11_USAGE_DYNAMIC, D3D11_BIND_VERTEX_BUFFER, D3D11_CPU_ACCESS_WRITE, NULL, 0 };
+	D3D11_BUFFER_DESC IndexDesc		= { m_IndexBuffSize,		D3D11_USAGE_DYNAMIC, D3D11_BIND_INDEX_BUFFER, D3D11_CPU_ACCESS_WRITE, NULL, 0 };
 
 	GLog->Logf(TEXT("DX11: Creating vertex buffer"));
 
@@ -400,6 +403,16 @@ MAKE_DEVICE:
 
 	m_BufferedIndices	= 0;
 	m_DrawnIndices		= 0;
+
+	GLog->Logf(TEXT("DX11: Creating secondary vertex buffer"));
+
+	// Metallicafan212:	Secondary vertex buffer
+	hr = m_D3DDevice->CreateBuffer(&SecVertDesc, nullptr, &SecondaryVertexBuffer);
+
+	ThrowIfFailed(hr);
+
+	m_SecVertexBuff			= nullptr;
+	m_SecVertexBuffPos		= 0;
 
 #if DX11_HP2
 	GLog->Logf(TEXT("DX11: Creating D2D1 factory1"));
@@ -1366,18 +1379,21 @@ void UICBINDx11RenderDevice::SetupResources()
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Set the index and vertex buffers now (since we don't swap them in and out)
-	UINT Stride = sizeof(FD3DVert);
-	UINT Offset = 0;
+	UINT Stride		= sizeof(FD3DVert);
+	UINT SecStride	= sizeof(FD3DSecondaryVert);
+	UINT Offset		= 0;
 	
 	if (m_D3DDeferredContext != nullptr)
 	{
 		m_D3DDeferredContext->IASetIndexBuffer(IndexBuffer, INDEX_FORMAT, 0);
 		m_D3DDeferredContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+		m_D3DDeferredContext->IASetVertexBuffers(1, 1, &SecondaryVertexBuffer, &SecStride, &Offset);
 	}
 	else
 	{
 		m_D3DDeviceContext->IASetIndexBuffer(IndexBuffer, INDEX_FORMAT, 0);
 		m_D3DDeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+		m_D3DDeviceContext->IASetVertexBuffers(1, 1, &SecondaryVertexBuffer, &SecStride, &Offset);
 	}
 	
 
@@ -1457,6 +1473,7 @@ void UICBINDx11RenderDevice::Exit()
 
 	SAFE_RELEASE(VertexBuffer);
 	SAFE_RELEASE(IndexBuffer);
+	SAFE_RELEASE(SecondaryVertexBuffer);
 
 	m_D3DDeviceContext->ClearState();
 

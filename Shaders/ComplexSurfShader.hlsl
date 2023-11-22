@@ -1,3 +1,4 @@
+#if !EXTRA_VERT_INFO
 #define DO_STANDARD_BUFFER 0
 #include "ShaderGlobals.h"
 
@@ -5,7 +6,6 @@
 cbuffer CommonBuffer : register (START_CONST_NUM)
 {
 	COMMON_VARS
-	
 	// Metallicafan212:	The info we use for this specific shader
 	float4 	XAxis 		: packoffset(c4);
 	float4 	YAxis 		: packoffset(c5);
@@ -17,12 +17,16 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 	
 	// Metallicafan212:	And for the fogmap...
 	float2 	FogScale	: packoffset(c11.z);
+	
 };
 
 // Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling
 //					The buffer variables have to be defined before they can be used
 #define DO_FINAL_COLOR
 #include "ShaderGlobals.h"
+#else
+#include "ShaderGlobals.h"
+#endif
 
 // Metallicafan212:	Possible texture inputs for this shader
 //					This has hard inputs, but it checks what's actually bound before using them
@@ -46,13 +50,15 @@ SamplerState MacroState 	: register(s2);
 SamplerState FogState 		: register(s3);
 SamplerState DetailState	: register(s4);
 
+#if !EXTRA_VERT_INFO
 struct VSInput 
 { 
-	float4 pos 		: POSITION0;
-	float4 uv		: TEXCOORD0;
-	float4 color	: COLOR0;
-	float4 fog		: COLOR1;
+	float4 pos 			: POSITION0;
+	float4 uv			: TEXCOORD0;
+	float4 color		: COLOR0;
+	float4 fog			: COLOR1;
 };
+#endif
 
 struct PSInput 
 {
@@ -85,6 +91,24 @@ PSInput VertShader(VSInput input)
 	// Metallicafan212:	Transform it out
 	output.pos 		= mul(input.pos, Proj);
 	output.color	= input.color;
+	
+	#if EXTRA_VERT_INFO
+	
+	// Metallicafan212:	TODO! I'm lazy, just define the variables here
+	float4 XAxis 	= input.XAxis;
+	float4 YAxis	= input.YAxis;
+	
+	float4 PanScale[5];
+	PanScale[0]			= input.PanScale1;
+	PanScale[1]			= input.PanScale2;
+	PanScale[2]			= input.PanScale3;
+	PanScale[3]			= input.PanScale4;
+	PanScale[4]			= input.PanScale5;
+	
+	float2 LightScale	= input.LFScale.xy;
+	float2 FogScale		= input.LFScale.zw;
+	
+	#endif
 	
 	// Metallicafan212:	We pre-calcuated the dots
 	float UDot		= XAxis.w;

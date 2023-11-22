@@ -1,6 +1,9 @@
 #include "ICBINDx11Drv.h"
 
-FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_VertexBuff, INDEX* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies)
+// Metallicafan212:	TODO! Temp vertex to keep here to copy data over
+FD3DSecondaryVert TempVert;
+
+FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_VertexBuff, INDEX* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies, FD3DSecondaryVert* m_SecVert)
 {
 	SIZE_T vIndex	= 0;
 	SIZE_T V		= 0;
@@ -22,11 +25,23 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 		m_VertexBuff[V].X		= Poly->Pts[0]->Point.X;
 		m_VertexBuff[V].Y		= Poly->Pts[0]->Point.Y;
 		m_VertexBuff[V].Z		= Poly->Pts[0]->Point.Z;
+
+		// Metallicafan212:	Pan/Scale info
+#if EXTRA_VERT_INFO
+		m_SecVert[V]			= TempVert;
+#endif
+
 		m_VertexBuff[V++].Color = Color;
 
 		m_VertexBuff[V].X		= Poly->Pts[1]->Point.X;
 		m_VertexBuff[V].Y		= Poly->Pts[1]->Point.Y;
 		m_VertexBuff[V].Z		= Poly->Pts[1]->Point.Z;
+
+		// Metallicafan212:	Pan/Scale info
+#if EXTRA_VERT_INFO
+		m_SecVert[V] = TempVert;
+#endif
+
 		m_VertexBuff[V++].Color = Color;
 
 
@@ -35,6 +50,12 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 			m_VertexBuff[V].X		= Poly->Pts[i]->Point.X;
 			m_VertexBuff[V].Y		= Poly->Pts[i]->Point.Y;
 			m_VertexBuff[V].Z		= Poly->Pts[i]->Point.Z;
+
+			// Metallicafan212:	Pan/Scale info
+#if EXTRA_VERT_INFO
+			m_SecVert[V] = TempVert;
+#endif
+
 			m_VertexBuff[V++].Color	= Color;
 
 			// Metallicafan212:	Now assemble this triangle
@@ -140,9 +161,11 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	// Metallicafan212:	Also bind the detail texture lmao
 	SetTexture(4, Surface.DetailTexture, 0);
 
+#if !EXTRA_VERT_INFO
 	// Metallicafan212:	TODO! Maybe embedd this instead of doing it in the shader?
 	//					It would allow us to buffer surfaces
 	SurfCoords = Facet.MapCoords;
+#endif
 
 	FSurfShader->Bind(m_RenderContext);
 
@@ -231,7 +254,46 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 	LockVertAndIndexBuffer(VertRequest, IndexRequest);
 
-	BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices);
+	// Metallicafan212:	Secondary color buffer
+#if EXTRA_VERT_INFO
+	LockSecondaryVertBuffer();
+
+	// Metallicafan212:	Calculate all the extra info
+	FLOAT	UDot		= Facet.MapCoords.XAxis | Facet.MapCoords.Origin;
+	FLOAT	VDot		= Facet.MapCoords.YAxis | Facet.MapCoords.Origin;
+	TempVert.XAxis		= FPlane(Facet.MapCoords.XAxis, UDot);
+	TempVert.YAxis		= FPlane(Facet.MapCoords.YAxis, VDot);
+	//SDef->SurfAlpha			= SurfAlpha;
+	//SDef->bDrawOpacity		= bSurfInvisible;
+
+
+	// Metallicafan212:	Now the pan info
+	for (INT i = 0; i < 5; i++)
+	{
+		// Metallicafan212:	Copy the pan and scale info
+		if (BoundTextures[i].TexInfoHash != 0)
+		{
+			TempVert.PanScale[i] = FPlane(BoundTextures[i].UPan, BoundTextures[i].VPan, BoundTextures[i].UMult, BoundTextures[i].VMult);
+		}
+	}
+
+	// Metallicafan212:	And lastly the original lightmap scale
+	if (BoundTextures[1].TexInfoHash != 0)
+	{
+		TempVert.LFScale.X = BoundTextures[1].UScale;
+		TempVert.LFScale.Y = BoundTextures[1].VScale;
+	}
+
+	// Metallicafan212:	And the fog scale
+	if (BoundTextures[3].TexInfoHash != 0)
+	{
+		TempVert.LFScale.Z = BoundTextures[3].UScale;
+		TempVert.LFScale.W = BoundTextures[3].VScale;
+	}
+
+#endif
+
+	BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff);
 
 
 	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -300,7 +362,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		FSurfShader->Bind(m_RenderContext);
 
 		// Metallicafan212:	Rebuffer the verts (again)
-		BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices);
+		BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff);
 
 		//UnlockVertexBuffer();
 		//UnlockIndexBuffer();
@@ -310,7 +372,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		AdvanceVertPos();//VertRequest, sizeof(FD3DVert), IndexRequest);
 
 		// Metallicafan212:	Draw immediately
+#if !EXTRA_VERT_INFO
 		EndBuffering();
+#endif
 	}
 
 	unguard;

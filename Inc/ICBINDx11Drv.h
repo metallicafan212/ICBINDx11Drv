@@ -6,6 +6,9 @@
 // Metallicafan212:	TODO! Eventually, I should swap back to TMap, but it's really slow when we're doing a lot of lookups
 #define USE_UNODERED_MAP_EVERYWHERE 1
 
+// Metallicafan212:	If complex surface stuff is added to each vert
+#define EXTRA_VERT_INFO 1
+
 // Metallicafan212:	EXPLICIT HP2 new engine check
 //					Modify this to add in more game macros
 //					This is (currently) ONLY used to turn off specific code blocks, not to redefine the functions
@@ -205,6 +208,16 @@ struct FD3DVert
 	//					TODO! Align this around the index buffer as well!!!!
 	//UBOOL	bFakeVert;
 	//INT		FakeVertMode;
+};
+
+// Metallicafan212:	Extra info that's only used for complex surfaces
+//					This is stored in a separate buffer and is only locked/used when needed
+struct FD3DSecondaryVert
+{
+	FPlane	XAxis;
+	FPlane	YAxis;
+	FPlane	PanScale[5];
+	FPlane	LFScale;
 };
 
 // Metallicafan212:	Cache stuff
@@ -446,7 +459,11 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
 
 // Metallicafan212:	Base layout declaration
+#if EXTRA_VERT_INFO
+extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[12];
+#else
 extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
+#endif
 
 #define SAFE_RELEASE(ptr) if(ptr != nullptr){ptr->Release(); ptr = nullptr;}
 #define SAFE_DELETE(ptr) if(ptr != nullptr){delete ptr; ptr = nullptr;}
@@ -910,7 +927,23 @@ class UICBINDx11RenderDevice : public URenderDevice
 	INT							IndexValueArray[IBUFF_SIZE];
 
 	// Metallicafan212:	Line buffer?
-	ID3D11Buffer*				LineBuffer;
+	//ID3D11Buffer*				LineBuffer;
+
+	// Metallicafan212:	Secondary vertex buffer, which is only locked when needed
+	ID3D11Buffer*				SecondaryVertexBuffer;
+
+	FD3DSecondaryVert*			m_SecVertexBuff;
+
+	D3D11_MAPPED_SUBRESOURCE	SecVertBuffMap;
+
+	// Metallicafan212:	Size (in bytes)
+	SIZE_T						m_SecVertexBuffSize;
+
+	// Metallicafan212:	Position (in bytes!!!!)
+	SIZE_T						m_SecVertexBuffPos;
+
+	// Metallicafan212:	If it should be cleared on next draw
+	UBOOL						bClearSec;
 
 	inline const TCHAR* GetD3DDebugSeverity(D3D11_MESSAGE_SEVERITY s)
 	{
@@ -1096,6 +1129,8 @@ class UICBINDx11RenderDevice : public URenderDevice
 			m_DrawnVerts	= 0;
 			m_DrawnIndices	= 0;
 
+			bClearSec		= 1;
+
 			if (m_VertexBuff != nullptr)
 				UnlockBuffers();
 		}
@@ -1120,6 +1155,27 @@ class UICBINDx11RenderDevice : public URenderDevice
 		m_IndexBuff		= (INDEX*)((BYTE*)IndexBuffMap.pData + m_IndexBuffPos);
 	}
 
+	inline void LockSecondaryVertBuffer()
+	{
+		// Metallicafan212:	Lock and map it, it defaults to being unmapped
+		if (m_SecVertexBuff == nullptr)
+		{
+			D3D11_MAP MType		= !bClearSec ? D3D11_MAP_WRITE_NO_OVERWRITE : D3D11_MAP_WRITE_DISCARD;
+
+			HRESULT hr			= m_RenderContext->Map(SecondaryVertexBuffer, 0, MType, 0, &SecVertBuffMap);
+
+			ThrowIfFailed(hr);
+
+			bClearSec			= 0;
+		}
+
+		// Metallicafan212:	Set the new position
+		m_SecVertexBuffPos		= (m_DrawnVerts + m_BufferedVerts) * sizeof(FD3DSecondaryVert);
+
+		// Metallicafan212:	Update the buffer pointer
+		m_SecVertexBuff			= (FD3DSecondaryVert*)((BYTE*)SecVertBuffMap.pData + m_SecVertexBuffPos);
+	}
+
 	inline void UnlockBuffers()
 	{
 		if (m_VertexBuff != nullptr)
@@ -1131,6 +1187,13 @@ class UICBINDx11RenderDevice : public URenderDevice
 			m_RenderContext->Unmap(IndexBuffer, 0);
 
 		m_IndexBuff = nullptr;
+
+		if (m_SecVertexBuff != nullptr)
+		{
+			m_RenderContext->Unmap(SecondaryVertexBuffer, 0);
+
+			m_SecVertexBuff = nullptr;
+		}
 	}
 
 	inline void AdvanceVertPos()
@@ -1180,8 +1243,8 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 			// Metallicafan212:	Init the values
 			//m_CurrentBuff		= BT_None;
-			m_BufferedIndices = 0;
-			m_BufferedVerts = 0;
+			m_BufferedIndices	= 0;
+			m_BufferedVerts		= 0;
 		}
 	}
 

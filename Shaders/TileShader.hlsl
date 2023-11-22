@@ -25,6 +25,7 @@ Texture2D 	Diffuse 		: register(t0);
 
 SamplerState DiffState;
 
+#if !EXTRA_VERT_INFO
 struct VSInput 
 { 
 	float4 pos 		: POSITION0;
@@ -32,6 +33,7 @@ struct VSInput
 	float4 color	: COLOR0;
 	float4 fog		: COLOR1;
 };
+#endif
 
 struct PSInput 
 {

@@ -5,6 +5,7 @@
 //					This is now provided by the shader defines in the driver
 //#define USE_GEO_SHADER 1
 
+#if !EXTRA_VERT_INFO
 struct VSInput 
 { 
 	float4 pos 		: POSITION0;
@@ -12,6 +13,7 @@ struct VSInput
 	float4 color	: COLOR0;
 	float4 fog		: COLOR1;
 };
+#endif
 
 struct GSInput
 {

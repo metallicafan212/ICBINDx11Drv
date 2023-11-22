@@ -32,6 +32,7 @@ static const float Pi_2 = 1.570796327f;
 static const float InvPi = 0.318309886f;
 static const float InvPi2 = 0.159154943f;
 
+#if !EXTRA_VERT_INFO
 struct VSInput 
 { 
 	float4 pos 		: POSITION0;
@@ -39,6 +40,7 @@ struct VSInput
 	float4 color	: COLOR0;
 	float4 fog		: COLOR1;
 };
+#endif
 
 struct PSInput 
 {

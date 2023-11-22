@@ -175,6 +175,12 @@ public:
 			Macros.AddItem({ "WINE", "0" });
 		}
 
+#if EXTRA_VERT_INFO
+		Macros.AddItem({"EXTRA_VERT_INFO", "1"});
+#else
+		Macros.AddItem({"EXTRA_VERT_INFO", "0"});
+#endif
+
 		// Metallicafan212:	There must be a null terminated value here
 		Macros.AddZeroed();
 	}

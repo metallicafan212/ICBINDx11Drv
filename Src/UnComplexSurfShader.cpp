@@ -2,6 +2,7 @@
 
 struct FSurfMatrixDef : FShaderVarCommon
 {
+#if !EXTRA_VERT_INFO
 	FPlane	XAxis, YAxis;
 	FPlane	PanScale[5];
 	FPlane	LightandFogScale;
@@ -10,6 +11,7 @@ struct FSurfMatrixDef : FShaderVarCommon
 
 	// Metallicafan212:	Keep it aligned along register bounds
 	//FLOAT	Pad2[2];
+#endif
 };
 
 // Metallicafan212:	This file defines the mesh (one texture???) rendering shader
@@ -55,6 +57,7 @@ void FD3DSurfShader::WriteConstantBuffer(void* InMem)
 	// Metallicafan212:	Copy over
 	FD3DShader::WriteConstantBuffer(InMem);
 
+#if !EXTRA_VERT_INFO
 	// Metallicafan212:	Now the rest of the data
 	FSurfMatrixDef* SDef	= (FSurfMatrixDef*)InMem;
 
@@ -89,6 +92,7 @@ void FD3DSurfShader::WriteConstantBuffer(void* InMem)
 		SDef->LightandFogScale.Z = ParentDevice->BoundTextures[3].UScale;
 		SDef->LightandFogScale.W = ParentDevice->BoundTextures[3].VScale;
 	}
+#endif
 
 	unguardSlow;
 }
