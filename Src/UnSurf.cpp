@@ -370,8 +370,8 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	/*FLOAT*/ UVInfo.UDot = Facet.MapCoords.XAxis | Facet.MapCoords.Origin;
 	/*FLOAT*/ UVInfo.VDot = Facet.MapCoords.YAxis | Facet.MapCoords.Origin;
 #if !COMPLEX_SURF_MANUAL_UVs
-	TempVert.XAxis		= FPlane(Facet.MapCoords.XAxis, UDot);
-	TempVert.YAxis		= FPlane(Facet.MapCoords.YAxis, VDot);
+	TempVert.XAxis		= FPlane(Facet.MapCoords.XAxis, UVInfo.UDot);
+	TempVert.YAxis		= FPlane(Facet.MapCoords.YAxis, UVInfo.VDot);
 	//SDef->SurfAlpha			= SurfAlpha;
 	//SDef->bDrawOpacity		= bSurfInvisible;
 
@@ -389,15 +389,15 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	// Metallicafan212:	And lastly the original lightmap scale
 	if (BoundTextures[1].TexInfoHash != 0)
 	{
-		TempVert.LFScale.X = BoundTextures[1].UScale;
-		TempVert.LFScale.Y = BoundTextures[1].VScale;
+		TempVert.LFScale.X = BoundTextures[1].UScale * 0.5f;
+		TempVert.LFScale.Y = BoundTextures[1].VScale * 0.5f;
 	}
 
 	// Metallicafan212:	And the fog scale
 	if (BoundTextures[3].TexInfoHash != 0)
 	{
-		TempVert.LFScale.Z = BoundTextures[3].UScale;
-		TempVert.LFScale.W = BoundTextures[3].VScale;
+		TempVert.LFScale.Z = BoundTextures[3].UScale * 0.5f;
+		TempVert.LFScale.W = BoundTextures[3].VScale * 0.5f;
 	}
 #else
 	UVInfo.XAxis = Facet.MapCoords.XAxis;

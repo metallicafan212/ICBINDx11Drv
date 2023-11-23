@@ -7,7 +7,7 @@
 #define USE_UNODERED_MAP_EVERYWHERE 1
 
 // Metallicafan212:	If complex surface stuff is added to each vert
-#define EXTRA_VERT_INFO 0
+#define EXTRA_VERT_INFO 1
 
 // Metallicafan212:	If we pack the UVs of each texture into each vert instead (when EXTRA_VERT_INFO is on)
 #define COMPLEX_SURF_MANUAL_UVs 1
@@ -1147,7 +1147,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 			m_DrawnVerts	= 0;
 			m_DrawnIndices	= 0;
 
+#if EXTRA_VERT_INFO
 			bClearSec		= 1;
+#endif
 
 			if (m_VertexBuff != nullptr)
 				UnlockBuffers();
@@ -1206,12 +1208,14 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 		m_IndexBuff = nullptr;
 
+#if EXTRA_VERT_INFO
 		if (m_SecVertexBuff != nullptr)
 		{
 			m_RenderContext->Unmap(SecondaryVertexBuffer, 0);
 
 			m_SecVertexBuff = nullptr;
 		}
+#endif
 	}
 
 	inline void AdvanceVertPos()

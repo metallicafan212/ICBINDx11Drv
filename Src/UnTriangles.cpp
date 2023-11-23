@@ -87,7 +87,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	}
 
 	// Metallicafan212:	TODO!
-	FMeshShader->bNoMeshOpacity = 0;
+	FMeshShader->bNoMeshOpacity = (m_HitData != nullptr ? 1 : 0);
 
 	FMeshShader->Bind(m_RenderContext);
 

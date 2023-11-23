@@ -404,6 +404,7 @@ MAKE_DEVICE:
 	m_BufferedIndices	= 0;
 	m_DrawnIndices		= 0;
 
+#if EXTRA_VERT_INFO
 	GLog->Logf(TEXT("DX11: Creating secondary vertex buffer"));
 
 	// Metallicafan212:	Secondary vertex buffer
@@ -413,6 +414,7 @@ MAKE_DEVICE:
 
 	m_SecVertexBuff			= nullptr;
 	m_SecVertexBuffPos		= 0;
+#endif
 
 #if DX11_HP2
 	GLog->Logf(TEXT("DX11: Creating D2D1 factory1"));
@@ -1387,13 +1389,17 @@ void UICBINDx11RenderDevice::SetupResources()
 	{
 		m_D3DDeferredContext->IASetIndexBuffer(IndexBuffer, INDEX_FORMAT, 0);
 		m_D3DDeferredContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+#if EXTRA_VERT_INFO
 		m_D3DDeferredContext->IASetVertexBuffers(1, 1, &SecondaryVertexBuffer, &SecStride, &Offset);
+#endif
 	}
 	else
 	{
 		m_D3DDeviceContext->IASetIndexBuffer(IndexBuffer, INDEX_FORMAT, 0);
 		m_D3DDeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+#if EXTRA_VERT_INFO
 		m_D3DDeviceContext->IASetVertexBuffers(1, 1, &SecondaryVertexBuffer, &SecStride, &Offset);
+#endif
 	}
 	
 
