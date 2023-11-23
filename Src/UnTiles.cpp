@@ -41,13 +41,6 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 		SetProjectionStateNoCheck(false);
 #endif
 
-	// Metallicafan212:	Tile Alpha is reversed to account for the engine always fucking sending 0 for things that are 100% visible
-#if DX11_HP2
-	Color.W = 1.0f - Color.W;
-#else
-	Color.W = 1.0f;
-#endif
-
 
 #if DX11_HP2
 	if (Info.Palette && !(PolyFlags & PF_Translucent | PF_AlphaBlend))
@@ -70,10 +63,15 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	}
 #endif
 
-	//if (PolyFlags & PF_Highlighted)
-	//{
-	//	PolyFlags = PF_Highlighted;
-	//}
+	// Metallicafan212:	Tile Alpha is reversed to account for the engine always fucking sending 0 for things that are 100% visible
+#if DX11_HP2
+	Color.W = 1.0f - Color.W;
+#elif DX11_UT_469
+	if(Color.W == 0.0f)
+		Color.W = 1.0f;
+#else
+	Color.W = 1.0f;
+#endif
 
 	// Metallicafan212:	Needed for tiles
 	//					Basically, non-looping tiles have AF issues, so I auto clamp to reduce these issues
