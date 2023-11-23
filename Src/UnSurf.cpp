@@ -239,7 +239,8 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	SetRasterState(DXRS_Normal);
 
 	//if (SceneNodeHack)
-	if(1)
+	//if(1)
+	if(SceneNodeHack)
 	{
 		if ((Frame->X != m_sceneNodeX) || (Frame->Y != m_sceneNodeY))
 		{

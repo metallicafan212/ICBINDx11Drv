@@ -151,6 +151,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	//					1 = triple buffering
 	AddIntProp(CPP_PROP(NumAdditionalBuffers), 1);
 
+	AddBoolProp(CPP_PROP(SceneNodeHack), 0);
+
 	unguard;
 }
 

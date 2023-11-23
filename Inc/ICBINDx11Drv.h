@@ -558,6 +558,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	//					1 = 3 buffers, triple buffering
 	INT							NumAdditionalBuffers;
 
+	// Metallicafan212:	If to use the DX9 style scene node hack
+	UBOOL						SceneNodeHack;
+
 	INT							LastAdditionalBuffers;
 
 	// Metallicafan212:	Versions to check on lock if they changed

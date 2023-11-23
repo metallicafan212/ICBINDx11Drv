@@ -80,7 +80,8 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	SetBlend(PolyFlags);
 
 	//if (SceneNodeHack) //&& !bUsingRT) 
-	if(1)
+	//if(1)
+	if(SceneNodeHack)
 	{
 		if ((Frame->X != m_sceneNodeX) || (Frame->Y != m_sceneNodeY))
 		{
