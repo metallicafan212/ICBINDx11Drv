@@ -26,6 +26,9 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 		// Metallicafan212:	Only end buffering if the slot wasn't null before!!!
 		if (BoundTextures[TexNum].TexInfoHash != 0)
 			EndBuffering();
+		else if(BoundTextures[TexNum].m_SRV != nullptr)
+			// Metallicafan212:	It's already been null-d out
+			return;
 
 		BoundTextures[TexNum].bIsRT			= 0;
 		BoundTextures[TexNum].UMult			= 1.0f;

@@ -985,7 +985,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		swapChainDesc.SampleDesc.Count		= 1;
 		swapChainDesc.SampleDesc.Quality	= 0;
 		swapChainDesc.BufferUsage			= DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_UNORDERED_ACCESS;
-		swapChainDesc.BufferCount			= 2;
+		swapChainDesc.BufferCount			= 2 + NumAdditionalBuffers;
 		//swapChainDesc.Scaling				= DXGI_SCALING_NONE;
 		// Metallicafan212:	If we're on windows 10 or above, use the better DXGI mode
 		swapChainDesc.SwapEffect			= (bAllowTearing ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD);
@@ -1032,6 +1032,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		dxgiAdapter->Release();
 		dxgiDevice->Release();
 
+		LastAdditionalBuffers = NumAdditionalBuffers;
+
 		// Metallicafan212:	Log the change
 		//LONG_PTR esChange	= es ^ GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_EXSTYLE);
 		//LONG_PTR sChange	= s ^ GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_STYLE);
@@ -1042,6 +1044,13 @@ void UICBINDx11RenderDevice::SetupResources()
 	}
 	else
 	{
+		// Metallicafan212:	If the buffer count doesn't match, resetup the device
+		if (LastAdditionalBuffers != NumAdditionalBuffers)
+		{
+			SetupDevice();
+			goto SetupSwap;
+		}
+
 		GLog->Logf(TEXT("DX11: Resizing swap chain"));
 
 		if (bLastFullscreen != bFullscreen)
@@ -1685,9 +1694,9 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 #endif
 
 	// Metallicafan212:	Check if our lock flags changed
-	if (Gamma != LastGamma || LastAASamples != NumAASamples || LastAFSamples != NumAFSamples || LastResolutionScale != ResolutionScale)
+	if (Gamma != LastGamma || LastAASamples != NumAASamples || LastAFSamples != NumAFSamples || LastResolutionScale != ResolutionScale || LastAdditionalBuffers != NumAdditionalBuffers)
 	{
-		if (LastAASamples != NumAASamples || LastResolutionScale != ResolutionScale)
+		if (LastAASamples != NumAASamples || LastResolutionScale != ResolutionScale || LastAdditionalBuffers != NumAdditionalBuffers)
 		{
 			// Metallicafan212:	Doing this will also flush the sampler state
 			SetupResources();

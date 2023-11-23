@@ -146,6 +146,11 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	//					Default is green with a alpha of 1.0f
 	AddColorProp(CPP_PROP(ActorSelectionColor), FColor(FPlane(0.0f, 1.0f, 0.0f, 1.0f)));
 
+	// Metallicafan212:	Number of additional buffers for the swapchain to make
+	//					Default is 0, for double buffering
+	//					1 = triple buffering
+	AddIntProp(CPP_PROP(NumAdditionalBuffers), 1);
+
 	unguard;
 }
 
@@ -230,6 +235,9 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 
 	ThreeDeeLineThickness	= Clamp(ThreeDeeLineThickness, 1.0f, FLT_MAX);
 	OrthoLineThickness		= Clamp(OrthoLineThickness, 1.0f, FLT_MAX);
+
+	// Metallicafan212:	TODO! Find the max value allowed!
+	NumAdditionalBuffers	= Max(0, NumAdditionalBuffers);
 
 	// Metallicafan212:	Find the real MSAA levels supported
 	UINT SampleCount = 1;

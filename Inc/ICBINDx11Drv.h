@@ -553,6 +553,12 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	Actor selection color
 	FColor						ActorSelectionColor;
 
+	// Metallicafan212:	Additional buffer count
+	//					0 = 2 buffers (back, front)
+	//					1 = 3 buffers, triple buffering
+	INT							NumAdditionalBuffers;
+
+	INT							LastAdditionalBuffers;
 
 	// Metallicafan212:	Versions to check on lock if they changed
 	INT							LastAASamples;
