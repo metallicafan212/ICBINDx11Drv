@@ -54,7 +54,7 @@ void UICBINDx11RenderDevice::StaticConstructor()
 #endif
 
 #if DX11_UT_469
-	NeedsMaskedFonts = 1;
+	NeedsMaskedFonts = 0;
 
 	// Metallicafan212:	DX11 supports massive textures
 	UseLightmapAtlas = 1;

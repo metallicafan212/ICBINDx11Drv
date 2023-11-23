@@ -57,6 +57,11 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	}
 #endif
 
+	//if (PolyFlags & PF_Highlighted)
+	//{
+	//	PolyFlags = PF_Highlighted;
+	//}
+
 	// Metallicafan212:	Needed for tiles
 	//					Basically, non-looping tiles have AF issues, so I auto clamp to reduce these issues
 	//					Fixes editor icons and the like
