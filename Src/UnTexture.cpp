@@ -977,7 +977,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #if DX11_HP2
 	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage);
 #else
-	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_RenderFog | PF_AlphaBlend);
+	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_AlphaBlend);
 #endif
 
 	if (blendFlags != CurrentPolyFlags)
@@ -995,7 +995,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #if DX11_HP2
 		const PFLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_Invisible | PF_AlphaBlend | PF_AlphaToCoverage | PF_Masked | PF_ColorMask;
 #else
-		const PFLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_Invisible;
+		const PFLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_Invisible | PF_Masked | PF_AlphaBlend | PF_Invisible;
 #endif
 
 		if (Xor & (RELEVANT_BLEND_FLAGS))
@@ -1030,6 +1030,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 						bState = CreateBlend(PF_Invisible, D3D11_BLEND_ZERO, D3D11_BLEND_ONE, D3D11_COLOR_WRITE_ENABLE_ALPHA);
 					}
 				}
+				/*
 				else if (blendFlags == PF_Highlighted)
 				{
 					//FindAndSetBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
@@ -1040,9 +1041,11 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 						bState = CreateBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
 					}
 				}
+				*/
+#if DX11_HP2 | DX11_HP1
 #if DX11_HP2
 				else if (blendFlags & PF_Translucent && (blendFlags & PF_Highlighted || blendFlags & PF_AlphaBlend))
-#else
+#elif DX11_HP1
 				else if ((blendFlags & (PF_Translucent | PF_Highlighted)) == (PF_Translucent | PF_Highlighted))//blendFlags & PF_Translucent && (blendFlags & PF_Highlighted))
 #endif
 				{
@@ -1054,6 +1057,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 						bState = CreateBlend(PF_Translucent | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
 					}
 				}
+#endif
 				else if (blendFlags & PF_Translucent)
 				{
 					//FindAndSetBlend(PF_Translucent, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_COLOR);
@@ -1127,6 +1131,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 						bState = CreateBlend(PF_AlphaBlend | PF_AlphaToCoverage, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
 					}
 				}
+#endif
 				else if (blendFlags & PF_AlphaBlend)
 				{
 					//FindAndSetBlend(PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
@@ -1137,6 +1142,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 						bState = CreateBlend(PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
 					}
 				}
+#if DX11_HP2
 				else if (blendFlags & PF_ColorMask)
 				{
 					//FindAndSetBlend(PF_ColorMask, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);

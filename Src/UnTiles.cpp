@@ -41,6 +41,13 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 		SetProjectionStateNoCheck(false);
 #endif
 
+	// Metallicafan212:	Tile Alpha is reversed to account for the engine always fucking sending 0 for things that are 100% visible
+#if DX11_HP2
+	Color.W = 1.0f - Color.W;
+#else
+	Color.W = 1.0f;
+#endif
+
 
 #if DX11_HP2
 	if (Info.Palette && !(PolyFlags & PF_Translucent | PF_AlphaBlend))
@@ -53,6 +60,12 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	// Metallicafan212:	Adjust the polyflags if we're using alpha
 	if (Color.W != 0.0f)
 	{
+		PolyFlags |= PF_AlphaBlend;
+	}
+#elif DX11_UT_469
+	if (Info.Texture != nullptr && Info.Texture->Alpha != 0.0f)
+	{
+		Color.W = Info.Texture->Alpha;
 		PolyFlags |= PF_AlphaBlend;
 	}
 #endif
@@ -74,7 +87,6 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	if (PolyFlags & PF_AlphaBlend)
 		PolyFlags &= ~(PF_ForceZWrite | PF_Occlude);
 #endif
-
 
 	// Metallicafan212:	Setup blending
 	SetBlend(PolyFlags);
@@ -166,13 +178,6 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 		RPY1 *= Z;
 		RPY2 *= Z;
 	}
-
-	// Metallicafan212:	Tile Alpha is reversed to account for the engine always fucking sending 0 for things that are 100% visible
-#if DX11_HP2
-	Color.W = 1.0f - Color.W;
-#else
-	Color.W = 1.0f;
-#endif
 
 	// Metallicafan212:	Swap the color out if we're modulated. Somehow I missed this the first time around
 	if (PolyFlags & PF_Modulated)
