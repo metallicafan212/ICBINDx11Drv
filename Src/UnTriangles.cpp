@@ -60,6 +60,10 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 {
 	guard(UICBINDx11RenderDevice::DrawTriangles);
 
+	// Metallicafan212:	Reject invalid number of triangles
+	if(NumPts < 0 || NumIndices < 0)
+		return;
+
 	SetBlend(PolyFlags);
 
 	// Metallicafan212:	Request normal raster state
