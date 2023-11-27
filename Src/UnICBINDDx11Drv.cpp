@@ -1824,7 +1824,14 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 	// Metallicafan212:	Render now!
 	DoDeferredRender();
 
-	// Metallicafan212:	
+	// Metallicafan212:	Fix the render state
+#if DX11_HP2
+	if (ExtraRasterFlags != 0)
+	{
+		ExtraRasterFlags = 0;
+		SetRasterState(DXRS_Normal);
+	}
+#endif
 
 	// Metallicafan212:	Get the selection
 	if (m_HitData != nullptr)
