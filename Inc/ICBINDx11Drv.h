@@ -561,6 +561,10 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	If to use the DX9 style scene node hack
 	UBOOL						SceneNodeHack;
 
+	// Metallicafan212:	Gamma offset value
+	//					Default is 0.0f, setting it above 0 will brighten the image for the same brightness setting, negative will reduce it
+	FLOAT						GammaOffset;
+
 	INT							LastAdditionalBuffers;
 
 	// Metallicafan212:	Versions to check on lock if they changed

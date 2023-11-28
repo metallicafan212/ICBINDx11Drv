@@ -153,6 +153,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	AddBoolProp(CPP_PROP(SceneNodeHack), 0);
 
+	AddFloatProp(CPP_PROP(GammaOffset), 0.0f);
+
 	unguard;
 }
 

@@ -1711,7 +1711,8 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 	// Metallicafan212:	Gamma is disabled in HP2 because a speedrunning trick involves messing with the brighness bar
 	//					So, to account for that, there's a manual gamma value (for the time being...)
-	FrameShaderVars.Gamma = Gamma;
+	//					11/28/23, added a manual gamma offset (for the time being, until I add in multiple gamma modes)
+	FrameShaderVars.Gamma = Gamma + GammaOffset;
 
 #if DX11_HP2
 	// Metallicafan212:	Check for wireframe
