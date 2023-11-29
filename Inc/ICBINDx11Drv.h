@@ -565,6 +565,12 @@ class UICBINDx11RenderDevice : public URenderDevice
 	//					Default is 0.0f, setting it above 0 will brighten the image for the same brightness setting, negative will reduce it
 	FLOAT						GammaOffset;
 
+	// Metallicafan212:	If we shouldn't multiply lightmaps by 2 in the complex surface shader
+	UBOOL						bOneXLightmaps;
+
+	// Metallicafan212:	If actor fogging should reduce lighting coverage, or use the broken DX7 fogging
+	UBOOL						bEnableCorrectFogging;
+
 	INT							LastAdditionalBuffers;
 
 	// Metallicafan212:	Versions to check on lock if they changed

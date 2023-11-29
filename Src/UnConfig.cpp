@@ -155,6 +155,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	AddFloatProp(CPP_PROP(GammaOffset), 0.0f);
 
+	AddBoolProp(CPP_PROP(bOneXLightmaps), 0);
+	AddBoolProp(CPP_PROP(bEnableCorrectFogging), 1);
+
 	unguard;
 }
 

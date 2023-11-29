@@ -1729,6 +1729,9 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	// Metallicafan212:	Set this ONCE!
 	FrameShaderVars.bDoSelection = HitData != nullptr;
 
+	FrameShaderVars.bEnableCorrectFogging	= bEnableCorrectFogging;
+	FrameShaderVars.bOneXLightmaps			= bOneXLightmaps;
+
 	// Metallicafan212:	Make sure the RT is set?
 	//if (RTStack.Num())
 	//{

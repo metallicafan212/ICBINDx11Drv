@@ -24,6 +24,9 @@ struct FFrameShaderVars
 	UBOOL				bDoSelection;
 
 	// Metallicafan212:	TODO! More settings!!!
+	UBOOL				bOneXLightmaps;
+	UBOOL				bEnableCorrectFogging;
+	FLOAT				Pad[2];
 };
 
 // Metallicafan212:	Just a buffer for fog settings

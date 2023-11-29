@@ -220,7 +220,16 @@ PSOutput PxShader(PSInput input)
 	if(bTexturesBound[0].y != 0)
 	{
 		float4 LColor 	= Light.SampleBias(LightState, input.lUV, 0.0f);
-		DiffColor.xyz 	*= LColor.xyz * 2.0f;
+		
+		// Metallicafan212:	Check for oneX blending
+		if(bOneXLightmaps)
+		{
+			DiffColor.xyz 	*= LColor.xyz;
+		}
+		else
+		{
+			DiffColor.xyz 	*= LColor.xyz * 2.0f;
+		}
 		
 		//lAlpha = LColor.w;
 	}

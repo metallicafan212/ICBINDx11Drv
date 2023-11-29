@@ -17,7 +17,7 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 #include "ShaderGlobals.h"
 
 
-#define bEnableCorrectFog 1
+#define bEnableCorrectFog bCorrectFog
 
 // Metallicafan212:	Standard texture sampler
 Texture2D Diffuse 		: register(t0);

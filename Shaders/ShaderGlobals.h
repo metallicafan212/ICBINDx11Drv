@@ -76,6 +76,9 @@ cbuffer FrameVariables : register (b0)
 	float	Gamma			: packoffset(c4.x);
 	float2	ViewSize		: packoffset(c4.y);
 	int		bDoSelection	: packoffset(c4.w);
+	int		bOneXLightmaps	: packoffset(c5.x);
+	int		bCorrectFog		: packoffset(c5.y);
+	float2 	PadF			: packoffset(c5.z);
 };
 
 cbuffer DFogVariables : register (b1)
