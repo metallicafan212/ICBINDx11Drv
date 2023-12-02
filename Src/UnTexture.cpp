@@ -18,7 +18,7 @@ FMipmap* GetBaseMip(FTextureInfo& Info)
 // Metallicafan212:	Texturing related functions (since there's going to be quite a bit)
 void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG PolyFlags)
 {
-	guard(UICBINDx11RenderDevice::SetTexture);
+	guardSlow(UICBINDx11RenderDevice::SetTexture);
 
 	// Metallicafan212:	Support null textures
 	if (Info == nullptr)
@@ -195,7 +195,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 	ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->MipSkip, 0);//DaTex->bSkipMipZero ? 1 : 0, 0);
 	m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
 
-	unguard;
+	unguardSlow;
 }
 
 /*
@@ -955,7 +955,7 @@ void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourceP
 // Metallicafan212:	Based on the DX9 version, but HEAVILY modified
 void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 {
-	guard(UICBINDx11RenderDevice::SetBlend);
+	guardSlow(UICBINDx11RenderDevice::SetBlend);
 
 	// Metallicafan212:	Cut it down to only specific flags
 	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected)))
@@ -1270,7 +1270,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 		UpdatePolyflagsVars();
 	}
 
-	unguard;
+	unguardSlow;
 }
 
 #if DX11_UT_469

@@ -518,7 +518,7 @@ MAKE_DEVICE:
 //					 For feature levels 10.1 and higher, the setting of MultisampleEnable has no effect on points and triangles with regard to MSAA and impacts only the selection of the line-rendering algorithm"
 void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 {
-	guard(UICBINDx11RenderDevice::SetRasterState);
+	guardSlow(UICBINDx11RenderDevice::SetRasterState);
 
 	// Metallicafan212:	See if the raster state differs
 	//					TODO! Add more flags
@@ -594,7 +594,7 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 		CurrentRasterState = State;
 	}
 
-	unguard;
+	unguardSlow;
 }
 
 // Metallicafan212:	Generalized functions for render device stuff (Init, Lock, Unlock, etc.)
