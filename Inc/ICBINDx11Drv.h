@@ -1559,7 +1559,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	virtual void DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, INT NumPts, _WORD* Indices, INT NumIndices, QWORD PolyFlags, FSpanBuffer* Span);
 
-	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo & Surface, FSurfaceFacet & Facet, QWORD PolyFlags, BYTE cAlpha);
+	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo & Surface, FSurfaceFacet & Facet, QWORD PolyFlags, FLOAT Alpha);//BYTE cAlpha);
 	
 	virtual void DrawTile(FSceneNode* Frame, FTextureInfo & Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, class FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, QWORD PolyFlags);
 

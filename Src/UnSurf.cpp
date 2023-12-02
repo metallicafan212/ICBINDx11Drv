@@ -176,7 +176,7 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 
 // Metallicafan212:	Definitions relating to complex surface (BSP) drawing
 #if DX11_HP2
-void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet, QWORD PolyFlags, BYTE cAlpha)
+void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet, QWORD PolyFlags, FLOAT Alpha)//BYTE cAlpha)
 {
 #else
 void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet)
@@ -212,7 +212,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	// Metallicafan212:	Copy over the surface alpha
 	//FSurfShader->SurfAlpha = cAlpha / 255.0f;
 
-	FLOAT AlphaMult = cAlpha / 255.0f;
+	FLOAT AlphaMult = Alpha;//cAlpha / 255.0f;
 
 	// Metallicafan212:	I've hacked lumos as DX11's reverse alpha mode doesn't go to 100% alpha, causing lumos to not occlude things behind it (when it's undescovered)
 	if (PolyFlags & PF_LumosAffected)
