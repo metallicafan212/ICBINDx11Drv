@@ -174,6 +174,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 	// Metallicafan212:	Use a local string to add a zero width character
 	FString LocalText = RealText;// + TEXT("‌");
 
+	/*
 	// Metallicafan212:	Search for a space
 	INT SpaceI = LocalText.InStr(TEXT(" "), 1);
 
@@ -182,6 +183,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 		// Metallicafan212:	Add a & for sizing
 		LocalText.GetCharArray()[SpaceI] = L' ';
 	}
+	*/
 
 	UCanvas* Canvas = Viewport->Canvas;
 
@@ -302,6 +304,23 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 #else
 			FontMap[FontKey] = DaFont;
 #endif
+
+			// Metallicafan212:	Per Scintilla, set the spacing to be consistent
+			DaFont->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+			IDWriteTextLayout* pTextLayout = nullptr;
+			hr = m_D2DWriteFact->CreateTextLayout(TEXT("X"), 1, DaFont, 100.0f, 100.0f, &pTextLayout);
+
+			if (SUCCEEDED(hr) && pTextLayout != nullptr)
+			{
+				constexpr int maxLines = 2;
+				DWRITE_LINE_METRICS lineMetrics[maxLines]{};
+				UINT32 lineCount = 0;
+				hr = pTextLayout->GetLineMetrics(lineMetrics, maxLines, &lineCount);
+
+				pTextLayout->Release();
+				DaFont->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, lineMetrics[0].height, lineMetrics[0].baseline);
+			}
+
 			//FontMap.Set(*RealCopy, DaFont);
 		}
 	}
@@ -310,7 +329,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 	{
 		// Metallicafan212:	Create a text format to render it
 		IDWriteTextLayout* layout = nullptr;
-		hr = m_D2DWriteFact->CreateTextLayout(/*Text, appStrlen(Text)*/*LocalText, LocalText.Len(), DaFont, Canvas->ClipX, Canvas->ClipY, &layout);//R.right - R.left, rect.bottom - rect.top, &temp);
+		hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, Canvas->ClipX, Canvas->ClipY, &layout);
 		
 		ThrowIfFailed(hr);
 
@@ -329,7 +348,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 		}
 #endif
 
-		DrawX += Met.width;
+		DrawX += Met.widthIncludingTrailingWhitespace;//Met.width;
 		DrawY += Met.height;
 
 		// Metallicafan212:	PF_Invisible says to just calc the rect
@@ -366,7 +385,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 			if (Flags & PF_TwoSided)
 			{
 				// Center about DrawX.
-				X -= Met.width / 2.0f;
+				X -= Met.widthIncludingTrailingWhitespace / 2.0f;
 				//Y -= Met.height / 2.0f;
 				W = Canvas->ClipX - X;
 				//H = Canvas->ClipY - Y;
