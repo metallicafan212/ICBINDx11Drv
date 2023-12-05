@@ -73,6 +73,7 @@ void FD3DMSAAShader::WriteConstantBuffer(void* InMem)
 	// Metallicafan212:	Now the rest of the data
 	FMSAAVars* SDef = (FMSAAVars*)InMem;
 
+	/*
 	// Metallicafan212:	Set each var
 	//					TODO! Cache this info!!!!
 	SDef->FilterSize		= ParentDevice->MSAAFilterSize;
@@ -120,6 +121,7 @@ void FD3DMSAAShader::WriteConstantBuffer(void* InMem)
 	{
 		SDef->SampleOffsets[i] -= FPlane(0.5f, 0.5f, 0.0f, 0.0f);
 	}
+	*/
 
 	unguardSlow;
 }

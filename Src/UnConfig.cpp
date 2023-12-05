@@ -106,6 +106,7 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	//AddFloatProp(CPP_PROP(TileAAUVMove), 0.1f);
 	//TileAAUVMove = 0.1f;
 
+	/*
 	// Metallicafan212:	TODO! MSAA resolve related vars
 	AddBoolProp(CPP_PROP(bUseMSAAComputeShader), 1);
 	AddFloatProp(CPP_PROP(MSAAFilterSize), 0.5f);
@@ -113,6 +114,7 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	AddFloatProp(CPP_PROP(MSAACubicB), 1.0f);
 	AddFloatProp(CPP_PROP(MSAACubicC), 2.69f);
 	AddIntProp(CPP_PROP(MSAAFilterType), 8);
+	*/
 
 	AddBoolProp(CPP_PROP(bDisableDebugInterface), 1);
 	AddBoolProp(CPP_PROP(bDisableSDKLayers), 1);

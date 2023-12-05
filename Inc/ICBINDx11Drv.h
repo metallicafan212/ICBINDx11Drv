@@ -523,17 +523,20 @@ class UICBINDx11RenderDevice : public URenderDevice
 	FLOAT						OrthoLineThickness;
 	UBOOL						bDebugSelection;
 	UBOOL						bUseD3D11On12;
-	UBOOL						bUseMSAAComputeShader;
+
+	//UBOOL						bUseMSAAComputeShader;
 	UBOOL						bDisableDebugInterface;
 	UBOOL						bDisableSDKLayers;
 	UBOOL						UseVSync;
 
+	/*
 	// Metallicafan212:	TODO! MSAA resolving vars
 	FLOAT						MSAAFilterSize;
 	FLOAT						MSAAGaussianSigma;
 	FLOAT						MSAACubicB;
 	FLOAT 						MSAACubicC;
 	INT							MSAAFilterType;
+	*/
 
 	// Metallicafan212:	HACK coord minus for the current MSAA level...
 	//					Certain levels need different coord movements

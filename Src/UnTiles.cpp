@@ -108,6 +108,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	UBOOL bFontHack = (PolyFlags & PF_NoSmooth | PF_Masked) == (PolyFlags & PF_NoSmooth | PF_Masked);//(PolyFlags & (PF_NoSmooth | PF_Masked)) == (PF_NoSmooth | PF_Masked);
 #endif
 
+	/*
 	// Metallicafan212:	Per CacoFFF's suggestion, add/remove 0.1f * U/VSize when rendering fonts
 	FLOAT ExtraU = 0.0f;
 	FLOAT ExtraV = 0.0f;
@@ -119,9 +120,22 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 		//ExtraV = 0.1f / Info.VSize;
 		ExtraV = TileAAUVMove / Info.VSize;
 	}
+	*/
+
+	// Metallicafan212:	New approach for tiles, when using MSAA.
+	//					Based on dpjudas' approach
+	if ((NumAASamples > 1 || bIsNV) && (PolyFlags & PF_NoSmooth))
+	{
+		XL	= appFloor(X + XL + 0.5f);
+		YL	= appFloor(Y + YL + 0.5f);
+		X	= appFloor(X + 0.5f);
+		Y	= appFloor(Y + 0.5f);
+		XL	= XL - X;
+		YL	= YL - Y;
+	}
 
 	// Metallicafan212:	Use a separate centroid UV input if we have a font tile (no smooth) and have MSAA on!
-	FTileShader->bDoMSAAFontHack = (bFontHack && (NumAASamples > 1));
+	FTileShader->bDoMSAAFontHack = 0;//(bFontHack && (NumAASamples > 1));
 
 
 	//Adjust Z coordinate if Z range hack is active
@@ -197,10 +211,10 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	FLOAT TexInfoUMult = BoundTextures[0].UMult;
 	FLOAT TexInfoVMult = BoundTextures[0].VMult;
 
-	FLOAT SU1			= (U * TexInfoUMult)		+ ExtraU;
-	FLOAT SU2			= ((U + UL) * TexInfoUMult) + ExtraU;
-	FLOAT SV1			= (V * TexInfoVMult)		+ ExtraV;
-	FLOAT SV2			= ((V + VL) * TexInfoVMult) + ExtraV;
+	FLOAT SU1			= (U * TexInfoUMult)		;//+ ExtraU;
+	FLOAT SU2			= ((U + UL) * TexInfoUMult) ;//+ ExtraU;
+	FLOAT SV1			= (V * TexInfoVMult)		;//+ ExtraV;
+	FLOAT SV2			= ((V + VL) * TexInfoVMult) ;//+ ExtraV;
 
 	// Buffer the tiles
 	m_VertexBuff[0].Color	= Color;

@@ -304,7 +304,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 #else
 			FontMap[FontKey] = DaFont;
 #endif
-
+			/*
 			// Metallicafan212:	Per Scintilla, set the spacing to be consistent
 			DaFont->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 			IDWriteTextLayout* pTextLayout = nullptr;
@@ -320,8 +320,11 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 				pTextLayout->Release();
 				DaFont->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, lineMetrics[0].height, lineMetrics[0].baseline);
 			}
+			*/
 
 			//FontMap.Set(*RealCopy, DaFont);
+
+			DaFont->SetWordWrapping(DWRITE_WORD_WRAPPING_WRAP);
 		}
 	}
 
@@ -415,8 +418,8 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 #endif
 #endif
 
-			layout->SetMaxWidth(W);
-			layout->SetMaxHeight(H);
+			//layout->SetMaxWidth(W);
+			//layout->SetMaxHeight(H);
 
 			//m_D2DRT->FillRectangle(D2D1::RectF(0, 0, 1920, 1080), ColBrush);
 			m_CurrentD2DRT->DrawTextLayout(D2D1::Point2F(X, Y), layout, ColBrush, D2D1_DRAW_TEXT_OPTIONS_NONE); //D2D1_DRAW_TEXT_OPTIONS_CLIP);
@@ -711,6 +714,9 @@ UTexture* UICBINDx11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL 
 		hr = m_D2DFact->CreateDxgiSurfaceRenderTarget(Tex->RTDXGI.Get(), &props, Tex->RTD2D.GetAddressOf());
 
 		ThrowIfFailed(hr);
+
+		Tex->RTD2D->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+		Tex->RTD2D->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
 #endif
 
 	}

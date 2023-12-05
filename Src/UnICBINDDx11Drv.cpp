@@ -1222,7 +1222,7 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	// Metallicafan212:	Setup AA now
 	m_D2DRT->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-	m_D2DRT->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+	m_D2DRT->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
 
 	// Metallicafan212:	Get the defaults
 	IDWriteRenderingParams* Def = nullptr;
@@ -1862,6 +1862,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 #if DX11_USE_MSAA_SHADER
 
 #if USE_MSAA_COMPUTE
+			/*
 			if (bUseMSAAComputeShader)
 			{
 				// Metallicafan212:	Use a compute shader instead!!!
@@ -1899,6 +1900,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, 1, Temp, nullptr);
 
 				RestoreRenderTarget();
+				*/
 #else
 
 				// Metallicafan212:	We have to do geometry now...
@@ -2011,8 +2013,10 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 				RestoreRenderTarget();
 #endif
+			/*
 			}
 			else
+			*/
 #endif
 			{
 				m_D3DDeviceContext->ResolveSubresource(m_BackBuffTex, 0, m_ScreenBuffTex, 0, ScreenFormat);
