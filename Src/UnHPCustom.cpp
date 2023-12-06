@@ -185,8 +185,6 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 	}
 	*/
 
-	Scale *= ResolutionScale;
-
 	UCanvas* Canvas = Viewport->Canvas;
 
 	// Metallicafan212:	Hold the scale here
@@ -332,6 +330,16 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 
 	if (DaFont != nullptr)
 	{
+		// Metallicafan212:	Optional word wrapping
+		if (Flags & PF_BrightCorners)
+		{
+			DaFont->SetWordWrapping(DWRITE_WORD_WRAPPING_WRAP);
+		}
+		else
+		{
+			DaFont->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+		}
+
 		// Metallicafan212:	Create a text format to render it
 		IDWriteTextLayout* layout = nullptr;
 		hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, Canvas->ClipX, Canvas->ClipY, &layout);
@@ -353,8 +361,8 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 		}
 #endif
 
-		DrawX += Met.widthIncludingTrailingWhitespace / ResolutionScale;//Met.width;
-		DrawY += Met.height / ResolutionScale;
+		DrawX += Met.widthIncludingTrailingWhitespace; /// ResolutionScale;//Met.width;
+		DrawY += Met.height; /// ResolutionScale;
 
 		// Metallicafan212:	PF_Invisible says to just calc the rect
 		if (!(Flags & PF_Invisible))
@@ -396,7 +404,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 				//H = Canvas->ClipY - Y;
 				//layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);//->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 			}
-#if 1//DO_MANUAL_SCALE
+#if DO_MANUAL_SCALE
 			if (BoundRT == nullptr)
 			{
 				X *= ResolutionScale;
@@ -405,8 +413,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 				H *= ResolutionScale;
 			}
 #else
-#if 1//!RES_SCALE_IN_PROJ
-			/*
+#if !RES_SCALE_IN_PROJ
 			if (BoundRT == nullptr)
 			{
 				D2D1::Matrix3x2F s = D2D1::Matrix3x2F::Scale(ResolutionScale, ResolutionScale);
@@ -415,15 +422,14 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 				m_CurrentD2DRT->SetTransform(s);
 			}
 			else
-			*/
 			{
 				m_CurrentD2DRT->SetTransform(D2D1::Matrix3x2F::Identity());
 			}
 #endif
 #endif
 
-			//layout->SetMaxWidth(W);
-			//layout->SetMaxHeight(H);
+			layout->SetMaxWidth(W);
+			layout->SetMaxHeight(H);
 
 			//m_D2DRT->FillRectangle(D2D1::RectF(0, 0, 1920, 1080), ColBrush);
 			m_CurrentD2DRT->DrawTextLayout(D2D1::Point2F(X, Y), layout, ColBrush, D2D1_DRAW_TEXT_OPTIONS_NONE); //D2D1_DRAW_TEXT_OPTIONS_CLIP);
