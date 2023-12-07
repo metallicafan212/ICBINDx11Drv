@@ -438,9 +438,10 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 			m_CurrentD2DRT->EndDraw();
 
 			ColBrush->Release();
-			layout->Release();
-
 		}
+
+		// Metallicafan212:	Release it outside the if lmao
+		layout->Release();
 	}
 
 	return 1;
