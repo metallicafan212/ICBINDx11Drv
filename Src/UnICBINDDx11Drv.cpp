@@ -420,7 +420,7 @@ MAKE_DEVICE:
 	GLog->Logf(TEXT("DX11: Creating D2D1 factory1"));
 
 	// Metallicafan212:	D2D manager
-	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, IID_PPV_ARGS(&m_D2DFact));
+	hr = D2D1CreateFactory(/*D2D1_FACTORY_TYPE_MULTI_THREADED*/D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_PPV_ARGS(&m_D2DFact));
 
 	ThrowIfFailed(hr);
 
@@ -1226,17 +1226,19 @@ void UICBINDx11RenderDevice::SetupResources()
 	m_CurrentD2DRT = m_D2DRT;
 
 	// Metallicafan212:	Setup AA now
-	m_D2DRT->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+	m_D2DRT->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);//ResolutionScale > 1.0f ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 	m_D2DRT->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
 
 	// Metallicafan212:	Get the defaults
 	IDWriteRenderingParams* Def = nullptr;
 	m_D2DRT->GetTextRenderingParams(&Def);
 
+	DWRITE_RENDERING_MODE m = DWRITE_RENDERING_MODE_DEFAULT;//DWRITE_RENDERING_MODE_NATURAL_SYMMETRIC;
+
 	if (Def != nullptr)
 	{
 		// Metallicafan212:	Create the text rendering parameters from the defaults
-		hr = m_D2DWriteFact->CreateCustomRenderingParams(Def->GetGamma(), Def->GetEnhancedContrast(), Def->GetClearTypeLevel(), Def->GetPixelGeometry(), DWRITE_RENDERING_MODE_NATURAL, &m_TextParams);
+		hr = m_D2DWriteFact->CreateCustomRenderingParams(Def->GetGamma(), Def->GetEnhancedContrast(), Def->GetClearTypeLevel(), Def->GetPixelGeometry(), m, &m_TextParams);
 
 		ThrowIfFailed(hr);
 
@@ -1245,7 +1247,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	else
 	{
 		// Metallicafan212:	Make our own....
-		hr = m_D2DWriteFact->CreateCustomRenderingParams(1.0f, 0.0f, 0.0f, DWRITE_PIXEL_GEOMETRY_BGR, DWRITE_RENDERING_MODE_NATURAL, &m_TextParams);
+		hr = m_D2DWriteFact->CreateCustomRenderingParams(1.0f, 0.0f, 0.0f, DWRITE_PIXEL_GEOMETRY_BGR, m, &m_TextParams);
 
 		ThrowIfFailed(hr);
 	}
