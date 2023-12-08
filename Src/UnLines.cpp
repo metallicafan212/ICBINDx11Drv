@@ -271,6 +271,12 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 	FLOAT ExtraScale = 1.0f;
 #endif
 
+	// Metallicafan212:	Add on size to the input vars, just so that the pivot cross shows up (why didn't they use Draw2DLine????)
+	X1 -= 1;
+	Y1 -= 1;
+	X2 += 1;
+	Y2 += 1;
+
 	X1 *= ExtraScale;
 	Y1 *= ExtraScale;
 	X2 *= ExtraScale;
