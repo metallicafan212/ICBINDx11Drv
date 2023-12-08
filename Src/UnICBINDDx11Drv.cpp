@@ -543,25 +543,30 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 
 		if (m_s == nullptr)
 		{
-			D3D11_RASTERIZER_DESC Desc;
+			CD3D11_RASTERIZER_DESC Desc(D3D11_DEFAULT);
 
-			// Metallicafan212:	Default vars
+			// Metallicafan212: We want no backface culling
 			Desc.CullMode					= D3D11_CULL_NONE;
-			Desc.DepthBias					= 0;
-			Desc.DepthBiasClamp				= 0.0f;
-			Desc.DepthClipEnable			= TRUE;
-			Desc.FrontCounterClockwise		= FALSE;
-			Desc.ScissorEnable				= FALSE;
+
+			// Metallicafan212:	These are defaults
+			//Desc.DepthBias					= 0;
+			//Desc.DepthBiasClamp				= 0.0f;
+			//Desc.DepthClipEnable			= TRUE;
+			//Desc.FrontCounterClockwise		= FALSE;
+			//Desc.ScissorEnable				= FALSE;
 
 			// Metallicafan212:	Now check the flags
 			if (State & DXRS_Wireframe)
 			{
 				Desc.FillMode = D3D11_FILL_WIREFRAME;
 			}
+			// Metallicafan212:	This is default
+			/*
 			else
 			{
 				Desc.FillMode = D3D11_FILL_SOLID;
 			}
+			*/
 
 			// Metallicafan212:	TODO!!!! This does NOTHING in real DX11 modes!!!
 			if (State & DXRS_NoAA)
