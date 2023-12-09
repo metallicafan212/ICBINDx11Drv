@@ -1047,14 +1047,14 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 					if (mSize != 0)
 					{
-						temp = (D3D11_MESSAGE*)malloc(mSize);
+						temp = (D3D11_MESSAGE*)appMalloc(mSize, TEXT("DX11 Error Unrapping"));
 
 						m_D3DQueue->GetMessage(i, temp, &mSize);
 
 						// Metallicafan212:	Now log it
 						GWarn->Logf(TEXT("DX11 debug message (%s): %s"), GetD3DDebugSeverity(temp->Severity), appFromAnsi(temp->pDescription));
 
-						free(temp);
+						appFree(temp);
 					}
 				}
 			}
@@ -1426,11 +1426,11 @@ class UICBINDx11RenderDevice : public URenderDevice
 			SDesc.Filter			= (PolyFlags & PF_NoSmooth ? D3D11_FILTER_MIN_MAG_MIP_POINT : D3D11_FILTER_ANISOTROPIC);
 			SDesc.AddressU			= (PolyFlags & PF_ClampUVs ? D3D11_TEXTURE_ADDRESS_CLAMP : D3D11_TEXTURE_ADDRESS_WRAP);
 			SDesc.AddressV			= SDesc.AddressU;
-			SDesc.AddressW			= D3D11_TEXTURE_ADDRESS_WRAP;//SDesc.AddressU;
+			SDesc.AddressW			= SDesc.AddressU;//SDesc.AddressU;
 			SDesc.MinLOD			= MinMip;//-D3D11_FLOAT32_MAX;
 			SDesc.MaxLOD			= D3D11_FLOAT32_MAX;
 			SDesc.MipLODBias		= MipBias;//0.0f;
-			SDesc.MaxAnisotropy		= PolyFlags & PF_NoSmooth ? 1 : NumAFSamples;//16;//16;
+			SDesc.MaxAnisotropy		= PolyFlags & PF_NoSmooth ? 8 : NumAFSamples;//16;//16;
 			SDesc.ComparisonFunc	= D3D11_COMPARISON_NEVER;
 
 			HRESULT hr = m_D3DDevice->CreateSamplerState(&SDesc, &S);

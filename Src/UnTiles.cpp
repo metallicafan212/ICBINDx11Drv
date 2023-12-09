@@ -108,23 +108,23 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	UBOOL bFontHack = (PolyFlags & PF_NoSmooth | PF_Masked) == (PolyFlags & PF_NoSmooth | PF_Masked);//(PolyFlags & (PF_NoSmooth | PF_Masked)) == (PF_NoSmooth | PF_Masked);
 #endif
 
-	/*
 	// Metallicafan212:	Per CacoFFF's suggestion, add/remove 0.1f * U/VSize when rendering fonts
 	FLOAT ExtraU = 0.0f;
 	FLOAT ExtraV = 0.0f;
 
-	if (bFontHack && (bIsNV || NumAASamples > 1))
+	if (bFontHack && (NumAASamples > 1 || bIsNV))
 	{
 		//ExtraU = 0.1f / Info.USize;
 		ExtraU = TileAAUVMove / Info.USize;
 		//ExtraV = 0.1f / Info.VSize;
 		ExtraV = TileAAUVMove / Info.VSize;
 	}
-	*/
-
 	// Metallicafan212:	New approach for tiles, when using MSAA.
 	//					Based on dpjudas' approach
-	if ((NumAASamples > 1 || bIsNV) && (PolyFlags & PF_NoSmooth))
+	//else
+
+	/*
+	if ((NumAASamples > 1)) //|| bIsNV) && bFontHack)
 	{
 		XL	= appFloor(X + XL + 0.5f);
 		YL	= appFloor(Y + YL + 0.5f);
@@ -133,9 +133,10 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 		XL	= XL - X;
 		YL	= YL - Y;
 	}
+	*/
 
 	// Metallicafan212:	Use a separate centroid UV input if we have a font tile (no smooth) and have MSAA on!
-	FTileShader->bDoMSAAFontHack = 0;//(bFontHack && (NumAASamples > 1));
+	FTileShader->bDoMSAAFontHack = 0;//bFontHack && bIsNV;//(bFontHack && (NumAASamples > 1));
 
 
 	//Adjust Z coordinate if Z range hack is active
@@ -211,10 +212,10 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	FLOAT TexInfoUMult = BoundTextures[0].UMult;
 	FLOAT TexInfoVMult = BoundTextures[0].VMult;
 
-	FLOAT SU1			= (U * TexInfoUMult)		;//+ ExtraU;
-	FLOAT SU2			= ((U + UL) * TexInfoUMult) ;//+ ExtraU;
-	FLOAT SV1			= (V * TexInfoVMult)		;//+ ExtraV;
-	FLOAT SV2			= ((V + VL) * TexInfoVMult) ;//+ ExtraV;
+	FLOAT SU1			= (U * TexInfoUMult)		+ ExtraU;
+	FLOAT SU2			= ((U + UL) * TexInfoUMult) + ExtraU;
+	FLOAT SV1			= (V * TexInfoVMult)		+ ExtraV;
+	FLOAT SV2			= ((V + VL) * TexInfoVMult) + ExtraV;
 
 	// Buffer the tiles
 	m_VertexBuff[0].Color	= Color;

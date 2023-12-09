@@ -294,25 +294,25 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 		case 0:
 		case 1:
 		{
-			TileAAUVMove = 0.01f;
+			TileAAUVMove = -0.001f;
 			break;
 		}
 
 		case 2:
 		{
-			TileAAUVMove = 0.45f;
+			TileAAUVMove = -0.001f;
 			break;
 		}
 
 		case 4:
 		{
-			TileAAUVMove = 0.5f;
+			TileAAUVMove = -0.001f;//0.5f;
 			break;
 		}
 
 		case 8:
 		{
-			TileAAUVMove = 0.2f;
+			TileAAUVMove = -0.001f;//0.2f;
 			break;
 		}
 	}
