@@ -972,7 +972,8 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		bForceRGBA = 0;
 
-		ScreenFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+		// Metallicafan212:	See if we should use the HDR compatible mode
+		ScreenFormat = (!GIsEditor && UseHDR ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_B8G8R8A8_UNORM);
 
 		// Metallicafan212:	Base this on the feature level
 		if (m_FeatureLevel < D3D_FEATURE_LEVEL_11_1)
@@ -1026,8 +1027,26 @@ void UICBINDx11RenderDevice::SetupResources()
 
 			goto RETRY_SWAP;
 		}
+		/*
+		else if(SUCCEEDED(hr) && !bForceRGBA)
+		{
+			// Metallicafan212:	Set the correct color space
+			IDXGISwapChain3* sp3 = nullptr;
 
-		ThrowIfFailed(hr);
+			m_D3DSwapChain->QueryInterface(IID_PPV_ARGS(&sp3));
+
+			if (sp3 != nullptr)
+			{
+				sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
+
+				sp3->Release();
+			}
+		}
+		*/
+		else if(FAILED(hr))
+		{
+			ThrowIfFailed(hr);
+		}
 
 		// Metallicafan212:	Make it stop messing with the window itself
 		dxgiFactory->MakeWindowAssociation((HWND)Viewport->GetWindow(), DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER);
@@ -1226,9 +1245,10 @@ void UICBINDx11RenderDevice::SetupResources()
 	m_CurrentD2DRT = m_D2DRT;
 
 	// Metallicafan212:	Setup AA now
-	m_D2DRT->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);//ResolutionScale > 1.0f ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-	m_D2DRT->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+	//m_D2DRT->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);//ResolutionScale > 1.0f ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+	//m_D2DRT->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
 
+	/*
 	// Metallicafan212:	Get the defaults
 	IDWriteRenderingParams* Def = nullptr;
 	m_D2DRT->GetTextRenderingParams(&Def);
@@ -1253,6 +1273,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	}
 
 	m_D2DRT->SetTextRenderingParams(m_TextParams);
+	*/
 
 	/*
 	// Metallicafan212:	IMPORTANT!!! If we have AA, turn off AA in D2D!

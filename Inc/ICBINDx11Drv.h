@@ -529,6 +529,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	UBOOL						bDisableSDKLayers;
 	UBOOL						UseVSync;
 
+	// Metallicafan212:	If to use HDR (note that it'll look wrong on non-HDR screens)
+	UBOOL						UseHDR;
+
 	/*
 	// Metallicafan212:	TODO! MSAA resolving vars
 	FLOAT						MSAAFilterSize;

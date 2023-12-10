@@ -414,7 +414,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 			}
 #else
 #if !RES_SCALE_IN_PROJ
-			if (BoundRT == nullptr)
+			if (BoundRT == nullptr && ResolutionScale != 1.0f)
 			{
 				D2D1::Matrix3x2F s = D2D1::Matrix3x2F::Scale(ResolutionScale, ResolutionScale);
 

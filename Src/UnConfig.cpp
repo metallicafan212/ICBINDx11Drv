@@ -160,6 +160,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	AddBoolProp(CPP_PROP(bOneXLightmaps), 0);
 	AddBoolProp(CPP_PROP(bEnableCorrectFogging), 1);
 
+	// Metallicafan212:	Add an option to use a HDR compatible screen type (in-game only)
+	AddBoolProp(CPP_PROP(UseHDR), 0);
+
 	unguard;
 }
 
