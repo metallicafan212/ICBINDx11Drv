@@ -1027,8 +1027,7 @@ void UICBINDx11RenderDevice::SetupResources()
 
 			goto RETRY_SWAP;
 		}
-		/*
-		else if(SUCCEEDED(hr) && !bForceRGBA)
+		else if(SUCCEEDED(hr) && !bForceRGBA && UseHDR)
 		{
 			// Metallicafan212:	Set the correct color space
 			IDXGISwapChain3* sp3 = nullptr;
@@ -1037,12 +1036,11 @@ void UICBINDx11RenderDevice::SetupResources()
 
 			if (sp3 != nullptr)
 			{
-				sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
+				sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
 
 				sp3->Release();
 			}
 		}
-		*/
 		else if(FAILED(hr))
 		{
 			ThrowIfFailed(hr);

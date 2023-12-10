@@ -91,8 +91,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	// Metallicafan212:	TODO! More config options
 
-	// Metallicafan212:	MSAA will be disabled by default
-	AddIntProp(CPP_PROP(NumAASamples), 1);
+	// Metallicafan212:	MSAA is now enabled by default
+	AddIntProp(CPP_PROP(NumAASamples), 8);
 	AddIntProp(CPP_PROP(NumAFSamples), 16);
 
 	// Metallicafan212:	TODO! Make this engine global!!!!
