@@ -26,7 +26,10 @@ struct FFrameShaderVars
 	// Metallicafan212:	TODO! More settings!!!
 	UBOOL				bOneXLightmaps;
 	UBOOL				bEnableCorrectFogging;
-	FLOAT				Pad[2];
+
+	UBOOL				bHDR;
+
+	FLOAT				Pad;
 };
 
 // Metallicafan212:	Just a buffer for fog settings

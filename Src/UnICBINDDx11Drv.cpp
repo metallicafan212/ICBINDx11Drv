@@ -1040,6 +1040,8 @@ void UICBINDx11RenderDevice::SetupResources()
 
 				sp3->Release();
 			}
+
+			ActiveHDR = 1;
 		}
 		else if(FAILED(hr))
 		{
@@ -1757,6 +1759,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 	FrameShaderVars.bEnableCorrectFogging	= bEnableCorrectFogging;
 	FrameShaderVars.bOneXLightmaps			= bOneXLightmaps;
+	FrameShaderVars.bHDR					= ActiveHDR;
 
 	// Metallicafan212:	Make sure the RT is set?
 	//if (RTStack.Num())

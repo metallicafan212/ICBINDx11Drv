@@ -29,14 +29,6 @@ struct PSInput
 {
 	float4 pos 						: SV_POSITION0; 
 	float2 uv						: TEXCOORD0;
-	
-	// Metallicafan212:	The default proton/wine HLSL compiler doesn't support the centroid modifier for some reason..... 
-#if !WINE
-	centroid linear float2 cuv		: TEXCOORD1;
-#else
-	float2 cuv						: TEXCOORD1;
-#endif
-
 	float4 color					: COLOR0; 
 	float4 fog						: COLOR1;
 	float  distFog					: COLOR2;
@@ -60,7 +52,6 @@ PSInput VertShader(VSInput input)
 	output.pos 			= mul(input.pos, Proj);
 	output.color		= input.color;
 	output.uv.xy		= input.uv.xy;
-	output.cuv.xy		= input.uv.xy;
 	
 	// Metallicafan212:	Do the final fog value
 	output.distFog		= DoDistanceFog(output.pos);
@@ -101,44 +92,45 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	float4 DiffColor;
 	
+	/*
 	if(bDoUVHack)
 	{
 		UseUV 		= input.cuv;
 		
 		/*
-		if(UseUV.x >= 1.0f)
-		{
-			UseUV.x -= floor(UseUV.x);
-		}
-		
-		if(UseUV.y >= 1.0f)
-		{
-			UseUV.y -= floor(UseUV.y);
-		}
-		
-		float USize, VSize, Levels;
-		
-		// Metallicafan212:	Calculate the mip level
-		float LOD = 0.0f;//Diffuse.CalculateLevelOfDetail(DiffState, UseUV);
-		
-		// Metallicafan212:	Get the dimensions, since .Load uses the actual pixel locations, not 0.0-1.0 UV coords
-		Diffuse.GetDimensions(LOD, USize, VSize, Levels);
-		
-		UseUV		= UseUV * (float2(USize, VSize));
-		
-		// Metallicafan212:	Round the coordinates to get around the NVidia UV issues
-		UseUV 		= round(UseUV);
-		
-		
-		DiffColor = Diffuse.Load(float3(UseUV, LOD)) * input.color;
-		*/
+		//if(UseUV.x >= 1.0f)
+		//{
+		//	UseUV.x -= floor(UseUV.x);
+		//}
+		//
+		//if(UseUV.y >= 1.0f)
+		//{
+		//	UseUV.y -= floor(UseUV.y);
+		//}
+		//
+		//float USize, VSize, Levels;
+		//
+		//// Metallicafan212:	Calculate the mip level
+		//float LOD = 0.0f;//Diffuse.CalculateLevelOfDetail(DiffState, UseUV);
+		//
+		//// Metallicafan212:	Get the dimensions, since .Load uses the actual pixel locations, not 0.0-1.0 UV coords
+		//Diffuse.GetDimensions(LOD, USize, VSize, Levels);
+		//
+		//UseUV		= UseUV * (float2(USize, VSize));
+		//
+		//// Metallicafan212:	Round the coordinates to get around the NVidia UV issues
+		//UseUV 		= round(UseUV);
+		//
+		//
+		//DiffColor = Diffuse.Load(float3(UseUV, LOD)) * input.color;
 		
 		DiffColor = DoGammaCorrection(Diffuse.SampleBias(DiffState, UseUV, 0.0f)) * input.color;
 	}
 	else
-	{
-		DiffColor = DoGammaCorrection(Diffuse.SampleBias(DiffState, UseUV, 0.0f)) * input.color;
-	}
+	*/
+	//{
+	DiffColor = DoGammaCorrection(Diffuse.SampleBias(DiffState, UseUV, 0.0f)) * input.color;
+	//}
 	
 	
 	// Metallicafan212:	Do alpha rejecting
@@ -146,12 +138,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	//					Reevaluate how we do this!!!!
 	CLIP_PIXEL(DiffColor);
 	
-	DiffColor = DoPixelFog(input.distFog, DiffColor);
-	
-	//if(bDoSelection || !input.bRejectBW)
-	//{
-	DiffColor = DoFinalColor(DiffColor);
-	//}
+	DiffColor = DoFinalColor(DoPixelFog(input.distFog, DiffColor));
 
 	return DiffColor;
 }

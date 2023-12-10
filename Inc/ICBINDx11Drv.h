@@ -532,6 +532,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	If to use HDR (note that it'll look wrong on non-HDR screens)
 	UBOOL						UseHDR;
 
+	// Metallicafan212:	If HDR is active (and the screenformat is set)
+	UBOOL						ActiveHDR;
+
 	/*
 	// Metallicafan212:	TODO! MSAA resolving vars
 	FLOAT						MSAAFilterSize;

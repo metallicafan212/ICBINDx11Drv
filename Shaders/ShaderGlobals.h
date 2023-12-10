@@ -78,7 +78,8 @@ cbuffer FrameVariables : register (b0)
 	int		bDoSelection	: packoffset(c4.w);
 	int		bOneXLightmaps	: packoffset(c5.x);
 	int		bCorrectFog		: packoffset(c5.y);
-	float2 	PadF			: packoffset(c5.z);
+	int		bHDR			: packoffset(c5.z);
+	float 	PadF			: packoffset(c5.w);
 };
 
 cbuffer DFogVariables : register (b1)
@@ -173,6 +174,12 @@ float4 DoFinalColor(float4 ColorIn)
 	// Metallicafan212:	Gamma correct the color!!!!
 	//float OverGamma = 1.0f / Gamma;
 	//ColorIn.xyz = pow(ColorIn.xyz, float3(OverGamma, OverGamma, OverGamma));
+	
+	// Metallicafan212:	If doing HDR, change to linear color
+	if(bHDR && !bModulated)
+	{
+		ColorIn.xyz = pow(ColorIn.xyz, float3(2.2f, 2.2f, 2.2f)) * 1.2f;
+	}
 	
 	// Metallicafan212:	Early return
 	if(BWPercent <= 0.0f)
