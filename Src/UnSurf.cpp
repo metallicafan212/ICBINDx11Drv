@@ -459,6 +459,10 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 		LockVertAndIndexBuffer(VertRequest, IndexRequest);
 
+#if EXTRA_VERT_INFO
+		LockSecondaryVertBuffer();
+#endif
+
 		//LockVertexBuffer(sizeof(FD3DVert) * VertRequest);
 		//LockIndexBuffer(IndexRequest);
 
