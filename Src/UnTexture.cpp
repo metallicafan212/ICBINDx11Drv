@@ -1042,7 +1042,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 					}
 				}
 				*/
-#if DX11_HP2 | DX11_HP1
+#if DX11_HP2 || DX11_HP1
 #if DX11_HP2
 				else if (blendFlags & PF_Translucent && (blendFlags & PF_Highlighted || blendFlags & PF_AlphaBlend))
 #elif DX11_HP1
@@ -1095,7 +1095,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #endif
 				else if (blendFlags & PF_Highlighted)
 				{
-#if DX11_HP2
+#if 1//DX11_HP2
 					if (blendFlags & PF_AlphaBlend)
 					{
 						//FindAndSetBlend(PF_Highlighted | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);

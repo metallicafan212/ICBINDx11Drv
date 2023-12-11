@@ -475,7 +475,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 		// Metallicafan212:	Rebind the shader....
 
-#if	DX11_HP2
+#if	1//DX11_HP2
 		SetBlend(PF_AlphaBlend);
 #else
 		SetBlend(PF_Highlighted | PF_Translucent);
