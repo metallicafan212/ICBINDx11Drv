@@ -103,6 +103,9 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
 
+	SAFE_RELEASE(m_MSAAResolveSRV);
+	SAFE_RELEASE(m_MSAAResolveTex);
+
 	//SAFE_RELEASE(m_ScreenOpacityTex);
 	//SAFE_RELEASE(m_ScreenOpacityRTSRV);
 	//SAFE_RELEASE(m_D3DScreenOpacityRTV);
@@ -618,6 +621,10 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	m_D3DScreenRTV		= nullptr;
 	m_ScreenRTSRV		= nullptr;
 
+	// Metallicafan212:	MSAA resolving
+	m_MSAAResolveSRV	= nullptr;
+	m_MSAAResolveTex	= nullptr;
+
 	//m_ScreenOpacityTex		= nullptr;
 	//m_D3DScreenOpacityRTV	= nullptr;
 	//m_ScreenOpacityRTSRV	= nullptr;
@@ -811,6 +818,10 @@ void UICBINDx11RenderDevice::SetupResources()
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
+
+	// Metallicafan212:	MSAA resolving textures
+	SAFE_RELEASE(m_MSAAResolveSRV);
+	SAFE_RELEASE(m_MSAAResolveTex);
 
 	//SAFE_RELEASE(m_ScreenOpacityTex);
 	//SAFE_RELEASE(m_ScreenOpacityRTSRV);
@@ -1196,6 +1207,19 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	ThrowIfFailed(hr);
 
+	// Metallicafan212:	Intermediate texture for MSAA resolving
+	RTMSAA.SampleDesc.Count = 1;
+	hr = m_D3DDevice->CreateTexture2D(&RTMSAA, nullptr, &m_MSAAResolveTex);
+	ThrowIfFailed(hr);
+
+	// Metallicafan212:	Now a resource view for it
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	hr = m_D3DDevice->CreateShaderResourceView(m_MSAAResolveTex, &srvDesc, &m_MSAAResolveSRV);
+	ThrowIfFailed(hr);
+
+	//SAFE_RELEASE(m_MSAAResolveSRV);
+	//SAFE_RELEASE(m_MSAAResolveTex);
+
 	// Metallicafan212:	Make the depth and stencil buffer
 	//					TODO! Possibly use a higher quality format????
 	CD3D11_TEXTURE2D_DESC depthStencilDesc = CD3D11_TEXTURE2D_DESC();
@@ -1224,7 +1248,8 @@ void UICBINDx11RenderDevice::SetupResources()
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Now make the depth shader resource
-	srvDesc.Format = DSTSRVFormat;
+	srvDesc.Format				= DSTSRVFormat;
+	srvDesc.ViewDimension		= NumAASamples > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;
 	hr = m_D3DDevice->CreateShaderResourceView(m_ScreenDSTex, &srvDesc, &m_ScreenDTSRV);
 
 	ThrowIfFailed(hr);
@@ -2048,11 +2073,12 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			*/
 #endif
 			{
-				m_D3DDeviceContext->ResolveSubresource(m_BackBuffTex, 0, m_ScreenBuffTex, 0, ScreenFormat);
+				//m_D3DDeviceContext->ResolveSubresource(m_BackBuffTex, 0, m_ScreenBuffTex, 0, ScreenFormat);
+				m_D3DDeviceContext->ResolveSubresource(m_MSAAResolveTex, 0, m_ScreenBuffTex, 0, ScreenFormat);
 			}
 		}
 		// Metallicafan212:	Always use the resolution scaling shader, so we can do final effects on the screen
-		else
+		//else
 		{
 #if USE_RES_COMPUTE
 			// Metallicafan212:	Use a compute shader instead!!!
@@ -2155,7 +2181,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 			// Metallicafan212:	Manually setup the vars...
 			m_RenderContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
-			m_RenderContext->PSSetShaderResources(0, 1, &m_ScreenRTSRV);
+			m_RenderContext->PSSetShaderResources(0, 1, NumAASamples > 1 ? &m_MSAAResolveSRV : &m_ScreenRTSRV);
 
 			SetSceneNode(nullptr);
 

@@ -641,6 +641,12 @@ class UICBINDx11RenderDevice : public URenderDevice
 	INT							MSAAThreadX;
 	INT							MSAAThreadY;
 
+	// Metallicafan212:	Screen holding texture for MSAA resolving, when NumAASamples > 1
+	ID3D11Texture2D*			m_MSAAResolveTex;
+
+	// Metallicafan212:	The shader resource view, so we can use it as a input when doing the secondary shader
+	ID3D11ShaderResourceView*	m_MSAAResolveSRV;
+
 	// Metallicafan212:	Hacked screen texture for checking if a opacity frame rendered on top or not
 	//					May or may not work as intended!!!!
 	//ID3D11Texture2D*			m_ScreenOpacityTex;
