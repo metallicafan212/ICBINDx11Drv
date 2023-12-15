@@ -29,8 +29,14 @@ struct FFrameShaderVars
 
 	UBOOL				bHDR;
 
-	// Metallicafan212:	TODO! I should find a way to dynamically add in the gamma modes into the final shaders, without having to rewrite them
+	// Metallicafan212:	User-chosen gamma mode (corresponds to the EGammaMode enum)
 	INT					GammaMode;
+
+	// Metallicafan212:	sRGB to HDR expansion value
+	FLOAT				HDRExpansion;
+
+	// Metallicafan212:	Additional padding
+	FLOAT				Pad[3];
 };
 
 // Metallicafan212:	Just a buffer for fog settings

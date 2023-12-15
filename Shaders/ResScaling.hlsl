@@ -34,7 +34,7 @@ SamplerState ScreenState	: register(s0);
 // Metallicafan212:	Gamma correction functions
 float4 XOpenGLGamma(float3 In)
 {		
-	float InvGamma = 1.0f / (Gamma * 2);
+	float InvGamma = 1.0f / (Gamma);
 	
 	return float4(pow(In, float3(InvGamma, InvGamma, InvGamma)), 1.0f);//float4(pow(In.x, InvGamma), pow(In.y, InvGamma), pow(In.z, InvGamma), 1.0f);
 }
@@ -43,6 +43,18 @@ float4 DX9Gamma(float3 In)
 {
 	// Metallicafan212:	TODO!
 	return float4(In, 1.0f);
+}
+
+// Metallicafan212:	From https://github.com/Microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/ColorSpaceUtility.hlsli
+float3 SRGBToRec2020(float3 In)
+{
+	static const float3x3 ConvMat =
+    {
+        0.627402, 0.329292, 0.043306,
+        0.069095, 0.919544, 0.011360,
+        0.016394, 0.088028, 0.895578
+    };
+    return mul(ConvMat, In);
 }
 
 
@@ -94,28 +106,48 @@ float4 PxShader(PSInput input) : SV_TARGET
 		return float4(TexColor, 1.0f);
 	}
 	
+	/*
 	// Metallicafan212:	HDR correct!
 	//					TODO! Determine a better constant
-	TexColor.xyz = pow(TexColor.xyz, float3(2.2f, 2.2f, 2.2f)) * 1.4f;
+	if(bHDR)
+	{
+		//Out.xyz = pow(Out.xyz, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
+		TexColor = SRGBToRec2020(TexColor) * HDRExpansion;//pow(TexColor, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
+	}
+	*/
+	
+	
+	float4 Out;
 	
 	if(GammaMode == GM_XOpenGL)
 	{
 		// Metallicafan212:	Use the over gamma method
-		return XOpenGLGamma(TexColor);
+		Out = XOpenGLGamma(TexColor);
 	}
 	else if(GammaMode == GM_DX9)
 	{
-		return DX9Gamma(TexColor);
+		Out = DX9Gamma(TexColor);
 	}
 	else // Metallicafan212: TODO!
 	{
-		return float4(TexColor, 1.0f);
+		Out = float4(TexColor, 1.0f);
 	}
+	
+	// Metallicafan212:	HDR correct!
+	//					TODO! Determine a better constant
+	if(bHDR)
+	{
+		//Out.xyz = pow(Out.xyz, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
+		//TexColor = SRGBToRec202(TexColor);//pow(TexColor, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
+		Out.xyz = SRGBToRec2020(Out.xyz) * HDRExpansion;
+	}
+	
+	return Out;
 	
 	// Metallicafan212:	Gamma correct it
 	//float OverGamma = 1.0f / Gamma;
 	//return float4(pow(TexColor, float3(OverGamma, OverGamma, OverGamma)), 1.0f);
-	return float4(TexColor, 1.0f);
+	//return float4(TexColor, 1.0f);
 }
 
 #if 0

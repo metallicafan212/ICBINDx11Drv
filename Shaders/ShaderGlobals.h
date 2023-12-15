@@ -80,6 +80,8 @@ cbuffer FrameVariables : register (b0)
 	int		bCorrectFog		: packoffset(c5.y);
 	int		bHDR			: packoffset(c5.z);
 	int 	GammaMode		: packoffset(c5.w);
+	float	HDRExpansion	: packoffset(c6.x);
+	float3 	PadHDR3			: packoffset(c6.y);
 };
 
 // Metallicafan212:	I did the same thing I did for polyflags, and made the whole enum a set of defines
@@ -186,7 +188,7 @@ float4 DoFinalColor(float4 ColorIn)
 	// Metallicafan212:	If doing HDR, change to linear color
 	if(GammaMode == GM_PerObject && bHDR && !bModulated)
 	{
-		ColorIn.xyz = pow(ColorIn.xyz, float3(2.2f, 2.2f, 2.2f)) * 1.2f;
+		ColorIn.xyz = pow(ColorIn.xyz, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
 	}
 	
 	// Metallicafan212:	Early return

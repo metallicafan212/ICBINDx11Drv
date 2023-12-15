@@ -581,6 +581,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	//					Default is 0.0f, setting it above 0 will brighten the image for the same brightness setting, negative will reduce it
 	FLOAT						GammaOffset;
 
+	// Metallicafan212:	HDR color correction value, since we have to expand sRGB to linear color for HDR to work
+	FLOAT						HDRExpansion;
+
 	// Metallicafan212:	If we shouldn't multiply lightmaps by 2 in the complex surface shader
 	UBOOL						bOneXLightmaps;
 

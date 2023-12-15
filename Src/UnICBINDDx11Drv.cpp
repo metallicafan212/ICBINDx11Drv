@@ -984,6 +984,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		bForceRGBA = 0;
 
 		// Metallicafan212:	See if we should use the HDR compatible mode
+	TESTHDR:
 		ScreenFormat = (!GIsEditor && UseHDR ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_B8G8R8A8_UNORM);
 
 		// Metallicafan212:	Base this on the feature level
@@ -1027,8 +1028,17 @@ void UICBINDx11RenderDevice::SetupResources()
 			&m_D3DSwapChain
 		);
 
+		if (FAILED(hr) && UseHDR)
+		{
+			// Metallicafan212:	Swap
+			GLog->Logf(TEXT("DX11: Failed to use HDR screen format, swapping back to SDR"));
+			UseHDR = 0;
+			goto TESTHDR;
+		}
+
 		if (FAILED(hr) && !bForceRGBA)
 		{
+			GLog->Logf(TEXT("DX11: Failed to set default screen format, trying RGBA8"));
 			// Metallicafan212:	Test with RGBA8
 			ScreenFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 
@@ -1040,6 +1050,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		}
 		else if(SUCCEEDED(hr) && !bForceRGBA && UseHDR)
 		{
+			GLog->Logf(TEXT("DX11: HDR mode active"));
+
 			// Metallicafan212:	Set the correct color space
 			IDXGISwapChain3* sp3 = nullptr;
 
@@ -1047,7 +1059,8 @@ void UICBINDx11RenderDevice::SetupResources()
 
 			if (sp3 != nullptr)
 			{
-				sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
+				GLog->Logf(TEXT("DX11: Setting HDR colorspace"));
+				sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);//DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
 
 				sp3->Release();
 			}
@@ -1744,7 +1757,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 #endif
 
 	// Metallicafan212:	Check if our lock flags changed
-	if (Gamma != LastGamma || LastAASamples != NumAASamples || LastAFSamples != NumAFSamples || LastResolutionScale != ResolutionScale || LastAdditionalBuffers != NumAdditionalBuffers)
+	if (LastAASamples != NumAASamples || LastAFSamples != NumAFSamples || LastResolutionScale != ResolutionScale || LastAdditionalBuffers != NumAdditionalBuffers)
 	{
 		if (LastAASamples != NumAASamples || LastResolutionScale != ResolutionScale || LastAdditionalBuffers != NumAdditionalBuffers)
 		{
@@ -1755,16 +1768,16 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 		{
 			FlushTextureSamplers();
 		}
-
-		LastGamma = Gamma;
 	}
 
 	// Metallicafan212:	Gamma is disabled in HP2 because a speedrunning trick involves messing with the brighness bar
 	//					So, to account for that, there's a manual gamma value (for the time being...)
 	//					11/28/23, added a manual gamma offset (for the time being, until I add in multiple gamma modes)
-	FrameShaderVars.Gamma		= Gamma + GammaOffset;
+	FrameShaderVars.Gamma			= Gamma + GammaOffset;
 
-	FrameShaderVars.GammaMode	= GammaMode;
+	FrameShaderVars.GammaMode		= GammaMode;
+
+	FrameShaderVars.HDRExpansion	= HDRExpansion;
 
 #if DX11_HP2
 	// Metallicafan212:	Check for wireframe
