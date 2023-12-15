@@ -1779,6 +1779,8 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 	FrameShaderVars.HDRExpansion	= HDRExpansion;
 
+	FrameShaderVars.ResolutionScale	= ResolutionScale;
+
 #if DX11_HP2
 	// Metallicafan212:	Check for wireframe
 	if (Viewport->IsWire())
@@ -2169,10 +2171,10 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 				}//D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;//D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;//D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 				SDesc.AddressU			= D3D11_TEXTURE_ADDRESS_CLAMP;
 				SDesc.AddressV			= SDesc.AddressU;
-				SDesc.AddressW			= D3D11_TEXTURE_ADDRESS_WRAP;//SDesc.AddressU;
+				SDesc.AddressW			= SDesc.AddressU;//D3D11_TEXTURE_ADDRESS_WRAP;//SDesc.AddressU;
 				SDesc.MinLOD			= 0.0f;
-				SDesc.MaxLOD			= 0.0f;
-				SDesc.MipLODBias		= -16.0f;
+				SDesc.MaxLOD			= FLT_MAX;//0.0f;
+				SDesc.MipLODBias		= 0.0f;//-16.0f;
 				SDesc.MaxAnisotropy		= 1;//16;//16;
 				SDesc.ComparisonFunc	= D3D11_COMPARISON_NEVER;
 

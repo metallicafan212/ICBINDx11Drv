@@ -35,8 +35,11 @@ struct FFrameShaderVars
 	// Metallicafan212:	sRGB to HDR expansion value
 	FLOAT				HDRExpansion;
 
+	// Metallicafan212:	Resolution scale value
+	FLOAT				ResolutionScale;
+
 	// Metallicafan212:	Additional padding
-	FLOAT				Pad[3];
+	FLOAT				Pad[2];//3];
 };
 
 // Metallicafan212:	Just a buffer for fog settings
@@ -469,9 +472,9 @@ public:
 	// Metallicafan212:	Constructor that inits the device pointer
 	FD3DResScalingShader(class UICBINDx11RenderDevice* InParent);
 
-	virtual void SetupConstantBuffer();
+	//virtual void SetupConstantBuffer();
 
-	virtual void WriteConstantBuffer(void* InMem);
+	//virtual void WriteConstantBuffer(void* InMem);
 };
 
 // Metallicafan212:	MSAA resolving shader

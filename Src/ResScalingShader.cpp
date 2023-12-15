@@ -34,6 +34,7 @@ FD3DResScalingShader::FD3DResScalingShader(UICBINDx11RenderDevice* InParent)
 	unguard;
 }
 
+/*
 // Metallicafan212:	Shader interface
 void FD3DResScalingShader::SetupConstantBuffer()
 {
@@ -70,3 +71,4 @@ void FD3DResScalingShader::WriteConstantBuffer(void* InMem)
 
 	unguardSlow;
 }
+*/

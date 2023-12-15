@@ -1,3 +1,4 @@
+/*
 // Metallicafan212:	Resolution scaling shader, that will correctly filter down the screen texture to the destination
 #define DO_STANDARD_BUFFER 0
 #include "ShaderGlobals.h"
@@ -16,6 +17,7 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 // Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling
 //					The buffer variables have to be defined before they can be used
 #define DO_FINAL_COLOR
+*/
 #include "ShaderGlobals.h"
 
 struct PSInput 
@@ -100,10 +102,12 @@ float4 PxShader(PSInput input) : SV_TARGET
 		TexColor = Screen.SampleBias(ScreenState, UV, 0.0f).xyz;
 	}
 	
+	float4 Out;
+	
 	// Metallicafan212:	Determine the gamma mode
 	if(GammaMode == GM_PerObject)
 	{
-		return float4(TexColor, 1.0f);
+		Out = float4(TexColor, 1.0f);
 	}
 	
 	/*
@@ -116,8 +120,6 @@ float4 PxShader(PSInput input) : SV_TARGET
 	}
 	*/
 	
-	
-	float4 Out;
 	
 	if(GammaMode == GM_XOpenGL)
 	{
