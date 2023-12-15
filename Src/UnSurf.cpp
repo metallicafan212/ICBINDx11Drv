@@ -4,17 +4,17 @@
 //					TODO! Store this somewhere else!!!!
 struct FUVInfo
 {
-	FPlane PanScale[5];
+	FPlane	PanScale[5];
 
-	UBOOL bEnabledTex[5];
+	UBOOL	bEnabledTex[5];
 
-	FPlane LFScale;
+	FPlane	LFScale;
 
 	FVector XAxis;
 	FVector YAxis;
 
-	FLOAT UDot;
-	FLOAT VDot;
+	FLOAT	UDot;
+	FLOAT	VDot;
 };
 
 #if EXTRA_VERT_INFO && !COMPLEX_SURF_MANUAL_UVs
@@ -89,42 +89,6 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 #else
 		// Metallicafan212:	Calculate the UVs of this vertex
 		CALC_UV(0);
-
-		/*
-		if (bEnabledTex[0])
-		{
-			m_VertexBuff[Vert].U	= (U - PanScale[0].X) * PanScale[0].Z;
-			m_VertexBuff[Vert].V	= (V - PanScale[0].Y) * PanScale[0].W;
-		}
-
-		// Metallicafan212:	Lightmap
-		if (bEnabledTex[1])
-		{
-			m_VertexBuff[Vert].UX	= (U - PanScale[1].X + 0.5f * LFScale.X) * PanScale[1].Z;
-			m_VertexBuff[Vert].VX	= (V - PanScale[1].Y + 0.5f * LFScale.Y) * PanScale[1].W;
-		}
-
-		// Metallicafan212:	Macro
-		if (bEnabledTex[2])
-		{
-			m_SecVert[Vert].MU		= (U - PanScale[2].X) * PanScale[2].Z;
-			m_SecVert[Vert].MV		= (V - PanScale[2].Y) * PanScale[2].W;
-		}
-
-		// Metallicafan212:	Fog
-		if (bEnabledTex[3])
-		{
-			m_SecVert[Vert].FU		= (U - PanScale[3].X + 0.5f * LFScale.Z) * PanScale[3].Z;
-			m_SecVert[Vert].FV		= (V - PanScale[3].Y + 0.5f * LFScale.W) * PanScale[3].W;
-		}
-
-		// Metallicafan212:	Detail
-		if (bEnabledTex[4])
-		{
-			m_SecVert[Vert].DU		= (U - PanScale[4].X) * PanScale[4].Z;
-			m_SecVert[Vert].DV		= (V - PanScale[4].Y) * PanScale[4].W;
-		}
-		*/
 #endif
 #endif
 
@@ -176,7 +140,7 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 
 // Metallicafan212:	Definitions relating to complex surface (BSP) drawing
 #if DX11_HP2
-void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet, QWORD PolyFlags, FLOAT Alpha)//BYTE cAlpha)
+void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet, QWORD PolyFlags, FLOAT Alpha)
 {
 #else
 void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet)
@@ -210,17 +174,14 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 #if DX11_HP2
 	// Metallicafan212:	Copy over the surface alpha
-	//FSurfShader->SurfAlpha = cAlpha / 255.0f;
+	FLOAT AlphaMult = Alpha;
 
-	FLOAT AlphaMult = Alpha;//cAlpha / 255.0f;
-
-	// Metallicafan212:	I've hacked lumos as DX11's reverse alpha mode doesn't go to 100% alpha, causing lumos to not occlude things behind it (when it's undescovered)
+	// Metallicafan212:	I've hacked lumos as DX11's reverse alpha mode doesn't go to 100% alpha, causing lumos to not occlude things behind it (when it's undiscovered)
 	if (PolyFlags & PF_LumosAffected)
 	{
 		AlphaMult = 1.0f - AlphaMult;
 
 		// Metallicafan212:	If we have lumos, but the alpha is maxed, we need to turn on occlusion!!!
-
 		if (AlphaMult >= 1.0f)
 		{
 			PolyFlags |= PF_Occlude;
@@ -231,11 +192,6 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	{
 		AlphaMult = 1.0f;
 	}
-/*
-#else
-	// Metallicafan212:	TODO! Other games might use a surface alpha (like Rune iirc?). Reevaluate this later
-	FSurfShader->SurfAlpha = 1.0f;
-*/
 #endif
 
 	SetBlend(PolyFlags);
@@ -243,13 +199,10 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	// Metallicafan212:	Raster state
 	SetRasterState(DXRS_Normal);
 
-	//if (SceneNodeHack)
-	//if(1)
 	if(SceneNodeHack)
 	{
 		if ((Frame->X != m_sceneNodeX) || (Frame->Y != m_sceneNodeY))
 		{
-			//m_sceneNodeHackCount++;
 			SetSceneNode(Frame);
 		}
 	}
@@ -462,11 +415,6 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 #if EXTRA_VERT_INFO
 		LockSecondaryVertBuffer();
 #endif
-
-		//LockVertexBuffer(sizeof(FD3DVert) * VertRequest);
-		//LockIndexBuffer(IndexRequest);
-
-		//SetBlend(PF_Translucent);
 		SetTexture(0, nullptr, 0);
 		SetTexture(1, nullptr, 0);
 		SetTexture(2, nullptr, 0);
@@ -493,18 +441,16 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 				else
 				{
 					TestColor = Surface.FlatColor.Plane();
-					TestColor.W = 0.75f * 0.75f;//0.75f;
-					//FSurfShader->SurfAlpha = 0.75f;
+					TestColor.W = 0.75f * 0.75f;
 				}
 			}
 			else
 			{
 #if !DX11_UT_469
-				TestColor = SurfaceSelectionColor.Plane();//FPlane(0.0f, 0.0f, 1.0f, 0.5f);
+				TestColor = SurfaceSelectionColor.Plane();
 #else
-				TestColor = FPlane(SurfaceSelectionColor.R / 255.0f, SurfaceSelectionColor.G / 255.0f, SurfaceSelectionColor.B / 255.0f, SurfaceSelectionColor.A / 255.0f);//FPlane(SurfaceSelectionColor.Plane(), 0.5f);
+				TestColor = FPlane(SurfaceSelectionColor.R / 255.0f, SurfaceSelectionColor.G / 255.0f, SurfaceSelectionColor.B / 255.0f, SurfaceSelectionColor.A / 255.0f);
 #endif
-				//FSurfShader->SurfAlpha = 0.5f;
 			}
 		}
 
@@ -517,12 +463,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff);
 #endif
 
-		//UnlockVertexBuffer();
-		//UnlockIndexBuffer();
-
-		//UnlockBuffers();
-
-		AdvanceVertPos();//VertRequest, sizeof(FD3DVert), IndexRequest);
+		AdvanceVertPos();
 
 		// Metallicafan212:	Draw immediately
 #if !EXTRA_VERT_INFO

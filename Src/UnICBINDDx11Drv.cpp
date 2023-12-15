@@ -1855,7 +1855,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 		RestoreRenderTarget();
 
 	// Metallicafan212:	Render now!
-	DoDeferredRender();
+	//DoDeferredRender();
 
 	// Metallicafan212:	Fix the render state
 #if DX11_HP2
@@ -2053,7 +2053,6 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 		}
 		// Metallicafan212:	Always use the resolution scaling shader, so we can do final effects on the screen
 		else
-		//else if (ResolutionScale != 1.0f)
 		{
 #if USE_RES_COMPUTE
 			// Metallicafan212:	Use a compute shader instead!!!
@@ -2238,25 +2237,19 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			m_VertexBuff[5].V		= SV2;
 			m_VertexBuff[5].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
 
-			//UnlockVertexBuffer();
-			//UnlockBuffers();
-
 			m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			AdvanceVertPos();//6);
+			AdvanceVertPos();
 
 			// Metallicafan212:	Draw
 			EndBuffering();
 
-			SetTexture(0, nullptr, 0);
+			//SetTexture(0, nullptr, 0);
+			// Metallicafan212:	Fix the shader holding onto the RT texture
+			m_RenderContext->PSSetShaderResources(0, 1, &BlankResourceView);
 
 			RestoreRenderTarget();
-
-			DoDeferredRender();
 #endif
 		}
-
-		// Metallicafan212:	Render now!
-		//DoDeferredRender();
 
 		static constexpr DXGI_PRESENT_PARAMETERS Parm{ 0, nullptr, nullptr, nullptr };
 		HRESULT hr = m_D3DSwapChain->Present1(UseVSync ? 1 : 0, (bAllowTearing && !bFullscreen && !UseVSync ? DXGI_PRESENT_ALLOW_TEARING : 0), &Parm);//m_D3DSwapChain->Present(0, 0);
