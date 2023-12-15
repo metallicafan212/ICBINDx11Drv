@@ -31,6 +31,20 @@ struct PSInput
 Texture2D Screen 			: register(t0);
 SamplerState ScreenState	: register(s0);
 
+// Metallicafan212:	Gamma correction functions
+float4 XOpenGLGamma(float3 In)
+{		
+	float InvGamma = 1.0f / (Gamma * 2);
+	
+	return float4(pow(In, float3(InvGamma, InvGamma, InvGamma)), 1.0f);//float4(pow(In.x, InvGamma), pow(In.y, InvGamma), pow(In.z, InvGamma), 1.0f);
+}
+
+float4 DX9Gamma(float3 In)
+{
+	// Metallicafan212:	TODO!
+	return float4(In, 1.0f);
+}
+
 
 PSInput VertShader(VSInput input)
 {	
@@ -72,6 +86,30 @@ float4 PxShader(PSInput input) : SV_TARGET
 		UV			= (UV - 0.5) / SW;
 		
 		TexColor = Screen.SampleBias(ScreenState, UV, 0.0f).xyz;
+	}
+	
+	// Metallicafan212:	Determine the gamma mode
+	if(GammaMode == GM_PerObject)
+	{
+		return float4(TexColor, 1.0f);
+	}
+	
+	// Metallicafan212:	HDR correct!
+	//					TODO! Determine a better constant
+	TexColor.xyz = pow(TexColor.xyz, float3(2.2f, 2.2f, 2.2f)) * 1.4f;
+	
+	if(GammaMode == GM_XOpenGL)
+	{
+		// Metallicafan212:	Use the over gamma method
+		return XOpenGLGamma(TexColor);
+	}
+	else if(GammaMode == GM_DX9)
+	{
+		return DX9Gamma(TexColor);
+	}
+	else // Metallicafan212: TODO!
+	{
+		return float4(TexColor, 1.0f);
 	}
 	
 	// Metallicafan212:	Gamma correct it

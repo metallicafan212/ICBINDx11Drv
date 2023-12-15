@@ -129,6 +129,10 @@ enum ERasterFlags
 	DXRS_MAX		= 0xFF,
 };
 
+// Metallicafan212:	Include the gamma mode settings
+//					This is heavy todo!
+#include "GammaModes.h"
+
 class UICBINDx11RenderDevice;
 
 // Metallicafan212:	Just cutting down on the needed typing
@@ -555,6 +559,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 //#if DX11_HP2
 	FLOAT						Gamma;
 //#endif
+
+	// Metallicafan212:	User selectable gamma mode
+	BYTE						GammaMode;
 
 	// Metallicafan212:	Surface selection color
 	FColor						SurfaceSelectionColor;
@@ -1548,6 +1555,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	void AddFloatProp(const TCHAR* Name, FLOAT& InParam, ECppProperty CPP, INT Offset, FLOAT fDefaultVal);
 	void AddIntProp(const TCHAR* Name, INT& InParam, ECppProperty CPP, INT Offset, INT iDefaultVal);
 	void AddColorProp(const TCHAR* Name, FColor& InParam, ECppProperty CPP, INT Offset, FColor iDefaultVal);
+	void AddByteProp(const TCHAR* Name, BYTE& InParam, ECppProperty CPP, INT Offset, BYTE bDefaultVal, UEnum* InEnum = nullptr);
 
 	void ClampUserOptions();
 

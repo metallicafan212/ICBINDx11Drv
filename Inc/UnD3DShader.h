@@ -29,7 +29,8 @@ struct FFrameShaderVars
 
 	UBOOL				bHDR;
 
-	FLOAT				Pad;
+	// Metallicafan212:	TODO! I should find a way to dynamically add in the gamma modes into the final shaders, without having to rewrite them
+	INT					GammaMode;
 };
 
 // Metallicafan212:	Just a buffer for fog settings
@@ -72,24 +73,6 @@ struct FPolyflagVars
 // Metallicafan212:	Common shader variables
 struct FShaderVarCommon
 {
-	/*
-	// Metallicafan212:	Other needed shader vars
-	UBOOL	bColorMasked;
-	UBOOL	bSelection;
-	FLOAT	AlphaReject;
-	FLOAT	BWPercent;
-
-	// Metallicafan212:	If alpha is currently enabled
-	UBOOL	bAlphaEnabled;
-
-	// Metallicafan212:	Temp hack for modulation until I recode gamma again....
-	UBOOL	bModulated;
-
-	// Metallicafan212:	Pad it!!!!
-	//FLOAT	Pad[3];
-	FLOAT	Pad[2];
-	*/
-
 	// Metallicafan212:	What textures are currently bound
 	UBOOL	BoundTextures[MAX_TEXTURES];
 };
@@ -191,6 +174,11 @@ public:
 #else
 		Macros.AddItem({"EXTRA_VERT_INFO", "0"});
 #endif
+
+		// Metallicafan212:	Add the gamma modes
+#define DECLARE_ENUM
+#define DECLARE_GM(name, val)Macros.AddItem({#name, #val});
+#include "GammaModes.h"
 
 		// Metallicafan212:	There must be a null terminated value here
 		Macros.AddZeroed();

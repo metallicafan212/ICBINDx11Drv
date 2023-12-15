@@ -1217,9 +1217,6 @@ void UICBINDx11RenderDevice::SetupResources()
 	hr = m_D3DDevice->CreateShaderResourceView(m_MSAAResolveTex, &srvDesc, &m_MSAAResolveSRV);
 	ThrowIfFailed(hr);
 
-	//SAFE_RELEASE(m_MSAAResolveSRV);
-	//SAFE_RELEASE(m_MSAAResolveTex);
-
 	// Metallicafan212:	Make the depth and stencil buffer
 	//					TODO! Possibly use a higher quality format????
 	CD3D11_TEXTURE2D_DESC depthStencilDesc = CD3D11_TEXTURE2D_DESC();
@@ -1765,7 +1762,9 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	// Metallicafan212:	Gamma is disabled in HP2 because a speedrunning trick involves messing with the brighness bar
 	//					So, to account for that, there's a manual gamma value (for the time being...)
 	//					11/28/23, added a manual gamma offset (for the time being, until I add in multiple gamma modes)
-	FrameShaderVars.Gamma = Gamma + GammaOffset;
+	FrameShaderVars.Gamma		= Gamma + GammaOffset;
+
+	FrameShaderVars.GammaMode	= GammaMode;
 
 #if DX11_HP2
 	// Metallicafan212:	Check for wireframe

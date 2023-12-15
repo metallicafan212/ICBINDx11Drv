@@ -163,10 +163,75 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	Add an option to use a HDR compatible screen type (in-game only)
 	AddBoolProp(CPP_PROP(UseHDR), 0);
 
+	// Metallicafan212:	Add on user selectable gamma modes, so they can pick what fits best for them
+	UEnum* GEnum = new (GetClass(), TEXT("GammaModes"))UEnum(nullptr);
+#define DECLARE_ENUM
+#define DECLARE_GM(name, val) GEnum->Names.AddItem(FName(TEXT(#name) + 3));
+
+#include "GammaModes.h"
+
+	AddByteProp(CPP_PROP(GammaMode), GM_XOpenGL, GEnum);
+
 	unguard;
 }
 
 #undef CPP_PROP
+
+void UICBINDx11RenderDevice::AddByteProp(const TCHAR* Name, BYTE& InParam, ECppProperty CPP, INT Offset, BYTE bDefaultVal, UEnum* InEnum)
+{
+	guard(UICBINDx11RenderDevice::AddByteProp);
+
+	// Metallicafan212:	Create it
+	new(GetClass(), Name, RF_Public)UByteProperty(CPP, Offset, TEXT("Display"), CPF_Config, InEnum);
+
+	InParam = bDefaultVal;
+
+	// Metallicafan212:	See if the default is provided
+	FString Test;
+
+	if (!GConfig->GetString(ClsName, Name, Test))
+	{
+		// Metallicafan212:	If we were provided a enum, use it for the value
+		//					This ASSUMES that the array size is correct
+		if (InEnum != nullptr)
+		{
+			GConfig->SetString(ClsName, Name, *InEnum->Names(bDefaultVal));
+		}
+		else
+		{
+			// Metallicafan212:	Use the default value
+			GConfig->SetInt(ClsName, Name, bDefaultVal);
+		}
+
+		InParam = bDefaultVal;
+	}
+	else if (InEnum != nullptr)
+	{
+		// Metallicafan212:	Get back the user's choice
+		INT NewValue = bDefaultVal;
+
+		for (INT i = 0; i < InEnum->Names.Num(); i++)
+		{
+			if (InEnum->Names(i) == *Test)
+			{
+				NewValue = i;
+			}
+		}
+
+		// Metallicafan212:	Either use the user's option or set the default
+		InParam = NewValue;
+	}
+	else
+	{
+		// Metallicafan212:	Read it as an int
+		INT val;
+		GConfig->GetInt(ClsName, Name, val);
+
+		InParam = Clamp(val, 0, 255);
+	}
+
+	unguard;
+}
 
 void UICBINDx11RenderDevice::AddColorProp(const TCHAR* Name, FColor& InParam, ECppProperty CPP, INT Offset, FColor DefaultVal)
 {
@@ -182,7 +247,7 @@ void UICBINDx11RenderDevice::AddColorProp(const TCHAR* Name, FColor& InParam, EC
 		ColorS = new(UObject::StaticClass(), TEXT("Color")) UStruct(NULL);
 
 	ColorS->PropertiesSize = sizeof(FColor);
-	new(GetClass(), Name, RF_Public)UStructProperty(CPP, Offset, TEXT("Options"), CPF_Config, ColorS);
+	new(GetClass(), Name, RF_Public)UStructProperty(CPP, Offset, TEXT("Display"), CPF_Config, ColorS);
 
 	unguard;
 }
@@ -191,7 +256,7 @@ void UICBINDx11RenderDevice::AddBoolProp(const TCHAR* Name, UBOOL& InParam, ECpp
 {
 	guard(UICBINDx11RenderDevice::AddBoolProp);
 
-	new(GetClass(), Name, RF_Public)UBoolProperty(CPP, Offset, TEXT("Options"), CPF_Config);
+	new(GetClass(), Name, RF_Public)UBoolProperty(CPP, Offset, TEXT("Display"), CPF_Config);
 
 	// Metallicafan212:	Now set the default value
 	if (!GConfig->GetBool(ClsName, Name, InParam))
@@ -208,7 +273,7 @@ void UICBINDx11RenderDevice::AddFloatProp(const TCHAR* Name, FLOAT& InParam, ECp
 {
 	guard(UICBINDx11RenderDevice::AddFloatProp);
 
-	new(GetClass(), Name, RF_Public)UFloatProperty(CPP, Offset, TEXT("Options"), CPF_Config);
+	new(GetClass(), Name, RF_Public)UFloatProperty(CPP, Offset, TEXT("Display"), CPF_Config);
 
 	// Metallicafan212:	Now set the default value
 	if (!GConfig->GetFloat(ClsName, Name, InParam))
@@ -225,7 +290,7 @@ void UICBINDx11RenderDevice::AddIntProp(const TCHAR* Name, INT& InParam, ECppPro
 {
 	guard(UICBINDx11RenderDevice::AddIntProp);
 
-	new(GetClass(), Name, RF_Public)UIntProperty(CPP, Offset, TEXT("Options"), CPF_Config);
+	new(GetClass(), Name, RF_Public)UIntProperty(CPP, Offset, TEXT("Display"), CPF_Config);
 
 	// Metallicafan212:	Now set the default value
 	if (!GConfig->GetInt(ClsName, Name, InParam))

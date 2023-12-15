@@ -79,8 +79,16 @@ cbuffer FrameVariables : register (b0)
 	int		bOneXLightmaps	: packoffset(c5.x);
 	int		bCorrectFog		: packoffset(c5.y);
 	int		bHDR			: packoffset(c5.z);
-	float 	PadF			: packoffset(c5.w);
+	int 	GammaMode		: packoffset(c5.w);
 };
+
+// Metallicafan212:	I did the same thing I did for polyflags, and made the whole enum a set of defines
+/*
+// Metallicafan212:	TODO! Find a way to mirror this as defines?
+#define GM_XOpenGL 		0
+#define GM_PerObject	1
+#define GM_DX9			2
+*/
 
 cbuffer DFogVariables : register (b1)
 {
@@ -147,7 +155,7 @@ float4 DoPixelFog(float DistFog, float4 Color)
 
 float4 DoGammaCorrection(float4 ColorIn)
 {
-	if(Gamma == 1.0f || bModulated)
+	if(GammaMode != GM_PerObject || Gamma == 1.0f || bModulated)
 		return ColorIn;
 	
 	float OverGamma = 1.0f / Gamma;
@@ -176,7 +184,7 @@ float4 DoFinalColor(float4 ColorIn)
 	//ColorIn.xyz = pow(ColorIn.xyz, float3(OverGamma, OverGamma, OverGamma));
 	
 	// Metallicafan212:	If doing HDR, change to linear color
-	if(bHDR && !bModulated)
+	if(GammaMode == GM_PerObject && bHDR && !bModulated)
 	{
 		ColorIn.xyz = pow(ColorIn.xyz, float3(2.2f, 2.2f, 2.2f)) * 1.2f;
 	}
