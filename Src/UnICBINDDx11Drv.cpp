@@ -2201,7 +2201,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 			FResScaleShader->Bind(m_RenderContext);
 
-			FLOAT Z = 0.5f;
+			FLOAT Z = 1.0f;
 			FLOAT X = 0.0f;
 			FLOAT Y = 0.0f;
 			FLOAT XL = SizeX;
@@ -2224,10 +2224,10 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			FLOAT SV1 = 0.0f;
 			FLOAT SV2 = 1.0f;
 
-			RPX1 *= Z;
-			RPX2 *= Z;
-			RPY1 *= Z;
-			RPY2 *= Z;
+			//RPX1 *= Z;
+			//RPX2 *= Z;
+			//RPY1 *= Z;
+			//RPY2 *= Z;
 
 			// Metallicafan212:	Start buffering now
 			StartBuffering(BT_ScreenFlash);
