@@ -959,6 +959,18 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	How many verts were buffered (how many to render when calling a draw command)
 	SIZE_T						m_BufferedVerts;
 
+	// Metallicafan212:	Hard-coded array for the screen bounds
+	FD3DVert					ScreenVerts[6] =
+	{
+		{-1.f, -1.f, 0.f, 1.f, 0.f, 1.f, 0.f, 0.f},
+		{1.0f, -1.f, 0.f, 1.f, 1.f, 1.f, 0.f, 0.f},
+		{-1.f, 1.0f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f},
+		{-1.f, 1.0f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f},
+		{1.0f, -1.f, 0.f, 1.f, 1.f, 1.f, 0.f, 0.f},
+		{1.0f, 1.0f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f},
+
+	};
+
 	// Metallicafan212:	Index buffer
 	ID3D11Buffer*				IndexBuffer;
 

@@ -2201,6 +2201,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 			FResScaleShader->Bind(m_RenderContext);
 
+			/*
 			FLOAT Z = 1.0f;
 			FLOAT X = 0.0f;
 			FLOAT Y = 0.0f;
@@ -2228,6 +2229,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			//RPX2 *= Z;
 			//RPY1 *= Z;
 			//RPY2 *= Z;
+			*/
 
 			// Metallicafan212:	Start buffering now
 			StartBuffering(BT_ScreenFlash);
@@ -2235,6 +2237,9 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			//LockVertexBuffer(6 * sizeof(FD3DVert));
 			LockVertAndIndexBuffer(6);
 
+			appMemcpy(m_VertexBuff, ScreenVerts, sizeof(FD3DVert) * 6);
+
+			/*
 			m_VertexBuff[0].X		= RPX1;
 			m_VertexBuff[0].Y		= RPY1;
 			m_VertexBuff[0].Z		= Z;
@@ -2276,6 +2281,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			m_VertexBuff[5].U		= SU1;
 			m_VertexBuff[5].V		= SV2;
 			m_VertexBuff[5].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
+			*/
 
 			m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			AdvanceVertPos();
