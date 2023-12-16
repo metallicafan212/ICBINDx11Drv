@@ -2187,7 +2187,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			//EndBuffering();
 
 			// Metallicafan212:	Order of operations, make sure the alpha rejection is set
-			SetBlend(0);
+			SetBlend(PF_Occlude);
 
 			SetTexture(0, nullptr, 0);
 
