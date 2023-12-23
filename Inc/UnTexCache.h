@@ -18,10 +18,10 @@ public:
 	void Flush();
 
 	// Metallicafan212:	Find a specific texture
-	FD3DTexture* Find(D3DCacheId InID, QWORD PolyFlags);
+	FD3DTexture* Find(D3DCacheId InID, PFLAG PolyFlags);
 
 	// Metallicafan212:	Get a new bind
-	FD3DTexture* Set(D3DCacheId InID, QWORD PolyFlags);
+	FD3DTexture* Set(D3DCacheId InID, PFLAG PolyFlags);
 
 	// Metallicafan212:	TODO! More interfaces
 

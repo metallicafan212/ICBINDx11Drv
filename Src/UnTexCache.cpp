@@ -63,7 +63,7 @@ void FTextureCache::Flush()
 	unguardSlow;
 }
 
-FD3DTexture* FTextureCache::Find(D3DCacheId InID, QWORD PolyFlags)
+FD3DTexture* FTextureCache::Find(D3DCacheId InID, PFLAG PolyFlags)
 {
 	guardSlow(FTextureCache::Find);
 
@@ -126,7 +126,7 @@ FD3DTexture* FTextureCache::Find(D3DCacheId InID, QWORD PolyFlags)
 	unguardSlow;
 }
 
-FD3DTexture* FTextureCache::Set(D3DCacheId InID, QWORD PolyFlags)
+FD3DTexture* FTextureCache::Set(D3DCacheId InID, PFLAG PolyFlags)
 {
 	guardSlow(FTextureCache::Set);
 

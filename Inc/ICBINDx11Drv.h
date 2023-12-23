@@ -340,57 +340,60 @@ struct FD3DTexture
 	ID3D11ShaderResourceView*	m_View;
 
 	// Metallicafan212:	Unreal texture pointer, only used for detecting RT textures...
-	UTexture*		Tex;
+	UTexture*			Tex;
 
 	// Metallicafan212:	The DX11 format
-	DXGI_FORMAT		TexFormat;
+	DXGI_FORMAT			TexFormat;
 
 	// Metallicafan212:	UE Format of this texture
-	ETextureFormat	Format;
+	ETextureFormat		Format;
+
+	// Metallicafan212:	Pointer to the texture type, so we can access the info
+	struct FD3DTexType* D3DTexType;
 
 	// Metallicafan212:	Flags this was uploaded as
 	//					This only matters if Masked is toggled on or off
-	PFLAG			PolyFlags;
+	PFLAG				PolyFlags;
 
 	// Metallicafan212:	If this texture should have UVs clamped (UClamp == USize && VClamp == VSize)
-	UBOOL			bShouldUVClamp;
+	UBOOL				bShouldUVClamp;
 
 	// Metallicafan212:	If this is really a RT texture
-	UBOOL			bIsRT;
+	UBOOL				bIsRT;
 
 	// Metallicafan212:	If mip 0 is "dead"
 	//UBOOL			bSkipMipZero;
 
 	// Metallicafan212:	Number of mips to skip
-	INT				MipSkip;
+	INT					MipSkip;
 
 	// Metallicafan212:	The cache ID Unreal provided us when it was uploaded
-	D3DCacheId		CacheID;
+	D3DCacheId			CacheID;
 
 	// Metallicafan212:	Bind information
-	INT				USize;
-	INT				VSize;
+	INT					USize;
+	INT					VSize;
 
 	// Metallicafan212:	Scaling info
-	//FLOAT			UScale;
-	//FLOAT			VScale;
+	//FLOAT				UScale;
+	//FLOAT				VScale;
 
-	INT				UClamp;
-	INT				VClamp;
+	INT					UClamp;
+	INT					VClamp;
 
 	// Metallicafan212:	UT469 (and now HP2) tracked number of changes to this texture
-	INT				RealtimeChangeCount;
+	INT					RealtimeChangeCount;
 
 	//FLOAT			UMult;
 	//FLOAT			VMult;
 
 
 	// Metallicafan212:	Number of mips
-	INT				NumMips;
+	INT					NumMips;
 
 	// Metallicafan212:	Color for the "color masking" system I added
-	FPlane			MaskedColor;
-	FPlane			MaskedGranularity;
+	FPlane				MaskedColor;
+	FPlane				MaskedGranularity;
 
 	//ID3D11UnorderedAccessView*	TexUAV;
 
@@ -428,12 +431,16 @@ struct FD3DBoundTex
 	FLOAT						VScale;
 };
 
+// Metallicafan212:	Generic function to handle all texture types
+typedef void (UICBINDx11RenderDevice::*UploadFunc)(FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+//typedef void (UICBINDx11RenderDevice::*ConversionFunc)(void* Source, SIZE_T SourceLength, FD3DTexture* Tex, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+
 // Metallicafan212:	Texture support table info
 struct FD3DTexType
 {
-	typedef void (*UploadFunc)(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
-	typedef void (*ConversionFunc)(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
-	typedef SIZE_T (FD3DTexType::* GetPitch)(INT USize);
+	//typedef void (*UploadFunc)(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+	//typedef void (*ConversionFunc)(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+	typedef SIZE_T (FD3DTexType::* GetTypePitch)(INT USize);
 
 	// Metallicafan212:	The UE format
 	ETextureFormat	Format;
@@ -454,10 +461,19 @@ struct FD3DTexType
 
 	// Metallicafan212:	Conversion function, needed to convert an unsupported texture format to a supported one
 	//					TODO! Implement conversions for BC1-7 if the hardware doesn't support it!!! (DX9 and DX10 level hardware)
-	ConversionFunc	TexConvFunc;
+	//ConversionFunc	TexConvFunc;
 
 	// Metallicafan212:	Pitch function
-	GetPitch		GetTexturePitch;
+	GetTypePitch		GetTexturePitch;
+
+	SIZE_T GetPitch(INT USize)
+	{
+#if DX11_UT_469
+		return FTextureBlockBytes(Info.Format)* FTextureBlockAlignedWidth(Info.Format, USize) / FTextureBlockWidth(Info.Format);
+#else
+		return (this->*GetTexturePitch)(USize);
+#endif
+	}
 
 	// Metallicafan212:	THIS IS ASSUMED RIGHT NOW!!!!
 	SIZE_T RawPitch(INT USize)
@@ -1375,12 +1391,18 @@ class UICBINDx11RenderDevice : public URenderDevice
 		return (QSORT_RETURN)(((A->X - B->X) != 0.0f) ? (A->X - B->X) : (A->Y - B->Y));
 	}
 
-	void RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, UBOOL bIsCompressed = 0, INT ByteOrBlockSize = 4, FD3DTexType::GetPitch PitchFunc = &FD3DTexType::RawPitch, FD3DTexType::UploadFunc UFunc = MemcpyTexUpload, FD3DTexType::ConversionFunc UConv = nullptr);
+	// Metallicafan212:	Texture conversion/uploading function
+	//typedef void (UICBINDx11RenderDevice::* UploadFunc)(void* Source, SIZE_T SourceLength, FD3DTexture* Tex, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH, FColor* Palette);
+	void DirectCP(FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+	void P8ToRGBA(FTextureInfo& Info, FD3DTexture* tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+	void RGBA7To8(FTextureInfo& Info, FD3DTexture* tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+
+	void RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, UBOOL bIsCompressed = 0, INT ByteOrBlockSize = 4, FD3DTexType::GetTypePitch PitchFunc = &FD3DTexType::RawPitch, UploadFunc UFunc = &DirectCP);//, FD3DTexType::ConversionFunc UConv = nullptr);
 
 	// Metallicafan212:	Texture setting code
 	void SetTexture(INT TexNum, FTextureInfo* Info, PFLAG PolyFlags);
 
-	void CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlags, UBOOL bJustSampler = 0);
+	FD3DTexture* CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlags, UBOOL bJustSampler = 0);
 
 	//void MakeTextureSampler(FD3DTexture* Bind, PFLAG PolyFlags);
 
@@ -1597,7 +1619,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	virtual void DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, INT NumPts, _WORD* Indices, INT NumIndices, QWORD PolyFlags, FSpanBuffer* Span);
 
-	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo & Surface, FSurfaceFacet & Facet, QWORD PolyFlags, FLOAT Alpha);//BYTE cAlpha);
+	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo & Surface, FSurfaceFacet & Facet, QWORD PolyFlags, FLOAT Alpha);
 	
 	virtual void DrawTile(FSceneNode* Frame, FTextureInfo & Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, class FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, QWORD PolyFlags);
 

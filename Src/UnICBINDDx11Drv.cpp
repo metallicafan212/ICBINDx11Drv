@@ -732,10 +732,10 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 #if P8_COMPUTE_SHADER
 	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 0, 1, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
 #else
-	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 0, 4, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
+	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 0, 4, &FD3DTexType::RawPitch, &UICBINDx11RenderDevice::P8ToRGBA);
 #endif
 
-	RegisterTextureFormat(TEXF_RGBA7, DXGI_FORMAT_B8G8R8A8_UNORM, 1, 0, 4, &FD3DTexType::RawPitch, nullptr, RGBA7To8);
+	RegisterTextureFormat(TEXF_RGBA7, DXGI_FORMAT_B8G8R8A8_UNORM, 1, 0, 4, &FD3DTexType::RawPitch, &UICBINDx11RenderDevice::RGBA7To8);
 	
 	// Metallicafan212:	I have standardized the TEXF enum between UT469 and HP2 (since BC6H is currently unused and RGBA8 was already called ARGB in the editor/implemented as BGRA8)
 

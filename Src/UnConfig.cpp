@@ -60,6 +60,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	UseLightmapAtlas = 1;
 
 	MaxTextureSize		= D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION;
+
+	AddBoolProp(CPP_PROP(SupportsUpdateTextureRect), 1);
 #endif
 
 	if (!GConfig->GetBool(ClsName, TEXT("DetailTextures"), (UBOOL&)DetailTextures))
