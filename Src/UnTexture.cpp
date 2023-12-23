@@ -185,6 +185,12 @@ FORCEINLINE UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, 
 	MipH	= Mip->VSize;
 
 	SourcePitch = Type->GetPitch(Mip->USize);
+
+	if (Size <= 0)
+	{
+		Size = SourcePitch * Mip->VSize;
+	}
+
 #elif DX11_UT_469
 
 	// Metallicafan212:	Add on the texture LOD setting
@@ -841,9 +847,9 @@ void UICBINDx11RenderDevice::RGBA7To8(FTextureInfo& Info, FD3DTexture* Tex, INT 
 		if (bPartial)
 		{
 			// Metallicafan212:	Get the update pitch
-			Pitch = Tex->D3DTexType->GetPitch(UpdateW);
+			Pitch = UpdateW * 4;//Tex->D3DTexType->GetPitch(UpdateW);
 
-			Size = UpdateW * UpdateH * 4;
+			Size = Pitch * UpdateH;
 
 			DWORD* pTex = (DWORD*)ConversionMemory;
 
