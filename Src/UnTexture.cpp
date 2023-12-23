@@ -191,8 +191,8 @@ FORCEINLINE UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, 
 	if(Info.Texture != nullptr)
 		MipNum += Info.LOD;
 
-	UBOOL Compressed = FIsCompressedFormat(Info.Format);
-	FMipmap* Mip = Info.Texture ? (Compressed ? &Info.Texture->CompMips(MipNum) : &Info.Texture->Mips(MipNum)) : nullptr;
+	UBOOL Compressed	= FIsCompressedFormat(Info.Format);
+	FMipmap* Mip		= Info.Texture ? (Compressed ? &Info.Texture->CompMips(MipNum) : &Info.Texture->Mips(MipNum)) : nullptr;
 	if (Mip)
 	{
 		Mip->LoadMip();
@@ -228,6 +228,8 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 {
 	guard(UICBINDx11RenderDevice::UpdateTextureRect);
 
+	// Metallicafan212:	This is HEAVILY TODO!!!!!
+
 	// Metallicafan212:	This is used by the lightmap atlas textures
 	QWORD CacheID = Info.CacheID;
 
@@ -239,7 +241,7 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 	if (DaTex == nullptr)
 	{
 		// Metallicafan212:	Cache the info
-		DaTex = CacheTextureInfo(Info);
+		DaTex = CacheTextureInfo(Info, 0);
 	}
 
 	/*
@@ -262,6 +264,33 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 		DaTex->VSize	= Clamp(DaTex->VSize, MinSize, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
 	}
 	*/
+
+	// Metallicafan212:	Ok, copy JUST the data we need
+	//					Reimplemented from the GL driver
+	INT DataBlock		= FTextureBlockBytes(Info.Format);
+	INT DataSize		= FTextureBytes(Info.Format, UL, VL);
+	BYTE* Data			= (BYTE*)appMalloc(DataSize, TEXT("TempTexMem"));//new BYTE(DataSize);
+
+	// Metallicafan212:	Get the pitch, so we can copy JUST the blocks we need
+	INT Pitch			= DaTex->D3DTexType->GetPitch(Info.USize);
+	INT DPitch			= DaTex->D3DTexType->GetPitch(UL);
+
+	INT xEnd = U + UL;
+	INT yEnd = V + VL;
+
+	for (INT y = V, yD = 0; y < yEnd; y++, yD++)
+	{
+		// Metallicafan212:	Get the aligned pointer
+		BYTE* Dst = Data + (DPitch * yD);
+		BYTE* Src = Info.Mips[0]->DataPtr + (Pitch * y);
+
+		appMemcpy(Dst, Src, sizeof(BYTE) * UL);
+	}
+	
+	// Metallicafan212:	Do something cursed as a test...
+	BYTE* OldMip			= Info.Mips[0]->DataPtr;
+	Info.Mips[0]->DataPtr	= Data;
+
 	
 	//DaTex->CacheID		= CacheID;
 
@@ -269,11 +298,18 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 	//					TODO! The loop isn't needed
 	//for (INT i = 0; i < Info.NumMips; i++)
 	//{
-	(this->*Type->TexUploadFunc)(Info, DaTex, 0, 1, U, V, UL, VL);
+	(this->*DaTex->D3DTexType->TexUploadFunc)(Info, DaTex, 0, 1, U, V, UL, VL);
 	//}
 
+	Info.Mips[0]->DataPtr = OldMip;
+
+	//Mark.Pop();
+
+	//delete Data;
+	appFree(Data);
+
 	//DaTex->RealtimeChangedCount = Info.RealtimeChangeCount;
-	Info->bRealtimeChanged = 0;
+	Info.bRealtimeChanged = 0;
 
 	unguard;
 }
@@ -735,7 +771,7 @@ void UICBINDx11RenderDevice::RegisterTextureFormat(ETextureFormat Format, DXGI_F
 	unguard;
 }
 
-void UICBINDx11RenderDevice::DirectCP(FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateXL, INT UpdateYL)
+void UICBINDx11RenderDevice::DirectCP(FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
 {
 	guardSlow(MemcpyTexUpload);
 
@@ -756,15 +792,15 @@ void UICBINDx11RenderDevice::DirectCP(FTextureInfo& Info, FD3DTexture* Tex, INT 
 		else
 		{
 			// Metallicafan212:	Calc the pitch
-			Pitch = Tex->D3DTexType->GetPitch(UpdateXL - UpdateX);
+			Pitch = Tex->D3DTexType->GetPitch(UpdateW);
 
 			// Metallicafan212:	Now upload it using a box
 			D3D11_BOX Upd	= CD3D11_BOX();
 
 			Upd.left		= UpdateX;
-			Upd.right		= UpdateXL;
+			Upd.right		= UpdateX + UpdateW;
 			Upd.top			= UpdateY;
-			Upd.bottom		= UpdateYL;
+			Upd.bottom		= UpdateY + UpdateH;
 
 			m_RenderContext->UpdateSubresource(Tex->m_Tex, Mip + Tex->MipSkip, &Upd, Data, Pitch, 0);
 		}
@@ -804,6 +840,11 @@ void UICBINDx11RenderDevice::RGBA7To8(FTextureInfo& Info, FD3DTexture* Tex, INT 
 		// Metallicafan212:	TODO! Partial uploads
 		if (bPartial)
 		{
+			// Metallicafan212:	Get the update pitch
+			Pitch = Tex->D3DTexType->GetPitch(UpdateW);
+
+			Size = UpdateW * UpdateH * 4;
+
 			DWORD* pTex = (DWORD*)ConversionMemory;
 
 			// Metallicafan212:	Get each color
@@ -824,13 +865,10 @@ void UICBINDx11RenderDevice::RGBA7To8(FTextureInfo& Info, FD3DTexture* Tex, INT 
 			// Metallicafan212:	Now update
 			D3D11_BOX Upd = CD3D11_BOX();
 
-			Upd.left	= UpdateX;
-			Upd.right	= UpdateW;
-			Upd.top		= UpdateY;
-			Upd.bottom	= UpdateH;
-
-			// Metallicafan212:	Get the update pitch
-			Pitch = Tex->D3DTexType->GetPitch(UpdateW - UpdateX);
+			Upd.left		= UpdateX;
+			Upd.right		= UpdateX + UpdateW;
+			Upd.top			= UpdateY;
+			Upd.bottom		= UpdateY + UpdateH;
 
 			m_RenderContext->UpdateSubresource(Tex->m_Tex, Mip + Tex->MipSkip, &Upd, ConversionMemory, Pitch, 0);
 		}
@@ -975,7 +1013,7 @@ void UICBINDx11RenderDevice::P8ToRGBA(FTextureInfo& Info, FD3DTexture* Tex, INT 
 #if DX11_HP2
 			(*DBytes) = Info.Palette[*Bytes].Int4;
 #else
-			(*DBytes) = GET_COLOR_DWORD(Palette[*Bytes]);
+			(*DBytes) = GET_COLOR_DWORD(Info.Palette[*Bytes]);
 #endif
 			// Metallicafan212:	Fix broken palettes on specific textures in UT!!!
 			//if (*Bytes != 0)
@@ -990,7 +1028,7 @@ void UICBINDx11RenderDevice::P8ToRGBA(FTextureInfo& Info, FD3DTexture* Tex, INT 
 
 
 		// Metallicafan212:	Now update
-		m_RenderContext->UpdateSubresource(Tex->m_Tex, Mip + Tex->MipSkip, nullptr, ConversionMemory, Pitch, 0);
+		m_RenderContext->UpdateSubresource(Tex->m_Tex, Mip + Tex->MipSkip, nullptr, ConversionMemory, W * 4, 0);
 	}
 
 	unguardSlow;

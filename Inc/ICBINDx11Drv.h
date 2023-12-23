@@ -469,7 +469,7 @@ struct FD3DTexType
 	SIZE_T GetPitch(INT USize)
 	{
 #if DX11_UT_469
-		return FTextureBlockBytes(Info.Format)* FTextureBlockAlignedWidth(Info.Format, USize) / FTextureBlockWidth(Info.Format);
+		return FTextureBlockBytes(Format)* FTextureBlockAlignedWidth(Format, USize) / FTextureBlockWidth(Format);
 #else
 		return (this->*GetTexturePitch)(USize);
 #endif
