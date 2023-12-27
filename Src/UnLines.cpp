@@ -46,13 +46,13 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	}
 	else
 	{
+		// Metallicafan212:	Start buffering now
+		StartBuffering(BT_Lines);
+
 #if DX11_HP2
 		// Metallicafan212:	Make the alpha reversed as well
 		//					I may want to make alpha'd lines in the future
 		Color.W = 1.0f - Color.W;
-
-		// Metallicafan212:	Start buffering now
-		StartBuffering(BT_Lines);
 
 		// Metallicafan212:	Make sure wireframe doesn't get set on lines
 		DWORD OldFlags = ExtraRasterFlags;
@@ -108,8 +108,6 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		//LockVertexBuffer(2 * sizeof(FD3DVert));
 		LockVertAndIndexBuffer(2);
 
-
-
 		m_VertexBuff[0].X		= P1.X;
 		m_VertexBuff[0].Y		= P1.Y;
 		m_VertexBuff[0].Z		= P1.Z;
@@ -153,13 +151,13 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	P2.X *= ExtraScale;
 	P2.Y *= ExtraScale;
 
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_Lines);
+
 #if DX11_HP2
 	// Metallicafan212:	Make the alpha reversed as well
 	//					I may want to make alpha'd lines in the future
 	Color.W = 1.0f - Color.W;
-
-	// Metallicafan212:	Start buffering now
-	StartBuffering(BT_Lines);
 
 	// Metallicafan212:	Make sure wireframe doesn't get set on lines
 	DWORD OldFlags = ExtraRasterFlags;
