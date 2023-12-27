@@ -153,6 +153,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	//if (PolyFlags & PF_Invisible)
 	//	return;
 
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_BSP);
+
 	if(m_nearZRangeHackProjectionActive)
 		SetProjectionStateNoCheck(false);
 
@@ -160,7 +163,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	//					This means that we HAVE to pack the pan information into the verts somehow...
 	//					Otherwise, the textures will start skewing due to the changed surface info.
 	//					This does provide a performance boost (when drawing in textured view) but it obviously doesn't work as intended yet
-	EndBuffering();
+	//EndBuffering();
 
 #if DX11_HP2
 	// Metallicafan212:	Editor shit, so we can see lumos
@@ -247,54 +250,6 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	// Metallicafan212:	Assemble how many verts we need to use
 	SIZE_T VertRequest = 0;
 
-#if UNFAN
-	for (FSavedPoly* Poly = Facet.Polys; Poly; Poly = Poly->Next)
-	{
-		VertRequest += (Poly->NumPts - 2) * 3;
-	}
-
-	LockVertexBuffer(sizeof(FD3DVert) * VertRequest);
-
-	for (FSavedPoly* Poly = Facet.Polys; Poly; Poly = Poly->Next)
-	{
-		INT NumPts = (Poly->NumPts - 2) * 3;
-
-		if (NumPts < 3)
-			continue;
-
-		SIZE_T j = 1;
-		
-		// Metallicafan212:	Set the base
-
-		for (SIZE_T i = V; i < (NumPts + V); i)
-		{
-			// Metallicafan212:	Assemble each triangle
-			//					Each triangle needs to be the base first, then the next two?
-			m_VertexBuff[i].X		= Poly->Pts[0]->Point.X;
-			m_VertexBuff[i].Y		= Poly->Pts[0]->Point.Y;
-			m_VertexBuff[i].Z		= Poly->Pts[0]->Point.Z;
-			m_VertexBuff[i++].Color	= TestColor;
-
-			m_VertexBuff[i].X		= Poly->Pts[j]->Point.X;
-			m_VertexBuff[i].Y		= Poly->Pts[j]->Point.Y;
-			m_VertexBuff[i].Z		= Poly->Pts[j++]->Point.Z;
-			m_VertexBuff[i++].Color	= TestColor;
-
-			m_VertexBuff[i].X		= Poly->Pts[j]->Point.X;
-			m_VertexBuff[i].Y		= Poly->Pts[j]->Point.Y;
-			m_VertexBuff[i].Z		= Poly->Pts[j]->Point.Z;
-			m_VertexBuff[i++].Color	= TestColor;
-		}
-
-		V += NumPts;	
-	}
-
-	UnlockVertexBuffer();
-	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_RenderContext->Draw(VertRequest, m_DrawnVerts);
-	AdvanceVertPos();//VertRequest);
-
-#else
 	// Metallicafan212:	Experiment, draw indexed
 	SIZE_T IndexRequest = 0;
 	for (FSavedPoly* Poly = Facet.Polys; Poly; Poly = Poly->Next)
@@ -306,9 +261,6 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		VertRequest		+= Poly->NumPts;
 		IndexRequest	+= (Poly->NumPts - 2) * 3;
 	}
-
-	// Metallicafan212:	Start buffering now
-	StartBuffering(BT_BSP);
 
 	LockVertAndIndexBuffer(VertRequest, IndexRequest);
 
@@ -393,11 +345,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff);
 #endif
 
-
-	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	AdvanceVertPos();
-
-#endif
 
 	// Metallicafan212:	TODO! Make selection a part of the shader???
 	//					I tried it before, but it just looked wrong since it had to compete with the underlying texture color

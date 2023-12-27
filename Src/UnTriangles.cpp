@@ -64,6 +64,9 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	if(NumPts < 0 || NumIndices < 0)
 		return;
 
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_Triangles);
+
 	SetBlend(PolyFlags);
 
 	// Metallicafan212:	Request normal raster state
@@ -94,9 +97,6 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	FMeshShader->bNoMeshOpacity = (m_HitData != nullptr ? 1 : 0);
 
 	FMeshShader->Bind(m_RenderContext);
-
-	// Metallicafan212:	Start buffering now
-	StartBuffering(BT_Triangles);
 
 	//LockVertexBuffer(NumPts * sizeof(FD3DVert));
 	LockVertAndIndexBuffer(NumPts, NumIndices);
@@ -157,7 +157,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	//UnlockVertexBuffer();
 	
 	// Metallicafan212:	Now copy the indices
-	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 #if !INT_INDEX_BUFF
 	if (Indices != nullptr)
@@ -192,6 +192,9 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	if (NumPts < 3)
 		return;
 
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_Triangles);
+
 	SetBlend(PolyFlags);
 
 	// Metallicafan212:	Request normal raster state
@@ -217,9 +220,6 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	FMeshShader->bNoMeshOpacity = 1;
 
 	FMeshShader->Bind(m_RenderContext);
-
-	// Metallicafan212:	Start buffering now
-	StartBuffering(BT_Triangles);
 
 	LockVertAndIndexBuffer(NumPts, (NumPts - 2) * 3);
 
@@ -295,7 +295,7 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	//UnlockBuffers();
 
 	// Metallicafan212:	Now copy the indices
-	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	AdvanceVertPos();//NumPts, sizeof(FD3DVert), (NumPts - 2) * 3);
 
@@ -306,7 +306,10 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 #if DX11_UT_469
 void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const FTextureInfo& Info, FTransTexture* const Pts, INT NumPts, DWORD PolyFlags, DWORD DataFlags, FSpanBuffer* Span)
 {
-	guard(UICBINDx11RenderDevice::DrawTriangles);
+	guard(UICBINDx11RenderDevice::DrawGouraudTriangles);
+
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_Triangles);
 
 	// Metallicafan212:	We have to implement specific effects ourselves when using this
 	//					Detect them here
@@ -345,9 +348,6 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	FMeshShader->Bind(m_RenderContext);
 
 	//LockVertexBuffer(NumPts * sizeof(FD3DVert));
-
-	// Metallicafan212:	Start buffering now
-	StartBuffering(BT_Triangles);
 
 	LockVertAndIndexBuffer(NumPts);
 
@@ -435,7 +435,7 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	//UnlockBuffers();
 
 	// Metallicafan212:	Now copy the indices
-	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	AdvanceVertPos();//NumPts, sizeof(FD3DVert));
 

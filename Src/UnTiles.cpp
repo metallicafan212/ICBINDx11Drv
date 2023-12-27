@@ -14,6 +14,9 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	SetRasterState(DXRS_Normal | DXRS_NoAA);
 	*/
 
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_Tiles);
+
 	// Metallicafan212:	The check for memorized really only need to be done in HP2, since I use it to mark a tile as rotated
 #if DX11_HP2
 	// Metallicafan212:	Make sure wireframe doesn't get set on tiles!
@@ -203,9 +206,6 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	if (m_HitData != nullptr)
 		Color = CurrentHitColor;
 
-	// Metallicafan212:	Start buffering now
-	StartBuffering(BT_Tiles);
-
 	//LockVertexBuffer(6 * sizeof(FD3DVert));
 	LockVertAndIndexBuffer(6);
 
@@ -264,7 +264,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	//UnlockBuffers();
 
 	// Metallicafan212:	Now draw
-	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	AdvanceVertPos();//6);
 

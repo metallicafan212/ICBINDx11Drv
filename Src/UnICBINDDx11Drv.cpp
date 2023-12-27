@@ -1756,6 +1756,9 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	Gamma = Viewport->GetOuterUClient()->Brightness * 2.0f;
 #endif
 
+	// Metallicafan212:	Require setting buffering on the first draw
+	m_CurrentBuff = BT_None;
+
 	// Metallicafan212:	Check if our lock flags changed
 	if (LastAASamples != NumAASamples || LastAFSamples != NumAFSamples || LastResolutionScale != ResolutionScale || LastAdditionalBuffers != NumAdditionalBuffers)
 	{
@@ -2067,7 +2070,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 				UnlockVertexBuffer();
 
-				m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				AdvanceVertPos();//6);
 
 				// Metallicafan212:	Draw
@@ -2183,6 +2186,9 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 				ThrowIfFailed(hr);
 			}
 
+			// Metallicafan212:	Start buffering now
+			StartBuffering(BT_ScreenFlash);
+
 			// Metallicafan212:	Render as a quad 🙃🙃🙃🙃🙃🙃🙃
 			//EndBuffering();
 
@@ -2230,9 +2236,6 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			//RPY1 *= Z;
 			//RPY2 *= Z;
 			*/
-
-			// Metallicafan212:	Start buffering now
-			StartBuffering(BT_ScreenFlash);
 
 			//LockVertexBuffer(6 * sizeof(FD3DVert));
 			LockVertAndIndexBuffer(6);
@@ -2283,7 +2286,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			m_VertexBuff[5].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
 			*/
 
-			m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			AdvanceVertPos();
 
 			// Metallicafan212:	Draw
@@ -2406,6 +2409,9 @@ void UICBINDx11RenderDevice::EndFlash()
 	{
 		EndBuffering();
 
+		// Metallicafan212:	Start buffering now
+		StartBuffering(BT_ScreenFlash);
+
 		// Metallicafan212:	Order of operations, make sure the alpha rejection is set
 		SetBlend(PF_Highlighted);
 
@@ -2449,9 +2455,6 @@ void UICBINDx11RenderDevice::EndFlash()
 		m_RenderContext->OMGetDepthStencilState(&CurState, &Sten);
 		m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
 
-		// Metallicafan212:	Start buffering now
-		StartBuffering(BT_ScreenFlash);
-
 		//LockVertexBuffer(6 * sizeof(FD3DVert));
 		LockVertAndIndexBuffer(6);
 
@@ -2488,7 +2491,7 @@ void UICBINDx11RenderDevice::EndFlash()
 		//UnlockVertexBuffer();
 		//UnlockBuffers();
 
-		m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		AdvanceVertPos();//6);
 
 		// Metallicafan212:	Draw

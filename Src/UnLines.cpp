@@ -51,6 +51,9 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		//					I may want to make alpha'd lines in the future
 		Color.W = 1.0f - Color.W;
 
+		// Metallicafan212:	Start buffering now
+		StartBuffering(BT_Lines);
+
 		// Metallicafan212:	Make sure wireframe doesn't get set on lines
 		DWORD OldFlags = ExtraRasterFlags;
 
@@ -102,9 +105,6 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		if(CurrentShader != FLineShader)
 			FLineShader->Bind(m_RenderContext);
 
-		// Metallicafan212:	Start buffering now
-		StartBuffering(BT_Lines);
-
 		//LockVertexBuffer(2 * sizeof(FD3DVert));
 		LockVertAndIndexBuffer(2);
 
@@ -129,7 +129,7 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 
 		//UnlockBuffers();
 
-		m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
 		AdvanceVertPos();//2);
 	}
@@ -157,6 +157,9 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	// Metallicafan212:	Make the alpha reversed as well
 	//					I may want to make alpha'd lines in the future
 	Color.W = 1.0f - Color.W;
+
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_Lines);
 
 	// Metallicafan212:	Make sure wireframe doesn't get set on lines
 	DWORD OldFlags = ExtraRasterFlags;
@@ -197,9 +200,6 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	// Metallicafan212:	TODO! Line specific shader
 	if (CurrentShader != FLineShader)
 		FLineShader->Bind(m_RenderContext);
-
-	// Metallicafan212:	Start buffering now
-	StartBuffering(BT_Lines);
 
 	//LockVertexBuffer(2 * sizeof(FD3DVert));
 	LockVertAndIndexBuffer(2);
@@ -254,7 +254,7 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	//UnlockVertexBuffer();
 	//UnlockBuffers();
 	
-	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
 	AdvanceVertPos();//2);
 
@@ -270,6 +270,9 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 #else
 	FLOAT ExtraScale = 1.0f;
 #endif
+
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_Points);
 
 	// Metallicafan212:	Add on size to the input vars, just so that the pivot cross shows up (why didn't they use Draw2DLine????)
 	X1 -= 1;
@@ -318,9 +321,6 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 	}
 
 	FGenShader->Bind(m_RenderContext);
-
-	// Metallicafan212:	Start buffering now
-	StartBuffering(BT_Points);
 
 	//LockVertexBuffer(sizeof(FD3DVert) * 6);
 	LockVertAndIndexBuffer(6);
@@ -407,7 +407,7 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 
 	//UnlockBuffers();
 
-	m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	AdvanceVertPos();//6);
 

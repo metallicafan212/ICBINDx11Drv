@@ -1349,9 +1349,24 @@ class UICBINDx11RenderDevice : public URenderDevice
 		if (inBuff != m_CurrentBuff)
 		{
 			EndBuffering();
+
+			switch (inBuff)
+			{
+				case BT_Lines:
+				{
+					m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+					break;
+				}
+
+				default:
+				{
+					m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				}
+			}
 		}
 
 		m_CurrentBuff = inBuff;
+
 	}
 
 	// Metallicafan212:	Update the global constant buffer in the shaders
