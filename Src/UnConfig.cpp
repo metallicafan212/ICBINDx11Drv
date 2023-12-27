@@ -178,6 +178,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	Expansion value for sRGB to linear color
 	AddFloatProp(CPP_PROP(HDRExpansion), 1.2f);
 
+	AddBoolProp(CPP_PROP(UseDX9FlatColor), 0);
+
 	unguard;
 }
 

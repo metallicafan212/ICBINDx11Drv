@@ -549,6 +549,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	UBOOL						bDisableSDKLayers;
 	UBOOL						UseVSync;
 
+	// Metallicafan212:	If to use the DX9 style flat colors instead (a lot brighter and hides the original textures)
+	UBOOL						UseDX9FlatColor;
+
 	// Metallicafan212:	If to use HDR (note that it'll look wrong on non-HDR screens)
 	UBOOL						UseHDR;
 

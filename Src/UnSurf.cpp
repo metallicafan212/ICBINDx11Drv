@@ -389,7 +389,15 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 				else
 				{
 					TestColor = Surface.FlatColor.Plane();
-					TestColor.W = 0.75f * 0.75f;
+
+					if (UseDX9FlatColor)
+					{
+						TestColor.W = 0.75f;
+					}
+					else
+					{
+						TestColor.W = 0.5625f;//0.75f * 0.75f;
+					}
 				}
 			}
 			else
