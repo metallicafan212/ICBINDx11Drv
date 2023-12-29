@@ -20,21 +20,23 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 {
 	guardSlow(UICBINDx11RenderDevice::SetTexture);
 
+	FD3DBoundTex& TX = BoundTextures[TexNum];
+
 	// Metallicafan212:	Support null textures
 	if (Info == nullptr)
 	{
 		// Metallicafan212:	Only end buffering if the slot wasn't null before!!!
-		if (BoundTextures[TexNum].TexInfoHash != 0)
+		if (TX.TexInfoHash != 0)
 			EndBuffering();
-		else if(BoundTextures[TexNum].m_SRV != nullptr)
+		else if(TX.m_SRV != nullptr)
 			// Metallicafan212:	It's already been null-d out
 			return;
 
-		BoundTextures[TexNum].bIsRT			= 0;
-		BoundTextures[TexNum].UMult			= 1.0f;
-		BoundTextures[TexNum].VMult			= 1.0f;
-		BoundTextures[TexNum].TexInfoHash	= 0;
-		BoundTextures[TexNum].m_SRV			= BlankResourceView;
+		TX.bIsRT		= 0;
+		TX.UMult		= 1.0f;
+		TX.VMult		= 1.0f;
+		TX.TexInfoHash	= 0;
+		TX.m_SRV		= BlankResourceView;
 
 		m_RenderContext->PSSetShaderResources(TexNum, 1, &BlankResourceView);
 		m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
@@ -77,7 +79,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 	// Metallicafan212:	End buffering if the input texture doesn't match!!!
 	UBOOL bSetTex = 0;
 	//DWORD CacheHash = GetCacheHash(Info->CacheID);
-	if ((BoundTextures[TexNum].TexInfoHash != 0 && BoundTextures[TexNum].TexInfoHash != Info->CacheID))//CacheHash))
+	if ((TX.TexInfoHash != 0 && TX.TexInfoHash != Info->CacheID))//CacheHash))
 	{
 		bSetTex = 1;
 		EndBuffering();
@@ -108,27 +110,38 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 		//DaTex = TextureMap.Find(Info->CacheID, PolyFlags);
 	}
 
+	// Metallicafan212:	Calculate the new values
+	FLOAT NewUMult = 1.0f / (Info->UScale * Info->USize);
+	FLOAT NewVMult = 1.0f / (Info->VScale * Info->VSize);
 
-	BoundTextures[TexNum].TexInfoHash	= Info->CacheID;//CacheHash;
-	BoundTextures[TexNum].UPan			= Info->Pan.X;
-	BoundTextures[TexNum].VPan			= Info->Pan.Y;
-	BoundTextures[TexNum].bIsRT			= DaTex->bIsRT;
-	BoundTextures[TexNum].UScale		= Info->UScale;
-	BoundTextures[TexNum].VScale		= Info->VScale;
-	BoundTextures[TexNum].UMult			= 1.0f / (Info->UScale * Info->USize);//M->USize);//Info->USize);
-	BoundTextures[TexNum].VMult			= 1.0f / (Info->VScale * Info->VSize);//M->VSize);//Info->VSize);
-
-	// Metallicafan212:	Get the size from the base mip!!!!
-	FMipmap* M = GetBaseMip(*Info);
-
-	// Metallicafan212:	Only try to UV clamp if the base mip is accessable
-	if (M != nullptr && (((DaTex->UClamp ^ M->USize) | (DaTex->VClamp ^ M->VSize)) != 0))
+	// Metallicafan212:	Fix some lightmap related issues
+	if (bSetTex || NewUMult != TX.UMult || NewVMult != TX.VMult || TX.UPan != Info->Pan.X || TX.VPan != Info->Pan.Y)
 	{
-		DaTex->bShouldUVClamp = 1;
-	}
-	else
-	{
-		DaTex->bShouldUVClamp = 0;
+		bSetTex = 1;
+
+		EndBuffering();
+
+		TX.TexInfoHash	= Info->CacheID;
+		TX.UPan			= Info->Pan.X;
+		TX.VPan			= Info->Pan.Y;
+		TX.bIsRT		= DaTex->bIsRT;
+		TX.UScale		= Info->UScale;
+		TX.VScale		= Info->VScale;
+		TX.UMult		= NewUMult;
+		TX.VMult		= NewVMult;
+
+		// Metallicafan212:	Get the size from the base mip!!!!
+		FMipmap* M = GetBaseMip(*Info);
+
+		// Metallicafan212:	Only try to UV clamp if the base mip is accessable
+		if (M != nullptr && (((DaTex->UClamp ^ M->USize) | (DaTex->VClamp ^ M->VSize)) != 0))
+		{
+			DaTex->bShouldUVClamp = 1;
+		}
+		else
+		{
+			DaTex->bShouldUVClamp = 0;
+		}
 	}
 
 
@@ -146,13 +159,13 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 		//m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
 
 		// Metallicafan212:	So we can find whatever is still bound as the RT when we call OMSetRenderTargets
-		BoundTextures[TexNum].m_SRV = TexTemp->RTSRView.Get();
+		TX.m_SRV = TexTemp->RTSRView.Get();
 
 		return;
 	}
 #endif
 
-	BoundTextures[TexNum].m_SRV = DaTex->m_View;
+	TX.m_SRV = DaTex->m_View;
 
 	m_RenderContext->PSSetShaderResources(TexNum, 1, &DaTex->m_View);
 

@@ -270,8 +270,8 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 	// Metallicafan212:	Calculate all the extra info
 	FUVInfo UVInfo;
-	/*FLOAT*/ UVInfo.UDot = Facet.MapCoords.XAxis | Facet.MapCoords.Origin;
-	/*FLOAT*/ UVInfo.VDot = Facet.MapCoords.YAxis | Facet.MapCoords.Origin;
+	UVInfo.UDot = Facet.MapCoords.XAxis | Facet.MapCoords.Origin;
+	UVInfo.VDot = Facet.MapCoords.YAxis | Facet.MapCoords.Origin;
 #if !COMPLEX_SURF_MANUAL_UVs
 	TempVert.XAxis		= FPlane(Facet.MapCoords.XAxis, UVInfo.UDot);
 	TempVert.YAxis		= FPlane(Facet.MapCoords.YAxis, UVInfo.VDot);
@@ -369,8 +369,6 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		SetTexture(3, nullptr, 0);
 		SetTexture(4, nullptr, 0);
 
-		// Metallicafan212:	Rebind the shader....
-
 #if	1//DX11_HP2
 		SetBlend(PF_AlphaBlend);
 #else
@@ -396,6 +394,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 					}
 					else
 					{
+						// Metallicafan212:	I like this look better, as it's easier to still see the underlying surfaces
 						TestColor.W = 0.5625f;//0.75f * 0.75f;
 					}
 				}
@@ -405,6 +404,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 #if !DX11_UT_469
 				TestColor = SurfaceSelectionColor.Plane();
 #else
+				// Metallicafan212:	The only reason that it's this way is because UT's .Plane returns a FVector....
 				TestColor = FPlane(SurfaceSelectionColor.R / 255.0f, SurfaceSelectionColor.G / 255.0f, SurfaceSelectionColor.B / 255.0f, SurfaceSelectionColor.A / 255.0f);
 #endif
 			}
