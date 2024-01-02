@@ -324,7 +324,7 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 	guard(UICBINDx11RenderDevice::DetectPixelHit);
 
 	// Metallicafan212:	Early break
-	if (PixelHitInfo.Num() == 0)
+	if (PixelHitInfo.Num() == 0 || Viewport->HitXL == 0 || Viewport->HitXL == 0)
 		return;
 
 	TMap<INT, INT> HitAppear;
