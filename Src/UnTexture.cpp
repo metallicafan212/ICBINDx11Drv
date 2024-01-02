@@ -867,7 +867,7 @@ void UICBINDx11RenderDevice::RGBA7To8(FTextureInfo& Info, FD3DTexture* Tex, INT 
 			DWORD* pTex = (DWORD*)ConversionMemory;
 
 			// Metallicafan212:	Get each color
-			SIZE_T Read		= 0;
+			INT   Read		= 0;
 			BYTE* Bytes		= Data;
 			BYTE* DBytes	= ConversionMemory;
 			
@@ -896,7 +896,7 @@ void UICBINDx11RenderDevice::RGBA7To8(FTextureInfo& Info, FD3DTexture* Tex, INT 
 			DWORD* pTex = (DWORD*)ConversionMemory;
 
 			// Metallicafan212:	Get each color
-			SIZE_T Read		= 0;
+			INT	  Read		= 0;
 			BYTE* Bytes		= Data;
 			BYTE* DBytes	= ConversionMemory;
 

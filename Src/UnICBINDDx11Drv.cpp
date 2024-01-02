@@ -2428,6 +2428,13 @@ void UICBINDx11RenderDevice::EndFlash()
 		FLOAT Z		= 0.5f;
 		FLOAT X		= 0.0f;
 		FLOAT Y		= 0.0f;
+
+		// Metallicafan212:	Test?
+		if (m_nearZRangeHackProjectionActive)
+		{
+			Z = 0.1f;
+		}
+
 		FLOAT XL	= ScaledSceneNodeX;//m_sceneNodeX;
 		FLOAT YL	= ScaledSceneNodeY;//m_sceneNodeY;
 
