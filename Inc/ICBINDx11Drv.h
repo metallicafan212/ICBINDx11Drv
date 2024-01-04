@@ -609,6 +609,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	If actor fogging should reduce lighting coverage, or use the broken DX7 fogging
 	UBOOL						bEnableCorrectFogging;
 
+	// Metallicafan212:	Alpha rejection value, for masking
+	FLOAT						MaskedAlphaReject;
+
 	INT							LastAdditionalBuffers;
 
 	// Metallicafan212:	Versions to check on lock if they changed

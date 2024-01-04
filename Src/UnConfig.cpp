@@ -180,6 +180,12 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	AddBoolProp(CPP_PROP(UseDX9FlatColor), 0);
 
+#if DX11_HP2
+	AddFloatProp(CPP_PROP(MaskedAlphaReject), 0.8f);
+#else
+	AddFloatProp(CPP_PROP(MaskedAlphaReject), 0.5f);
+#endif
+
 	unguard;
 }
 

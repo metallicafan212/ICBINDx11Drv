@@ -1323,20 +1323,17 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			// Metallicafan212:	Translucent gets combined with a few other flags to set a specific hack
 			//					Sigh.... If only they just added a alpha flag instead of reusing flags, it makes it extremely annoying
 			if (Flags & PF_Translucent && !(Flags & (PF_AlphaBlend | PF_Highlighted)))
-			{
-				EndBuffering();
+			{;
 				GlobalShaderVars.DistanceFogColor = GlobalShaderVars.TransFogColor;
 				UpdateFogSettings();
 			}
 			else if (Flags & PF_Modulated)
 			{
-				EndBuffering();
 				GlobalShaderVars.DistanceFogColor = GlobalShaderVars.ModFogColor;
 				UpdateFogSettings();
 			}
 			else
 			{
-				EndBuffering();
 				GlobalShaderVars.DistanceFogColor = GlobalShaderVars.DistanceFogFinal;
 				UpdateFogSettings();
 			}
@@ -1369,14 +1366,14 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #if DX11_HP2
 			else if (blendFlags & PF_ColorMask)
 			{
-				GlobalPolyflagVars.AlphaReject		= 0.8f;
+				GlobalPolyflagVars.AlphaReject		= MaskedAlphaReject;//0.8f;
 				GlobalPolyflagVars.bColorMasked		= 1;
 				GlobalPolyflagVars.bAlphaEnabled	= 1;
 			}
 #endif
 			else if (blendFlags & PF_Masked)
 			{
-				GlobalPolyflagVars.AlphaReject		= 0.8f;
+				GlobalPolyflagVars.AlphaReject		= MaskedAlphaReject;//0.8f;
 				GlobalPolyflagVars.bColorMasked		= 0;
 				GlobalPolyflagVars.bAlphaEnabled	= 1;
 			}
