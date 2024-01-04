@@ -1695,8 +1695,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	inline void UpdateFogSettings()
 	{
 		// Metallicafan212:	Now set the vars
-		GlobalDistFogSettings.DistanceFogColor		= GlobalShaderVars.DistanceFogFinal;
+		GlobalDistFogSettings.DistanceFogColor		= GlobalShaderVars.DistanceFogColor;
 		GlobalDistFogSettings.DistanceFogSettings	= GlobalShaderVars.DistanceFogSettings;
+		GlobalDistFogSettings.bDistanceFogEnabled	= GlobalShaderVars.bDoDistanceFog || GlobalShaderVars.bFadeFogValues;
 
 #if 0
 		m_RenderContext->UpdateSubresource(GlobalDistFogBuffer, 0, nullptr, &GlobalDistFogSettings, sizeof(FDistFogVars), 0);

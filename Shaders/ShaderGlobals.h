@@ -116,15 +116,15 @@ cbuffer PolyflagVars : register (b2)
 // Metallicafan212:	Distance fog shit
 //					TODO! A better algorithm????
 //					I have just straight ported the assembly code I wrote a while ago (since I'm a lazy fucking bastard)
-float DoDistanceFog(float4 InPos)
+float DoDistanceFog(float InZ)//float4 InPos)
 {
 	if(!bDoDistanceFog)
 		return 0.0f;
 	
 	// Metallicafan212:	Calcuate the fog value for the pixel shader
-	if(InPos.z > DistanceFogSettings.y)
+	if(InZ > DistanceFogSettings.y)
 	{
-		float dFog = ((InPos.z * -DistanceFogSettings.x) + DistanceFogSettings.y) * DistanceFogSettings.z;//mad(-InPos.z, DistanceFogSettings.x, DistanceFogSettings.y) * DistanceFogSettings.z;
+		float dFog = ((InZ * -DistanceFogSettings.x) + DistanceFogSettings.y) * DistanceFogSettings.z;//mad(-InPos.z, DistanceFogSettings.x, DistanceFogSettings.y) * DistanceFogSettings.z;
 
 		return saturate(DistanceFogSettings.w - dFog);
 	}

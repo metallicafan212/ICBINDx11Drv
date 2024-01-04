@@ -465,7 +465,7 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 	if (Enable)
 	{
 		// Metallicafan212:	Check if it's equal
-		if(GlobalShaderVars.TargetFogColor == Color && GlobalShaderVars.CurrentFogStart == FogStart && GlobalShaderVars.CurrentFogEnd == FogEnd)
+		if(GlobalShaderVars.bDoDistanceFog && GlobalShaderVars.TargetFogColor == Color && GlobalShaderVars.CurrentFogStart == FogStart && GlobalShaderVars.CurrentFogEnd == FogEnd)
 			return;
 
 		// Metallicafan212:	Save the fog settings
@@ -504,6 +504,8 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 
 	// Metallicafan212:	Keep the val around, so we can selectively set blending
 	GlobalShaderVars.bDoDistanceFog = Enable;
+
+	UpdateFogSettings();
 
 
 	unguard;

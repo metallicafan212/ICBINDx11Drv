@@ -1324,16 +1324,19 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			//					Sigh.... If only they just added a alpha flag instead of reusing flags, it makes it extremely annoying
 			if (Flags & PF_Translucent && !(Flags & (PF_AlphaBlend | PF_Highlighted)))
 			{
+				EndBuffering();
 				GlobalShaderVars.DistanceFogColor = GlobalShaderVars.TransFogColor;
 				UpdateFogSettings();
 			}
 			else if (Flags & PF_Modulated)
 			{
+				EndBuffering();
 				GlobalShaderVars.DistanceFogColor = GlobalShaderVars.ModFogColor;
 				UpdateFogSettings();
 			}
 			else
 			{
+				EndBuffering();
 				GlobalShaderVars.DistanceFogColor = GlobalShaderVars.DistanceFogFinal;
 				UpdateFogSettings();
 			}

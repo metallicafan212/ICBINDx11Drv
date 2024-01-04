@@ -142,7 +142,7 @@ PSInput VertShader(VSInput input)
 	output.dUV.z	= input.pos.z;
 	
 	// Metallicafan212:	Do the final fog value
-	output.distFog	= DoDistanceFog(output.pos);
+	//output.distFog	= DoDistanceFog(output.pos);
 	
 	return output;
 }
@@ -249,7 +249,13 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	TODO! This also sets the selection color for the editor! This should be re-evaluated
 	CLIP_PIXEL(DiffColor);
 	
-	DiffColor = DoPixelFog(input.distFog, DiffColor);
+	// Metallicafan212:	Get the distance fog, using the pixel depth
+	if(bDoDistanceFog)
+	{
+		float NewFog = DoDistanceFog(input.dUV.z);
+		
+		DiffColor = DoPixelFog(/*input.distFog*/NewFog, DiffColor);
+	}
 	
 	//return DoFinalColor(DiffColor);
 	Out.Color = DoFinalColor(DiffColor);

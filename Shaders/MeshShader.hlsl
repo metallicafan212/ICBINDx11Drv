@@ -56,7 +56,7 @@ PSInput VertShader(VSInput input)
 	output.fog		= input.fog;
 	
 	// Metallicafan212:	Do the final fog value
-	output.distFog	= DoDistanceFog(output.pos);
+	output.distFog	= DoDistanceFog(output.pos.z);
 	
 	return output;
 }

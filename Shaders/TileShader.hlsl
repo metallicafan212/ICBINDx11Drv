@@ -54,7 +54,7 @@ PSInput VertShader(VSInput input)
 	output.uv.xy		= input.uv.xy;
 	
 	// Metallicafan212:	Do the final fog value
-	output.distFog		= DoDistanceFog(output.pos);
+	output.distFog		= DoDistanceFog(output.pos.z);
 	
 	// Metallicafan212:	TODO! If this is a UI tile, don't do the HP2 specific black and white effect
 	//					Should make this configurable....
