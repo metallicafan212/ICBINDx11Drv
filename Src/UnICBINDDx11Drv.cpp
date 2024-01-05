@@ -1182,7 +1182,7 @@ void UICBINDx11RenderDevice::SetupResources()
 				{
 					// Metallicafan212:	Set it as a multiplier
 					FrameShaderVars.WhiteLevel = White.SDRWhiteLevel / 1000.0f;
-					GLog->Logf(TEXT("DX11: Windows says that the current display has %d nits. Using %f as our white balance multiplier."), (White.SDRWhiteLevel * 80) / 1000, FrameShaderVars.WhiteLevel);
+					GLog->Logf(TEXT("DX11: Windows says that the current display has %d nits. Using %f as our white balance multiplier."), (White.SDRWhiteLevel / 1000) * 80, FrameShaderVars.WhiteLevel);
 				}
 			}
 			else
@@ -1914,7 +1914,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 	FrameShaderVars.GammaMode		= GammaMode;
 
-	FrameShaderVars.HDRExpansion	= HDRExpansion;
+	FrameShaderVars.HDRExpansion	= AdditionalHDRExpansion;
 
 	FrameShaderVars.ResolutionScale	= ResolutionScale;
 

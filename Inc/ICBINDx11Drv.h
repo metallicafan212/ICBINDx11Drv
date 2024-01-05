@@ -601,7 +601,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	FLOAT						GammaOffset;
 
 	// Metallicafan212:	HDR color correction value, since we have to expand sRGB to linear color for HDR to work
-	FLOAT						HDRExpansion;
+	FLOAT						AdditionalHDRExpansion;
 
 	// Metallicafan212:	If we shouldn't multiply lightmaps by 2 in the complex surface shader
 	UBOOL						bOneXLightmaps;

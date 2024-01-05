@@ -175,8 +175,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	AddByteProp(CPP_PROP(GammaMode), GM_XOpenGL, GEnum);
 
-	// Metallicafan212:	Expansion value for sRGB to linear color
-	AddFloatProp(CPP_PROP(HDRExpansion), 1.2f);
+	// Metallicafan212:	Additional HDR correction, if needed
+	AddFloatProp(CPP_PROP(AdditionalHDRExpansion), 1.0f);
 
 	AddBoolProp(CPP_PROP(UseDX9FlatColor), 0);
 
