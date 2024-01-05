@@ -1,23 +1,3 @@
-/*
-// Metallicafan212:	Resolution scaling shader, that will correctly filter down the screen texture to the destination
-#define DO_STANDARD_BUFFER 0
-#include "ShaderGlobals.h"
-
-
-// Metallicafan212:	Constant buffer, but with the added NumAASamples
-cbuffer CommonBuffer : register (START_CONST_NUM)
-{
-	COMMON_VARS
-	
-	// Metallicafan212:	The info we use for this specific shader	
-	float	ResolutionScale				: packoffset(c4.x);
-	float3	Pad3						: packoffset(c4.y);
-};
-
-// Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling
-//					The buffer variables have to be defined before they can be used
-#define DO_FINAL_COLOR
-*/
 #include "ShaderGlobals.h"
 
 struct PSInput 
@@ -35,7 +15,12 @@ SamplerState ScreenState	: register(s0);
 
 // Metallicafan212:	Gamma correction functions
 float4 XOpenGLGamma(float3 In)
-{		
+{	
+	if(Gamma == 1.0f)
+	{
+		return float4(In, 1.0f);
+	}
+	
 	float InvGamma = 1.0f / (Gamma);
 	
 	return float4(pow(In, float3(InvGamma, InvGamma, InvGamma)), 1.0f);//float4(pow(In.x, InvGamma), pow(In.y, InvGamma), pow(In.z, InvGamma), 1.0f);
@@ -63,14 +48,6 @@ float3 SRGBToRec2020(float3 In)
 PSInput VertShader(VSInput input)
 {	
 	PSInput output = (PSInput)0;
-	
-	// Metallicafan212:	Set the W to 1 so matrix math works
-	//input.pos.w 	= 1.0f;
-	
-	// Metallicafan212:	Transform it out
-	//output.pos 		= mul(input.pos, Proj);
-	//output.color	= input.color;
-	//output.fog.xyzw = 0.0f;
 	output.pos 		= input.pos;
 	output.uv.xy	= input.uv.xy;
 	
@@ -110,19 +87,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	{
 		Out = float4(TexColor, 1.0f);
 	}
-	
-	/*
-	// Metallicafan212:	HDR correct!
-	//					TODO! Determine a better constant
-	if(bHDR)
-	{
-		//Out.xyz = pow(Out.xyz, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
-		TexColor = SRGBToRec2020(TexColor) * HDRExpansion;//pow(TexColor, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
-	}
-	*/
-	
-	
-	if(GammaMode == GM_XOpenGL)
+	else if(GammaMode == GM_XOpenGL)
 	{
 		// Metallicafan212:	Use the over gamma method
 		Out = XOpenGLGamma(TexColor);
@@ -142,15 +107,11 @@ float4 PxShader(PSInput input) : SV_TARGET
 	{
 		//Out.xyz = pow(Out.xyz, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
 		//TexColor = SRGBToRec202(TexColor);//pow(TexColor, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
-		Out.xyz = SRGBToRec2020(Out.xyz) * HDRExpansion;
+		//Out.xyz = SRGBToRec2020(Out.xyz) * WhiteLevel; //* HDRExpansion;
+		Out.xyz *= WhiteLevel;	
 	}
 	
 	return Out;
-	
-	// Metallicafan212:	Gamma correct it
-	//float OverGamma = 1.0f / Gamma;
-	//return float4(pow(TexColor, float3(OverGamma, OverGamma, OverGamma)), 1.0f);
-	//return float4(TexColor, 1.0f);
 }
 
 #if 0

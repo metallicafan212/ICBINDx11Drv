@@ -82,7 +82,8 @@ cbuffer FrameVariables : register (b0)
 	int 	GammaMode		: packoffset(c5.w);
 	float	HDRExpansion	: packoffset(c6.x);
 	float 	ResolutionScale : packoffset(c6.y);
-	float2 	PadHDR2			: packoffset(c6.z);
+	float	WhiteLevel		: packoffset(c6.z);
+	float 	PadHDR2			: packoffset(c6.w);
 };
 
 // Metallicafan212:	I did the same thing I did for polyflags, and made the whole enum a set of defines

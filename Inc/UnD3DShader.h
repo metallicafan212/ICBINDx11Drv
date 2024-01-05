@@ -38,8 +38,11 @@ struct FFrameShaderVars
 	// Metallicafan212:	Resolution scale value
 	FLOAT				ResolutionScale;
 
+	// Metallicafan212:	Display white level
+	FLOAT				WhiteLevel;
+
 	// Metallicafan212:	Additional padding
-	FLOAT				Pad[2];//3];
+	FLOAT				Pad[1];//2];//3];
 };
 
 // Metallicafan212:	Just a buffer for fog settings
