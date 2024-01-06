@@ -60,19 +60,19 @@ void GeoShader(line GSInput input[2], inout TriangleStream <PSInput> triStream)
 	
 	// Metallicafan212:	Render it using a triangle strip (GPU seems to like it better than a triangle list, where you restartstrip after every 3 verts)
 	output.pos			= X1;
-	output.distFog		= input[0].distFog;
+	output.origZ		= input[0].origZ;
 	triStream.Append(output);
 	
 	output.pos			= X2;
-	output.distFog		= input[0].distFog;
+	output.origZ		= input[0].origZ;;
 	triStream.Append(output);
 	
 	output.pos			= Y1;
-	output.distFog		= input[1].distFog;
+	output.origZ		= input[1].origZ;;
 	triStream.Append(output);
 	
 	output.pos			= Y2;
-	output.distFog		= input[1].distFog;
+	output.origZ		= input[1].origZ;;
 	triStream.Append(output);
 	
 	triStream.RestartStrip();

@@ -779,6 +779,156 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	unguard;
 }
 
+void UICBINDx11RenderDevice::AutodetectWhiteBalance()
+{
+	guard(UICBINDx11RenderDevice::AutodetectWhiteBalance);
+
+	GLog->Logf(TEXT("DX11: Autodetecting the display's white balance (in nits)"));
+
+	// Metallicafan212:	Default to a white balance level of 1.0
+	FrameShaderVars.WhiteLevel	= 1.0f;
+
+	// Metallicafan212:	Get the current display that the swap chain will display to
+	IDXGIOutput* Out			= nullptr;
+	HRESULT hr					= m_D3DSwapChain->GetContainingOutput(&Out);
+
+	ThrowIfFailed(hr);
+
+	// Metallicafan212:	Get the description, so we can see where the output is going
+	DXGI_OUTPUT_DESC OutDesc;
+	Out->GetDesc(&OutDesc);
+
+	// Metallicafan212:	We don't need the output now (we have the info we need)
+	//					So release it
+	Out->Release();
+
+	// Metallicafan212:	Get the path to the current monitor
+	MONITORINFOEX MInfo;
+	MInfo.cbSize = sizeof(MInfo);
+
+	GetMonitorInfo(OutDesc.Monitor, &MInfo);
+
+	GLog->Logf(TEXT("DX11: Querying windows for monitor information, to get the HDR white balance level"));
+
+	// Metallicafan212:	This FUCKING sucks, why THE FUCK do I have to do all this EXTERNAL fucking querying, why isn't there a fucking
+	//					D3DFuckAdapter->GetCurrentWhiteLevel() or a fucking IDXGIOutput->GetCurrentStupidWhiteLevelMyGod()
+	//					What fucking insane programmers are Muskysoft employing these days???????
+	//					You NEED the white level for this, BUT THEY MAKE IT VEYR HARD TO OBTAIN!!!!
+
+	// Metallicafan212:	Code adopted from https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-querydisplayconfig#examples
+	UINT32 pathCount, modeCount;
+	LONG result = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &pathCount, &modeCount);
+
+	if (result != ERROR_SUCCESS)
+	{
+		GLog->Logf(TEXT("DX11: Failed to query for active path sizes. Error was %d"), result);
+
+		pathCount = 0;
+		modeCount = 0;
+	}
+
+	if (pathCount == 0)
+	{
+		GLog->Logf(TEXT("DX11: Returned path count was 0."));
+	}
+
+	GLog->Logf(TEXT("DX11: Current monitor path is %s"), MInfo.szDevice);
+
+	// Metallicafan212:	Create buffers to hold all the dumb information
+	TArray<DISPLAYCONFIG_PATH_INFO> Paths;
+	TArray<DISPLAYCONFIG_MODE_INFO> Modes;
+
+	Paths.AddZeroed(pathCount);
+	Modes.AddZeroed(modeCount);
+
+	// Metallicafan212:	Now get it all, holy shit
+	result = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &pathCount, &Paths(0), &modeCount, &Modes(0), nullptr);
+
+	if (result != ERROR_SUCCESS)
+	{
+		GLog->Logf(TEXT("DX11: Failed to query for active paths. Error was %d"), result);
+	}
+	else
+	{
+
+		// Metallicafan212:	Now loop the paths
+		DISPLAYCONFIG_PATH_INFO* CurrentPath = nullptr;
+
+		for (INT i = 0; i < Paths.Num(); i++)
+		{
+			DISPLAYCONFIG_PATH_INFO& P = Paths(i);
+
+			// Metallicafan212:	Get device path name from this path
+			DISPLAYCONFIG_SOURCE_DEVICE_NAME  deviceName ={};
+			deviceName.header.adapterId			= P.sourceInfo.adapterId;
+			deviceName.header.type				= DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+			deviceName.header.size				= sizeof(deviceName);
+			deviceName.header.id				= P.sourceInfo.id;
+
+			result = DisplayConfigGetDeviceInfo(&deviceName.header);
+
+			if (result == ERROR_SUCCESS)
+			{
+				// Metallicafan212:	See if the path matches
+				if (appStrcmp(deviceName.viewGdiDeviceName, MInfo.szDevice) == 0)
+				{
+					GLog->Logf(TEXT("DX11: Found the current monitor"));
+
+					// Metallicafan212:	Found it, use it
+					CurrentPath = &Paths(i);
+					break;
+				}
+			}
+			else
+			{
+				GLog->Logf(TEXT("DX11: Failed to get device path name for path"));
+			}
+		}
+
+		if (CurrentPath != nullptr)
+		{
+			// Metallicafan212:	Get the current white level
+			DISPLAYCONFIG_SDR_WHITE_LEVEL White ={};
+			White.header.type		= DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL;
+			White.header.size		= sizeof(White);
+			White.header.adapterId	= CurrentPath->targetInfo.adapterId;//AdDesc.AdapterLuid;
+			White.header.id			= CurrentPath->targetInfo.id;
+
+			result					= DisplayConfigGetDeviceInfo(&White.header);
+
+			if (result != ERROR_SUCCESS)
+			{
+				GLog->Logf(TEXT("DX11: Failed to query for white balance level. Error is %d"), result);
+				// Metallicafan212:	Sigh....
+				FrameShaderVars.WhiteLevel = 1.0f;
+			}
+			else
+			{
+				// Metallicafan212:	Get the value back from windows
+				HDRWhiteBalanceNits = (White.SDRWhiteLevel / 1000) * 80;
+				GLog->Logf(TEXT("DX11: Windows says that the current display has %d nits. Using %f as our white balance multiplier."), HDRWhiteBalanceNits, HDRWhiteBalanceNits / 80.f);
+			}
+		}
+		else
+		{
+			GLog->Logf(TEXT("DX11: Failed to find display corresponding to the current swap chain ouput"));
+		}
+	}
+
+	// Metallicafan212:	Set it if we found a value
+	if (HDRWhiteBalanceNits > 0)
+	{
+		FrameShaderVars.WhiteLevel = HDRWhiteBalanceNits / 80.0f;
+	}
+
+	LastHDRWhiteBalanceNits = HDRWhiteBalanceNits;
+
+	//GConfig->Flush(0);
+	SaveConfig();
+
+	unguard;
+}
+
 void UICBINDx11RenderDevice::SetupResources()
 {
 	guard(UICBINDx11RenderDevice::SetupResources);
@@ -1014,9 +1164,6 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		GLog->Logf(TEXT("DX11: Creating swap chain for the window"));
 
-		//LONG_PTR es = GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_EXSTYLE);
-		//LONG_PTR s	= GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_STYLE);
-
 	RETRY_SWAP:
 		// Metallicafan212:	Create the swap chain now
 		hr = dxgiFactory->CreateSwapChainForHwnd(
@@ -1057,138 +1204,6 @@ void UICBINDx11RenderDevice::SetupResources()
 		else if(FAILED(hr))
 		{
 			ThrowIfFailed(hr);
-		}
-
-		// Metallicafan212:	Default to a white balance level of 1.0
-		FrameShaderVars.WhiteLevel = 1.0f;
-
-		// Metallicafan212:	Get the current display that the swap chain will display to
-		IDXGIOutput* Out = nullptr;
-		hr = m_D3DSwapChain->GetContainingOutput(&Out);
-
-		ThrowIfFailed(hr);
-
-		// Metallicafan212:	Get the description, so we can see where the output is going
-		DXGI_OUTPUT_DESC OutDesc;
-		Out->GetDesc(&OutDesc);
-
-		// Metallicafan212:	We don't need the output now (we have the info we need)
-		//					So release it
-		Out->Release();
-
-		// Metallicafan212:	Get the path to the current monitor
-		MONITORINFOEX MInfo;
-		MInfo.cbSize = sizeof(MInfo);
-
-		GetMonitorInfo(OutDesc.Monitor, &MInfo);
-
-		GLog->Logf(TEXT("DX11: Querying windows for monitor information, to get the HDR white balance level"));
-
-		// Metallicafan212:	This FUCKING sucks, why THE FUCK do I have to do all this EXTERNAL fucking querying, why isn't there a fucking
-		//					D3DFuckAdapter->GetCurrentWhiteLevel() or a fucking IDXGIOutput->GetCurrentStupidWhiteLevelMyGod()
-		//					What fucking insane programmers are Muskysoft employing these days???????
-		//					You NEED the white level for this, BUT THEY MAKE IT VEYR HARD TO OBTAIN!!!!
-
-		// Metallicafan212:	Code adopted from https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-querydisplayconfig#examples
-		UINT32 pathCount, modeCount;
-		LONG result = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &pathCount, &modeCount);
-
-		if (result != ERROR_SUCCESS)
-		{
-			GLog->Logf(TEXT("DX11: Failed to query for active path sizes. Error was %d"), result);
-
-			pathCount = 0;
-			modeCount = 0;
-		}
-
-		if (pathCount == 0)
-		{
-			GLog->Logf(TEXT("DX11: Returned path count was 0."));
-		}
-
-		GLog->Logf(TEXT("DX11: Current monitor path is %s"), MInfo.szDevice);
-
-		// Metallicafan212:	Create buffers to hold all the dumb information
-		TArray<DISPLAYCONFIG_PATH_INFO> Paths;
-		TArray<DISPLAYCONFIG_MODE_INFO> Modes;
-
-		Paths.AddZeroed(pathCount);
-		Modes.AddZeroed(modeCount);
-
-		// Metallicafan212:	Now get it all, holy shit
-		result = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &pathCount, &Paths(0), &modeCount, &Modes(0), nullptr);
-
-		if (result != ERROR_SUCCESS)
-		{
-			GLog->Logf(TEXT("DX11: Failed to query for active paths. Error was %d"), result);
-		}
-		else
-		{
-
-			// Metallicafan212:	Now loop the paths
-			DISPLAYCONFIG_PATH_INFO* CurrentPath = nullptr;
-
-			for (INT i = 0; i < Paths.Num(); i++)
-			{
-				DISPLAYCONFIG_PATH_INFO& P = Paths(i);
-
-				// Metallicafan212:	Get device path name from this path
-				DISPLAYCONFIG_SOURCE_DEVICE_NAME  deviceName ={};
-				deviceName.header.adapterId			= P.sourceInfo.adapterId;
-				deviceName.header.type				= DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
-				deviceName.header.size				= sizeof(deviceName);
-				deviceName.header.id				= P.sourceInfo.id;
-
-				result = DisplayConfigGetDeviceInfo(&deviceName.header);
-
-				if (result == ERROR_SUCCESS)
-				{
-					GLog->Logf(deviceName.viewGdiDeviceName);
-
-					// Metallicafan212:	See if the path matches
-					if (appStrcmp(deviceName.viewGdiDeviceName, MInfo.szDevice) == 0)
-					{
-						GLog->Logf(TEXT("DX11: Found the current monitor"));
-
-						// Metallicafan212:	Found it, use it
-						CurrentPath = &Paths(i);
-						break;
-					}
-				}
-				else
-				{
-					GLog->Logf(TEXT("DX11: Failed to get device path name for path"));
-				}
-			}
-
-			if (CurrentPath != nullptr)
-			{
-				// Metallicafan212:	Get the current white level
-				DISPLAYCONFIG_SDR_WHITE_LEVEL White ={};
-				White.header.type		= DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL;
-				White.header.size		= sizeof(White);
-				White.header.adapterId	= CurrentPath->targetInfo.adapterId;//AdDesc.AdapterLuid;
-				White.header.id			= CurrentPath->targetInfo.id;
-
-				result					= DisplayConfigGetDeviceInfo(&White.header);
-
-				if (result != ERROR_SUCCESS)
-				{
-					GLog->Logf(TEXT("DX11: Failed to query for white balance level. Error is %d"), result);
-					// Metallicafan212:	Sigh....
-					FrameShaderVars.WhiteLevel = 1.0f;
-				}
-				else
-				{
-					// Metallicafan212:	Set it as a multiplier
-					FrameShaderVars.WhiteLevel = White.SDRWhiteLevel / 1000.0f;
-					GLog->Logf(TEXT("DX11: Windows says that the current display has %d nits. Using %f as our white balance multiplier."), (White.SDRWhiteLevel / 1000) * 80, FrameShaderVars.WhiteLevel);
-				}
-			}
-			else
-			{
-				GLog->Logf(TEXT("DX11: Failed to find display corresponding to the current swap chain ouput"));
-			}
 		}
 
 		// Metallicafan212:	Make it stop messing with the window itself
@@ -1254,7 +1269,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		if (sp3 != nullptr)
 		{
 			GLog->Logf(TEXT("DX11: Setting HDR colorspace"));
-			sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
+			sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);//DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
 			sp3->Release();
 		}
 	}
@@ -1622,6 +1637,12 @@ void UICBINDx11RenderDevice::SetupResources()
 		GetSamplerState(PF_NoSmooth | PF_ClampUVs, i, 0);
 	}
 
+	if (HDRWhiteBalanceNits <= 0)
+	{
+		// Metallicafan212:	Autodetect it
+		AutodetectWhiteBalance();
+	}
+
 	unguard;
 }
 
@@ -1632,38 +1653,26 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 	INT TestX = Max(NewX, 2);
 	INT TestY = Max(NewY, 2);
 
-	//if (TestX != SizeX || TestY != SizeY || Fullscreen != bFullscreen)
+	if (Viewport != nullptr)
 	{
-		if (Viewport != nullptr)
+		// Metallicafan212:	Force 32bit color at all times????
+		if (!Viewport->ResizeViewport(BLIT_Direct3D | (Fullscreen ? BLIT_Fullscreen : BLIT_HardwarePaint), TestX, TestY, 4))
 		{
-			// Metallicafan212:	Force 32bit color at all times????
-			if (!Viewport->ResizeViewport(BLIT_Direct3D | (Fullscreen ? BLIT_Fullscreen : BLIT_HardwarePaint), TestX, TestY, 4))
-			{
-				return 0;
-			}
-		}
-
-		// Metallicafan212:	Save the values
-		//					We also have to clamp here since unreal could pass bad values (the editor opening, for example)
-		//INT OldX	= SizeX;
-		//INT OldY	= SizeY;
-		SizeX		= TestX;
-		SizeY		= TestY;
-
-		// Metallicafan212:	Resetup resources that need to be sized
-		//if (OldX != SizeX || OldY != SizeY || Fullscreen != bFullscreen)
-		{
-			bFullscreen = Fullscreen;
-			SetupResources();
-
-
-
-			// Metallicafan212:	Set the viewport now
-			//D3D11_VIEWPORT viewport = { 0.0f, 0.0f, static_cast<FLOAT>(SizeX), static_cast<FLOAT>(SizeY), 0.f, 1.f };
-			//m_D3DDeviceContext->RSSetViewports(1, &viewport);
-			SetSceneNode(nullptr);
+			return 0;
 		}
 	}
+
+	// Metallicafan212:	Save the values
+	//					We also have to clamp here since unreal could pass bad values (the editor opening, for example)
+	SizeX		= TestX;
+	SizeY		= TestY;
+
+	// Metallicafan212:	Resetup resources that need to be sized
+	bFullscreen = Fullscreen;
+	SetupResources();
+
+	// Metallicafan212:	Set the viewport now
+	SetSceneNode(nullptr);
 
 	return 1;
 
@@ -1804,30 +1813,6 @@ void UICBINDx11RenderDevice::Flush(UBOOL AllowPrecache)
 {
 	guard(UICBINDx11RenderDevice::Flush);
 
-	/*
-	// Metallicafan212:	Loop and flush out the textures
-	//					TODO! There might be a more efficient way to do this!
-	for (TMap<DWORD, FD3DTexture>::TIterator It(TextureMap); It; ++It)
-	{
-		// Metallicafan212:	Release all this info
-		FD3DTexture& Tex = It.Value();
-		SAFE_RELEASE(Tex.m_View);
-		SAFE_RELEASE(Tex.m_Tex);
-
-		for (INT i = 0; i < Tex.UAVMips.Num(); i++)
-		{
-			SAFE_RELEASE(Tex.UAVMips(i));
-		}
-
-		//SAFE_RELEASE(Tex.TexUAV);
-
-		SAFE_RELEASE(Tex.P8ConvSRV);
-		SAFE_RELEASE(Tex.P8ConvTex);
-	}
-
-	TextureMap.Empty();
-	*/
-
 	TextureMap.Flush();
 
 	appMemzero(BoundTextures, sizeof(BoundTextures));
@@ -1887,7 +1872,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 	// Metallicafan212:	Check gamma as well
 #if !DX11_HP2
-	Gamma = Viewport->GetOuterUClient()->Brightness * 2.0f;
+	Gamma = (!Viewport->IsOrtho() ? Viewport->GetOuterUClient()->Brightness * 2.0f : 1.0f);
 #endif
 
 	// Metallicafan212:	Require setting buffering on the first draw
@@ -1905,6 +1890,21 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 		{
 			FlushTextureSamplers();
 		}
+	}
+
+	// Metallicafan212:	Only calculate it if needed
+	if (LastHDRWhiteBalanceNits != HDRWhiteBalanceNits)
+	{
+		// Metallicafan212:	If it was set to 0 or below, autodetect it again
+		if (HDRWhiteBalanceNits <= 0)
+		{
+			AutodetectWhiteBalance();
+		}
+
+		FrameShaderVars.WhiteLevel	= HDRWhiteBalanceNits / 80.0f;
+
+		// Metallicafan212:	Update the last var
+		LastHDRWhiteBalanceNits		= HDRWhiteBalanceNits;
 	}
 
 	// Metallicafan212:	Gamma is disabled in HP2 because a speedrunning trick involves messing with the brighness bar

@@ -8,6 +8,9 @@ VS_OUT VertShader(VSInput input)
 	// Metallicafan212:	Set the W to 1 so matrix math works
 	input.pos.w 	= 1.0f;
 	
+	// Metallicafan212:	Save the original Z for distance fog calculations
+	output.origZ	= input.pos.z;
+	
 	// Metallicafan212:	Transform it out
 	output.pos 		= mul(input.pos, Proj);
 	
@@ -18,9 +21,6 @@ VS_OUT VertShader(VSInput input)
 	// Metallicafan212:	I've embedded the line size into the fog.x
 	output.fog		= input.fog;
 	
-	// Metallicafan212:	Do the final fog value
-	output.distFog	= DoDistanceFog(output.pos.z);
-	
 	return output;
 }
 
@@ -28,7 +28,12 @@ float4 PxShader(PSInput input) : SV_TARGET
 {			
 	CLIP_PIXEL(input.color);
 	
-	input.color = DoPixelFog(input.distFog, input.color);
+	// Metallicafan212:	Calculate distance fog
+	if(bDoDistanceFog)
+	{
+		float Fog	= DoDistanceFog(input.origZ);
+		input.color = DoPixelFog(Fog, input.color);
+	}
 	
 	return DoFinalColor(input.color);
 }

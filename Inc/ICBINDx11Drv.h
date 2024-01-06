@@ -603,6 +603,10 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	HDR color correction value, since we have to expand sRGB to linear color for HDR to work
 	FLOAT						AdditionalHDRExpansion;
 
+	// Metallicafan212:	User definable nits for the screen
+	//					If this is <= 0, the driver will attempt to autodetect it
+	INT							HDRWhiteBalanceNits;
+
 	// Metallicafan212:	If we shouldn't multiply lightmaps by 2 in the complex surface shader
 	UBOOL						bOneXLightmaps;
 
@@ -622,6 +626,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	Version to check gamma
 	FLOAT						LastGamma;
+
+	// Metallicafan212:	Last HDRWhiteBalanceNits value
+	INT							LastHDRWhiteBalanceNits;
 
 	// Metallicafan212:	If the GPU is AMD/ATI, Intel, or NVidia
 	UBOOL						bIsNV;
@@ -1601,6 +1608,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	Generate the semi-permanent resources needed for the device
 	void SetupResources();
+
+	// Metallicafan212:	Autodetect the nits white balance level for the screen
+	void AutodetectWhiteBalance();
 
 	// Metallicafan212:	Setup the device
 	void SetupDevice();

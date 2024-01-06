@@ -32,19 +32,6 @@ float4 DX9Gamma(float3 In)
 	return float4(In, 1.0f);
 }
 
-// Metallicafan212:	From https://github.com/Microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/ColorSpaceUtility.hlsli
-float3 SRGBToRec2020(float3 In)
-{
-	static const float3x3 ConvMat =
-    {
-        0.627402, 0.329292, 0.043306,
-        0.069095, 0.919544, 0.011360,
-        0.016394, 0.088028, 0.895578
-    };
-    return mul(ConvMat, In);
-}
-
-
 PSInput VertShader(VSInput input)
 {	
 	PSInput output = (PSInput)0;
@@ -108,7 +95,11 @@ float4 PxShader(PSInput input) : SV_TARGET
 		//Out.xyz = pow(Out.xyz, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
 		//TexColor = SRGBToRec202(TexColor);//pow(TexColor, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
 		//Out.xyz = SRGBToRec2020(Out.xyz) * WhiteLevel; //* HDRExpansion;
-		Out.xyz *= WhiteLevel;	
+		
+		// Metallicafan212:	Convert to linear, since we're using a linear screen format
+		Out.xyz = pow(Out.xyz, 2.2);
+		
+		Out.xyz *= WhiteLevel * HDRExpansion;	
 	}
 	
 	return Out;

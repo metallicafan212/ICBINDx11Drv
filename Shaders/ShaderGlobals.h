@@ -114,6 +114,19 @@ cbuffer PolyflagVars : register (b2)
 	float3	Pad					: packoffset(c1.y);
 };
 
+// Metallicafan212:	Moved from the ResScaling.hlsl shader
+// 					From https://github.com/Microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/ColorSpaceUtility.hlsli
+float3 SRGBToRec2020(float3 In)
+{
+	static const float3x3 ConvMat =
+    {
+        0.627402, 0.329292, 0.043306,
+        0.069095, 0.919544, 0.011360,
+        0.016394, 0.088028, 0.895578
+    };
+    return mul(ConvMat, In);
+}
+
 // Metallicafan212:	Distance fog shit
 //					TODO! A better algorithm????
 //					I have just straight ported the assembly code I wrote a while ago (since I'm a lazy fucking bastard)
@@ -192,6 +205,15 @@ float4 DoFinalColor(float4 ColorIn)
 	//{
 	//	ColorIn.xyz = pow(ColorIn.xyz, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
 	//}
+	
+	/*
+	// Metallicafan212:	If we're using HDR, change the color space?
+	if(bHDR)//&& !bModulated)
+	{
+		//ColorIn.xyz *= WhiteLevel * HDRExpansion;
+		ColorIn.xyz = SRGBToRec2020(ColorIn);
+	}
+	*/
 	
 	// Metallicafan212:	Early return
 	if(BWPercent <= 0.0f)

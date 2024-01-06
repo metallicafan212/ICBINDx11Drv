@@ -11,7 +11,7 @@ struct GSInput
 	float2 uv		: TEXCOORD0;
 	float4 color	: COLOR0; 
 	float  fog		: COLOR1;
-	float  distFog	: COLOR2;
+	float  origZ	: COLOR2;
 };
 
 struct PSInput 
@@ -20,7 +20,7 @@ struct PSInput
 	float2 uv		: TEXCOORD0;
 	float4 color	: COLOR0; 
 	float4 fog		: COLOR1;
-	float  distFog	: COLOR2;
+	float  origZ	: COLOR2;
 };			
 
 #if USE_GEO_SHADER

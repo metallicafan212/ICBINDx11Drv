@@ -30,7 +30,7 @@ struct PSInput
 	float2 uv		: TEXCOORD0;
 	float4 color	: COLOR0; 
 	float4 fog		: COLOR1;
-	float  distFog	: COLOR2;
+	float  origZ	: COLOR2;
 };
 
 
@@ -40,6 +40,9 @@ PSInput VertShader(VSInput input)
 	
 	// Metallicafan212:	Set the W to 1 so matrix math works
 	input.pos.w 	= 1.0f;
+	
+	// Metallicafan212:	Save the original z for distance fog
+	output.origZ	= input.pos.z;
 	
 	// Metallicafan212:	Optionally disable opacity, if it's not needed
 	if(bNoOpacity)
@@ -55,20 +58,11 @@ PSInput VertShader(VSInput input)
 	output.color	= input.color;
 	output.fog		= input.fog;
 	
-	// Metallicafan212:	Do the final fog value
-	output.distFog	= DoDistanceFog(output.pos.z);
-	
 	return output;
 }
 
 float4 PxShader(PSInput input) : SV_TARGET
 {	
-	// Metallicafan212:	TODO! Texturing
-	//input.color.a = 1.0f;
-	
-	// Metallicafan212:	TODO! Use it so the register stay the same...
-	//input.pos = input.pos * 2.0f;
-	
 	// Metallicafan212:	TODO! Add this as a bool property
 	if(bEnableCorrectFog)
 	{
@@ -82,7 +76,12 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	CLIP_PIXEL(FinalColor);
 	
-	FinalColor = DoPixelFog(input.distFog, FinalColor);
+	// Metallicafan212:	Calculate the distance fog here
+	if(bDoDistanceFog)
+	{
+		float Fog 	= DoDistanceFog(input.origZ);
+		FinalColor 	= DoPixelFog(Fog, FinalColor);
+	}
 	
 	return DoFinalColor(FinalColor);
 }
