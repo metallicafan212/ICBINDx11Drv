@@ -64,10 +64,45 @@ void UICBINDx11RenderDevice::PopHit(INT Count, UBOOL bForce)
 		PixelTopIndex = -1;
 	}
 
-	// Metallicafan212:	If it's a forced pop, copy over
+	// Metallicafan212:	If it's a forced pop, copy over the last hit to the buffer, with all parent info
 	if (bForce)
 	{
-		DetectPixelHit();
+		// Metallicafan212:	Copy over the single hit we want + HCoords, to support clicking nothing
+		BYTE* Data = m_HitData;
+
+		// Metallicafan212:	Only attempt a copy if we have a hit
+		//					This is to prevent clicking outside a texture in the texture browser, and it selecting the first texture
+		if(PixelHitInfo.Num())
+		{
+			// Metallicafan212:	Unwind the hit info, from the top
+			TArray<FPixHitInfo*> Parents;
+
+			FPixHitInfo* Top = &PixelHitInfo(PixelHitInfo.Num() - 1);
+
+			// Metallicafan212:	Go until we hit the topmost parent
+			while (Top != nullptr)
+			{
+				Parents.Insert(0);
+				Parents(0) = Top;
+
+				// Metallicafan212:	Break out if the parent is invalid
+				if (Top->Prev == -1)
+					Top = nullptr;
+				else
+					Top = &PixelHitInfo(Top->Prev);
+			}
+
+			// Metallicafan212:	Copy in order to preserve heiarchy
+			for (INT i = 0; i < Parents.Num(); i++)
+			{
+				appMemcpy(Data, &(Parents(i)->HitData(0)), Parents(i)->HitData.Num());
+				Data		+= Parents(i)->HitData.Num();
+				m_HitCount	+= Parents(i)->HitData.Num();
+			}
+		}
+
+		// Metallicafan212:	Move the data pointer
+		m_HitData = Data;
 	}
 
 	SetupPixelHitTest();
