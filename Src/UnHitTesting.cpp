@@ -542,10 +542,22 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 		for (INT i = 0; i < Parents.Num(); i++)
 		{
 			appMemcpy(Data, &(Parents(i)->HitData(0)), Parents(i)->HitData.Num());
-			Data += Parents(i)->HitData.Num();
-			m_HitCount += Parents(i)->HitData.Num();
+			Data		+= Parents(i)->HitData.Num();
+			m_HitCount	+= Parents(i)->HitData.Num();
 		}
 	}
+	else
+	{
+		m_HitCount = 0;
+	}
+
+	// Metallicafan212:	Clean out hit data structures
+	PixelTopIndex = -1;
+
+	PixelHitInfo.Empty();
+	
+	// Metallicafan212:	Update the pointer position
+	m_HitData = Data;
 
 	unguard;
 

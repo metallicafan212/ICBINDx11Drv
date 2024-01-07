@@ -1953,9 +1953,18 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 		// Metallicafan212:	Only clear if we have the screen clear set
 		//if (RenderLockFlags & LOCKR_ClearScreen)
 		// Metallicafan212:	TODO! Figure out why this fucks up with the loading screen
-		if(1)
+		if (1)
 		{
-			m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, &ScreenClear.X);
+			// Metallicafan212:	If we're hit testing, always clear to the first hit color
+			if (HitData != nullptr)
+			{
+				constexpr FLOAT FirstIndex[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+				m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, FirstIndex);
+			}
+			else
+			{
+				m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, &ScreenClear.X);
+			}
 		}
 
 		// Metallicafan212:	However, always clear depth
@@ -1986,7 +1995,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	if (m_HitData != nullptr)
 	{
 		// Metallicafan212:	Reset the pixel hit state
-		PixelHitInfo.AddItem(FPixHitInfo());
+		//PixelHitInfo.AddItem(FPixHitInfo());
 		PixelTopIndex = -1;
 
 		m_HitBufSize	= *m_HitSize;
