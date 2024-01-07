@@ -11,6 +11,9 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	FLOAT ExtraScale = 1.0f;
 #endif
 
+	// Metallicafan212:	If doing hit testing, make the lines a minimum of 2 pixels thick
+	FLOAT Thick = m_HitData != nullptr ? Clamp(ThreeDeeLineThickness, 2.0f, FLT_MAX) : ThreeDeeLineThickness;
+
 	// Metallicafan212:	We need to transform some lines into screen-space, as only some aren't already done
 	//					So the collision boxes are already in worldspace, so doing this transform causes it to skew
 	//					Consequently, all other lines do not render without this
@@ -70,7 +73,7 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 
 		SetRasterState(DXRS_Normal);
 
-		FPlane LineThick(ThreeDeeLineThickness * ExtraScale, 0.0f, 0.0f, 0.0f);
+		FPlane LineThick(Thick * ExtraScale, 0.0f, 0.0f, 0.0f);
 #endif
 
 		// Metallicafan212:	Selection testing
@@ -79,7 +82,7 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 			Color = CurrentHitColor;
 
 			// Metallicafan212:	If this isn't HP2, set the priority on lines/points higher
-#if !DX11_HP2
+#if 0//!DX11_HP2
 			if (PixelTopIndex != -1)
 				PixelHitInfo(PixelTopIndex).Priority = 10;
 #endif
@@ -151,6 +154,9 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	P2.X *= ExtraScale;
 	P2.Y *= ExtraScale;
 
+	// Metallicafan212:	If doing hit testing, make the lines a minimum of 2 pixels thick
+	FLOAT Thick = m_HitData != nullptr ? Clamp(OrthoLineThickness, 2.0f, FLT_MAX) : OrthoLineThickness;
+
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Lines);
 
@@ -175,7 +181,7 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 
 	SetRasterState(DXRS_Normal);
 
-	FPlane LineThick(OrthoLineThickness * ExtraScale, 0.0f, 0.0f, 0.0f);
+	FPlane LineThick(Thick * ExtraScale, 0.0f, 0.0f, 0.0f);
 
 #endif
 
@@ -220,7 +226,7 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		Color = CurrentHitColor;
 
 		// Metallicafan212:	If this isn't HP2, set the priority on lines/points higher
-#if !DX11_HP2
+#if 0//!DX11_HP2
 		if (PixelTopIndex != -1)
 			PixelHitInfo(PixelTopIndex).Priority = 10;
 #endif
@@ -330,7 +336,7 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 		Color = CurrentHitColor;
 
 		// Metallicafan212:	If this isn't HP2, set the priority on lines/points higher
-#if !DX11_HP2
+#if 0//!DX11_HP2
 		if(PixelTopIndex != -1)
 			PixelHitInfo(PixelTopIndex).Priority = 10;
 #endif
