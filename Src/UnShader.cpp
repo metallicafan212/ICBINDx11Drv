@@ -41,13 +41,32 @@ inline void CheckShader(HRESULT hr, ID3D10Blob* error)
 				appMemcpy(ErrorStr, error->GetBufferPointer(), ErrorSize);
 
 				//appUnwindf(TEXT("D3D11: Error compiling shader. Error is %s"), appFromAnsi(ErrorStr));
-				appErrorf(TEXT("D3D11: Error compiling shader. Error is %s"), appFromAnsi(ErrorStr));
+				appErrorf(TEXT("DX11: Error compiling shader. Error is %s"), appFromAnsi(ErrorStr));
 				delete[] ErrorStr;
 			}
 			error->Release();
 		}
 		// Metallicafan212:	Don't do anything else?
 		return;
+	}
+	else
+	{
+		// Metallicafan212:	Print the warning message out
+		if (error != nullptr)
+		{
+			SIZE_T ErrorSize = error->GetBufferSize();
+
+			// Metallicafan212:	Now alloc memory and log
+			ANSICHAR* ErrorStr = new ANSICHAR[ErrorSize]();
+
+			if (ErrorStr != nullptr)
+			{
+				appMemcpy(ErrorStr, error->GetBufferPointer(), ErrorSize);
+
+				GLog->Logf(TEXT("DX11: Warnings when compiling shader. Error is %s"), appFromAnsi(ErrorStr));
+				delete[] ErrorStr;
+			}
+		}
 	}
 
 	if (error != nullptr)

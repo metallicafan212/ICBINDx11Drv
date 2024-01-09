@@ -328,6 +328,8 @@ MAKE_DEVICE:
 			break;
 		}
 
+		// Metallicafan212:	This doesn't work at all, and only indicates support of 2_x NOT 3_0
+		/*
 		case D3D_FEATURE_LEVEL_9_3:
 		{
 			MaxVSLevel		= "vs_3_0";
@@ -336,7 +338,9 @@ MAKE_DEVICE:
 			bUseGeoShaders	= 0;
 			break;
 		}
+		*/
 
+		case D3D_FEATURE_LEVEL_9_3:
 		case D3D_FEATURE_LEVEL_9_2:
 		case D3D_FEATURE_LEVEL_9_1:
 		{
