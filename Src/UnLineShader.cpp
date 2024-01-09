@@ -16,7 +16,7 @@ FD3DLineShader::FD3DLineShader(UICBINDx11RenderDevice* InParent)
 	//					I know it's not "correct" to detect when the app is running on it, but there just seems to be removed features from the HLSL compiler....
 	//					This would be solved if I precompiled the shaders, but that would defeat the purpose of defining them this way
 #if 1//DX11_HP2
-	if (!GWineAndDine)
+	if (ParentDevice->bUseGeoShaders)//!GWineAndDine)
 #endif
 	{
 		GeoFile = SHADER_FOLDER TEXT("Line_GeoShader.hlsl");

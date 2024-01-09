@@ -662,6 +662,14 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	The current feature level, so we know if we support specific features
 	D3D_FEATURE_LEVEL			m_FeatureLevel;
 
+	// Metallicafan212:	The levels to use when compiling shaders
+	const ANSICHAR*				MaxVSLevel{};
+	const ANSICHAR*				MaxPSLevel{};
+	const ANSICHAR*				MaxGSLevel{};
+
+	// Metallicafan212:	If to use geo shaders at all (Shader version 3.0 has no geo shaders)
+	UBOOL						bUseGeoShaders;
+
 	// Metallicafan212:	For debugging only (will be removed later)
 	ID3D11Debug*				m_D3DDebug;
 	ID3D11InfoQueue*			m_D3DQueue;
@@ -685,16 +693,6 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	The shader resource view, so we can use it as a input when doing the secondary shader
 	ID3D11ShaderResourceView*	m_MSAAResolveSRV;
-
-	// Metallicafan212:	Hacked screen texture for checking if a opacity frame rendered on top or not
-	//					May or may not work as intended!!!!
-	//ID3D11Texture2D*			m_ScreenOpacityTex;
-
-	// Metallicafan212:	Render target to bind when rendering complex surfaces
-	//ID3D11RenderTargetView*		m_D3DScreenOpacityRTV;
-
-	// Metallicafan212:	Shader resource when we read from it
-	//ID3D11ShaderResourceView*	m_ScreenOpacityRTSRV;
 
 	// Metallicafan212:	The screen texture, which will use MSAA
 	ID3D11Texture2D*			m_ScreenBuffTex;

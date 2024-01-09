@@ -247,6 +247,10 @@ MAKE_DEVICE:
 
 	ThrowIfFailed(hr);
 
+	// Metallicafan212:	Initialize the geo shader bool
+	//					Wine/proton does not like my geo shader, so we ignore it (for now)
+	bUseGeoShaders = !GWineAndDine;
+
 	// Metallicafan212:	Log the feature level
 	const TCHAR* FLStr = nullptr;
 
@@ -292,6 +296,51 @@ MAKE_DEVICE:
 		{
 			FLStr = TEXT("9.1");
 			break;
+		}
+	}
+
+	// Metallicafan212:	Figure out the vertex/pixel/geo shader versions
+	//					TODO! Could combine with the previous switch, but then I would have to reformat this
+	switch (m_FeatureLevel)
+	{
+		case D3D_FEATURE_LEVEL_11_1:
+		case D3D_FEATURE_LEVEL_11_0:
+		{
+			MaxVSLevel		= "vs_5_0";
+			MaxPSLevel		= "ps_5_0";
+			MaxGSLevel		= "gs_5_0";
+			break;
+		}
+
+		case D3D_FEATURE_LEVEL_10_1:
+		{
+			MaxVSLevel		= "vs_4_1";
+			MaxPSLevel		= "ps_4_1";
+			MaxGSLevel		= "gs_4_1";
+			break;
+		}
+
+		case D3D_FEATURE_LEVEL_10_0:
+		{
+			MaxVSLevel		= "vs_4_0";
+			MaxPSLevel		= "ps_4_0";
+			MaxGSLevel		= "gs_4_0";
+			break;
+		}
+
+		case D3D_FEATURE_LEVEL_9_3:
+		{
+			MaxVSLevel		= "vs_3_0";
+			MaxPSLevel		= "ps_3_0";
+			MaxGSLevel		= "";
+			bUseGeoShaders	= 0;
+			break;
+		}
+
+		case D3D_FEATURE_LEVEL_9_2:
+		case D3D_FEATURE_LEVEL_9_1:
+		{
+			appErrorf(TEXT("Unsupported feature level %s"), FLStr);
 		}
 	}
 

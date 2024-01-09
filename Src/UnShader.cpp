@@ -72,9 +72,12 @@ void FD3DShader::Init()
 	// Metallicafan212:	Compile the shaders
 	if (VertexFunc.Len())
 	{
-		hr = D3DCompileFromFile(*VertexFile, GET_MACRO_PTR(Macros), D3D_CMP_STD_INC, appToAnsi(*VertexFunc), "vs_5_0", Flags, 0, &vsBuff, &error);
+		hr = D3DCompileFromFile(*VertexFile, GET_MACRO_PTR(Macros), D3D_CMP_STD_INC, appToAnsi(*VertexFunc), ParentDevice->MaxVSLevel, Flags, 0, &vsBuff, &error);
 
 		CheckShader(hr, error);
+
+		// Metallicafan212:	IDK, do something here?
+		ParentDevice->ThrowIfFailed(hr);
 
 		// Metallicafan212:	Get it as a vertex shader
 		hr = ParentDevice->m_D3DDevice->CreateVertexShader(vsBuff->GetBufferPointer(), vsBuff->GetBufferSize(), nullptr, &VertexShader);
@@ -86,9 +89,12 @@ void FD3DShader::Init()
 	// Metallicafan212:	Now the pixel shader
 	if (PixelFunc.Len())
 	{
-		hr = D3DCompileFromFile(*PixelFile, GET_MACRO_PTR(Macros), D3D_CMP_STD_INC, appToAnsi(*PixelFunc), "ps_5_0", Flags, 0, &psBuff, &error);
+		hr = D3DCompileFromFile(*PixelFile, GET_MACRO_PTR(Macros), D3D_CMP_STD_INC, appToAnsi(*PixelFunc), ParentDevice->MaxPSLevel, Flags, 0, &psBuff, &error);
 
 		CheckShader(hr, error);
+
+		// Metallicafan212:	IDK, do something here?
+		ParentDevice->ThrowIfFailed(hr);
 
 		// Metallicafan212:	Get it as a pixel shader
 		hr = ParentDevice->m_D3DDevice->CreatePixelShader(psBuff->GetBufferPointer(), psBuff->GetBufferSize(), nullptr, &PixelShader);
@@ -98,11 +104,14 @@ void FD3DShader::Init()
 	}
 
 	// Metallicafan212:	Now the geometry shader
-	if (GeoFunc.Len())
+	if (ParentDevice->bUseGeoShaders && GeoFunc.Len())
 	{
-		hr = D3DCompileFromFile(*GeoFile, GET_MACRO_PTR(Macros), D3D_CMP_STD_INC, appToAnsi(*GeoFunc), "gs_5_0", Flags, 0, &gsBuff, &error);
+		hr = D3DCompileFromFile(*GeoFile, GET_MACRO_PTR(Macros), D3D_CMP_STD_INC, appToAnsi(*GeoFunc), ParentDevice->MaxGSLevel, Flags, 0, &gsBuff, &error);
 
 		CheckShader(hr, error);
+
+		// Metallicafan212:	IDK, do something here?
+		ParentDevice->ThrowIfFailed(hr);
 
 		// Metallicafan212:	Get it as a pixel shader
 		hr = ParentDevice->m_D3DDevice->CreateGeometryShader(gsBuff->GetBufferPointer(), gsBuff->GetBufferSize(), nullptr, &GeoShader);
@@ -110,8 +119,6 @@ void FD3DShader::Init()
 		// Metallicafan212:	IDK, do something here?
 		ParentDevice->ThrowIfFailed(hr);
 	}
-
-	// Metallicafan212:	Make the input layout
 
 	// Metallicafan212:	Now create the layout pointer
 	if (VertexShader != nullptr)
