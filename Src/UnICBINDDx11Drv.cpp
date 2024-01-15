@@ -115,6 +115,10 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_D3DScreenDSV);
 	SAFE_RELEASE(m_ScreenDTSRV);
 
+	// Metallicafan212:	Selection version
+	SAFE_RELEASE(m_SelectionDSTex);
+	SAFE_RELEASE(m_SelectionDSV);
+
 
 	// Metallicafan212:	TODO! Do we need to make shaders each time?
 	SAFE_DELETE(FTileShader);
@@ -678,14 +682,12 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	m_MSAAResolveSRV	= nullptr;
 	m_MSAAResolveTex	= nullptr;
 
-	//m_ScreenOpacityTex		= nullptr;
-	//m_D3DScreenOpacityRTV	= nullptr;
-	//m_ScreenOpacityRTSRV	= nullptr;
-
 	// Metallicafan212:	Depth stencil target stuff
 	m_ScreenDSTex		= nullptr;
 	m_ScreenDTSRV		= nullptr;
 	m_D3DScreenDSV		= nullptr;
+	m_SelectionDSTex	= nullptr;
+	m_SelectionDSV		= nullptr;
 
 #if DX11_HP2
 	// Metallicafan212:	HP2 specific on-screen string drawing
@@ -1034,6 +1036,10 @@ void UICBINDx11RenderDevice::SetupResources()
 	SAFE_RELEASE(m_ScreenDSTex);
 	SAFE_RELEASE(m_D3DScreenDSV);
 	SAFE_RELEASE(m_ScreenDTSRV);
+
+	// Metallicafan212:	Selection versions
+	SAFE_RELEASE(m_SelectionDSTex);
+	SAFE_RELEASE(m_SelectionDSV);
 
 #if DX11_HP2
 	// Metallicafan212:	TODO! HP2 specific
@@ -1448,6 +1454,13 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	ThrowIfFailed(hr);
 
+	// Metallicafan212:	Version for selection
+	depthStencilDesc.SampleDesc.Count = 1;
+
+	hr = m_D3DDevice->CreateTexture2D(&depthStencilDesc, nullptr, &m_SelectionDSTex);
+
+	ThrowIfFailed(hr);
+
 	// Metallicafan212:	Now we need to declare the view as the right format
 	CD3D11_DEPTH_STENCIL_VIEW_DESC dtVDesc = CD3D11_DEPTH_STENCIL_VIEW_DESC();
 	dtVDesc.Flags				= 0;
@@ -1458,6 +1471,14 @@ void UICBINDx11RenderDevice::SetupResources()
 	hr = m_D3DDevice->CreateDepthStencilView(m_ScreenDSTex, &dtVDesc, &m_D3DScreenDSV);
 
 	ThrowIfFailed(hr);
+
+	// Metallicafan212:	Selection version of the view
+	dtVDesc.ViewDimension		= D3D11_DSV_DIMENSION_TEXTURE2D;
+
+	hr = m_D3DDevice->CreateDepthStencilView(m_SelectionDSTex, &dtVDesc, &m_SelectionDSV);
+
+	ThrowIfFailed(hr);
+
 
 	// Metallicafan212:	Now make the depth shader resource
 	srvDesc.Format				= DSTSRVFormat;
@@ -1928,6 +1949,23 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	Gamma = Viewport->GetOuterUClient()->Brightness * 2.0f;
 #endif
 
+	// Metallicafan212:	Hold onto the hit related info
+	m_HitData		= HitData;
+	m_HitSize		= HitSize;
+	m_HitCount		= 0;
+
+	if (m_HitData != nullptr)
+	{
+		// Metallicafan212:	Reset the pixel hit state
+		//PixelHitInfo.AddItem(FPixHitInfo());
+		PixelTopIndex = -1;
+
+		m_HitBufSize	= *m_HitSize;
+
+		// Metallicafan212:	Tell unreal there was no hits (so far)
+		*m_HitSize		= 0;
+	}
+
 	// Metallicafan212:	Require setting buffering on the first draw
 	m_CurrentBuff = BT_None;
 
@@ -2012,7 +2050,10 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 			if (HitData != nullptr)
 			{
 				constexpr FLOAT FirstIndex[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-				m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, FirstIndex);
+				//m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, FirstIndex);
+				m_RenderContext->ClearRenderTargetView(m_BackBuffRT, FirstIndex);
+
+				m_RenderContext->ClearDepthStencilView(m_SelectionDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 			}
 			else
 			{
@@ -2026,48 +2067,10 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 	// Metallicafan212:	Make sure Z buffering is ALWAYS on
 	m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);
-	
-
-	// Metallicafan212:	Clear to max Z
-	//m_D3DDeviceContext->ClearRenderTargetView(m_D3DScreenOpacityRTV, DirectX::Colors::White);
-
-	// Metallicafan212:	Make sure we're always using the right RT
-	//RestoreRenderTarget();
-	//m_D3DDeviceContext->OMSetRenderTargets(1, &m_D3DScreenRTV, m_D3DScreenDSV);
-	//BoundRT = nullptr;
 
 	// Metallicafan212:	Hold onto the flash fog for future render
 	FlashScale		= InFlashScale;
 	FlashFog		= InFlashFog;
-
-	// Metallicafan212:	Hold onto the hit related info
-	m_HitData		= HitData;
-	m_HitSize		= HitSize;
-	m_HitCount		= 0;
-
-	if (m_HitData != nullptr)
-	{
-		// Metallicafan212:	Reset the pixel hit state
-		//PixelHitInfo.AddItem(FPixHitInfo());
-		PixelTopIndex = -1;
-
-		m_HitBufSize	= *m_HitSize;
-
-		// Metallicafan212:	Tell unreal there was no hits (so far)
-		*m_HitSize		= 0;
-	}
-
-	// Metallicafan212:	Setup the buffers
-	//					TODO! For performance reasons, I have disabled this block
-	/*
-	LockVertexBuffer(0, 0);
-	LockIndexBuffer(0, 0);
-	UnlockVertexBuffer();
-	UnlockIndexBuffer();
-	*/
-
-	// Metallicafan212:	Reset the buffered state
-	//EndBuffering();
 
 	if (GlobalShaderVars.bDoDistanceFog || GlobalShaderVars.bFadeFogValues)
 		TickDistanceFog();
@@ -2116,9 +2119,13 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 		//ClearPixelHits();
 		*m_HitSize = m_HitCount;
 
-		// Metallicafan212:	TODO! Add this as a debug option
+		// Metallicafan212:	Selection is drawn directly to the back buffer now (to save on resources)
+		//					So running the shader on top isn't needed
 		if(bDebugSelection)
-			Blit = 1;
+			goto JUST_PRESENT;
+		// Metallicafan212:	TODO! Add this as a debug option
+		//if(bDebugSelection)
+		//	Blit = 1;
 	}
 
 	if (Blit)
@@ -2496,6 +2503,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 #endif
 		}
 
+	JUST_PRESENT:
 		static constexpr DXGI_PRESENT_PARAMETERS Parm{ 0, nullptr, nullptr, nullptr };
 		HRESULT hr = m_D3DSwapChain->Present1(UseVSync ? 1 : 0, (bAllowTearing && !bFullscreen && !UseVSync ? DXGI_PRESENT_ALLOW_TEARING : 0), &Parm);//m_D3DSwapChain->Present(0, 0);
 

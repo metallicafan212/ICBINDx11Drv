@@ -815,7 +815,14 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 	// Metallicafan212:	Reset
 	if (RTStack.Num() == 0)
 	{
-		m_RenderContext->OMSetRenderTargets(1, &m_D3DScreenRTV, m_D3DScreenDSV);
+		if (FrameShaderVars.bDoSelection)//m_HitData != nullptr)
+		{
+			m_RenderContext->OMSetRenderTargets(1, &m_BackBuffRT, m_SelectionDSV);
+		}
+		else
+		{
+			m_RenderContext->OMSetRenderTargets(1, &m_D3DScreenRTV, m_D3DScreenDSV);
+		}
 
 		// Metallicafan212:	Resolve the RT Texture
 		if (BoundRT != nullptr)

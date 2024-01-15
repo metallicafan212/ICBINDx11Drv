@@ -718,6 +718,12 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	The screen depth and stencil target
 	ID3D11DepthStencilView*		m_D3DScreenDSV;
 
+	// Metallicafan212:	Selection (no MSAA) depth texture
+	ID3D11Texture2D*			m_SelectionDSTex;
+
+	// Metallicafan212:	Selection (no MSAA) depth and stencil target
+	ID3D11DepthStencilView*		m_SelectionDSV;
+
 	// Metallicafan212:	The depth shader resource view (for MSAA resolving)
 	ID3D11ShaderResourceView*	m_ScreenDTSRV;
 
