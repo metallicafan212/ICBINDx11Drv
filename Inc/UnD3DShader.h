@@ -41,8 +41,16 @@ struct FFrameShaderVars
 	// Metallicafan212:	Display white level
 	FLOAT				WhiteLevel;
 
+	// Metallicafan212:	If to output depth as the color, instead of the normal color
+	UBOOL				bDepthDraw;
+
 	// Metallicafan212:	Additional padding
-	FLOAT				Pad[1];//2];//3];
+	//FLOAT				Pad[1];//2];//3];
+
+	FFrameShaderVars()
+	{
+		appMemzero(this, sizeof(FFrameShaderVars));
+	}
 };
 
 // Metallicafan212:	Just a buffer for fog settings

@@ -2021,8 +2021,12 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	}
 #endif
 
+#if DX11_HP2
+	FrameShaderVars.bDepthDraw				= Viewport->Actor != nullptr ? Viewport->Actor->RendMap == REN_Depth : 0;
+#endif
+
 	// Metallicafan212:	Set this ONCE!
-	FrameShaderVars.bDoSelection = HitData != nullptr;
+	FrameShaderVars.bDoSelection			= HitData != nullptr;
 
 	FrameShaderVars.bEnableCorrectFogging	= bEnableCorrectFogging;
 	FrameShaderVars.bOneXLightmaps			= bOneXLightmaps;

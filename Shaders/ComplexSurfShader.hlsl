@@ -60,7 +60,7 @@ struct PSInput
 	float4 dUV		: TEXCOORD4;
 	float4 color	: COLOR0; 
 	float4 fog		: COLOR1;
-	float  distFog	: COLOR2;
+	float  origZ	: COLOR2;
 	float2 detVars	: COLOR3;
 };
 
@@ -140,6 +140,8 @@ PSInput VertShader(VSInput input)
 	
 	// Metallicafan212:	Pass out the original Z
 	output.dUV.z	= input.pos.z;
+	
+	output.origZ	= input.pos.z;
 	
 	// Metallicafan212:	Do the final fog value
 	//output.distFog	= DoDistanceFog(output.pos);
@@ -252,7 +254,7 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	Get the distance fog, using the pixel depth
 	if(bDoDistanceFog)
 	{
-		float NewFog = DoDistanceFog(input.dUV.z);
+		float NewFog = DoDistanceFog(input.origZ);
 		
 		DiffColor = DoPixelFog(/*input.distFog*/NewFog, DiffColor);
 	}

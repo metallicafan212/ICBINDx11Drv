@@ -83,7 +83,8 @@ cbuffer FrameVariables : register (b0)
 	float	HDRExpansion	: packoffset(c6.x);
 	float 	ResolutionScale : packoffset(c6.y);
 	float	WhiteLevel		: packoffset(c6.z);
-	float 	PadHDR2			: packoffset(c6.w);
+	//float 	PadHDR2			: packoffset(c6.w);
+	int		bDepthDraw		: packoffset(c6.w);
 };
 
 // Metallicafan212:	I did the same thing I did for polyflags, and made the whole enum a set of defines
@@ -152,7 +153,7 @@ static float4 SelectionColor;
 // Metallicafan212:	Color masking is currently unimplemented and may not be reimplemented
 
 // Metallicafan212:	Do masked rejection
-#define CLIP_PIXEL(ColorIn) if(!bAlphaEnabled) ColorIn.w = 1.0f; SelectionColor = input.color; clip(ColorIn.w - AlphaReject);
+#define CLIP_PIXEL(ColorIn) if(!bAlphaEnabled) ColorIn.w = 1.0f; SelectionColor = input.color; clip(ColorIn.w - AlphaReject); if(bDepthDraw) ColorIn.xyz = input.origZ / 5000.0;/*input.pos.z / 1.2;*/
 
 float4 DoPixelFog(float DistFog, float4 Color)
 {
@@ -165,7 +166,7 @@ float4 DoPixelFog(float DistFog, float4 Color)
 	float3 Temp = DistanceFogColor.xyz - Color.xyz;
 	Temp *= DistanceFogColor.w;
 	
-	Temp = (Temp * DistFog) + Color;//mad(Temp, DistFog, Color);
+	Temp = (Temp * DistFog) + Color;
 	
 	return float4(Temp, Color.w);
 }
@@ -196,24 +197,11 @@ float4 DoFinalColor(float4 ColorIn)
 		}
 	}
 	
-	// Metallicafan212:	Gamma correct the color!!!!
-	//float OverGamma = 1.0f / Gamma;
-	//ColorIn.xyz = pow(ColorIn.xyz, float3(OverGamma, OverGamma, OverGamma));
-	
-	// Metallicafan212:	If doing HDR, change to linear color
-	//if(GammaMode == GM_PerObject && bHDR && !bModulated)
-	//{
-	//	ColorIn.xyz = pow(ColorIn.xyz, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
-	//}
-	
-	/*
-	// Metallicafan212:	If we're using HDR, change the color space?
-	if(bHDR)//&& !bModulated)
+	// Metallicafan212:	In the depth mode, just return back the color (it's handled in the macro above)
+	if(bDepthDraw)
 	{
-		//ColorIn.xyz *= WhiteLevel * HDRExpansion;
-		ColorIn.xyz = SRGBToRec2020(ColorIn);
+		return ColorIn;
 	}
-	*/
 	
 	// Metallicafan212:	Early return
 	if(BWPercent <= 0.0f)
