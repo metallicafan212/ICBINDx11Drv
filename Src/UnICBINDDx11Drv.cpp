@@ -515,7 +515,7 @@ MAKE_DEVICE:
 	SetRasterState(DXRS_Normal);
 
 	// Metallicafan212:	Reset the shader state
-	GlobalShaderVars	= FGlobalShaderVars();
+	FogShaderVars	= FFogShaderVars();
 	FrameShaderVars		= FFrameShaderVars();
 
 	// Metallicafan212:	Recreate the constant buffer as well
@@ -2023,6 +2023,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 #if DX11_HP2
 	FrameShaderVars.bDepthDraw				= Viewport->Actor != nullptr ? Viewport->Actor->RendMap == REN_Depth : 0;
+	FrameShaderVars.DepthZRange				= DepthDrawZLimit;
 #endif
 
 	// Metallicafan212:	Set this ONCE!
@@ -2076,7 +2077,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	FlashScale		= InFlashScale;
 	FlashFog		= InFlashFog;
 
-	if (GlobalShaderVars.bDoDistanceFog || GlobalShaderVars.bFadeFogValues)
+	if (FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues)
 		TickDistanceFog();
 
 	// Metallicafan212:	Update the shader variables

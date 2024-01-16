@@ -244,13 +244,13 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 
 	/*
 	// Metallicafan212:	Common static information
-	MDef->AlphaReject			= ParentDevice->GlobalShaderVars.AlphaReject;
-	MDef->bColorMasked			= ParentDevice->GlobalShaderVars.bColorMasked;
-	MDef->BWPercent				= ParentDevice->GlobalShaderVars.BWPercent;
+	MDef->AlphaReject			= ParentDevice->FogShaderVars.AlphaReject;
+	MDef->bColorMasked			= ParentDevice->FogShaderVars.bColorMasked;
+	MDef->BWPercent				= ParentDevice->FogShaderVars.BWPercent;
 
 	// Metallicafan212:	Automatically tell the shader that it's doing selection testing
 	MDef->bSelection			= (ParentDevice->m_HitData != nullptr);
-	MDef->bAlphaEnabled			= ParentDevice->GlobalShaderVars.bAlphaEnabled;
+	MDef->bAlphaEnabled			= ParentDevice->FogShaderVars.bAlphaEnabled;
 
 	// Metallicafan212:	Temp hack to just get modulated rendering right. It'll disable gamma correction
 	MDef->bModulated			= (ParentDevice->CurrentPolyFlags & PF_Modulated);

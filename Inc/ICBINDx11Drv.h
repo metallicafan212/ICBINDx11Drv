@@ -241,19 +241,9 @@ struct FD3DSecondaryVert
 // Metallicafan212:	Cache stuff
 typedef unsigned long long D3DCacheId;
 
-struct FGlobalShaderVars
+struct FFogShaderVars
 {
 	UBOOL				bDoDistanceFog;
-	/*
-	UBOOL				bColorMasked;
-	UBOOL				bDoDistanceFog;
-
-	FLOAT				AlphaReject;
-	FLOAT				BWPercent;
-
-	UBOOL				bAlphaEnabled;
-	UBOOL				bNVTileHack;
-	*/
 
 	// Metallicafan212:	Distance fog related stuff
 	//					These are the values that get sent to the shader immediately
@@ -286,11 +276,7 @@ struct FGlobalShaderVars
 	FLOAT				FogSetTime;
 
 	// Metallicafan212:	Constructor
-	FGlobalShaderVars() :
-		//bColorMasked(0),
-		//bDoDistanceFog(0),
-		//AlphaReject(1e-6f),
-		//BWPercent(0.0f),
+	FFogShaderVars() :
 		DistanceFogColor(0.0f, 0.0f, 0.0f, 0.0f),
 		DistanceFogSettings(1.0f / 32767.0f, 1.0f, 0.0f, 0.0f),
 		DistanceFogFinal(0.0f, 0.0f, 0.0f, 0.0f),
@@ -616,6 +602,10 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	Alpha rejection value, for masking
 	FLOAT						MaskedAlphaReject;
 
+	// Metallicafan212:	Configured Z range for the depth RMode
+	//					Max depth is 65535.0f
+	FLOAT						DepthDrawZLimit;
+
 	INT							LastAdditionalBuffers;
 
 	// Metallicafan212:	Versions to check on lock if they changed
@@ -811,7 +801,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	Holds onto values that the shaders (and renderer) code will be interested in
 	//					This does not directly map to variables in the shader itself, as there's copies used to do fading
-	FGlobalShaderVars					GlobalShaderVars;
+	FFogShaderVars						FogShaderVars;
 
 	// Metallicafan212:	Holds onto global variables for the shaders, so we're not uploading so much info all the time
 	FFrameShaderVars					FrameShaderVars;
@@ -1712,9 +1702,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	inline void UpdateFogSettings()
 	{
 		// Metallicafan212:	Now set the vars
-		GlobalDistFogSettings.DistanceFogColor		= GlobalShaderVars.DistanceFogColor;
-		GlobalDistFogSettings.DistanceFogSettings	= GlobalShaderVars.DistanceFogSettings;
-		GlobalDistFogSettings.bDistanceFogEnabled	= GlobalShaderVars.bDoDistanceFog || GlobalShaderVars.bFadeFogValues;
+		GlobalDistFogSettings.DistanceFogColor		= FogShaderVars.DistanceFogColor;
+		GlobalDistFogSettings.DistanceFogSettings	= FogShaderVars.DistanceFogSettings;
+		GlobalDistFogSettings.bDistanceFogEnabled	= FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues;
 
 #if 0
 		m_RenderContext->UpdateSubresource(GlobalDistFogBuffer, 0, nullptr, &GlobalDistFogSettings, sizeof(FDistFogVars), 0);

@@ -456,54 +456,54 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 	guard(UICBINDx11RenderDevice::SetDistanceFog);
 
 	// Metallicafan212:	Fog is already disabled?
-	if (!Enable && !GlobalShaderVars.bDoDistanceFog)
+	if (!Enable && !FogShaderVars.bDoDistanceFog)
 		return;
 
 	// Metallicafan212:	Update the values if it's enabled
-	GlobalShaderVars.FogFadeRate = FadeRate;
+	FogShaderVars.FogFadeRate = FadeRate;
 
 	if (Enable)
 	{
 		// Metallicafan212:	Check if it's equal
-		if(GlobalShaderVars.bDoDistanceFog && GlobalShaderVars.TargetFogColor == Color && GlobalShaderVars.CurrentFogStart == FogStart && GlobalShaderVars.CurrentFogEnd == FogEnd)
+		if(FogShaderVars.bDoDistanceFog && FogShaderVars.TargetFogColor == Color && FogShaderVars.CurrentFogStart == FogStart && FogShaderVars.CurrentFogEnd == FogEnd)
 			return;
 
 		// Metallicafan212:	Save the fog settings
-		GlobalShaderVars.LastFogColor		= GlobalShaderVars.DistanceFogColor;
-		GlobalShaderVars.LastFogSettings	= GlobalShaderVars.DistanceFogSettings;
+		FogShaderVars.LastFogColor		= FogShaderVars.DistanceFogColor;
+		FogShaderVars.LastFogSettings	= FogShaderVars.DistanceFogSettings;
 
 		// Metallicafan212:	Set the fog values
-		GlobalShaderVars.TargetFogColor		= Color;
+		FogShaderVars.TargetFogColor		= Color;
 
 		// Metallicafan212:	Start and end
-		GlobalShaderVars.TargetFogSettings	= FPlane(1.0f / (FogEnd - FogStart), (FogEnd / (FogEnd - FogStart)) - 1.0f, Color.W, 0.0f);
+		FogShaderVars.TargetFogSettings	= FPlane(1.0f / (FogEnd - FogStart), (FogEnd / (FogEnd - FogStart)) - 1.0f, Color.W, 0.0f);
 
-		GlobalShaderVars.bFadeFogValues		= 1;
+		FogShaderVars.bFadeFogValues		= 1;
 
-		GlobalShaderVars.CurrentFogStart	= FogStart;
-		GlobalShaderVars.CurrentFogEnd		= FogEnd;
+		FogShaderVars.CurrentFogStart	= FogStart;
+		FogShaderVars.CurrentFogEnd		= FogEnd;
 	}
 	else
 	{
 		// Metallicafan212:	Save the fog settings
-		GlobalShaderVars.LastFogColor		= GlobalShaderVars.DistanceFogColor;
-		GlobalShaderVars.LastFogSettings	= GlobalShaderVars.DistanceFogSettings;
+		FogShaderVars.LastFogColor		= FogShaderVars.DistanceFogColor;
+		FogShaderVars.LastFogSettings	= FogShaderVars.DistanceFogSettings;
 
 		// Metallicafan212:	Fade out
-		GlobalShaderVars.TargetFogColor		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
-		GlobalShaderVars.TargetFogSettings	= FPlane(1.0f / 32768.0f, 0.0f, 0.0f, 0.0f);
+		FogShaderVars.TargetFogColor		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
+		FogShaderVars.TargetFogSettings	= FPlane(1.0f / 32768.0f, 0.0f, 0.0f, 0.0f);
 
-		GlobalShaderVars.bFadeFogValues		= 1;
+		FogShaderVars.bFadeFogValues		= 1;
 
-		GlobalShaderVars.CurrentFogStart	= GlobalShaderVars.CurrentFogEnd = 0.0f;
+		FogShaderVars.CurrentFogStart	= FogShaderVars.CurrentFogEnd = 0.0f;
 	}
 
 
 	// Metallicafan212:	Grab the current time
-	GlobalShaderVars.FogSetTime = Viewport->CurrentTime.GetFloat();
+	FogShaderVars.FogSetTime = Viewport->CurrentTime.GetFloat();
 
 	// Metallicafan212:	Keep the val around, so we can selectively set blending
-	GlobalShaderVars.bDoDistanceFog = Enable;
+	FogShaderVars.bDoDistanceFog = Enable;
 
 	UpdateFogSettings();
 
@@ -516,17 +516,17 @@ void UICBINDx11RenderDevice::TickDistanceFog()
 	guard(UICBINDx11RenderDevice::TickDistanceFog);
 
 	// Metallicafan212:	If fog is disabled but we don't have 0 alpha, fade out
-	if (GlobalShaderVars.bFadeFogValues)
+	if (FogShaderVars.bFadeFogValues)
 	{
 		// Metallicafan212:	fade the current fog setting
-		FLOAT CurrPos = GlobalShaderVars.FogFadeRate <= 0.0f ? 1.0f : ((Viewport->CurrentTime.GetFloat() - GlobalShaderVars.FogSetTime) / GlobalShaderVars.FogFadeRate);
+		FLOAT CurrPos = FogShaderVars.FogFadeRate <= 0.0f ? 1.0f : ((Viewport->CurrentTime.GetFloat() - FogShaderVars.FogSetTime) / FogShaderVars.FogFadeRate);
 
 		if (CurrPos >= 1.0f)
 		{
-			GlobalShaderVars.DistanceFogColor		= GlobalShaderVars.TargetFogColor;
-			GlobalShaderVars.DistanceFogSettings	= GlobalShaderVars.TargetFogSettings;
+			FogShaderVars.DistanceFogColor		= FogShaderVars.TargetFogColor;
+			FogShaderVars.DistanceFogSettings	= FogShaderVars.TargetFogSettings;
 
-			GlobalShaderVars.bFadeFogValues = 0;
+			FogShaderVars.bFadeFogValues = 0;
 		}
 		else
 		{
@@ -537,17 +537,17 @@ void UICBINDx11RenderDevice::TickDistanceFog()
 			F.Z = Lerp(A.Z, B.Z, CurrPos); \
 			F.W = Lerp(A.W, B.W, CurrPos);
 
-			LERP_FPLANE(GlobalShaderVars.DistanceFogColor,		GlobalShaderVars.LastFogColor,		GlobalShaderVars.TargetFogColor);
-			LERP_FPLANE(GlobalShaderVars.DistanceFogSettings,	GlobalShaderVars.LastFogSettings,	GlobalShaderVars.TargetFogSettings);
+			LERP_FPLANE(FogShaderVars.DistanceFogColor,		FogShaderVars.LastFogColor,		FogShaderVars.TargetFogColor);
+			LERP_FPLANE(FogShaderVars.DistanceFogSettings,	FogShaderVars.LastFogSettings,	FogShaderVars.TargetFogSettings);
 		}
 	}
 
 	// Metallicafan212:	Set the alpha on the other arrays
-	GlobalShaderVars.ModFogColor.W		= GlobalShaderVars.DistanceFogColor.W;
-	GlobalShaderVars.TransFogColor.W	= GlobalShaderVars.DistanceFogColor.W;
+	FogShaderVars.ModFogColor.W		= FogShaderVars.DistanceFogColor.W;
+	FogShaderVars.TransFogColor.W	= FogShaderVars.DistanceFogColor.W;
 
 	// Metallicafan212:	Keep a copy so we can swap it for the modulated and translucent hacks
-	GlobalShaderVars.DistanceFogFinal	= GlobalShaderVars.DistanceFogColor;
+	FogShaderVars.DistanceFogFinal	= FogShaderVars.DistanceFogColor;
 
 	UpdateFogSettings();
 
@@ -559,7 +559,7 @@ void UICBINDx11RenderDevice::ForceSetFogColor(FPlane FogColor)
 	guard(UICBINDx11RenderDevice::ForceSetFogColor);
 
 	// Metallicafan212:	TODO!
-	GlobalShaderVars.DistanceFogColor = FogColor;
+	FogShaderVars.DistanceFogColor = FogColor;
 
 	UpdateGlobalShaderVars();
 
@@ -573,13 +573,13 @@ void UICBINDx11RenderDevice::SetBWPercent(FLOAT Percent)
 
 	Percent = Clamp(Percent, 0.0f, 1.0f);
 
-	if (Percent != GlobalPolyflagVars.BWPercent)//GlobalShaderVars.BWPercent)
+	if (Percent != GlobalPolyflagVars.BWPercent)//FogShaderVars.BWPercent)
 	{
 		// Metallicafan212:	End any buffering now
 		EndBuffering();
 
 		// Metallicafan212:	Update it
-		//GlobalShaderVars.BWPercent = Percent;
+		//FogShaderVars.BWPercent = Percent;
 		GlobalPolyflagVars.BWPercent = Percent;
 
 		UpdatePolyflagsVars();

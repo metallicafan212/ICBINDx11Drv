@@ -44,8 +44,11 @@ struct FFrameShaderVars
 	// Metallicafan212:	If to output depth as the color, instead of the normal color
 	UBOOL				bDepthDraw;
 
+	// Metallicafan212:	Configured Z range for the depth draw mode
+	FLOAT				DepthZRange;
+
 	// Metallicafan212:	Additional padding
-	//FLOAT				Pad[1];//2];//3];
+	FLOAT				Pad[3];
 
 	FFrameShaderVars()
 	{

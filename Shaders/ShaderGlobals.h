@@ -85,6 +85,8 @@ cbuffer FrameVariables : register (b0)
 	float	WhiteLevel		: packoffset(c6.z);
 	//float 	PadHDR2			: packoffset(c6.w);
 	int		bDepthDraw		: packoffset(c6.w);
+	float	DepthDrawLimit	: packoffset(c7.x);
+	float3	Paddddddd		: packoffset(c7.y);
 };
 
 // Metallicafan212:	I did the same thing I did for polyflags, and made the whole enum a set of defines
@@ -153,7 +155,7 @@ static float4 SelectionColor;
 // Metallicafan212:	Color masking is currently unimplemented and may not be reimplemented
 
 // Metallicafan212:	Do masked rejection
-#define CLIP_PIXEL(ColorIn) if(!bAlphaEnabled) ColorIn.w = 1.0f; SelectionColor = input.color; clip(ColorIn.w - AlphaReject); if(bDepthDraw) ColorIn.xyz = input.origZ / 5000.0;/*input.pos.z / 1.2;*/
+#define CLIP_PIXEL(ColorIn) if(!bAlphaEnabled) ColorIn.w = 1.0f; SelectionColor = input.color; clip(ColorIn.w - AlphaReject); if(bDepthDraw) ColorIn.xyz = input.origZ / DepthDrawLimit;/*input.pos.z / 1.2;*/
 
 float4 DoPixelFog(float DistFog, float4 Color)
 {

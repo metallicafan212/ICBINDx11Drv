@@ -188,6 +188,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	AddIntProp(CPP_PROP(HDRWhiteBalanceNits), 0);
 
+	AddFloatProp(CPP_PROP(DepthDrawZLimit), 5000.0f);
+
 	unguard;
 }
 

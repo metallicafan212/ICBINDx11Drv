@@ -58,11 +58,11 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 	//					Intel and AMD both sample correctly
 	if (bIsNV && (TexNum == 0 && PolyFlags & PF_NoSmooth && Info->NumMips == 1))
 	{
-		GlobalShaderVars.bNVTileHack = 1;
+		FogShaderVars.bNVTileHack = 1;
 	}
 	else
 	{
-		GlobalShaderVars.bNVTileHack = 0;
+		FogShaderVars.bNVTileHack = 0;
 	}
 	*/
 
@@ -1316,7 +1316,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 		// Metallicafan212:	Set the correct fake fog values
 		//					Reset fog if the XOR was Translucent or Modulated
 		//					TODO! This can be a bit glitchy in the editor, where it turns all fog into modulated fog
-		if ((GlobalShaderVars.bDoDistanceFog || GlobalShaderVars.bFadeFogValues) && (Xor & (PF_Translucent | PF_Modulated | PF_AlphaBlend | PF_Highlighted)))
+		if ((FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues) && (Xor & (PF_Translucent | PF_Modulated | PF_AlphaBlend | PF_Highlighted)))
 		{
 			PFLAG Flags = (blendFlags & RELEVANT_BLEND_FLAGS);
 
@@ -1324,17 +1324,17 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			//					Sigh.... If only they just added a alpha flag instead of reusing flags, it makes it extremely annoying
 			if (Flags & PF_Translucent && !(Flags & (PF_AlphaBlend | PF_Highlighted)))
 			{;
-				GlobalShaderVars.DistanceFogColor = GlobalShaderVars.TransFogColor;
+				FogShaderVars.DistanceFogColor = FogShaderVars.TransFogColor;
 				UpdateFogSettings();
 			}
 			else if (Flags & PF_Modulated)
 			{
-				GlobalShaderVars.DistanceFogColor = GlobalShaderVars.ModFogColor;
+				FogShaderVars.DistanceFogColor = FogShaderVars.ModFogColor;
 				UpdateFogSettings();
 			}
 			else
 			{
-				GlobalShaderVars.DistanceFogColor = GlobalShaderVars.DistanceFogFinal;
+				FogShaderVars.DistanceFogColor = FogShaderVars.DistanceFogFinal;
 				UpdateFogSettings();
 			}
 		}
