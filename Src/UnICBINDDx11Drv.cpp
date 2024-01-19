@@ -187,7 +187,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	// Metallicafan212:	On my system, the multithreaded supported device runs ever so slightly faster, for no reason
 	UINT Flags =	D3D11_CREATE_DEVICE_BGRA_SUPPORT
-				| bUseMultiThreadedDevice ? 0 : D3D11_CREATE_DEVICE_SINGLETHREADED
+				| (bUseMultiThreadedDevice ? 0 : D3D11_CREATE_DEVICE_SINGLETHREADED)
 				//|	D3D11_CREATE_DEVICE_SINGLETHREADED
 				|	(!bDisableSDKLayers ? D3D11_CREATE_DEVICE_DEBUG : 0)
 				;
