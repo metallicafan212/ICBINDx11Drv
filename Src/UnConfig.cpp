@@ -190,6 +190,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	AddFloatProp(CPP_PROP(DepthDrawZLimit), 5000.0f);
 
+	// Metallicafan212:	For some reason on my system, this runs slightly faster
+	AddBoolProp(CPP_PROP(bUseMultiThreadedDevice), 1);
+
 	unguard;
 }
 

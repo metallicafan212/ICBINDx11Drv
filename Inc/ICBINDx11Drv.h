@@ -237,7 +237,6 @@ struct FD3DSecondaryVert
 	FLOAT	FV;
 #endif
 };
-
 // Metallicafan212:	Cache stuff
 typedef unsigned long long D3DCacheId;
 
@@ -311,14 +310,6 @@ static inline DWORD GetTypeHash(const D3DCacheId& A)
 }
 #endif
 
-/*
-static inline DWORD GetCacheHash(const QWORD& A)
-{
-	QWORD Value			= (QWORD)A;
-	return (DWORD)Value ^ ((DWORD)(Value >> 16)) ^ ((DWORD)(Value >> 32));
-}
-*/
-
 // Metallicafan212:	Texture bind definition
 struct FD3DTexture
 {
@@ -361,18 +352,11 @@ struct FD3DTexture
 	INT					VSize;
 
 	// Metallicafan212:	Scaling info
-	//FLOAT				UScale;
-	//FLOAT				VScale;
-
 	INT					UClamp;
 	INT					VClamp;
 
 	// Metallicafan212:	UT469 (and now HP2) tracked number of changes to this texture
 	INT					RealtimeChangeCount;
-
-	//FLOAT			UMult;
-	//FLOAT			VMult;
-
 
 	// Metallicafan212:	Number of mips
 	INT					NumMips;
@@ -380,8 +364,6 @@ struct FD3DTexture
 	// Metallicafan212:	Color for the "color masking" system I added
 	FPlane				MaskedColor;
 	FPlane				MaskedGranularity;
-
-	//ID3D11UnorderedAccessView*	TexUAV;
 
 	// Metallicafan212:	Array of UAVs for this texture
 	TArray<ID3D11UnorderedAccessView*> UAVMips;
@@ -417,15 +399,37 @@ struct FD3DBoundTex
 	FLOAT						VScale;
 };
 
+// Metallicafan212:	Cached draw call
+//					TODO! Remove cached variables, or define a way to specify extra values for draw calls?
+struct FDrawCall
+{
+	// Metallicafan212:	Flags that were set in this draw call
+	PFLAG				PolyFlags;
+
+	// Metallicafan212:	Vertex range (start and size)
+	SIZE_T				VStart;
+	SIZE_T				VSize;
+
+	// Metallicafan212:	Textures bound
+	FD3DBoundTex		TBinds[MAX_TEXTURES];
+
+	// Metallicafan212:	Shader to use for this draw
+	class FD3DShader*	Shader;
+
+	// Metallicafan212:	If to use compressed Z range
+	UBOOL				bCompressZ;
+
+	// Metallicafan212:	Distance fog settings for this draw?
+
+};
+
+
 // Metallicafan212:	Generic function to handle all texture types
 typedef void (UICBINDx11RenderDevice::*UploadFunc)(FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
-//typedef void (UICBINDx11RenderDevice::*ConversionFunc)(void* Source, SIZE_T SourceLength, FD3DTexture* Tex, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
 
 // Metallicafan212:	Texture support table info
 struct FD3DTexType
 {
-	//typedef void (*UploadFunc)(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
-	//typedef void (*ConversionFunc)(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
 	typedef SIZE_T (FD3DTexType::* GetTypePitch)(INT USize);
 
 	// Metallicafan212:	The UE format
@@ -445,14 +449,10 @@ struct FD3DTexType
 	// Metallicafan212:	TODO! Memory uploading function
 	UploadFunc		TexUploadFunc;
 
-	// Metallicafan212:	Conversion function, needed to convert an unsupported texture format to a supported one
-	//					TODO! Implement conversions for BC1-7 if the hardware doesn't support it!!! (DX9 and DX10 level hardware)
-	//ConversionFunc	TexConvFunc;
-
 	// Metallicafan212:	Pitch function
-	GetTypePitch		GetTexturePitch;
+	GetTypePitch	GetTexturePitch;
 
-	SIZE_T GetPitch(INT USize)
+	FORCEINLINE SIZE_T GetPitch(INT USize)
 	{
 #if DX11_UT_469
 		return FTextureBlockBytes(Format)* FTextureBlockAlignedWidth(Format, USize) / FTextureBlockWidth(Format);
@@ -462,21 +462,16 @@ struct FD3DTexType
 	}
 
 	// Metallicafan212:	THIS IS ASSUMED RIGHT NOW!!!!
-	SIZE_T RawPitch(INT USize)
+	FORCEINLINE SIZE_T RawPitch(INT USize)
 	{
 		return BytesPerPixel * USize;
 	}
 
-	SIZE_T BlockCompressionPitch(INT USize)
+	FORCEINLINE SIZE_T BlockCompressionPitch(INT USize)
 	{
 		return max(1, ((USize + 3) / 4)) * BlockSize;
 	}
 };
-
-// Metallicafan212:	TODO! Refactor so this needs a LOT less arguments
-void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
-void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
-void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, class UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
 
 // Metallicafan212:	Base layout declaration
 #if EXTRA_VERT_INFO
@@ -529,10 +524,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	FLOAT						OrthoLineThickness;
 	UBOOL						bDebugSelection;
 	UBOOL						bUseD3D11On12;
-
-	//UBOOL						bUseMSAAComputeShader;
 	UBOOL						bDisableDebugInterface;
 	UBOOL						bDisableSDKLayers;
+	UBOOL						bUseMultiThreadedDevice;
 	UBOOL						UseVSync;
 
 	// Metallicafan212:	If to use the DX9 style flat colors instead (a lot brighter and hides the original textures)
@@ -543,15 +537,6 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	If HDR is active (and the screenformat is set)
 	UBOOL						ActiveHDR;
-
-	/*
-	// Metallicafan212:	TODO! MSAA resolving vars
-	FLOAT						MSAAFilterSize;
-	FLOAT						MSAAGaussianSigma;
-	FLOAT						MSAACubicB;
-	FLOAT 						MSAACubicC;
-	INT							MSAAFilterType;
-	*/
 
 	// Metallicafan212:	HACK coord minus for the current MSAA level...
 	//					Certain levels need different coord movements
@@ -735,9 +720,6 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	So we can easily request wireframe
 	DWORD						ExtraRasterFlags;
 
-	// Metallicafan212:	The extended window style before we created DX11
-	LONG_PTR					ViewExtendedStyle;
-
 #if DX11_HP2
 	// Metallicafan212:	DXGI surface for D2D
 	IDXGISurface*				m_DXGISurf;
@@ -786,11 +768,8 @@ class UICBINDx11RenderDevice : public URenderDevice
 #endif
 
 	FD3DMeshShader*						FMeshShader;
-
 	FD3DSurfShader*						FSurfShader;
-
 	FD3DLineShader*						FLineShader;
-
 	FD3DMSAAShader*						FMSAAShader;
 	
 #if P8_COMPUTE_SHADER
@@ -894,10 +873,6 @@ class UICBINDx11RenderDevice : public URenderDevice
 	BYTE*								ConversionMemory;
 	SIZE_T								ConversionMemSize;
 
-	// Metallicafan212:	Special texture for holding the palette colors
-	ID3D11Texture2D*					PaletteTexture;
-	ID3D11ShaderResourceView*			PaletteSRV;
-
 	// Metallicafan212:	Texturing support
 	//					TODO! Query for this limitation and put the number in a ifdef!
 	FD3DBoundTex						BoundTextures[MAX_TEXTURES];
@@ -906,7 +881,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	ID3D11ShaderResourceView*			BlankResourceView;
 	ID3D11SamplerState*					BlankSampler;
 
-	//TMap<DWORD, FD3DTexture>			TextureMap;
+	// Metallicafan212:	Generic class so we can implement different caching styles without having to change a bunch of files
 	FTextureCache						TextureMap;
 
 #if !USE_UNODERED_MAP_EVERYWHERE
@@ -928,9 +903,6 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	TODO! Global complex surface info
 	FCoords								SurfCoords;
-
-	// Metallicafan212:	Projection matrix
-	//DirectX::XMMATRIX					Proj;
 
 	// Metallicafan212:	Vertex buffer stuff
 	//					Per M$:
@@ -1021,10 +993,8 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	A pre-defined array containing indicies to copy from
 	//					TODO! Redefine the max size, right now (for consistency and preventing memory issues) it matches the iBuffer length
-	INT							IndexValueArray[IBUFF_SIZE];
-
-	// Metallicafan212:	Line buffer?
-	//ID3D11Buffer*				LineBuffer;
+	static UBOOL				bSetupIValArray;
+	static INT					IndexValueArray[IBUFF_SIZE];
 
 	// Metallicafan212:	Secondary vertex buffer, which is only locked when needed
 	ID3D11Buffer*				SecondaryVertexBuffer;

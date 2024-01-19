@@ -8,6 +8,9 @@ UBOOL GWineAndDine = 0;
 IMPLEMENT_CLASS(UICBINDx11RenderDevice);
 IMPLEMENT_PACKAGE(ICBINDx11Drv);
 
+UBOOL UICBINDx11RenderDevice::bSetupIValArray = 0;
+INT	  UICBINDx11RenderDevice::IndexValueArray[IBUFF_SIZE];
+
 void UICBINDx11RenderDevice::SetupDevice()
 {
 	guard(UICBINDx11RenderDevice::SetupDevice);
@@ -106,9 +109,6 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_MSAAResolveSRV);
 	SAFE_RELEASE(m_MSAAResolveTex);
 
-	//SAFE_RELEASE(m_ScreenOpacityTex);
-	//SAFE_RELEASE(m_ScreenOpacityRTSRV);
-	//SAFE_RELEASE(m_D3DScreenOpacityRTV);
 
 	// Metallicafan212:	Depth stencil target
 	SAFE_RELEASE(m_ScreenDSTex);
@@ -185,41 +185,17 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	D3D_FEATURE_LEVEL* FLPtr = &FLList[0];
 
-	// Metallicafan212:	Make it single threaded for more performance?
+	// Metallicafan212:	On my system, the multithreaded supported device runs ever so slightly faster, for no reason
 	UINT Flags =	D3D11_CREATE_DEVICE_BGRA_SUPPORT
-	//					TODO! Reeval if we need to use child threads in the future
-				|	D3D11_CREATE_DEVICE_SINGLETHREADED
+				| bUseMultiThreadedDevice ? 0 : D3D11_CREATE_DEVICE_SINGLETHREADED
+				//|	D3D11_CREATE_DEVICE_SINGLETHREADED
 				|	(!bDisableSDKLayers ? D3D11_CREATE_DEVICE_DEBUG : 0)
 				;
 	
 	GLog->Logf(TEXT("DX11: Creating device with the maximum feature level"));
 
 MAKE_DEVICE:
-	HRESULT hr = S_OK;
-
-	// Metallicafan212:	TODO! May not even support this lol
-	//					It probably wouldn't even run any better, and you need a ID3D12Device
-	/*
-	if (bUseD3D11On12)
-	{
-		hr = D3D11On12CreateDevice(nullptr, Flags, FLPtr, FLCount, nullptr, 0, 0, &m_D3DDevice, &m_D3DDeviceContext, &m_FeatureLevel);
-
-		if (FAILED(hr))
-		{
-			// Metallicafan212:	Not supported? Jump down
-			goto NORMAL_DX11;
-		}
-		else
-		{
-			GLog->Logf(TEXT("DX11: Created device using D3D11On12"));
-		}
-	}
-	else
-	*/
-	{
-	//NORMAL_DX11:
-		hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, FLPtr, FLCount, D3D11_SDK_VERSION, &m_D3DDevice, &m_FeatureLevel, &m_D3DDeviceContext);
-	}
+	HRESULT hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, FLPtr, FLCount, D3D11_SDK_VERSION, &m_D3DDevice, &m_FeatureLevel, &m_D3DDeviceContext);
 
 	// Metallicafan212:	Check if it failed due to the debug layer
 	if (FAILED(hr) && (Flags & D3D11_CREATE_DEVICE_DEBUG))
@@ -228,7 +204,7 @@ MAKE_DEVICE:
 		Flags &= ~D3D11_CREATE_DEVICE_DEBUG;
 
 		// Metallicafan212:	Don't try again on the next run
-		bDisableSDKLayers = 0;
+		bDisableSDKLayers = 1;
 
 		goto MAKE_DEVICE;
 	}
@@ -556,9 +532,16 @@ MAKE_DEVICE:
 	m_RenderContext->CSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
 
 	// Metallicafan212:	Setup the pre-defined index values array
-	for (INT i = 0; i < IBUFF_SIZE; i++)
+	if (!bSetupIValArray)
 	{
-		IndexValueArray[i] = i;
+		for (INT i = 0; i < IBUFF_SIZE; i++)
+		{
+			IndexValueArray[i] = i;
+		}
+
+		// Metallicafan212:	Mark it as initialized
+		//					TODO! Find some way to generate this as a static array via preprocessor
+		bSetupIValArray = 1;
 	}
 
 	// Metallicafan212:	If we're using deferred rendering, we HAVE to map with discard first!!!!
@@ -711,9 +694,6 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 #if USE_COMPUTE_SHADER
 	FMshLghtCompShader	= nullptr;
 #endif
-
-	PaletteTexture		= nullptr;
-	PaletteSRV = nullptr;
 
 	// Metallicafan212:	Blank tex, resource, and samplers for defaults
 	BlankTexture		= nullptr;
@@ -1047,9 +1027,6 @@ void UICBINDx11RenderDevice::SetupResources()
 	SAFE_RELEASE(m_DXGISurf);
 	SAFE_RELEASE(m_TextParams);
 #endif
-
-	SAFE_RELEASE(PaletteSRV);
-	SAFE_RELEASE(PaletteTexture);
 
 	// Metallicafan212:	No bind texture/sampler
 	SAFE_RELEASE(BlankTexture);
@@ -1610,20 +1587,6 @@ void UICBINDx11RenderDevice::SetupResources()
 	SDesc.ComparisonFunc	= D3D11_COMPARISON_NEVER;
 
 	hr = m_D3DDevice->CreateSamplerState(&SDesc, &BlankSampler);
-
-	ThrowIfFailed(hr);
-
-	// Metallicafan212:	Make a texture to hold onto the palette info
-	Desc.Width				= 256;
-	Desc.Height				= 1;
-	Desc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;
-
-	hr = m_D3DDevice->CreateTexture2D(&Desc, nullptr, &PaletteTexture);
-
-	ThrowIfFailed(hr);
-
-	// Metallicafan212:	Now the shader resource for it
-	hr = m_D3DDevice->CreateShaderResourceView(PaletteTexture, nullptr, &PaletteSRV);
 
 	ThrowIfFailed(hr);
 
@@ -2510,30 +2473,89 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 	JUST_PRESENT:
 		static constexpr DXGI_PRESENT_PARAMETERS Parm{ 0, nullptr, nullptr, nullptr };
-		HRESULT hr = m_D3DSwapChain->Present1(UseVSync ? 1 : 0, (bAllowTearing && !bFullscreen && !UseVSync ? DXGI_PRESENT_ALLOW_TEARING : 0), &Parm);//m_D3DSwapChain->Present(0, 0);
+		HRESULT hr = m_D3DSwapChain->Present1(UseVSync ? 1 : 0, (bAllowTearing && !bFullscreen && !UseVSync ? DXGI_PRESENT_ALLOW_TEARING : 0), &Parm);
 
-		// Metallicafan212:	Check if DXGI needs a resize (alt+tab in fullscreen for example)
-		if (hr == DXGI_ERROR_INVALID_CALL)
+		// Metallicafan212:	Check the return code
+		switch (hr)
 		{
-			SetupResources();
-		}
-		else if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
-		{
-			SetupDevice();
-			SetupResources();
-		}
-		else if(!SUCCEEDED(hr))//hr != DXGI_STATUS_OCCLUDED)
-		{
-			ThrowIfFailed(hr);
+			// Metallicafan212:	Check if DXGI needs a resize (alt+tab in fullscreen for example)
+			case DXGI_ERROR_INVALID_CALL:
+			{
+				SetupResources();
+				break;
+			}
+
+			// Metallicafan212:	Errors here indicate large failures
+			case DXGI_ERROR_DEVICE_REMOVED:
+			case DXGI_ERROR_DEVICE_RESET:
+			{
+				// Metallicafan212:	Figure out the issue
+				HRESULT reason = m_D3DDevice->GetDeviceRemovedReason();
+
+				switch (reason)
+				{
+					case DXGI_ERROR_DEVICE_HUNG:
+					{
+						appErrorf(TEXT("DX11: Device hung, cannot continue"));
+
+						break;
+					}
+
+					case DXGI_ERROR_DEVICE_REMOVED:
+					{
+						GWarn->Logf(TEXT("DX11: Device removed, recreating the driver resources"));
+
+						SetupDevice();
+						SetupResources();
+
+						break;
+					}
+
+					case DXGI_ERROR_DEVICE_RESET:
+					{
+						GWarn->Logf(TEXT("DX11: Device reset, recreating the driver resources"));
+						SetupDevice();
+						SetupResources();
+
+						break;
+					}
+
+					case DXGI_ERROR_DRIVER_INTERNAL_ERROR:
+					{
+						GWarn->Logf(TEXT("DX11: Driver internal error, recreating the device"));
+
+						SetupDevice();
+						SetupResources();
+
+						break;
+					}
+
+					case DXGI_ERROR_INVALID_CALL:
+					{
+						appErrorf(TEXT("DX11: Device removed reason is invalid call"));
+
+						break;
+					}
+				}
+
+				break;
+			}
+
+			default:
+			{
+				// Metallicafan212:	Other errors? Throw if so
+				ThrowIfFailed(hr);
+			}
 		}
 	}
 
+	// Metallicafan212:	Allow the user to see the selection rendering (rather than quickly swapping back)
 	if (bDebugSelection && m_HitData != nullptr)
 	{
 		appSleep(1.0f);
 	}
 
-	// Metallicafan212:	Grab all the debug info!!!!
+	// Metallicafan212:	Get optional debug info
 	if (m_D3DQueue != nullptr)
 	{
 		UINT64 n = m_D3DQueue->GetNumStoredMessages();
@@ -2557,14 +2579,14 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 				if (mSize != 0)
 				{
-					temp = (D3D11_MESSAGE*)malloc(mSize);
+					temp = (D3D11_MESSAGE*)appMalloc(mSize, TEXT("DX11 Debug Message"));
 
 					m_D3DQueue->GetMessage(i, temp, &mSize);
 
 					// Metallicafan212:	Now log it
 					GWarn->Logf(TEXT("DX11 debug message (%s): %s at %s"), GetD3DDebugSeverity(temp->Severity), appFromAnsi(temp->pDescription), tStamp);
 
-					free(temp);
+					appFree(temp);
 				}
 			}
 		}
@@ -2598,16 +2620,6 @@ void UICBINDx11RenderDevice::ClearZ(FSceneNode* Frame)
 void UICBINDx11RenderDevice::EndFlash()
 {
 	guard(UICBINDx11RenderDevice::EndFlash);
-
-#if DX11_HP2
-	/*
-	// Metallicafan212:	Test for a very small, but not 0 float, since the code seems to keep running for some reason
-	if ((1.0f - Min(FlashScale.W * 2.0f, 1.0f)) <= 0.0001f)
-	{
-		return;
-	}
-	*/
-#endif
 
 	// Metallicafan212:	Draw it as a tile, but using the generic shader
 #if DX11_HP2
@@ -2644,8 +2656,8 @@ void UICBINDx11RenderDevice::EndFlash()
 			Z = 0.1f;
 		}
 
-		FLOAT XL	= ScaledSceneNodeX;//m_sceneNodeX;
-		FLOAT YL	= ScaledSceneNodeY;//m_sceneNodeY;
+		FLOAT XL	= ScaledSceneNodeX;
+		FLOAT YL	= ScaledSceneNodeY;
 
 		// Metallicafan212:	Now make 2 triangles
 		//					I copied this all from the tile rendering, since I'm such a lazy fucking bastard
@@ -2704,11 +2716,7 @@ void UICBINDx11RenderDevice::EndFlash()
 		m_VertexBuff[5].Y		= RPY2;
 		m_VertexBuff[5].Z		= Z;
 
-		//UnlockVertexBuffer();
-		//UnlockBuffers();
-
-		//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		AdvanceVertPos();//6);
+		AdvanceVertPos();
 
 		// Metallicafan212:	Draw
 		EndBuffering();
@@ -2755,12 +2763,12 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 
 		// Metallicafan212:	All of this is copied from the DX9 driver
 		// Precompute stuff.
-		FLOAT rcpFrameFX = 1.0f / NewX;//Frame->FX;
-		m_Aspect = NewY * rcpFrameFX;//Frame->FY * rcpFrameFX;
+		FLOAT rcpFrameFX = 1.0f / NewX;
+		m_Aspect = NewY * rcpFrameFX;
 
 		// Metallicafan212:	This is HP2 specific! Since I have a viewport FOV that is calcuated to be a hor+ FOV, so 90 @ 16x9 is 109
 #if DX11_HP2
-		m_RProjZ = appTan(Viewport->FOVAngle * PI / 360.0);//Viewport->Actor->FovAngle * PI / 360.0);
+		m_RProjZ = appTan(Viewport->FOVAngle * PI / 360.0);
 #else
 		m_RProjZ = appTan(Viewport->Actor->FovAngle * PI / 360.0);
 #endif
@@ -2795,13 +2803,8 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 			NewYB	*= ResolutionScale;
 
 			// Metallicafan212:	Scaled FX2 and FY2
-#if 1//!RES_SCALE_IN_PROJ
 			ScaledFX2 = Frame->FX2 * ResolutionScale;
 			ScaledFY2 = Frame->FY2 * ResolutionScale;
-#else
-			ScaledFX2 = Frame->FX2;
-			ScaledFY2 = Frame->FY2;
-#endif
 		}
 		else
 		{
@@ -2824,12 +2827,12 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 
 		// Metallicafan212:	All of this is copied from the DX9 driver
 		// Precompute stuff.
-		FLOAT rcpFrameFX = 1.0f / NewX;//Frame->FX;
-		m_Aspect = NewY * rcpFrameFX;//Frame->FY * rcpFrameFX;
+		FLOAT rcpFrameFX = 1.0f / NewX;
+		m_Aspect = NewY * rcpFrameFX;
 
 		// Metallicafan212:	This is HP2 specific! Since I have a viewport FOV that is calcuated to be a hor+ FOV, so 90 @ 16x9 is 109
 #if DX11_HP2
-		m_RProjZ = appTan(Viewport->FOVAngle * PI / 360.0);//Viewport->Actor->FovAngle * PI / 360.0);
+		m_RProjZ = appTan(Viewport->FOVAngle * PI / 360.0);
 #else
 		m_RProjZ = appTan(Viewport->Actor->FovAngle * PI / 360.0);
 #endif
@@ -2853,6 +2856,7 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 	unguard;
 }
 
+// Metallicafan212:	TODO! Rewrite this to check if it needs an update (changed variables, etc.)
 // Metallicafan212:	Shamfully copied from the DX9 renderer
 void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRangeHack, UBOOL bForceUpdate)
 {
@@ -2889,7 +2893,7 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	//Set zFar
 #if DX11_HP2 || DX11_UNREAL_227 || DX11_UT_469
 	// Metallicafan212:	Increased to the next power of two
-	zFar = 65535.0f;//49152.0f;
+	zFar = 65535.0f;
 #else
 	zFar = 32768.0f;
 #endif
@@ -2967,24 +2971,12 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 
 	// Metallicafan212:	I've fixed this to the correct order it should be
 	FrameShaderVars.Proj.m[0][0] = 2.0f * zNear * invRightMinusLeft;
-	//FrameShaderVars.Proj.m[0][1] = 0.0f;
-	FrameShaderVars.Proj.m[0][2] = -1.0f / ScaledSceneNodeX;//0.0f;
-	//FrameShaderVars.Proj.m[0][3] = 0.0f;
-
-	//FrameShaderVars.Proj.m[1][0] = 0.0f;
+	FrameShaderVars.Proj.m[0][2] = -1.0f / ScaledSceneNodeX;
 	FrameShaderVars.Proj.m[1][1] = -2.0f * zNear * invTopMinusBottom;
 	FrameShaderVars.Proj.m[1][2] = 1.0f / ScaledSceneNodeY;
-	//FrameShaderVars.Proj.m[1][3] = 0.0f;
-
-	//FrameShaderVars.Proj.m[2][0] = 0.0f;
-	//FrameShaderVars.Proj.m[2][1] = 0.0f;
 	FrameShaderVars.Proj.m[2][2] = -zScaleVal * (zFar * invNearMinusFar);
 	FrameShaderVars.Proj.m[2][3] = zScaleVal * zScaleVal * (zNear * zFar * invNearMinusFar);
-
-	//FrameShaderVars.Proj.m[3][0] = 0.0f;
-	//FrameShaderVars.Proj.m[3][1] = 0.0f;
 	FrameShaderVars.Proj.m[3][2] = 1.0f;
-	//FrameShaderVars.Proj.m[3][3] = 0.0f;
 #endif
 
 	// Metallicafan212:	Now update the bind
