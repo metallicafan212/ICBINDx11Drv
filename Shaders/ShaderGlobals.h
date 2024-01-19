@@ -72,21 +72,27 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 // Metallicafan212:	Define the base constant buffer!!!!
 cbuffer FrameVariables : register (b0)
 {
-	matrix 	Proj			: packoffset(c0);
-	float	Gamma			: packoffset(c4.x);
-	float2	ViewSize		: packoffset(c4.y);
-	int		bDoSelection	: packoffset(c4.w);
-	int		bOneXLightmaps	: packoffset(c5.x);
-	int		bCorrectFog		: packoffset(c5.y);
-	int		bHDR			: packoffset(c5.z);
-	int 	GammaMode		: packoffset(c5.w);
-	float	HDRExpansion	: packoffset(c6.x);
-	float 	ResolutionScale : packoffset(c6.y);
-	float	WhiteLevel		: packoffset(c6.z);
+	matrix 	Proj				: packoffset(c0);
+	float	Gamma				: packoffset(c4.x);
+	float2	ViewSize			: packoffset(c4.y);
+	int		bDoSelection		: packoffset(c4.w);
+	int		bOneXLightmaps		: packoffset(c5.x);
+	int		bCorrectFog			: packoffset(c5.y);
+	int		bHDR				: packoffset(c5.z);
+	int 	GammaMode			: packoffset(c5.w);
+	float	HDRExpansion		: packoffset(c6.x);
+	float 	ResolutionScale 	: packoffset(c6.y);
+	float	WhiteLevel			: packoffset(c6.z);
 	//float 	PadHDR2			: packoffset(c6.w);
-	int		bDepthDraw		: packoffset(c6.w);
-	float	DepthDrawLimit	: packoffset(c7.x);
-	float3	Paddddddd		: packoffset(c7.y);
+	int		bDepthDraw			: packoffset(c6.w);
+	float	DepthDrawLimit		: packoffset(c7.x);
+	
+	// Metallicafan212:	DX9 gamma offset values
+	float	GammaOffsetRed		: packoffset(c7.y);
+	float	GammaOffsetBlue		: packoffset(c7.z);
+	float	GammaOffsetGreen	: packoffset(c7.w);
+	
+	//float3	Paddddddd		: packoffset(c7.y);
 };
 
 // Metallicafan212:	I did the same thing I did for polyflags, and made the whole enum a set of defines

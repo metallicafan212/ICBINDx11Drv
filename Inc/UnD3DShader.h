@@ -47,8 +47,13 @@ struct FFrameShaderVars
 	// Metallicafan212:	Configured Z range for the depth draw mode
 	FLOAT				DepthZRange;
 
+	// Metallicafan212:	DX9 mode gamma correction variables
+	FLOAT				GammaOffsetRed;
+	FLOAT				GammaOffsetGreen;
+	FLOAT				GammaOffsetBlue;
+
 	// Metallicafan212:	Additional padding
-	FLOAT				Pad[3];
+	//FLOAT				Pad[3];
 
 	FFrameShaderVars()
 	{

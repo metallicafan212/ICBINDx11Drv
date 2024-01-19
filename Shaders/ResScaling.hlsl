@@ -15,7 +15,8 @@ SamplerState ScreenState	: register(s0);
 
 // Metallicafan212:	Gamma correction functions
 float4 XOpenGLGamma(float3 In)
-{	
+{
+	// Metallicafan212:	TODO! Branching might be more expensive than just doing the math, might want to test
 	if(Gamma == 1.0f)
 	{
 		return float4(In, 1.0f);
@@ -23,12 +24,16 @@ float4 XOpenGLGamma(float3 In)
 	
 	float InvGamma = 1.0f / (Gamma);
 	
-	return float4(pow(In, float3(InvGamma, InvGamma, InvGamma)), 1.0f);//float4(pow(In.x, InvGamma), pow(In.y, InvGamma), pow(In.z, InvGamma), 1.0f);
+	return float4(pow(In, float3(InvGamma, InvGamma, InvGamma)), 1.0f);
 }
 
-float4 DX9Gamma(float3 In)
-{
-	// Metallicafan212:	TODO!
+float4 DX9Gamma(float3 In, float r, float g, float b)
+{	
+	// Metallicafan212:	Colorize each part of the pixel, using the separate channel gamma controls
+	In.x = pow(In.x, r);
+	In.y = pow(In.y, g);
+	In.z = pow(In.z, b);
+	
 	return float4(In, 1.0f);
 }
 
@@ -70,6 +75,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	float4 Out;
 	
 	// Metallicafan212:	Determine the gamma mode
+	//					Proton/wine doesn't like switches, so we're using if statements....
 	if(GammaMode == GM_PerObject)
 	{
 		Out = float4(TexColor, 1.0f);
@@ -81,7 +87,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	}
 	else if(GammaMode == GM_DX9)
 	{
-		Out = DX9Gamma(TexColor);
+		Out = DX9Gamma(TexColor, GammaOffsetRed, GammaOffsetBlue, GammaOffsetGreen);
 	}
 	else // Metallicafan212: TODO!
 	{

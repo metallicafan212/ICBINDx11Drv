@@ -103,35 +103,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	AddFloatProp(CPP_PROP(OrthoLineThickness), 1.2f);
 
 	AddBoolProp(CPP_PROP(bDebugSelection), 0);
-	//AddBoolProp(CPP_PROP(bUseD3D11On12), 0);
-
-	// Metallicafan212:	TODO! Go in game to determine what these values should be
-	//AddFloatProp(CPP_PROP(TileAAUVMove), 0.1f);
-	//TileAAUVMove = 0.1f;
-
-	/*
-	// Metallicafan212:	TODO! MSAA resolve related vars
-	AddBoolProp(CPP_PROP(bUseMSAAComputeShader), 1);
-	AddFloatProp(CPP_PROP(MSAAFilterSize), 0.5f);
-	AddFloatProp(CPP_PROP(MSAAGaussianSigma), 1.0f);
-	AddFloatProp(CPP_PROP(MSAACubicB), 1.0f);
-	AddFloatProp(CPP_PROP(MSAACubicC), 2.69f);
-	AddIntProp(CPP_PROP(MSAAFilterType), 8);
-	*/
 
 	AddBoolProp(CPP_PROP(bDisableDebugInterface), 1);
 	AddBoolProp(CPP_PROP(bDisableSDKLayers), 1);
-
-	/*
-	// Metallicafan212:	Load the old setting, if it's available
-	UseVSync = 0;
-	UBOOL bTest = 0;
-
-	if (GConfig->GetBool(ClsName, TEXT("bVSync"), bTest))
-	{
-		UseVSync = bTest;
-	}
-	*/
 
 	AddBoolProp(CPP_PROP(UseVSync), 0);
 
@@ -159,6 +133,10 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	AddBoolProp(CPP_PROP(SceneNodeHack), 0);
 
 	AddFloatProp(CPP_PROP(GammaOffset), 0.0f);
+
+	AddFloatProp(CPP_PROP(GammaOffsetRed), 0.0f);
+	AddFloatProp(CPP_PROP(GammaOffsetBlue), 0.0f);
+	AddFloatProp(CPP_PROP(GammaOffsetGreen), 0.0f);
 
 	AddBoolProp(CPP_PROP(bOneXLightmaps), 0);
 	AddBoolProp(CPP_PROP(bEnableCorrectFogging), 1);

@@ -1964,13 +1964,19 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	// Metallicafan212:	Gamma is disabled in HP2 because a speedrunning trick involves messing with the brighness bar
 	//					So, to account for that, there's a manual gamma value (for the time being...)
 	//					11/28/23, added a manual gamma offset (for the time being, until I add in multiple gamma modes)
-	FrameShaderVars.Gamma			= (!Viewport->IsOrtho() ? Gamma + GammaOffset : 1.0f);
+	FrameShaderVars.Gamma				= (!Viewport->IsOrtho() ? Gamma + GammaOffset : 1.0f);
 
-	FrameShaderVars.GammaMode		= GammaMode;
+	FrameShaderVars.GammaMode			= GammaMode;
 
-	FrameShaderVars.HDRExpansion	= AdditionalHDRExpansion;
+	FrameShaderVars.HDRExpansion		= AdditionalHDRExpansion;
 
-	FrameShaderVars.ResolutionScale	= ResolutionScale;
+	FrameShaderVars.ResolutionScale		= ResolutionScale;
+
+	// Metallicafan212:	DX9 specific gamma vars
+	//					This is based on the UD3D9RenderDevice::BuildGammaRamp code, although it might not be very accurate (yet)
+	FrameShaderVars.GammaOffsetRed		= (1.0f / (1.25f * (FrameShaderVars.Gamma + GammaOffsetRed)));
+	FrameShaderVars.GammaOffsetGreen	= (1.0f / (1.25f * (FrameShaderVars.Gamma + GammaOffsetGreen)));
+	FrameShaderVars.GammaOffsetBlue		= (1.0f / (1.25f * (FrameShaderVars.Gamma + GammaOffsetBlue)));
 
 #if DX11_HP2
 	// Metallicafan212:	Check for wireframe

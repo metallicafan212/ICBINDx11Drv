@@ -571,6 +571,11 @@ class UICBINDx11RenderDevice : public URenderDevice
 	//					Default is 0.0f, setting it above 0 will brighten the image for the same brightness setting, negative will reduce it
 	FLOAT						GammaOffset;
 
+	// Metallicafan212:	Gamma offsets for each color channel (DX9 mode only)
+	FLOAT						GammaOffsetRed;
+	FLOAT						GammaOffsetBlue;
+	FLOAT						GammaOffsetGreen;
+
 	// Metallicafan212:	HDR color correction value, since we have to expand sRGB to linear color for HDR to work
 	FLOAT						AdditionalHDRExpansion;
 
