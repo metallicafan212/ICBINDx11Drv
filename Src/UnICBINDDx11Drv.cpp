@@ -2617,7 +2617,14 @@ void UICBINDx11RenderDevice::ClearZ(FSceneNode* Frame)
 	}
 	else
 	{
-		m_RenderContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		if (m_HitData != nullptr)
+		{
+			m_RenderContext->ClearDepthStencilView(m_SelectionDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		}
+		else
+		{
+			m_RenderContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		}
 	}
 
 	unguard;
