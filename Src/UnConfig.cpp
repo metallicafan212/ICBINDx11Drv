@@ -171,6 +171,10 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	For some reason on my system, this runs slightly faster
 	AddBoolProp(CPP_PROP(bUseMultiThreadedDevice), 1);
 
+	// Metallicafan212:	If we have the multi-threaded device, allow for deferred rendering to work
+	//					TODO! This doesn't work AT ALL!
+	//AddBoolProp(CPP_PROP(bUseDeferredRendering), 1);
+
 	unguard;
 }
 

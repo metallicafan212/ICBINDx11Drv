@@ -528,6 +528,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	UBOOL						bDisableSDKLayers;
 	UBOOL						bUseMultiThreadedDevice;
 	UBOOL						UseVSync;
+	UBOOL						bUseDeferredRendering;
 
 	// Metallicafan212:	If to use the DX9 style flat colors instead (a lot brighter and hides the original textures)
 	UBOOL						UseDX9FlatColor;
@@ -1196,6 +1197,23 @@ class UICBINDx11RenderDevice : public URenderDevice
 				EndBuffering();
 			}
 
+			/*
+			// Metallicafan212:	Render now?
+			if (bUseDeferredRendering && m_DrawnVerts != 0)
+			{
+				// Metallicafan212:	Get a command list to execute
+				ID3D11CommandList* CommandList	= nullptr;
+				HRESULT hr						= m_D3DDeferredContext->FinishCommandList(TRUE, &CommandList);
+
+				if (SUCCEEDED(hr))
+				{
+					m_D3DDeviceContext->ExecuteCommandList(CommandList, TRUE);
+
+					CommandList->Release();
+				}
+			}
+			*/
+
 			m_VertexBuffPos = 0;
 			m_IndexBuffPos	= 0;
 			m_DrawnVerts	= 0;
@@ -1214,12 +1232,12 @@ class UICBINDx11RenderDevice : public URenderDevice
 		{
 			D3D11_MAP MType = bNoOverwrite ? D3D11_MAP_WRITE_NO_OVERWRITE : D3D11_MAP_WRITE_DISCARD;
 
-			HRESULT hr		= m_RenderContext->Map(VertexBuffer, 0, MType, 0, &VertexBuffMap);
+			HRESULT hr		= m_D3DDeviceContext->Map(VertexBuffer, 0, MType, 0, &VertexBuffMap);
 
 			ThrowIfFailed(hr);
 
 			// Metallicafan212:	Now lock the IBuff
-			hr				= m_RenderContext->Map(IndexBuffer, 0, MType, 0, &IndexBuffMap);
+			hr				= m_D3DDeviceContext->Map(IndexBuffer, 0, MType, 0, &IndexBuffMap);
 
 			ThrowIfFailed(hr);
 		}
@@ -1236,7 +1254,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 		{
 			D3D11_MAP MType		= !bClearSec ? D3D11_MAP_WRITE_NO_OVERWRITE : D3D11_MAP_WRITE_DISCARD;
 
-			HRESULT hr			= m_RenderContext->Map(SecondaryVertexBuffer, 0, MType, 0, &SecVertBuffMap);
+			HRESULT hr			= m_D3DDeviceContext->Map(SecondaryVertexBuffer, 0, MType, 0, &SecVertBuffMap);
 
 			ThrowIfFailed(hr);
 
@@ -1253,19 +1271,19 @@ class UICBINDx11RenderDevice : public URenderDevice
 	inline void UnlockBuffers()
 	{
 		if (m_VertexBuff != nullptr)
-			m_RenderContext->Unmap(VertexBuffer, 0);
+			m_D3DDeviceContext->Unmap(VertexBuffer, 0);
 
 		m_VertexBuff = nullptr;
 
 		if (m_IndexBuff != nullptr)
-			m_RenderContext->Unmap(IndexBuffer, 0);
+			m_D3DDeviceContext->Unmap(IndexBuffer, 0);
 
 		m_IndexBuff = nullptr;
 
 #if EXTRA_VERT_INFO
 		if (m_SecVertexBuff != nullptr)
 		{
-			m_RenderContext->Unmap(SecondaryVertexBuffer, 0);
+			m_D3DDeviceContext->Unmap(SecondaryVertexBuffer, 0);
 
 			m_SecVertexBuff = nullptr;
 		}

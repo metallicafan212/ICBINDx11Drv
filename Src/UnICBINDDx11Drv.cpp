@@ -194,6 +194,10 @@ void UICBINDx11RenderDevice::SetupDevice()
 	
 	GLog->Logf(TEXT("DX11: Creating device with the maximum feature level"));
 
+	// Metallicafan212:	Don't allow for deferred rendering if we're not using multi-threading
+	if(!bUseMultiThreadedDevice)
+		bUseDeferredRendering = 0;
+
 MAKE_DEVICE:
 	HRESULT hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, FLPtr, FLCount, D3D11_SDK_VERSION, &m_D3DDevice, &m_FeatureLevel, &m_D3DDeviceContext);
 
@@ -330,18 +334,20 @@ MAKE_DEVICE:
 
 	m_RenderContext = m_D3DDeviceContext;
 
-	/*
-	if (m_FeatureLevel >= D3D_FEATURE_LEVEL_11_0)
+	if (bUseDeferredRendering && m_FeatureLevel >= D3D_FEATURE_LEVEL_11_0)
 	{
-		// Metallicafan212:	Create a deferred context and command list
+		// Metallicafan212:	Create a deferred context (if the user has it enabled)
 		hr = m_D3DDevice->CreateDeferredContext(0, &m_D3DDeferredContext);
 
 		if (SUCCEEDED(hr))
 		{
 			GLog->Logf(TEXT("DX11: Using deferred rendering! This is expirimental!"));
 		}
+		else
+		{
+			bUseDeferredRendering = 0;
+		}
 	}
-	*/
 
 	GLog->Logf(TEXT("DX11: Using feature level %s"), FLStr);
 
@@ -1912,6 +1918,17 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	Gamma = Viewport->GetOuterUClient()->Brightness * 2.0f;
 #endif
 
+	/*
+	if (bUseDeferredRendering && m_D3DDeferredContext != nullptr)
+	{
+		m_RenderContext = m_D3DDeferredContext;
+	}
+	else
+	{
+		m_RenderContext = m_D3DDeviceContext;
+	}
+	*/
+
 	// Metallicafan212:	Hold onto the hit related info
 	m_HitData		= HitData;
 	m_HitSize		= HitSize;
@@ -2080,6 +2097,23 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 		SetRasterState(DXRS_Normal);
 	}
 #endif
+
+	/*
+	// Metallicafan212:	Render now?
+	if (bUseDeferredRendering)
+	{
+		// Metallicafan212:	Get a command list to execute
+		ID3D11CommandList* CommandList	= nullptr;
+		HRESULT hr						= m_D3DDeferredContext->FinishCommandList(TRUE, &CommandList);
+
+		if (SUCCEEDED(hr))
+		{
+			m_D3DDeviceContext->ExecuteCommandList(CommandList, TRUE);
+
+			CommandList->Release();
+		}
+	}
+	*/
 
 	// Metallicafan212:	Get the selection
 	if (m_HitData != nullptr)
@@ -2358,7 +2392,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 				SDesc.MaxAnisotropy		= 1;//16;//16;
 				SDesc.ComparisonFunc	= D3D11_COMPARISON_NEVER;
 
-				HRESULT hr = m_D3DDevice->CreateSamplerState(&SDesc, &ScreenSamp);
+				HRESULT hr				= m_D3DDevice->CreateSamplerState(&SDesc, &ScreenSamp);
 
 				ThrowIfFailed(hr);
 			}
@@ -2474,6 +2508,24 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			m_RenderContext->PSSetShaderResources(0, 1, &BlankResourceView);
 
 			RestoreRenderTarget();
+
+			/*
+			// Metallicafan212:	Render now?
+			//					TODO! This should probably be called on the direct device context
+			if (bUseDeferredRendering)
+			{
+				// Metallicafan212:	Get a command list to execute
+				ID3D11CommandList* CommandList	= nullptr;
+				HRESULT hr						= m_D3DDeferredContext->FinishCommandList(TRUE, &CommandList);
+
+				if (SUCCEEDED(hr))
+				{
+					m_D3DDeviceContext->ExecuteCommandList(CommandList, TRUE);
+
+					CommandList->Release();
+				}
+			}
+			*/
 #endif
 		}
 

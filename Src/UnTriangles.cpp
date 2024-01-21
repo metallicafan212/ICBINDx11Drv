@@ -309,7 +309,7 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	guard(UICBINDx11RenderDevice::DrawGouraudTriangles);
 
 	// Metallicafan212:	Start buffering now
-	//StartBuffering(BT_Triangles);
+	StartBuffering(BT_Triangles);
 
 	// Metallicafan212:	We have to implement specific effects ourselves when using this
 	//					Detect them here
