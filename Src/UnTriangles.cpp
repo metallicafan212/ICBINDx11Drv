@@ -309,11 +309,11 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	guard(UICBINDx11RenderDevice::DrawGouraudTriangles);
 
 	// Metallicafan212:	Start buffering now
-	StartBuffering(BT_Triangles);
+	//StartBuffering(BT_Triangles);
 
 	// Metallicafan212:	We have to implement specific effects ourselves when using this
 	//					Detect them here
-	UBOOL bMirror = Frame->Mirror < 0.0f;
+	UBOOL bMirror	= Frame->Mirror < 0.0f;
 
 	UBOOL bEnv		= PolyFlags & PF_Environment;
 
@@ -347,21 +347,11 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 
 	FMeshShader->Bind(m_RenderContext);
 
-	//LockVertexBuffer(NumPts * sizeof(FD3DVert));
-
 	LockVertAndIndexBuffer(NumPts);
-
-	//if (bIndexedBuffered)
-	//{
-	//	EndBuffering();
-	//}
 
 	// Metallicafan212:	Added in distance fog
 	//					All calculations have to be done ourselfs, but at least it's doable
-	UBOOL drawFog = (((PolyFlags & (PF_RenderFog | PF_Translucent | PF_Modulated)) == PF_RenderFog));
-
-	// Metallicafan212:	Turn off Light A if we're missing the required flags for opacity
-	//UBOOL bNoOpacity	= ((PolyFlags & (PF_Highlighted | PF_Translucent)) != (PF_Highlighted | PF_Translucent));
+	UBOOL drawFog		= (((PolyFlags & (PF_RenderFog | PF_Translucent | PF_Modulated)) == PF_RenderFog));
 
 	FD3DVert* Mshy		= (FD3DVert*)m_VertexBuff;
 
@@ -382,22 +372,21 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 #endif
 	}
 
+	//UBOOL bHasDrawn = 0;
+
 	// Metallicafan212:	Process a whole triangle at a time
 	INT M = 0;
-	for (INT i = 0; i < NumPts; i += 3)//i++)
+	for (INT i = 0; i < NumPts; i += 3)
 	{
 		// Metallicafan212:	Check if it's outcoded
-		if (Pts[i].Flags & Pts[i + 1].Flags & Pts[i + 2].Flags)
+		if (/*!bHasDrawn &&*/ Pts[i].Flags & Pts[i + 1].Flags & Pts[i + 2].Flags)
 		{
-			// Metallicafan212:	TODO! XOpenGL continues to draw if it's drawn some of them
+			// Metallicafan212:	Skip this triangle, and decrement the amount of verts requested by the lock
+			m_VLockCount -= 3;
 			continue;
 		}
 
-		// Metallicafan212:	TODO! This should be done in the shader, not here!
-		//if (bNoOpacity)
-		//Pts[i].Light.W		= 1.0f;
-		//Pts[i + 1].Light.W	= 1.0f;
-		//Pts[i + 2].Light.W	= 1.0f;
+		//bHasDrawn = 1;
 
 		if (bMirror)
 		{
