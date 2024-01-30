@@ -2069,9 +2069,6 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	// Metallicafan212:	Update the shader variables
 	UpdateGlobalShaderVars();
 
-	// Metallicafan212:	If we're using deferred rendering, we have to constantly set our buffers....
-	SetupDeferredRender();
-
 	unguard;
 }
 
@@ -2085,9 +2082,6 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 	// Metallicafan212:	Restore our render target (as it may have been changed due to RT textures)
 	while(RTStack.Num())
 		RestoreRenderTarget();
-
-	// Metallicafan212:	Render now!
-	//DoDeferredRender();
 
 	// Metallicafan212:	Fix the render state
 #if DX11_HP2

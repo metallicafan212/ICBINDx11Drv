@@ -211,6 +211,9 @@ float4 DoFinalColor(float4 ColorIn)
 		return ColorIn;
 	}
 	
+	// Metallicafan212:	Clamp the color
+	ColorIn.xyz = clamp(ColorIn.xyz, 0.0, 1.0);
+	
 	// Metallicafan212:	Early return
 	if(BWPercent <= 0.0f)
 	{

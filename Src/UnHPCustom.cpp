@@ -367,17 +367,6 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 		// Metallicafan212:	PF_Invisible says to just calc the rect
 		if (!(Flags & PF_Invisible))
 		{
-			/*
-			// Metallicafan212:	Render NOW!!!!
-			if (m_D3DDeferredContext != nullptr)
-			{
-				m_D3DDeferredContext->FinishCommandList(FALSE, &m_D3DCommandList);
-
-				m_D3DDeviceContext->ExecuteCommandList(m_D3DCommandList, FALSE);
-
-				SAFE_RELEASE(m_D3DCommandList);
-			}
-			*/
 
 			// Metallicafan212:	IMPORTANT!!!! D2D seems to actually somewhat RESPECT the current shaders, so we need to use a generic shader for this
 			FGenShader->Bind(m_RenderContext);

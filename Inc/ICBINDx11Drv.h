@@ -399,28 +399,45 @@ struct FD3DBoundTex
 	FLOAT						VScale;
 };
 
-// Metallicafan212:	Cached draw call
-//					TODO! Remove cached variables, or define a way to specify extra values for draw calls?
+// Metallicafan212:	Draw call info
+
+// Metallicafan212:	Cached render state
+//					This is so we can execute as many draw calls at once as we can
 struct FDrawCall
 {
+	// Metallicafan212:	If to use compressed Z range (or not)
+	//					Changing it results in a new draw call
+	UBOOL					bCompressZ;
+
+	// Metallicafan212:	If to clear z
+	UBOOL					bClearZ;
+
 	// Metallicafan212:	Flags that were set in this draw call
-	PFLAG				PolyFlags;
+	PFLAG					PolyFlags;
 
 	// Metallicafan212:	Vertex range (start and size)
-	SIZE_T				VStart;
-	SIZE_T				VSize;
+	SIZE_T					VStart;
+	SIZE_T					VSize;
 
 	// Metallicafan212:	Textures bound
-	FD3DBoundTex		TBinds[MAX_TEXTURES];
+	//					Changing a texture results in a new draw call
+	FD3DBoundTex			TBinds[MAX_TEXTURES];
 
 	// Metallicafan212:	Shader to use for this draw
-	class FD3DShader*	Shader;
+	//					Changing the shader results in a new draw call
+	class FD3DShader*		Shader;
 
-	// Metallicafan212:	If to use compressed Z range
-	UBOOL				bCompressZ;
+	// Metallicafan212:	Distance fog settings (if they changed)
+	UBOOL					bUseDistFog;
+	FPlane					DistanceFogColor;
+	FPlane					DistanceFogSettings;
 
-	// Metallicafan212:	Distance fog settings for this draw?
+	// Metallicafan212:	Black and white percent
+	FLOAT					BWPercent;
 
+	// Metallicafan212:	Render target and depth to set (if needed)
+	ID3D11RenderTargetView*	RTV;
+	ID3D11DepthStencilView*	DSV;
 };
 
 
@@ -1096,66 +1113,13 @@ class UICBINDx11RenderDevice : public URenderDevice
 		}
 	}
 
-	inline void SetupDeferredRender()
-	{
-		if (m_D3DDeferredContext != nullptr)
-		{
-			UINT Stride = sizeof(FD3DVert);
-			UINT Offset = 0;
-			m_D3DDeferredContext->IASetIndexBuffer(IndexBuffer, INDEX_FORMAT, 0);
-			m_D3DDeferredContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
-
-			// Metallicafan212:	Set the constant buffers as well
-			m_RenderContext->VSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
-			m_RenderContext->GSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
-			m_RenderContext->PSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
-			m_RenderContext->CSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
-
-			m_RenderContext->VSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
-			m_RenderContext->GSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
-			m_RenderContext->PSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
-			m_RenderContext->CSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
-
-			m_RenderContext->VSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
-			m_RenderContext->GSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
-			m_RenderContext->PSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
-			m_RenderContext->CSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
-
-		}
-	}
-
-	inline void DoDeferredRender()
-	{
-		/*
-		// Metallicafan212:	Render now!
-		if (m_D3DDeferredContext != nullptr)
-		{
-			HRESULT hr = m_D3DDeferredContext->FinishCommandList(TRUE, &m_D3DCommandList);
-
-			m_D3DDeviceContext->ExecuteCommandList(m_D3DCommandList, FALSE);
-			SAFE_RELEASE(m_D3DCommandList);
-
-			// Metallicafan212:	Keep the vertex buffer bound!!!!
-			SetupDeferredRender();
-		}
-		*/
-	}
-
 	// Metallicafan212:	TODO! Replace ALL non-indexed drawing with this....
-	inline void DoStandardIBuff(INT VertNum)
+	FORCEINLINE void DoStandardIBuff(INT VertNum)
 	{
-		/*
-		// Metallicafan212:	This'll fill the index buffer with just a standard indices pointing to the raw triangle list we have
-		for (INT i = 0; i < VertNum; i++)
-		{
-			m_IndexBuff[i] = i + m_BufferedVerts;
-		}
-		*/
-
 		appMemcpy(m_IndexBuff, &IndexValueArray[m_BufferedVerts], sizeof(INDEX) * VertNum);
 	}
 
-	inline void LockVertAndIndexBuffer(SIZE_T VertCount, SIZE_T IndexCount = 0, UBOOL bNoOverwrite = 1)
+	FORCEINLINE void LockVertAndIndexBuffer(SIZE_T VertCount, SIZE_T IndexCount = 0, UBOOL bNoOverwrite = 1)
 	{
 		m_VLockCount = VertCount;
 		m_ILockCount = IndexCount;
@@ -1247,7 +1211,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 		m_IndexBuff		= (INDEX*)((BYTE*)IndexBuffMap.pData + m_IndexBuffPos);
 	}
 
-	inline void LockSecondaryVertBuffer()
+	FORCEINLINE void LockSecondaryVertBuffer()
 	{
 		// Metallicafan212:	Lock and map it, it defaults to being unmapped
 		if (m_SecVertexBuff == nullptr)
@@ -1268,7 +1232,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 		m_SecVertexBuff			= (FD3DSecondaryVert*)((BYTE*)SecVertBuffMap.pData + m_SecVertexBuffPos);
 	}
 
-	inline void UnlockBuffers()
+	FORCEINLINE void UnlockBuffers()
 	{
 		if (m_VertexBuff != nullptr)
 			m_D3DDeviceContext->Unmap(VertexBuffer, 0);
@@ -1290,11 +1254,11 @@ class UICBINDx11RenderDevice : public URenderDevice
 #endif
 	}
 
-	inline void AdvanceVertPos()
+	FORCEINLINE void AdvanceVertPos()
 	{
 		if (bNeedsAutoIBuff)
 		{
-			DoStandardIBuff(m_VLockCount);//VertCount);
+			DoStandardIBuff(m_VLockCount);
 
 			bNeedsAutoIBuff = 0;
 		}
@@ -1309,41 +1273,27 @@ class UICBINDx11RenderDevice : public URenderDevice
 		m_ILockCount = 0;
 	}
 
-	inline void EndBuffering()
+	FORCEINLINE void EndBuffering()
 	{
 		if (m_BufferedVerts != 0 && m_CurrentBuff != BT_None)
 		{
 			// Metallicafan212:	We only lock once to save on performance 
 			UnlockBuffers();
 
-			// Metallicafan212:	This detection is probably not needed anymore
-			/*
-			QWORD ITest = ((QWORD)m_BufferedIndices) + m_DrawnIndices;
-			if (ITest >= IBUFF_SIZE)
-			{
-				appErrorf(TEXT("Metallicafan212, you fucking idiot, the index buffer is fucked. DrawnIndices: %lu, BufferedIndices: %lu"), m_DrawnIndices, m_BufferedIndices);
-			}
-			*/
 			m_RenderContext->DrawIndexed(m_BufferedIndices, m_DrawnIndices, m_DrawnVerts);
 
 			// Metallicafan212:	Increment the buffer counters
 			m_DrawnIndices	+= m_BufferedIndices;
 			m_DrawnVerts	+= m_BufferedVerts;
 
-			// Metallicafan212:	I guess it unmaps after each draw????
-			//SetupDeferredRender();
-
-			DoDeferredRender();
-
 			// Metallicafan212:	Init the values
-			//m_CurrentBuff		= BT_None;
 			m_BufferedIndices	= 0;
 			m_BufferedVerts		= 0;
 		}
 	}
 
 	// Metallicafan212:	Start and end buffering (for different types)
-	inline void StartBuffering(EBuffType inBuff)
+	FORCEINLINE void StartBuffering(EBuffType inBuff)
 	{
 		// Metallicafan212:	Check if we need to draw
 		if (inBuff != m_CurrentBuff)
@@ -1370,7 +1320,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	}
 
 	// Metallicafan212:	Update the global constant buffer in the shaders
-	inline void UpdateGlobalShaderVars()
+	FORCEINLINE void UpdateGlobalShaderVars()
 	{
 #if 0
 		m_RenderContext->UpdateSubresource(FrameConstantsBuffer, 0, nullptr, &FrameShaderVars, sizeof(FFrameShaderVars), 0);
@@ -1385,7 +1335,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 #endif
 	}
 
-	inline void UpdatePolyflagsVars()
+	FORCEINLINE void UpdatePolyflagsVars()
 	{
 #if 0
 		m_RenderContext->UpdateSubresource(GlobalPolyflagsBuffer, 0, nullptr, &GlobalPolyflagVars, sizeof(FPolyflagVars), 0);
@@ -1465,7 +1415,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	void SetRasterState(DWORD State);
 
-	inline ID3D11SamplerState* GetSamplerState(PFLAG PolyFlags, INT MinMip, INT MipBias)
+	FORCEINLINE ID3D11SamplerState* GetSamplerState(PFLAG PolyFlags, INT MinMip, INT MipBias)
 	{
 		guardSlow(UICBINDx11RenderDevice::GetSamplerState);
 
@@ -1521,7 +1471,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 		unguardSlow;
 	}
 
-	inline ID3D11BlendState* GetBlendState(PFLAG PolyFlag)
+	FORCEINLINE ID3D11BlendState* GetBlendState(PFLAG PolyFlag)
 	{
 #if !USE_UNODERED_MAP_EVERYWHERE
 		ID3D11BlendState* bState = BlendMap.FindRef(PolyFlag);
@@ -1534,7 +1484,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 		return bState;
 	}
 
-	inline ID3D11BlendState* CreateBlend(PFLAG PolyFlag, D3D11_BLEND SrcBlend, D3D11_BLEND DstBlend,
+	FORCEINLINE ID3D11BlendState* CreateBlend(PFLAG PolyFlag, D3D11_BLEND SrcBlend, D3D11_BLEND DstBlend,
 		UINT8 RTWrite = D3D11_COLOR_WRITE_ENABLE_ALL, BOOL bEnableBlending = 1, BOOL bAlphaToCov = 0, D3D11_BLEND_OP BldOp = D3D11_BLEND_OP_ADD, D3D11_BLEND_OP BldOpAlh = D3D11_BLEND_OP_ADD,
 		D3D11_BLEND SrcBlendAlpha = D3D11_BLEND_ONE, D3D11_BLEND DstBlendAlpha = D3D11_BLEND_ZERO)
 	{
@@ -1635,26 +1585,26 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	TODO! More particle related code
 	virtual INT MaxVertices() { return 256; };
 
-	virtual void DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, INT NumPts, _WORD* Indices, INT NumIndices, QWORD PolyFlags, FSpanBuffer* Span);
+	virtual void DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, INT NumPts, _WORD* Indices, INT NumIndices, PFLAG PolyFlags, FSpanBuffer* Span);
 
-	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo & Surface, FSurfaceFacet & Facet, QWORD PolyFlags, FLOAT Alpha);
+	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo & Surface, FSurfaceFacet & Facet, PFLAG PolyFlags, FLOAT Alpha);
 	
-	virtual void DrawTile(FSceneNode* Frame, FTextureInfo & Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, class FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, QWORD PolyFlags);
+	virtual void DrawTile(FSceneNode* Frame, FTextureInfo & Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, class FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, PFLAG PolyFlags);
 
-	virtual void DrawRotatedTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, class FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, QWORD PolyFlags, FCoords InCoords = GMath.UnitCoords);
+	virtual void DrawRotatedTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, class FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, PFLAG PolyFlags, FCoords InCoords = GMath.UnitCoords);
 
 	virtual int DrawString(QWORD Flags, UFont * Font, INT & DrawX, INT & DrawY, const TCHAR * Text, const FPlane & Color, FLOAT Scale = 1.0f, FLOAT SpriteScaleX = 1.0f, FLOAT SpriteScaleY = 1.0f);
 #elif DX11_UT_469
 
-	virtual void DrawTile(FSceneNode * Frame, FTextureInfo & Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer * Span, FLOAT Z, FPlane Color, FPlane Fog, DWORD PolyFlags);
+	virtual void DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, DWORD PolyFlags);
 	
-	virtual void DrawComplexSurface(FSceneNode * Frame, FSurfaceInfo & Surface, FSurfaceFacet & Facet);
+	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet & Facet);
 	
-	virtual void DrawGouraudPolygon(FSceneNode * Frame, FTextureInfo & Info, FTransTexture * *Pts, int NumPts, DWORD PolyFlags, FSpanBuffer * Span);
+	virtual void DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, int NumPts, DWORD PolyFlags, FSpanBuffer* Span);
 	
 	virtual UBOOL SupportsTextureFormat(ETextureFormat Format);
 	
-	virtual void DrawGouraudTriangles(const FSceneNode * Frame, const FTextureInfo & Info, FTransTexture* const Pts, INT NumPts, DWORD PolyFlags, DWORD DataFlags, FSpanBuffer * Span);
+	virtual void DrawGouraudTriangles(const FSceneNode* Frame, const FTextureInfo& Info, FTransTexture* const Pts, INT NumPts, DWORD PolyFlags, DWORD DataFlags, FSpanBuffer* Span);
 
 	// Metallicafan212:	Support partial uploads
 	virtual void UpdateTextureRect(FTextureInfo& Info, INT U, INT V, INT UL, INT VL);
@@ -1692,7 +1642,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	//					We use this to fade the values from one setting to another
 	void TickDistanceFog();
 
-	inline void UpdateFogSettings()
+	FORCEINLINE void UpdateFogSettings()
 	{
 		// Metallicafan212:	Now set the vars
 		GlobalDistFogSettings.DistanceFogColor		= FogShaderVars.DistanceFogColor;
