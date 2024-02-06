@@ -54,7 +54,7 @@ PSInput VertShader(VSInput input)
 	
 	// Metallicafan212:	Transform it out
 	output.pos 		= mul(input.pos, Proj);
-	output.uv		= input.uv;
+	output.uv		= input.uv.xy;
 	
 	return output;
 }
@@ -396,7 +396,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 #else
 
 // Metallicafan212:	Resolve the MSAA texture to this current pixel
-[numthreads(32, 32, 1)]
+[numthreads(8, 8, 1)]
 void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 {
 	// Metallicafan212:	Sample both the render target and the depth target

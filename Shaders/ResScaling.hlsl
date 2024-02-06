@@ -24,15 +24,17 @@ float4 XOpenGLGamma(float3 In)
 	
 	float InvGamma = 1.0f / (Gamma);
 	
-	return float4(pow(In, float3(InvGamma, InvGamma, InvGamma)), 1.0f);
+	return float4(pow(abs(In), float3(InvGamma, InvGamma, InvGamma)), 1.0f);
 }
 
 float4 DX9Gamma(float3 In, float r, float g, float b)
 {	
 	// Metallicafan212:	Colorize each part of the pixel, using the separate channel gamma controls
-	In.x = pow(In.x, r);
-	In.y = pow(In.y, g);
-	In.z = pow(In.z, b);
+	float3 Exp = float3(r, g, b);
+	//In.x = pow(abs(In.x), r);
+	//In.y = pow(abs(In.y), g);
+	//In.z = pow(abs(In.z), b);
+	In.xyz = pow(abs(In.xyz), Exp);
 	
 	return float4(In, 1.0f);
 }
@@ -103,7 +105,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 		//Out.xyz = SRGBToRec2020(Out.xyz) * WhiteLevel; //* HDRExpansion;
 		
 		// Metallicafan212:	Convert to linear, since we're using a linear screen format
-		Out.xyz = pow(Out.xyz, 2.2);
+		Out.xyz = pow(abs(Out.xyz), 2.2);
 		
 		Out.xyz *= WhiteLevel * HDRExpansion;	
 	}

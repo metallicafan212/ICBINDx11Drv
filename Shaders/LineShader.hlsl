@@ -19,7 +19,7 @@ VS_OUT VertShader(VSInput input)
 	output.color	= input.color;
 	
 	// Metallicafan212:	I've embedded the line size into the fog.x
-	output.fog		= input.fog;
+	output.fog		= input.fog.x;
 	
 	return output;
 }

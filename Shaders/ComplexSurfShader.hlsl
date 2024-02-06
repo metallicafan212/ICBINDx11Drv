@@ -240,9 +240,7 @@ PSOutput PxShader(PSInput input)
 	if(bTexturesBound[0].w != 0)
 	{
 		float4 FogColor = Fogmap.SampleBias(FogState, input.fUV, 0.0f);
-		DiffColor.xyz 	= (DiffColor * (1.0f - FogColor.w)) + FogColor.xyz;//mad(DiffColor.xyz, (1.0f - FogColor.w), FogColor.xyz);
-		//DiffColor.xyz *= FogColor.w;
-		//DiffColor.xyz += FogColor.xyz;
+		DiffColor.xyz 	= (DiffColor.xyz * (1.0f - FogColor.w)) + FogColor.xyz;//mad(DiffColor.xyz, (1.0f - FogColor.w), FogColor.xyz);
 	}
 	
 	// Metallicafan212:	Set our alpha for lumos

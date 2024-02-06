@@ -185,7 +185,7 @@ float4 DoGammaCorrection(float4 ColorIn)
 		return ColorIn;
 	
 	float OverGamma = 1.0f / Gamma;
-	ColorIn.xyz = pow(ColorIn.xyz, float3(OverGamma, OverGamma, OverGamma));
+	ColorIn.xyz = pow(abs(ColorIn.xyz), float3(OverGamma, OverGamma, OverGamma));
 	
 	return ColorIn;
 }
