@@ -79,7 +79,7 @@ void FShaderManager::Init()
 
 		TCHAR ModHand[4096]		= TEXT("\0");
 
-		GetModuleFileName(CurrModule, ModHand, sizeof(TCHAR*) * 4096);
+		GetModuleFileName(CurrModule, ModHand, 4096);
 
 		SQWORD ModTime			= GFileManager->GetGlobalTime(ModHand);
 
