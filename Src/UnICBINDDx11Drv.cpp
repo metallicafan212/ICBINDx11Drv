@@ -1,9 +1,5 @@
 ﻿#include "ICBINDx11Drv.h"
 
-#if !DX11_HP2
-UBOOL GWineAndDine = 0;
-#endif
-
 // Metallicafan212:	TODO!
 IMPLEMENT_CLASS(UICBINDx11RenderDevice);
 IMPLEMENT_PACKAGE(ICBINDx11Drv);
@@ -15,29 +11,9 @@ void UICBINDx11RenderDevice::SetupDevice()
 {
 	guard(UICBINDx11RenderDevice::SetupDevice);
 
-	// Metallicafan212:	Detect wine
+	// Metallicafan212: Detect windows version and wine on non-HP2 engines
 #if !DX11_HP2
-
-	// Metallicafan212:	Check if wine
-	typedef const char* (CDECL* pwine_get_version)(void);
-
-	pwine_get_version func = nullptr;
-
-	HMODULE hntDLL = GetModuleHandle(TEXT("ntdll.dll"));
-
-	if (hntDLL != nullptr)
-	{
-		func = (pwine_get_version)GetProcAddress(hntDLL, "wine_get_version");
-
-		if (func != nullptr)
-		{
-			GWineAndDine = 1;
-
-			debugf(NAME_Init, TEXT("DX11: Detected, Wine/Proton Windows emulator. WARNING! Wine/Proton emulation is not perfect!"));
-			debugf(NAME_Init, TEXT("DX11: Wine/Proton version: %s"), appFromAnsi(func()));
-		}
-	}
-
+	SetupWindowsVersionCheck();
 #endif
 
 
@@ -184,6 +160,13 @@ void UICBINDx11RenderDevice::SetupDevice()
 	INT FLCount = ARRAY_COUNT(FLList);
 
 	D3D_FEATURE_LEVEL* FLPtr = &FLList[0];
+
+	if (!GWin81)
+	{
+		// Metallicafan212:	Start with 11_0
+		FLPtr++;
+		FLCount--;
+	}
 
 	// Metallicafan212:	On my system, the multithreaded supported device runs ever so slightly faster, for no reason
 	UINT Flags =	D3D11_CREATE_DEVICE_BGRA_SUPPORT
@@ -1110,48 +1093,57 @@ void UICBINDx11RenderDevice::SetupResources()
 			debugf(TEXT("D3D adapter vendor      : Intel"));
 			bIsIntel = 1;
 		}
+		else
+		{
+			debugf(TEXT("D3D adapter vendor      : Unknown (%0x10)"), AdDesc.VendorId);
+		}
 
 		// Metallicafan212:	If to use the new Windows 10 modes. I only test if we're actually running on 10
 		//					!GIsEditor is here because using the tearing mode does something fucky in DWM, changing the window in such a way that normal non-DX11 renderers can't draw to it
 		//					I need to analyse and see what exactly it's modifying about the window and reverse that change
 		bAllowTearing = (!GIsEditor
-#if DX11_HP2
+		
+		// Metallicafan212:	2024, I added simple windows version checking to the driver for non-HP2 targets
+#if 1//DX11_HP2
 			&& GWin10
 #endif
 			);
 
-
-		IDXGIFactory5* dxgiFactory5 = nullptr;
-		hr = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory5));
-
-		IDXGIFactory2* dxgiFactory;
-
-		if (FAILED(hr))
-		{
-			// Metallicafan212:	Get the DXGI factory2 only
-			bAllowTearing = 0;
-		}
-		else
-		{
-			// Metallicafan212:	See if it supports the effect
-			BOOL bSupportsTearing = 0;
-
-			hr = dxgiFactory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &bSupportsTearing, sizeof(BOOL));
-
-			if (FAILED(hr) || !bSupportsTearing)
-			{
-				if (FAILED(hr))
-				{
-					GLog->Logf(TEXT("DX11: Device does not support tearing"));
-				}
-				bAllowTearing = 0;
-			}
-
-		}
-
+		// Metallicafan212:	Don't even test it if it's not able to be grabbed
+		IDXGIFactory2* dxgiFactory = nullptr;
 		if (bAllowTearing)
 		{
-			GLog->Logf(TEXT("DX11: Setting up swap chain with tearing support"));
+			IDXGIFactory5* dxgiFactory5 = nullptr;
+			hr = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory5));
+
+			if (FAILED(hr))
+			{
+				// Metallicafan212:	Get the DXGI factory2 only
+				bAllowTearing = 0;
+			}
+			else
+			{
+				// Metallicafan212:	See if it supports the effect
+				BOOL bSupportsTearing = 0;
+
+				hr = dxgiFactory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &bSupportsTearing, sizeof(BOOL));
+
+				if (FAILED(hr) || !bSupportsTearing)
+				{
+					if (FAILED(hr))
+					{
+						GLog->Logf(TEXT("DX11: Device does not support tearing"));
+					}
+					bAllowTearing = 0;
+				}
+
+				SAFE_RELEASE(dxgiFactory5);
+			}
+
+			if (bAllowTearing)
+			{
+				GLog->Logf(TEXT("DX11: Setting up swap chain with tearing support"));
+			}
 		}
 
 		// And obtain the factory object that created it.
@@ -1263,8 +1255,6 @@ void UICBINDx11RenderDevice::SetupResources()
 		//LONG_PTR sChange	= s ^ GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_STYLE);
 
 		//GLog->Logf(TEXT("Window style changes are %llu and %llu"), esChange, sChange);
-
-		SAFE_RELEASE(dxgiFactory5);
 	}
 	else
 	{
@@ -1484,67 +1474,6 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	// Metallicafan212:	Set the main surface
 	m_CurrentD2DRT = m_D2DRT;
-
-	// Metallicafan212:	Setup AA now
-	//m_D2DRT->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);//ResolutionScale > 1.0f ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-	//m_D2DRT->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-
-	/*
-	// Metallicafan212:	Get the defaults
-	IDWriteRenderingParams* Def = nullptr;
-	m_D2DRT->GetTextRenderingParams(&Def);
-
-	DWRITE_RENDERING_MODE m = DWRITE_RENDERING_MODE_DEFAULT;//DWRITE_RENDERING_MODE_NATURAL_SYMMETRIC;
-
-	if (Def != nullptr)
-	{
-		// Metallicafan212:	Create the text rendering parameters from the defaults
-		hr = m_D2DWriteFact->CreateCustomRenderingParams(Def->GetGamma(), Def->GetEnhancedContrast(), Def->GetClearTypeLevel(), Def->GetPixelGeometry(), m, &m_TextParams);
-
-		ThrowIfFailed(hr);
-
-		Def->Release();
-	}
-	else
-	{
-		// Metallicafan212:	Make our own....
-		hr = m_D2DWriteFact->CreateCustomRenderingParams(1.0f, 0.0f, 0.0f, DWRITE_PIXEL_GEOMETRY_BGR, m, &m_TextParams);
-
-		ThrowIfFailed(hr);
-	}
-
-	m_D2DRT->SetTextRenderingParams(m_TextParams);
-	*/
-
-	/*
-	// Metallicafan212:	IMPORTANT!!! If we have AA, turn off AA in D2D!
-	if (NumAASamples > 1)
-	{
-		m_D2DRT->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-		m_D2DRT->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-		
-		// Metallicafan212:	Get the defaults
-		IDWriteRenderingParams* Def = nullptr;
-		m_D2DRT->GetTextRenderingParams(&Def);
-
-		if (Def != nullptr)
-		{
-			// Metallicafan212:	Create the text rendering parameters from the defaults
-			hr = m_D2DWriteFact->CreateCustomRenderingParams(Def->GetGamma(), Def->GetEnhancedContrast(), Def->GetClearTypeLevel(), Def->GetPixelGeometry(), DWRITE_RENDERING_MODE_GDI_NATURAL, &m_TextParams);
-
-			ThrowIfFailed(hr);
-		}
-		else
-		{
-			// Metallicafan212:	Make our own....
-			hr = m_D2DWriteFact->CreateCustomRenderingParams(1.0f, 0.0f, 0.0f, DWRITE_PIXEL_GEOMETRY_RGB, DWRITE_RENDERING_MODE_GDI_NATURAL, &m_TextParams);
-
-			ThrowIfFailed(hr);
-		}
-
-		m_D2DRT->SetTextRenderingParams(m_TextParams);
-	}
-	*/
 #endif
 
 	// Metallicafan212:	Make a totally blank texture

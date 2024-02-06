@@ -109,15 +109,21 @@ typedef unsigned short INDEX;
 #include "UnRender.h"
 #include "UnRenDev.h"
 
+#if !DX11_HP2
+#include "WindowVersions.h"
+#endif
+
 // Metallicafan212:	Compiling with the windows 7 version number undef's this flag
 #ifndef WS_EX_NOREDIRECTIONBITMAP
 #define WS_EX_NOREDIRECTIONBITMAP 0x00200000L
 #endif
 
+/*
 // Metallicafan212:	For detecting wine.....
 #if !DX11_HP2
 extern UBOOL GWineAndDine;
 #endif
+*/
 
 #define MAX_TEXTURES 16
 

@@ -204,6 +204,7 @@
     <ClInclude Include="..\Inc\ICBINDx11Drv.h" />
     <ClInclude Include="..\Inc\UnD3DShader.h" />
     <ClInclude Include="..\Inc\UnTexCache.h" />
+    <ClInclude Include="..\Inc\WindowsVersions.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ResScalingShader.cpp" />
@@ -226,6 +227,7 @@
     <ClCompile Include="UnTiles.cpp" />
     <ClCompile Include="UnTileShader.cpp" />
     <ClCompile Include="UnTriangles.cpp" />
+    <ClCompile Include="WindowsHelper.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
