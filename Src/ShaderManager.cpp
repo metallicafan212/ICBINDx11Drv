@@ -33,6 +33,7 @@ FArchive& operator<<(FArchive& Ar, FShaderManager* Manager)
 	// Metallicafan212:	If the version number doesn't match, ignore it
 	if (Ar.IsLoading() && Ver != SHADER_CACHE_VER)
 	{
+		GLog->Logf(TEXT("DX11: Version %d is not the current version %d, invalidating shader cache"), Ver, SHADER_CACHE_VER);
 		Manager->bCacheInvalid = 1;
 	}
 
@@ -42,6 +43,7 @@ FArchive& operator<<(FArchive& Ar, FShaderManager* Manager)
 
 	if (Ar.IsLoading() && Desc != Manager->DXDevice->GPUDesc)
 	{
+		GLog->Logf(TEXT("DX11: GPU desc %s doesn't match the current description %s, invalidating shader cache"), *Desc, *Manager->DXDevice->GPUDesc);
 		Manager->bCacheInvalid = 1;
 	}
 
@@ -51,6 +53,7 @@ FArchive& operator<<(FArchive& Ar, FShaderManager* Manager)
 
 	if (Ar.IsLoading() && DriverVer != Manager->DXDevice->GPUDriverVer.QuadPart)
 	{
+		GLog->Logf(TEXT("DX11: GPU driver version %llu doesn't match the current version %llu, invalidating shader cache"), DriverVer, Manager->DXDevice->GPUDriverVer.QuadPart);
 		Manager->bCacheInvalid = 1;
 	}
 
@@ -68,6 +71,7 @@ FArchive& operator<<(FArchive& Ar, FShaderManager* Manager)
 		if (Ar.IsLoading() && TestDate != FDate)
 		{
 			// Metallicafan212:	Invalidate, either the driver is newer or older than the cache
+			GLog->Logf(TEXT("DX11: Driver build date %s doesn't match current build date of %s, invalidating shader cache"), *TestDate, *FDate);
 			Manager->bCacheInvalid = 1;
 		}
 	}
@@ -77,6 +81,8 @@ FArchive& operator<<(FArchive& Ar, FShaderManager* Manager)
 	{
 		Manager->Bytecode.Empty();
 	}
+
+	return Ar;
 
 	unguard;
 }
@@ -214,6 +220,8 @@ TArray<BYTE>* FShaderManager::GetShaderBytes(FString File, FString Func, const A
 
 	if (ShaderBytes == nullptr)
 	{
+		GLog->Logf(TEXT("DX11: Compiling %s from file"), *Key);
+
 		// Metallicafan212:	Not found, so the shader needs to be read
 		ShaderBytes				= &Bytecode.Set(*Key, TArray<BYTE>());
 		ID3D10Blob* Error		= nullptr;
