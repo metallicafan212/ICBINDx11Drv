@@ -110,7 +110,7 @@ typedef unsigned short INDEX;
 #include "UnRenDev.h"
 
 #if !DX11_HP2
-#include "WindowVersions.h"
+#include "WindowsVersions.h"
 #endif
 
 // Metallicafan212:	Compiling with the windows 7 version number undef's this flag
