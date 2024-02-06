@@ -104,6 +104,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_DELETE(FSurfShader);
 	SAFE_DELETE(FLineShader);
 	SAFE_DELETE(FMSAAShader);
+	SAFE_DELETE(ShaderManager);
 #if P8_COMPUTE_SHADER
 	SAFE_DELETE(FP8ToRGBAShader);
 #endif
@@ -338,31 +339,6 @@ MAKE_DEVICE:
 	D3D11_QUERY_DESC qDesc = { D3D11_QUERY_EVENT, 0 };
 	m_D3DDevice->CreateQuery(&qDesc, &m_D3DQuery);
 
-	GLog->Logf(TEXT("DX11: Creating shaders"));
-
-	// Metallicafan212:	Make the shader
-	FTileShader			= new FD3DTileShader(this);
-
-	FGenShader			= new FD3DGenericShader(this);
-
-	FResScaleShader		= new FD3DResScalingShader(this);
-
-#if USE_COMPUTE_SHADER
-	FMshLghtCompShader	= new FD3DLghtMshCompShader(this);
-#endif
-
-	FMeshShader			= new FD3DMeshShader(this);
-
-	FSurfShader			= new FD3DSurfShader(this);
-
-	FLineShader			= new FD3DLineShader(this);
-
-	FMSAAShader			= new FD3DMSAAShader(this);
-
-#if P8_COMPUTE_SHADER
-	FP8ToRGBAShader		= new FD3DP8ToRGBAShader(this);
-#endif
-
 	// Metallicafan212:	Setup the debug info
 #if 1//_DEBUG
 
@@ -543,6 +519,42 @@ MAKE_DEVICE:
 	unguard;
 }
 
+void UICBINDx11RenderDevice::InitShaders()
+{
+	guard(UICBINDx11RenderDevice::InitShaders);
+
+#define MAKE_SHADER(Var, cls) \
+		if(Var == nullptr) \
+		{	\
+			GLog->Logf(TEXT("DX11: Making %s"), TEXT(#Var)); \
+			Var = new cls(this); \
+		}
+
+	// Metallicafan212:	Should probably rename this macro
+	MAKE_SHADER(ShaderManager,		FShaderManager);
+
+	MAKE_SHADER(FTileShader,		FD3DTileShader);
+	MAKE_SHADER(FGenShader,			FD3DGenericShader);
+	MAKE_SHADER(FResScaleShader,	FD3DResScalingShader);
+#if USE_COMPUTE_SHADER
+	MAKE_SHADER(FMshLghtCompShader,	FD3DLghtMshCompShader);
+#endif
+	MAKE_SHADER(FMeshShader,		FD3DMeshShader);
+	MAKE_SHADER(FSurfShader,		FD3DSurfShader);
+	MAKE_SHADER(FLineShader,		FD3DLineShader);
+	MAKE_SHADER(FMSAAShader,		FD3DMSAAShader);
+#if P8_COMPUTE_SHADER
+	MAKE_SHADER(FP8ToRGBAShader,	FD3DP8ToRGBAShader);
+#endif
+
+#undef MAKE_SHADER
+
+	// Metallicafan212:	See if the cache needs to be written
+	ShaderManager->SaveCache();
+
+	unguard;
+}
+
 // Metallicafan212:	UGH, I'm a fucking idiot. You can't mix MSAA and non-MSAA rendering in DX11..... So I'm going to have to come up with some alternative method to render font tiles correctly
 //					Per this page: https://learn.microsoft.com/en-us/windows/win32/api/d3d11/ns-d3d11-d3d11_rasterizer_desc
 //					"Note  For feature levels 9.1, 9.2, 9.3, and 10.0, if you set MultisampleEnable to FALSE, 
@@ -677,6 +689,7 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	FGenShader			= nullptr;
 	FResScaleShader		= nullptr;
 	FMSAAShader			= nullptr;
+	ShaderManager		= nullptr;
 #if P8_COMPUTE_SHADER
 	FP8ToRGBAShader		= nullptr;
 #endif
@@ -1067,6 +1080,15 @@ void UICBINDx11RenderDevice::SetupResources()
 		debugf(TEXT("Compiled                : %s"),	COMPILED_AT);
 		//debugf(TEXT("D3D adapter driver      : %s"), appFromAnsi(ident.Driver));
 		debugf(TEXT("D3D adapter description : %s"),	AdDesc.Description);
+
+		// Metallicafan212:	Copy the description
+		GPUDesc = AdDesc.Description;
+
+		// Metallicafan212:	Now get the version number of the driver
+		hr = dxgiAdapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &GPUDriverVer);
+
+		ThrowIfFailed(hr);
+		
 		// Metallicafan212:	TODO! In 32bit mode, use %lu instead
 #if UNREAL32
 		debugf(TEXT("D3D adapter VRam        : %dGB (%luMB)"), appRound((AdDesc.DedicatedVideoMemory / 1073741824.0)), (AdDesc.DedicatedVideoMemory / 1048576));
@@ -1290,6 +1312,9 @@ void UICBINDx11RenderDevice::SetupResources()
 			appErrorf(TEXT("Failed to resize buffers with %lu"), hr);
 		}
 	}
+
+	// Metallicafan212:	Initalize shaders, if needed
+	InitShaders();
 
 	// Metallicafan212:	Make sure the correct color space is always set
 	if (ActiveHDR)
@@ -1682,6 +1707,7 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_DELETE(FSurfShader);
 	SAFE_DELETE(FLineShader);
 	SAFE_DELETE(FMSAAShader);
+	SAFE_DELETE(ShaderManager);
 #if P8_COMPUTE_SHADER
 	SAFE_DELETE(FP8ToRGBAShader);
 #endif

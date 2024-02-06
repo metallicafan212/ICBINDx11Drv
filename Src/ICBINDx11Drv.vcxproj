@@ -202,12 +202,14 @@
   <ItemGroup>
     <ClInclude Include="..\Inc\GammaModes.h" />
     <ClInclude Include="..\Inc\ICBINDx11Drv.h" />
+    <ClInclude Include="..\Inc\ShaderManager.h" />
     <ClInclude Include="..\Inc\UnD3DShader.h" />
     <ClInclude Include="..\Inc\UnTexCache.h" />
     <ClInclude Include="..\Inc\WindowsVersions.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ResScalingShader.cpp" />
+    <ClCompile Include="ShaderManager.cpp" />
     <ClCompile Include="UnComplexSurfShader.cpp" />
     <ClCompile Include="UnComputeShader.cpp" />
     <ClCompile Include="UnConfig.cpp" />

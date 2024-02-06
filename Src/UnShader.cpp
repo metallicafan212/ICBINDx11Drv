@@ -24,6 +24,7 @@ D3D11_INPUT_ELEMENT_DESC FBasicInLayout[] =
 #endif
 };
 
+/*
 inline void CheckShader(HRESULT hr, ID3D10Blob* error)
 {
 	if (FAILED(hr))
@@ -72,17 +73,20 @@ inline void CheckShader(HRESULT hr, ID3D10Blob* error)
 	if (error != nullptr)
 		error->Release();
 }
+*/
 
 // Metallicafan212:	Shader interface
 void FD3DShader::Init()
 {
 	guard(FD3DShader::Init);
 
+	/*
 	// Metallicafan212:	Create the shader blobs (pixel, vertex), and the stream layout
 	ID3D10Blob* error	= nullptr;
 	ID3D10Blob* vsBuff	= nullptr;
 	ID3D10Blob* psBuff	= nullptr;
 	ID3D10Blob* gsBuff	= nullptr;
+	*/
 
 	UINT Flags = 0;//D3DCOMPILE_DEBUG;
 
@@ -91,32 +95,50 @@ void FD3DShader::Init()
 	// Metallicafan212:	Compile the shaders
 	if (VertexFunc.Len())
 	{
+		/*
 		hr = D3DCompileFromFile(*VertexFile, GET_MACRO_PTR(Macros), D3D_CMP_STD_INC, appToAnsi(*VertexFunc), ParentDevice->MaxVSLevel, Flags, 0, &vsBuff, &error);
 
 		CheckShader(hr, error);
 
 		// Metallicafan212:	IDK, do something here?
 		ParentDevice->ThrowIfFailed(hr);
+		*/
+
+		TArray<BYTE>* ShaderBytes = ParentDevice->ShaderManager->GetShaderBytes(VertexFile, VertexFunc, ParentDevice->MaxVSLevel, GET_MACRO_PTR(Macros), Flags);
 
 		// Metallicafan212:	Get it as a vertex shader
-		hr = ParentDevice->m_D3DDevice->CreateVertexShader(vsBuff->GetBufferPointer(), vsBuff->GetBufferSize(), nullptr, &VertexShader);
+		hr = ParentDevice->m_D3DDevice->CreateVertexShader(ShaderBytes->GetData(), ShaderBytes->Num(), nullptr, &VertexShader);
 
 		// Metallicafan212:	IDK, do something here?
 		ParentDevice->ThrowIfFailed(hr);
+
+
+		// Metallicafan212:	Now create the layout pointer
+		if (VertexShader != nullptr)
+		{
+			hr = ParentDevice->m_D3DDevice->CreateInputLayout(InputDesc, InputCount, ShaderBytes->GetData(), ShaderBytes->Num(), &InputLayout);
+
+			// Metallicafan212:	IDK, do something here?
+			ParentDevice->ThrowIfFailed(hr);
+		}
 	}
 
 	// Metallicafan212:	Now the pixel shader
 	if (PixelFunc.Len())
 	{
+		/*
 		hr = D3DCompileFromFile(*PixelFile, GET_MACRO_PTR(Macros), D3D_CMP_STD_INC, appToAnsi(*PixelFunc), ParentDevice->MaxPSLevel, Flags, 0, &psBuff, &error);
 
 		CheckShader(hr, error);
 
 		// Metallicafan212:	IDK, do something here?
 		ParentDevice->ThrowIfFailed(hr);
+		*/
+
+		TArray<BYTE>* ShaderBytes = ParentDevice->ShaderManager->GetShaderBytes(PixelFile, PixelFunc, ParentDevice->MaxPSLevel, GET_MACRO_PTR(Macros), Flags);
 
 		// Metallicafan212:	Get it as a pixel shader
-		hr = ParentDevice->m_D3DDevice->CreatePixelShader(psBuff->GetBufferPointer(), psBuff->GetBufferSize(), nullptr, &PixelShader);
+		hr = ParentDevice->m_D3DDevice->CreatePixelShader(ShaderBytes->GetData(), ShaderBytes->Num(), nullptr, &PixelShader);
 
 		// Metallicafan212:	IDK, do something here?
 		ParentDevice->ThrowIfFailed(hr);
@@ -125,24 +147,19 @@ void FD3DShader::Init()
 	// Metallicafan212:	Now the geometry shader
 	if (ParentDevice->bUseGeoShaders && GeoFunc.Len())
 	{
+		/*
 		hr = D3DCompileFromFile(*GeoFile, GET_MACRO_PTR(Macros), D3D_CMP_STD_INC, appToAnsi(*GeoFunc), ParentDevice->MaxGSLevel, Flags, 0, &gsBuff, &error);
 
 		CheckShader(hr, error);
 
 		// Metallicafan212:	IDK, do something here?
 		ParentDevice->ThrowIfFailed(hr);
+		*/
+
+		TArray<BYTE>* ShaderBytes = ParentDevice->ShaderManager->GetShaderBytes(GeoFile, GeoFunc, ParentDevice->MaxGSLevel, GET_MACRO_PTR(Macros), Flags);
 
 		// Metallicafan212:	Get it as a pixel shader
-		hr = ParentDevice->m_D3DDevice->CreateGeometryShader(gsBuff->GetBufferPointer(), gsBuff->GetBufferSize(), nullptr, &GeoShader);
-
-		// Metallicafan212:	IDK, do something here?
-		ParentDevice->ThrowIfFailed(hr);
-	}
-
-	// Metallicafan212:	Now create the layout pointer
-	if (VertexShader != nullptr)
-	{
-		hr = ParentDevice->m_D3DDevice->CreateInputLayout(InputDesc, InputCount, vsBuff->GetBufferPointer(), vsBuff->GetBufferSize(), &InputLayout);
+		hr = ParentDevice->m_D3DDevice->CreateGeometryShader(ShaderBytes->GetData(), ShaderBytes->Num(), nullptr, &GeoShader);
 
 		// Metallicafan212:	IDK, do something here?
 		ParentDevice->ThrowIfFailed(hr);
@@ -153,9 +170,9 @@ void FD3DShader::Init()
 	SetupConstantBuffer();
 
 
-	SAFE_RELEASE(vsBuff);
-	SAFE_RELEASE(psBuff);
-	SAFE_RELEASE(gsBuff);
+	//SAFE_RELEASE(vsBuff);
+	//SAFE_RELEASE(psBuff);
+	//SAFE_RELEASE(gsBuff);
 
 	unguard;
 }

@@ -141,6 +141,8 @@ enum ERasterFlags
 
 class UICBINDx11RenderDevice;
 
+#include "ShaderManager.h"
+
 // Metallicafan212:	Just cutting down on the needed typing
 namespace MS = Microsoft::WRL;
 
@@ -671,6 +673,10 @@ class UICBINDx11RenderDevice : public URenderDevice
 	const ANSICHAR*				MaxPSLevel{};
 	const ANSICHAR*				MaxGSLevel{};
 
+	// Metallicafan212:	The GPU name, so we can invalidate the shader cache if it changes
+	FString						GPUDesc;
+	LARGE_INTEGER				GPUDriverVer;
+
 	// Metallicafan212:	If to use geo shaders at all (Shader version 3.0 has no geo shaders)
 	UBOOL						bUseGeoShaders;
 
@@ -806,6 +812,8 @@ class UICBINDx11RenderDevice : public URenderDevice
 #endif
 
 	FD3DShader*							CurrentShader;
+
+	FShaderManager*						ShaderManager;
 
 	// Metallicafan212:	Holds onto values that the shaders (and renderer) code will be interested in
 	//					This does not directly map to variables in the shader itself, as there's copies used to do fading
@@ -1319,10 +1327,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 					m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				}
 			}
+
+			m_CurrentBuff = inBuff;
 		}
-
-		m_CurrentBuff = inBuff;
-
 	}
 
 	// Metallicafan212:	Update the global constant buffer in the shaders
@@ -1557,6 +1564,10 @@ class UICBINDx11RenderDevice : public URenderDevice
 
 	// Metallicafan212:	Setup the device
 	void SetupDevice();
+
+	// Metallicafan212:	Initialize the shaders (if needed)
+	//					This was moved to a separate function so we could hold off until after we have the GPU adapter information
+	void InitShaders();
 
 	// Metallicafan212:	Set the projection matrix
 	void SetProjectionStateNoCheck(UBOOL bRequestingNearRangeHack, UBOOL bForceUpdate = 0);
