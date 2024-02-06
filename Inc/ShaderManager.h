@@ -2,7 +2,7 @@
 // Metallicafan212:	This defines a manager class for loading pre-compiled HLSL from a file
 //					It can also be hard-coded in the future to remove the need of having the shader files entirely
 
-#define SHADER_CACHE_VER 1
+#define SHADER_CACHE_VER 2
 
 class FShaderManager
 {

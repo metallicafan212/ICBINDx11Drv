@@ -3,6 +3,8 @@
 // Metallicafan212:	Might be too stupid of a name lmao
 #define CACHE_FILE SHADER_FOLDER TEXT("Haybale.cache")
 
+#define CACHE_TIME (__DATE__ " " __TIME__)
+
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
 FShaderManager::FShaderManager(UICBINDx11RenderDevice* InDev)
@@ -55,6 +57,22 @@ FArchive& operator<<(FArchive& Ar, FShaderManager* Manager)
 	// Metallicafan212:	Now save/load the cache itself
 	Ar << Manager->Bytecode;
 
+	if (Ver >= 2)
+	{
+		// Metallicafan212:	Load the date
+		FString TestDate	= appFromAnsi(CACHE_TIME);
+		FString FDate		= TestDate;
+
+		Ar << FDate;
+
+		if (Ar.IsLoading() && TestDate != FDate)
+		{
+			// Metallicafan212:	Invalidate, either the driver is newer or older than the cache
+			Manager->bCacheInvalid = 1;
+		}
+	}
+
+	// Metallicafan212:	If it's invalid, clear it so it creates it again
 	if (Manager->bCacheInvalid)
 	{
 		Manager->Bytecode.Empty();
@@ -85,8 +103,10 @@ void FShaderManager::Init()
 
 		SQWORD CacheFileTime	= GFileManager->GetGlobalTime(CACHE_FILE);
 
-		// Metallicafan212:	Load it
-		if (GFileManager->FileSize(CACHE_FILE) >= 0 && CacheFileTime > ModTime)
+		// Metallicafan212:	Load it, testing the time isn't needed now
+		//					TODO! Loop all files (that aren't our cache file) in the shaders folder and see if any are newer than our cache
+		//					If so, just invalidate immediately
+		if (GFileManager->FileSize(CACHE_FILE) >= 0)//&& CacheFileTime > ModTime)
 		{
 			FArchive* Ar = GFileManager->CreateFileReader(CACHE_FILE);
 
