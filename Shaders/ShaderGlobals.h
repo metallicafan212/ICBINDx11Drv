@@ -174,7 +174,7 @@ float4 DoPixelFog(float DistFog, float4 Color)
 	float3 Temp = DistanceFogColor.xyz - Color.xyz;
 	Temp *= DistanceFogColor.w;
 	
-	Temp = (Temp * DistFog) + Color;
+	Temp = (Temp * DistFog) + Color.xyz;
 	
 	return float4(Temp, Color.w);
 }
