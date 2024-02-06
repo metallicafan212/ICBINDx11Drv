@@ -379,12 +379,12 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	for (INT i = 0; i < NumPts; i += 3)
 	{
 		// Metallicafan212:	Check if it's outcoded
-		if (/*!bHasDrawn &&*/ Pts[i].Flags & Pts[i + 1].Flags & Pts[i + 2].Flags)
-		{
-			// Metallicafan212:	Skip this triangle, and decrement the amount of verts requested by the lock
-			m_VLockCount -= 3;
-			continue;
-		}
+		//if (/*!bHasDrawn &&*/ Pts[i].Flags & Pts[i + 1].Flags & Pts[i + 2].Flags)
+		//{
+		//	// Metallicafan212:	Skip this triangle, and decrement the amount of verts requested by the lock
+		//	m_VLockCount -= 3;
+		//	continue;
+		//}
 
 		//bHasDrawn = 1;
 
