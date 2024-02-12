@@ -51,7 +51,7 @@ void GeoShader(line GSInput input[2], inout TriangleStream <PSInput> triStream)
 	float2 sideInNDC		= sideInScreen / ViewSize;
 	float4 axis				= float4(axisInNDC, 0.0f, 0.0f) * lineWidth;
 	float4 side				= float4(sideInNDC, 0.0f, 0.0f) * lineWidth;
-	
+		
 	// Metallicafan212:	Now get the verts
 	float4 X1				= (P1 + (side - axis) 	* P1.w);
 	float4 Y1				= (P2 + (side + axis) 	* P2.w);
