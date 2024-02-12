@@ -297,6 +297,8 @@ MAKE_DEVICE:
 		}
 
 		// Metallicafan212:	9.3 doesn't allow for pixel shader 3.0 but allows for 4.0?????
+		//					Nevermind, turns out my shaders can't compile for this target since integer inputs aren't allowed
+		/*
 		case D3D_FEATURE_LEVEL_9_3:
 		{
 			MaxVSLevel		= "vs_4_0_level_9_3";
@@ -305,6 +307,7 @@ MAKE_DEVICE:
 			bUseGeoShaders	= 0;
 			break;
 		}
+		*/
 
 		// Metallicafan212:	This doesn't work at all, and only indicates support of 2_x NOT 3_0
 		/*
@@ -318,9 +321,10 @@ MAKE_DEVICE:
 		}
 		*/
 
-		//case D3D_FEATURE_LEVEL_9_3:
+		case D3D_FEATURE_LEVEL_9_3:
 		case D3D_FEATURE_LEVEL_9_2:
 		case D3D_FEATURE_LEVEL_9_1:
+		default:
 		{
 			appErrorf(TEXT("Unsupported feature level %s"), FLStr);
 		}
