@@ -156,7 +156,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 		ID3D11SamplerState* Temp = GetSamplerState(PolyFlags, DaTex->MipSkip, 0);
 		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
 
-		TX.Flags = PolyFlags;s
+		TX.Flags = PolyFlags;
 	}
 
 	unguardSlow;
