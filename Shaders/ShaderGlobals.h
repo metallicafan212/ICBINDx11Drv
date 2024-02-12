@@ -179,9 +179,11 @@ float4 DoPixelFog(float DistFog, float4 Color)
 	return float4(Temp, Color.w);
 }
 
+// Metallicafan212:	Not needed now, the per object gamma was removed
+/*
 float4 DoGammaCorrection(float4 ColorIn)
 {
-	if(/*GammaMode != GM_PerObject ||*/ Gamma == 1.0f || bModulated)
+	if(GammaMode != GM_PerObject || Gamma == 1.0f || bModulated)
 		return ColorIn;
 	
 	float OverGamma = 1.0f / Gamma;
@@ -189,6 +191,7 @@ float4 DoGammaCorrection(float4 ColorIn)
 	
 	return ColorIn;
 }
+*/
 
 float4 DoFinalColor(float4 ColorIn)
 {

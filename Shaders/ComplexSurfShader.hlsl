@@ -180,7 +180,7 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	Diffuse texture
 	if(bTexturesBound[0].x != 0)
 	{
-		float4 Diff  	= DoGammaCorrection(Diffuse.SampleBias(DiffState, input.uv, 0.0f));
+		float4 Diff  	= Diffuse.SampleBias(DiffState, input.uv, 0.0f);
 		DiffColor.xyz  *= Diff.xyz;
 		DiffColor.w	   *= Diff.w;
 	}

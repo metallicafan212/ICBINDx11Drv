@@ -71,7 +71,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	}
 	
 	//return input.color + input.fog;
-	float4 FinalColor = (DoGammaCorrection(Diffuse.SampleBias(DiffState, input.uv, 0.0f)) * input.color);
+	float4 FinalColor = (Diffuse.SampleBias(DiffState, input.uv, 0.0f) * input.color);
 	FinalColor.xyz += input.fog.xyz;
 	
 	CLIP_PIXEL(FinalColor);

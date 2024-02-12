@@ -70,7 +70,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 {
 	float2 UseUV = input.uv;
 	
-	float4 DiffColor = DoGammaCorrection(Diffuse.SampleBias(DiffState, UseUV, 0.0f)) * input.color;
+	float4 DiffColor = Diffuse.SampleBias(DiffState, UseUV, 0.0f) * input.color;
 	
 	// Metallicafan212:	Do alpha rejecting
 	//					TODO! This also sets the global selection color for the editor!
