@@ -175,6 +175,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	//					TODO! This doesn't work AT ALL!
 	//AddBoolProp(CPP_PROP(bUseDeferredRendering), 1);
 
+	// Metallicafan212:	If to load the precompiled shaders from the bytes in the binary, rather than recompile when an invalid shader cache is encountered
+	AddBoolProp(CPP_PROP(bUsePrecompiledShaders), 0);
+
 	unguard;
 }
 

@@ -200,19 +200,58 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_PxShader_ps_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_PxShader_ps_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_PxShader_ps_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_VertShader_vs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_VertShader_vs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_VertShader_vs_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_PxShader_ps_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_PxShader_ps_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_PxShader_ps_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_VertShader_vs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_VertShader_vs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_VertShader_vs_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\LineShader_PxShader_ps_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\LineShader_PxShader_ps_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\LineShader_PxShader_ps_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\LineShader_VertShader_vs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\LineShader_VertShader_vs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\LineShader_VertShader_vs_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Line_GeoShader_GeoShader_gs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Line_GeoShader_GeoShader_gs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Line_GeoShader_GeoShader_gs_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_PxShader_ps_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_PxShader_ps_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_PxShader_ps_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_VertShader_vs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_VertShader_vs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_VertShader_vs_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_PxShader_ps_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_PxShader_ps_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_PxShader_ps_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_VertShader_vs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_VertShader_vs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_VertShader_vs_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\TileShader_PxShader_ps_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\TileShader_PxShader_ps_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\TileShader_PxShader_ps_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\TileShader_VertShader_vs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\TileShader_VertShader_vs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\TileShader_VertShader_vs_5_0.h" />
     <ClInclude Include="..\Inc\GammaModes.h" />
     <ClInclude Include="..\Inc\ICBINDx11Drv.h" />
-    <ClInclude Include="..\Inc\ShaderManager.h" />
     <ClInclude Include="..\Inc\UnD3DShader.h" />
+    <ClInclude Include="..\Inc\UnShaderManager.h" />
     <ClInclude Include="..\Inc\UnTexCache.h" />
     <ClInclude Include="..\Inc\WindowsVersions.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ResScalingShader.cpp" />
-    <ClCompile Include="ShaderManager.cpp" />
     <ClCompile Include="UnComplexSurfShader.cpp" />
     <ClCompile Include="UnComputeShader.cpp" />
     <ClCompile Include="UnConfig.cpp" />
+    <ClCompile Include="UnHardcodedShaders.cpp" />
     <ClCompile Include="UnICBINDDx11Drv.cpp" />
     <ClCompile Include="UnGenericShader.cpp" />
     <ClCompile Include="UnHitTesting.cpp" />
@@ -223,6 +262,7 @@
     <ClCompile Include="UnMSAAShader.cpp" />
     <ClCompile Include="UnP8ToRGBAShader.cpp" />
     <ClCompile Include="UnShader.cpp" />
+    <ClCompile Include="UnShaderManager.cpp" />
     <ClCompile Include="UnSurf.cpp" />
     <ClCompile Include="UnTexCache.cpp" />
     <ClCompile Include="UnTexture.cpp" />

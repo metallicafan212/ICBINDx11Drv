@@ -103,7 +103,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_DELETE(FMeshShader);
 	SAFE_DELETE(FSurfShader);
 	SAFE_DELETE(FLineShader);
-	SAFE_DELETE(FMSAAShader);
+	//SAFE_DELETE(FMSAAShader);
 	SAFE_DELETE(ShaderManager);
 #if P8_COMPUTE_SHADER
 	SAFE_DELETE(FP8ToRGBAShader);
@@ -296,6 +296,16 @@ MAKE_DEVICE:
 			break;
 		}
 
+		// Metallicafan212:	9.3 doesn't allow for pixel shader 3.0 but allows for 4.0?????
+		case D3D_FEATURE_LEVEL_9_3:
+		{
+			MaxVSLevel		= "vs_4_0_level_9_3";
+			MaxPSLevel		= "ps_4_0_level_9_3";
+			MaxGSLevel		= "";
+			bUseGeoShaders	= 0;
+			break;
+		}
+
 		// Metallicafan212:	This doesn't work at all, and only indicates support of 2_x NOT 3_0
 		/*
 		case D3D_FEATURE_LEVEL_9_3:
@@ -308,7 +318,7 @@ MAKE_DEVICE:
 		}
 		*/
 
-		case D3D_FEATURE_LEVEL_9_3:
+		//case D3D_FEATURE_LEVEL_9_3:
 		case D3D_FEATURE_LEVEL_9_2:
 		case D3D_FEATURE_LEVEL_9_1:
 		{
@@ -542,7 +552,7 @@ void UICBINDx11RenderDevice::InitShaders()
 	MAKE_SHADER(FMeshShader,		FD3DMeshShader);
 	MAKE_SHADER(FSurfShader,		FD3DSurfShader);
 	MAKE_SHADER(FLineShader,		FD3DLineShader);
-	MAKE_SHADER(FMSAAShader,		FD3DMSAAShader);
+	//MAKE_SHADER(FMSAAShader,		FD3DMSAAShader);
 #if P8_COMPUTE_SHADER
 	MAKE_SHADER(FP8ToRGBAShader,	FD3DP8ToRGBAShader);
 #endif
@@ -688,7 +698,7 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	FTileShader			= nullptr;
 	FGenShader			= nullptr;
 	FResScaleShader		= nullptr;
-	FMSAAShader			= nullptr;
+	//FMSAAShader			= nullptr;
 	ShaderManager		= nullptr;
 #if P8_COMPUTE_SHADER
 	FP8ToRGBAShader		= nullptr;
@@ -1706,7 +1716,7 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_DELETE(FMeshShader);
 	SAFE_DELETE(FSurfShader);
 	SAFE_DELETE(FLineShader);
-	SAFE_DELETE(FMSAAShader);
+	//SAFE_DELETE(FMSAAShader);
 	SAFE_DELETE(ShaderManager);
 #if P8_COMPUTE_SHADER
 	SAFE_DELETE(FP8ToRGBAShader);

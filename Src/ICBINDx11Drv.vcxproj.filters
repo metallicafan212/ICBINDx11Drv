@@ -19,6 +19,9 @@
     <Filter Include="Source Files\Shaders\ComputeShaders">
       <UniqueIdentifier>{c31d5bda-a753-43bb-92aa-8220f6ec13e8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\CompiledShaders">
+      <UniqueIdentifier>{b9040668-ece1-4168-91ce-b3e84fdaed17}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Inc\ICBINDx11Drv.h">
@@ -36,8 +39,125 @@
     <ClInclude Include="..\Inc\WindowsVersions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Inc\ShaderManager.h">
+    <ClInclude Include="..\Inc\UnShaderManager.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\LineShader_PxShader_ps_4_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\LineShader_PxShader_ps_4_1.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\LineShader_PxShader_ps_5_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\LineShader_VertShader_vs_4_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\LineShader_VertShader_vs_4_1.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\LineShader_VertShader_vs_5_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_PxShader_ps_4_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_PxShader_ps_4_1.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_PxShader_ps_5_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_VertShader_vs_4_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_VertShader_vs_4_1.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_VertShader_vs_5_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_PxShader_ps_4_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_PxShader_ps_4_1.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_PxShader_ps_5_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_VertShader_vs_4_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_VertShader_vs_4_1.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_VertShader_vs_5_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\TileShader_PxShader_ps_4_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\TileShader_PxShader_ps_4_1.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\TileShader_PxShader_ps_5_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\TileShader_VertShader_vs_4_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\TileShader_VertShader_vs_4_1.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\TileShader_VertShader_vs_5_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_PxShader_ps_4_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_PxShader_ps_4_1.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_PxShader_ps_5_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_VertShader_vs_4_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_VertShader_vs_4_1.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_VertShader_vs_5_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_PxShader_ps_4_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_PxShader_ps_4_1.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_PxShader_ps_5_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_VertShader_vs_4_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_VertShader_vs_4_1.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_VertShader_vs_5_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\Line_GeoShader_GeoShader_gs_4_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\Line_GeoShader_GeoShader_gs_4_1.h">
+      <Filter>Header Files\CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\CompiledShaders\Line_GeoShader_GeoShader_gs_5_0.h">
+      <Filter>Header Files\CompiledShaders</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -104,8 +224,11 @@
     <ClCompile Include="WindowsHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ShaderManager.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="UnShaderManager.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="UnHardcodedShaders.cpp">
+      <Filter>Source Files\Shaders</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -141,7 +141,7 @@ enum ERasterFlags
 
 class UICBINDx11RenderDevice;
 
-#include "ShaderManager.h"
+#include "UnShaderManager.h"
 
 // Metallicafan212:	Just cutting down on the needed typing
 namespace MS = Microsoft::WRL;
@@ -623,6 +623,11 @@ class UICBINDx11RenderDevice : public URenderDevice
 	//					Max depth is 65535.0f
 	FLOAT						DepthDrawZLimit;
 
+	// Metallicafan212:	If to always use the precompiled shaders, rather than recompiling the source HLSL files
+	//					This is only for the base shaders, user shaders will have to be recompiled
+	//					This basically just re-inits the shader cache using the hard-coded shader bytes
+	UBOOL						bUsePrecompiledShaders;
+
 	INT							LastAdditionalBuffers;
 
 	// Metallicafan212:	Versions to check on lock if they changed
@@ -806,7 +811,7 @@ class UICBINDx11RenderDevice : public URenderDevice
 	FD3DMeshShader*						FMeshShader;
 	FD3DSurfShader*						FSurfShader;
 	FD3DLineShader*						FLineShader;
-	FD3DMSAAShader*						FMSAAShader;
+	//FD3DMSAAShader*						FMSAAShader;
 	
 #if P8_COMPUTE_SHADER
 	FD3DP8ToRGBAShader*					FP8ToRGBAShader;

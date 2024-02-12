@@ -35,6 +35,8 @@ public:
 
 	FORCEINLINE UBOOL IsInitialized() {return bIsInitalized;}
 
+	void LoadHardcodedShaders();
+
 	void SaveCache();
 
 	friend FArchive& operator<<(FArchive& Ar, FShaderManager* Manager);

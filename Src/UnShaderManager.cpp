@@ -1,5 +1,8 @@
 #include "ICBINDx11Drv.h"
 
+// Metallicafan212:	If to print out the shader bytes to the log when compiled
+#define SHADER_DEBUG_OUTPUT 1
+
 // Metallicafan212:	Might be too stupid of a name lmao
 #define CACHE_FILE SHADER_FOLDER TEXT("Haybale.cache")
 
@@ -96,6 +99,8 @@ void FShaderManager::Init()
 	{
 		bIsInitalized = 1;
 
+#if !DX11_HARDCODE_SHADERS
+
 		// Metallicafan212:	Load in the file, and see if it needs to be invalidated
 
 		// Metallicafan212:	Find out the modification date on the shader cache, if it's less than this module's date, reload it
@@ -130,7 +135,17 @@ void FShaderManager::Init()
 			}
 			else
 			{
-				CacheTime = 0;
+				if (DXDevice->bUsePrecompiledShaders)
+				{
+					LoadHardcodedShaders();
+
+					// Metallicafan212:	Set it to the max time??
+					CacheTime = ModTime;//1ll << 62;
+				}
+				else
+				{
+					CacheTime = 0;
+				}
 			}
 		}
 		else
@@ -140,6 +155,9 @@ void FShaderManager::Init()
 		}
 
 		bCacheInvalid = 0;
+#else
+		LoadHardcodedShaders();
+#endif
 	}
 
 	unguard;
@@ -206,10 +224,14 @@ TArray<BYTE>* FShaderManager::GetShaderBytes(FString File, FString Func, const A
 	
 	TArray<BYTE>* ShaderBytes = nullptr;
 
+#if !DX11_HARDCODE_SHADERS
 	// Metallicafan212:	Compare the cache time to the file time
 	SQWORD ShaderTime = GFileManager->GetGlobalTime(*File);
 
-	FString Key = FString::Printf(TEXT("%s:%s"), *File, *Func);
+	FString RealFile;
+
+	// Metallicafan212:	Add the generational language to it as well
+	FString Key = FString::Printf(TEXT("%s:%s:%s"), *File, *Func, appFromAnsi(Lang));
 
 	// Metallicafan212:	On a fresh load, CacheTime should be 0
 	if (ShaderTime < CacheTime)
@@ -232,6 +254,7 @@ TArray<BYTE>* FShaderManager::GetShaderBytes(FString File, FString Func, const A
 
 		CheckShader(hr, Error);
 
+
 		// Metallicafan212:	IDK, do something here?
 		DXDevice->ThrowIfFailed(hr);
 
@@ -246,7 +269,32 @@ TArray<BYTE>* FShaderManager::GetShaderBytes(FString File, FString Func, const A
 		bShouldSaveCache = 1;
 
 		SAFE_RELEASE(ShaderBuff);
+
+#if SHADER_DEBUG_OUTPUT
+		FString Bytes = Key + *FString::Printf(TEXT(" shader bytes[%d]: {"), Size);
+
+		Bytes += *FString::Printf(TEXT("0x%02hhx"), (*ShaderBytes)(0));
+
+		for (INT i = 1; i < Size; i++)
+		{
+			Bytes += *FString::Printf(TEXT(", 0x%02hhx"), (*ShaderBytes)(i));
+		}
+
+		Bytes += TEXT("};") LINE_TERMINATOR;
+
+		//GLog->Logf(TEXT("DX11: %s"), *Bytes);
+		OutputDebugString(*Bytes);
+#endif
 	}
+#else
+	// Metallicafan212:	Shaders are hard-coded, see if we can find them
+	ShaderBytes  = Bytecode.Find(Key);
+
+	if (ShaderBytes == nullptr)
+	{
+		appErrorf(TEXT("DX11: Failed to find hard-coded shader %s"), *Key);
+	}
+#endif
 
 	// Metallicafan212:	Return it out
 	return ShaderBytes;
@@ -258,6 +306,7 @@ void FShaderManager::SaveCache()
 {
 	guard(FShaderManager::SaveCache);
 
+#if !DX11_HARDCODE_SHADERS
 	if (bShouldSaveCache)
 	{
 		bShouldSaveCache = 0;
@@ -275,6 +324,9 @@ void FShaderManager::SaveCache()
 
 		CacheTime = GFileManager->GetGlobalTime(CACHE_FILE);
 	}
+#endif
 
 	unguard;
 }
+
+
