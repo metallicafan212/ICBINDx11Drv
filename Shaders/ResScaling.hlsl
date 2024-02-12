@@ -78,11 +78,14 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	// Metallicafan212:	Determine the gamma mode
 	//					Proton/wine doesn't like switches, so we're using if statements....
+	/*
 	if(GammaMode == GM_PerObject)
 	{
 		Out = float4(TexColor, 1.0f);
 	}
-	else if(GammaMode == GM_XOpenGL)
+	else
+	*/
+	if(GammaMode == GM_XOpenGL)
 	{
 		// Metallicafan212:	Use the over gamma method
 		Out = XOpenGLGamma(TexColor);

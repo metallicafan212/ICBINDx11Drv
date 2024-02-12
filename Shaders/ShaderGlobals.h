@@ -181,7 +181,7 @@ float4 DoPixelFog(float DistFog, float4 Color)
 
 float4 DoGammaCorrection(float4 ColorIn)
 {
-	if(GammaMode != GM_PerObject || Gamma == 1.0f || bModulated)
+	if(/*GammaMode != GM_PerObject ||*/ Gamma == 1.0f || bModulated)
 		return ColorIn;
 	
 	float OverGamma = 1.0f / Gamma;
