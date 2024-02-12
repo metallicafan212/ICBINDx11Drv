@@ -28,7 +28,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 		// Metallicafan212:	Only end buffering if the slot wasn't null before!!!
 		if (TX.TexInfoHash != 0)
 			EndBuffering();
-		else if(TX.m_SRV != nullptr)
+		else if (TX.m_SRV != nullptr)
 			// Metallicafan212:	It's already been null-d out
 			return;
 
@@ -37,6 +37,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 		TX.VMult		= 1.0f;
 		TX.TexInfoHash	= 0;
 		TX.m_SRV		= BlankResourceView;
+		TX.Flags		= 0;
 
 		m_RenderContext->PSSetShaderResources(TexNum, 1, &BlankResourceView);
 		m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
@@ -50,36 +51,15 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 		PolyFlags |= PF_AlphaToCoverage;
 #endif
 
-
-
-	/*
-	// Metallicafan212:	TILE HACK!!!
-	//					Load the texture directly ONLY for font characters!!!
-	//					Intel and AMD both sample correctly
-	if (bIsNV && (TexNum == 0 && PolyFlags & PF_NoSmooth && Info->NumMips == 1))
-	{
-		FogShaderVars.bNVTileHack = 1;
-	}
-	else
-	{
-		FogShaderVars.bNVTileHack = 0;
-	}
-	*/
-
 	// Metallicafan212:	Adjust the cache ID to fix masking issues (per the DX9 driver)
 	//					Like said before, this was disabled because it slots ALL textures into the first bucket
 	QWORD CacheID = Info->CacheID;
 
-	//if ((CacheID & 0xFF) == 0xE0)
-	//{
-	//	//Alter texture cache id if masked texture hack is enabled and texture is masked
-	//	CacheID |= ((PolyFlags & PF_Masked) ? 1 : 0);
-	//}
-
 	// Metallicafan212:	End buffering if the input texture doesn't match!!!
 	UBOOL bSetTex = 0;
-	//DWORD CacheHash = GetCacheHash(Info->CacheID);
-	if ((TX.TexInfoHash != 0 && TX.TexInfoHash != Info->CacheID))//CacheHash))
+
+	// Metallicafan212:	We have to be able to draw without a texture, so we do have to not ignore hash 0
+	if ((TX.TexInfoHash != Info->CacheID))
 	{
 		bSetTex = 1;
 		EndBuffering();
@@ -99,22 +79,23 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 #endif
 
 	// Metallicafan212:	Check if we need to upload it to the GPU
-	//					(REMOVED, DUE TO MULTIPLE MAPS) I also check masked as we need to rehack the palette when mask changes
-	UBOOL bUpload			= DaTex == nullptr || bTexChanged; //|| ( ((PolyFlags & PF_Masked) ^ (DaTex->PolyFlags & PF_Masked)) == PF_Masked);
+	//					Masked textures get placed in a separate map, so they can be toggled on and off without a refresh
+	//					This uses more memory, but results in more consistent FPS and behavior
+	UBOOL bUpload			= DaTex == nullptr || bTexChanged;
 
 	if(bUpload)
 	{
 		DaTex = CacheTextureInfo(*Info, PolyFlags);
-
-		// Metallicafan212:	Get the new bind, if it's changed
-		//DaTex = TextureMap.Find(Info->CacheID, PolyFlags);
 	}
+
+	// Metallicafan212:	Save the UV clamp state here
+	PolyFlags |= (DaTex->bShouldUVClamp ? PF_ClampUVs : 0);
 
 	// Metallicafan212:	Calculate the new values
 	FLOAT NewUMult = 1.0f / (Info->UScale * Info->USize);
 	FLOAT NewVMult = 1.0f / (Info->VScale * Info->VSize);
 
-	// Metallicafan212:	Fix some lightmap related issues
+	// Metallicafan212:	Fix some lightmap related issues, check UV mult and UV pan
 	if (bSetTex || NewUMult != TX.UMult || NewVMult != TX.VMult || TX.UPan != Info->Pan.X || TX.VPan != Info->Pan.Y)
 	{
 		bSetTex = 1;
@@ -165,12 +146,18 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 	}
 #endif
 
-	TX.m_SRV = DaTex->m_View;
+	// Metallicafan212:	Only actually set the slot if we need to
+	if (bSetTex || TX.m_SRV == nullptr || TX.Flags != PolyFlags)
+	{
+		TX.m_SRV = DaTex->m_View;
 
-	m_RenderContext->PSSetShaderResources(TexNum, 1, &DaTex->m_View);
+		m_RenderContext->PSSetShaderResources(TexNum, 1, &DaTex->m_View);
 
-	ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->MipSkip, 0);//DaTex->bSkipMipZero ? 1 : 0, 0);
-	m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
+		ID3D11SamplerState* Temp = GetSamplerState(PolyFlags, DaTex->MipSkip, 0);
+		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
+
+		TX.Flags = PolyFlags;s
+	}
 
 	unguardSlow;
 }

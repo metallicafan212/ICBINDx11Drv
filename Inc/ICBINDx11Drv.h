@@ -405,6 +405,7 @@ struct FD3DBoundTex
 	FLOAT						VMult;
 	FLOAT						UScale;
 	FLOAT						VScale;
+	PFLAG						Flags;
 };
 
 // Metallicafan212:	Draw call info
