@@ -79,7 +79,8 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	// Metallicafan212:	Needed for tiles
 	//					Basically, non-looping tiles have AF issues, so I auto clamp to reduce these issues
 	//					Fixes editor icons and the like
-	if ((abs(UL) <= Info.USize && abs(VL) <= Info.VSize))
+	//					This should be disabled if the UL and VL will make it loop
+	if ((abs(U + UL) <= Info.USize && abs(V + VL) <= Info.VSize))
 		PolyFlags |= PF_ClampUVs;
 	else
 		PolyFlags &= ~PF_ClampUVs;
