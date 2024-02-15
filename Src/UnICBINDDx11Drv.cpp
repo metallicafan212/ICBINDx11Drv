@@ -217,7 +217,13 @@ MAKE_DEVICE:
 
 	// Metallicafan212:	Initialize the geo shader bool
 	//					Wine/proton does not like my geo shader, so we ignore it (for now)
-	bUseGeoShaders = !GWineAndDine;
+	//bUseGeoShaders = !GWineAndDine;
+
+	// Metallicafan212:	When using wine, force use of the precompiled shaders!
+	if (GWineAndDine)
+	{
+		bUsePrecompiledShaders = 1;
+	}
 
 	// Metallicafan212:	Log the feature level
 	const TCHAR* FLStr = nullptr;
