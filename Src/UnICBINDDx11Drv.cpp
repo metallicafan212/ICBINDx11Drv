@@ -219,6 +219,9 @@ MAKE_DEVICE:
 	//					Wine/proton does not like my geo shader, so we ignore it (for now)
 	//bUseGeoShaders = !GWineAndDine;
 
+	// Metallicafan212:	Fix broken use of geo shaders
+	bUseGeoShaders	= 1;
+
 	// Metallicafan212:	When using wine, force use of the precompiled shaders!
 	if (GWineAndDine)
 	{
