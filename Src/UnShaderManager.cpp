@@ -1,7 +1,7 @@
 #include "ICBINDx11Drv.h"
 
 // Metallicafan212:	If to print out the shader bytes to the log when compiled
-#define SHADER_DEBUG_OUTPUT 1
+#define SHADER_DEBUG_OUTPUT 0
 
 // Metallicafan212:	Might be too stupid of a name lmao
 #define CACHE_FILE SHADER_FOLDER TEXT("Haybale.cache")
@@ -224,14 +224,14 @@ TArray<BYTE>* FShaderManager::GetShaderBytes(FString File, FString Func, const A
 	
 	TArray<BYTE>* ShaderBytes = nullptr;
 
+	// Metallicafan212:	Add the generational language to it as well
+	FString Key = FString::Printf(TEXT("%s:%s:%s"), *File, *Func, appFromAnsi(Lang));
+
 #if !DX11_HARDCODE_SHADERS
 	// Metallicafan212:	Compare the cache time to the file time
 	SQWORD ShaderTime = GFileManager->GetGlobalTime(*File);
 
 	FString RealFile;
-
-	// Metallicafan212:	Add the generational language to it as well
-	FString Key = FString::Printf(TEXT("%s:%s:%s"), *File, *Func, appFromAnsi(Lang));
 
 	// Metallicafan212:	On a fresh load, CacheTime should be 0
 	if (ShaderTime < CacheTime)

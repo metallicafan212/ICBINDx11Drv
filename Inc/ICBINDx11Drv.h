@@ -52,6 +52,10 @@
 #define WINDOWS_IGNORE_PACKING_MISMATCH 1
 #endif
 
+// Metallicafan212:	Hard-code shaders for comp play
+//					TODO! Should probably only be enabled for build built with the official patch and released on Github
+#define DX11_HARDCODE_SHADERS 1
+
 #endif
 
 #define INT_INDEX_BUFF 1
@@ -82,7 +86,7 @@ typedef unsigned short INDEX;
 
 #define DX11_USE_MSAA_SHADER 1
 
-#define D3D_DRIVER_VERSION TEXT("0.69 Alpha")
+#define D3D_DRIVER_VERSION TEXT("0.89 Alfalfa-Alpha")
 
 // Metallicafan212:	Compile time
 #define COMPILED_AT			*FString::Printf(TEXT("%s @ %s"), appFromAnsi(__DATE__), appFromAnsi(__TIME__))
