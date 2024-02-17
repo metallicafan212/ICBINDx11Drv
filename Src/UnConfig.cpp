@@ -178,6 +178,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	If to load the precompiled shaders from the bytes in the binary, rather than recompile when an invalid shader cache is encountered
 	AddBoolProp(CPP_PROP(bUsePrecompiledShaders), 0);
 
+	//AddFloatProp(CPP_PROP(TileAAUVMove), 0.001f);
+
 	unguard;
 }
 
@@ -362,34 +364,38 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 	if(LastAASamples != NumAASamples)
 		GLog->Logf(TEXT("DX11: Requesting %d AA samples"), NumAASamples);
 
+	// Metallicafan212:	Use a positive number, fixes text being offset on NV
+	TileAAUVMove = 0.001f;
+	/*
 	// Metallicafan212:	TODO! Hard-coded offsets to make tiles not look like ass....
 	switch (NumAASamples)
 	{
 		case 0:
 		case 1:
 		{
-			TileAAUVMove = -0.001f;
+			TileAAUVMove = 0.001f;
 			break;
 		}
 
 		case 2:
 		{
-			TileAAUVMove = -0.001f;
+			TileAAUVMove = 0.001f;
 			break;
 		}
 
 		case 4:
 		{
-			TileAAUVMove = -0.001f;//0.5f;
+			TileAAUVMove = 0.001f;//0.5f;
 			break;
 		}
 
 		case 8:
 		{
-			TileAAUVMove = -0.001f;//0.2f;
+			TileAAUVMove = 0.001f;//0.2f;
 			break;
 		}
 	}
+	*/
 
 	// Metallicafan212:	Set this here now
 	LastGamma = Gamma;
