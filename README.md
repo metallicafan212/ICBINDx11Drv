@@ -3,7 +3,7 @@ Metallicafan212’s Farm-Raised Open Source DirectX 11 Renderer.
 ![image](https://github.com/metallicafan212/D3D11Drv/assets/5996243/787208bd-fe10-4f51-a7e6-675cc8a5fc3c)
 
 This repository contains a working (albeit a bit messy) DX11 renderer for HP2 New Engine, Old Unreal UT 469, and in the future, for more UE1 games as well.
-Currently in an alpha stage, as I need to implement more user configurables, more features, add a custom MSAA resolve to fix blurry tile rendering, etc.
+Currently in an alpha stage, as it does need more testing, but it's largely complete and has a lot of end-user customizable, in the editor and the game.
 Parts are based on how the DX9 renderer works, but have been heavily modified by myself. The only part copied "wholesale" from DX9 is the projection setup, as it actually works.
 Eventually, I will be recoding the projection setup so that it uses the standard DirectX math libraries, but for now, this works.
 
@@ -11,17 +11,20 @@ Eventually, I will be recoding the projection setup so that it uses the standard
 https://github.com/metallicafan212/ICBINDx11Drv/releases/latest
 
 ## Current state
-This renderer works great, and on specific systems or games, runs 10% to 30% faster than the DX9 renderer.
+This renderer works great, and on specific systems or games, runs 10% to 30% faster than the DX9 renderer. Lots of different settings for the user to change, and mess with.
+Exclusive features like line thickness and super resolution (ResolutionScale setting).
 
 ## What this renderer does
 Everything the DX9 renderer does in HP2 (RT textures, distance fog, all standard rendering, on-screen fast string drawing using D2D, etc.).
 Full UnrealEd support including all line drawing routines, selection, user-customizable 3D and 2D line thickness options, etc.
+Full UnrealEd browser support, including the texture and mesh browser.
 
 ## What this renderer does not
 Raytracing, external texture loading, support other games (yet).
 
 ## What's missing to support other games?
-This is now implemented. The full (base) UE1 rendering interface is implemented and working. Specific game extensions (Rune, DX) are not implemented.
+The full (base) UE1 rendering interface is implemented and working. UT469 and HP2 specific extensions are also implemented.
+Specific game extensions (Rune, DX) are not implemented, but are planned.
 
 ## Building
 ```
