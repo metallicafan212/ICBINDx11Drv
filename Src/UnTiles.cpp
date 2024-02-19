@@ -25,7 +25,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	if(ExtraRasterFlags & DXRS_Wireframe)
 		ExtraRasterFlags = 0;
 
-	SetRasterState(DXRS_Normal);
+	SetRasterState(DXRS_Normal | DXRS_NoAA);
 
 	ExtraRasterFlags = OldFlags;
 

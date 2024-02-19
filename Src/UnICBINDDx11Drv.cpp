@@ -134,6 +134,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 	}
 
 	SAFE_RELEASE(m_D3DDeviceContext);
+	SAFE_RELEASE(m_D3DDevice1);
 	SAFE_RELEASE(m_D3DDevice);
 	SAFE_RELEASE(m_D3DDeferredContext);
 	SAFE_RELEASE(m_D3DCommandList);
@@ -147,8 +148,10 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	// Metallicafan212:	Init DX11
 	//					We want to use feature level 11_1 for compute shaders
-	D3D_FEATURE_LEVEL FLList[7] = 
+	D3D_FEATURE_LEVEL FLList[9] = 
 	{ 
+		D3D_FEATURE_LEVEL_12_1,
+		D3D_FEATURE_LEVEL_12_0,
 		D3D_FEATURE_LEVEL_11_1,
 		D3D_FEATURE_LEVEL_11_0,
 		D3D_FEATURE_LEVEL_10_1,
@@ -161,6 +164,13 @@ void UICBINDx11RenderDevice::SetupDevice()
 	INT FLCount = ARRAY_COUNT(FLList);
 
 	D3D_FEATURE_LEVEL* FLPtr = &FLList[0];
+
+	if (!GWin10)
+	{
+		// Metallicafan212:	Don't attempt to use feature levels 12_1 and 12_0
+		FLPtr	+= 2;
+		FLCount -= 2;
+	}
 
 	if (!GWin81)
 	{
@@ -228,11 +238,27 @@ MAKE_DEVICE:
 		bUsePrecompiledShaders = 1;
 	}
 
+	// Metallicafan212:	Get the windows 8+ specific device
+	m_D3DDevice1 = nullptr;
+	hr = m_D3DDevice->QueryInterface(__uuidof(m_D3DDevice1), (void**)&m_D3DDevice1);
+
 	// Metallicafan212:	Log the feature level
 	const TCHAR* FLStr = nullptr;
 
 	switch (m_FeatureLevel)
 	{
+		case D3D_FEATURE_LEVEL_12_1:
+		{
+			FLStr = TEXT("12.1");
+			break;
+		}
+
+		case D3D_FEATURE_LEVEL_12_0:
+		{
+			FLStr = TEXT("12.0");
+			break;
+		}
+
 		case D3D_FEATURE_LEVEL_11_1:
 		{
 			FLStr = TEXT("11.1");
@@ -280,6 +306,9 @@ MAKE_DEVICE:
 	//					TODO! Could combine with the previous switch, but then I would have to reformat this
 	switch (m_FeatureLevel)
 	{
+		// Metallicafan212:	Directx 11 doesn't support shader model 5.1, even though the feature level does
+		case D3D_FEATURE_LEVEL_12_1:
+		case D3D_FEATURE_LEVEL_12_0:
 		case D3D_FEATURE_LEVEL_11_1:
 		case D3D_FEATURE_LEVEL_11_0:
 		{
@@ -587,12 +616,18 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 {
 	guardSlow(UICBINDx11RenderDevice::SetRasterState);
 
+	// Metallicafan212:	Don't allow for changing raster sates
+
 	// Metallicafan212:	See if the raster state differs
 	//					TODO! Add more flags
 	State &= (DXRS_Wireframe | DXRS_NoAA);
 
 	// Metallicafan212:	Add on the extra raster flags
 	State |= ExtraRasterFlags;
+
+	// Metallicafan212:	If we don't have a windows 8 device, don't allow for the no AA option
+	if(m_D3DDevice1 == nullptr)
+		State &= ~(DXRS_NoAA);
 
 	if (State != CurrentRasterState)
 	{
@@ -601,7 +636,7 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 
 		// Metallicafan212:	Find what needs to be added on to make it, if it doesn't exist yet
 #if !USE_UNODERED_MAP_EVERYWHERE
-		ID3D11RasterizerState* m_s = RasterMap.FindRef(State);
+		ID3D11RasterizerState1* m_s = RasterMap.FindRef(State);
 #else
 		auto f = RasterMap.find(State);
 
@@ -610,53 +645,108 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 
 		if (m_s == nullptr)
 		{
-			CD3D11_RASTERIZER_DESC Desc(D3D11_DEFAULT);
-
-			// Metallicafan212: We want no backface culling
-			Desc.CullMode					= D3D11_CULL_NONE;
-
-			// Metallicafan212:	These are defaults
-			//Desc.DepthBias					= 0;
-			//Desc.DepthBiasClamp				= 0.0f;
-			//Desc.DepthClipEnable			= TRUE;
-			//Desc.FrontCounterClockwise		= FALSE;
-			//Desc.ScissorEnable				= FALSE;
-
-			// Metallicafan212:	Now check the flags
-			if (State & DXRS_Wireframe)
+			if (m_D3DDevice1 != nullptr)
 			{
-				Desc.FillMode = D3D11_FILL_WIREFRAME;
-			}
-			// Metallicafan212:	This is default
-			/*
-			else
-			{
-				Desc.FillMode = D3D11_FILL_SOLID;
-			}
-			*/
+				CD3D11_RASTERIZER_DESC1 Desc(D3D11_DEFAULT);
 
-			// Metallicafan212:	TODO!!!! This does NOTHING in real DX11 modes!!!
-			if (State & DXRS_NoAA)
-			{
-				Desc.AntialiasedLineEnable	= FALSE;
-				Desc.MultisampleEnable		= FALSE;
-			}
-			else
-			{
-				Desc.AntialiasedLineEnable	= TRUE;
-				Desc.MultisampleEnable		= TRUE;
-			}
+				// Metallicafan212: We want no backface culling
+				Desc.CullMode					= D3D11_CULL_NONE;
 
-			HRESULT hr = m_D3DDevice->CreateRasterizerState(&Desc, &m_s);
+				// Metallicafan212:	These are defaults
+				//Desc.DepthBias					= 0;
+				//Desc.DepthBiasClamp				= 0.0f;
+				//Desc.DepthClipEnable			= TRUE;
+				//Desc.FrontCounterClockwise		= FALSE;
+				//Desc.ScissorEnable				= FALSE;
 
-			ThrowIfFailed(hr);
+				// Metallicafan212:	Now check the flags
+				if (State & DXRS_Wireframe)
+				{
+					Desc.FillMode = D3D11_FILL_WIREFRAME;
+				}
+				// Metallicafan212:	This is default
+				/*
+				else
+				{
+					Desc.FillMode = D3D11_FILL_SOLID;
+				}
+				*/
 
-			// Metallicafan212:	Now set it on the map
+				// Metallicafan212:	TODO!!!! This does NOTHING in real DX11 modes!!!
+				if (State & DXRS_NoAA)
+				{
+					Desc.AntialiasedLineEnable	= FALSE;
+					Desc.MultisampleEnable		= FALSE;
+					Desc.ForcedSampleCount		= 1;
+				}
+				else
+				{
+					Desc.AntialiasedLineEnable	= TRUE;
+					Desc.MultisampleEnable		= TRUE;
+					Desc.ForcedSampleCount		= 0;
+				}
+
+				HRESULT hr = m_D3DDevice1->CreateRasterizerState1(&Desc, (ID3D11RasterizerState1**)&m_s);
+
+				ThrowIfFailed(hr);
+
+				// Metallicafan212:	Now set it on the map
 #if !USE_UNODERED_MAP_EVERYWHERE
-			RasterMap.Set(State, m_s);
+				RasterMap.Set(State, m_s);
 #else
-			RasterMap[State] = m_s;
+				RasterMap[State] = m_s;
 #endif
+			}
+			else
+			{
+				CD3D11_RASTERIZER_DESC Desc(D3D11_DEFAULT);
+
+				// Metallicafan212: We want no backface culling
+				Desc.CullMode					= D3D11_CULL_NONE;
+
+				// Metallicafan212:	These are defaults
+				//Desc.DepthBias					= 0;
+				//Desc.DepthBiasClamp				= 0.0f;
+				//Desc.DepthClipEnable			= TRUE;
+				//Desc.FrontCounterClockwise		= FALSE;
+				//Desc.ScissorEnable				= FALSE;
+
+				// Metallicafan212:	Now check the flags
+				if (State & DXRS_Wireframe)
+				{
+					Desc.FillMode = D3D11_FILL_WIREFRAME;
+				}
+				// Metallicafan212:	This is default
+				/*
+				else
+				{
+					Desc.FillMode = D3D11_FILL_SOLID;
+				}
+				*/
+
+				// Metallicafan212:	TODO!!!! This does NOTHING in real DX11 modes!!!
+				if (State & DXRS_NoAA)
+				{
+					Desc.AntialiasedLineEnable	= FALSE;
+					Desc.MultisampleEnable		= FALSE;
+				}
+				else
+				{
+					Desc.AntialiasedLineEnable	= TRUE;
+					Desc.MultisampleEnable		= TRUE;
+				}
+
+				HRESULT hr = m_D3DDevice1->CreateRasterizerState(&Desc, &m_s);
+
+				ThrowIfFailed(hr);
+
+				// Metallicafan212:	Now set it on the map
+#if !USE_UNODERED_MAP_EVERYWHERE
+				RasterMap.Set(State, m_s);
+#else
+				RasterMap[State] = m_s;
+#endif
+			}
 		}
 
 		// Metallicafan212:	Set it
@@ -1825,6 +1915,7 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_RELEASE(m_D3DDeviceContext);
 	SAFE_RELEASE(m_D3DDeferredContext);
 	SAFE_RELEASE(m_D3DCommandList);
+	SAFE_RELEASE(m_D3DDevice1);
 	SAFE_RELEASE(m_D3DDevice);
 
 	unguard;

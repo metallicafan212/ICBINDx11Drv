@@ -54,9 +54,9 @@ if (UVInfo.bEnabledTex[chan]) \
 	DO_UV_CHANNEL_NO_ADD(4, m_SecVert[Vert].DU, m_SecVert[Vert].DV);
 
 #if EXTRA_VERT_INFO
-FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_VertexBuff, INDEX* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies, FD3DSecondaryVert* m_SecVert, FUVInfo& UVInfo)
+FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FPlane Fog, FD3DVert* m_VertexBuff, INDEX* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies, FD3DSecondaryVert* m_SecVert, FUVInfo& UVInfo)
 #else
-FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_VertexBuff, INDEX* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies, FD3DSecondaryVert* m_SecVert)
+FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FPlane Fog, FD3DVert* m_VertexBuff, INDEX* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies, FD3DSecondaryVert* m_SecVert)
 #endif
 {
 	SIZE_T vIndex	= 0;
@@ -91,8 +91,8 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 		CALC_UV(0);
 #endif
 #endif
-
-		m_VertexBuff[Vert++].Color = Color;
+		m_VertexBuff[Vert].Fog		= Fog;
+		m_VertexBuff[Vert++].Color	= Color;
 
 		m_VertexBuff[Vert].X		= Poly->Pts[1]->Point.X;
 		m_VertexBuff[Vert].Y		= Poly->Pts[1]->Point.Y;
@@ -107,8 +107,8 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 		CALC_UV(1);
 #endif
 #endif
-
-		m_VertexBuff[Vert++].Color = Color;
+		m_VertexBuff[Vert].Fog		= Fog;
+		m_VertexBuff[Vert++].Color	= Color;
 
 
 		for (INT i = 2; i < NumPts; i++)
@@ -126,8 +126,9 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FD3DVert* m_
 			CALC_UV(i);
 #endif
 #endif
-
+			m_VertexBuff[Vert].Fog		= Fog;
 			m_VertexBuff[Vert++].Color	= Color;
+
 
 			// Metallicafan212:	Now assemble this triangle
 			//					It always uses the base vertex, the previous one, and the current one
@@ -195,6 +196,13 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	{
 		AlphaMult = 1.0f;
 	}
+
+	// Metallicafan212:	If selecting, remove vertex coloring
+	if (m_HitData != nullptr)
+	{
+		PolyFlags &= ~PF_VertexColored;
+	}
+
 #endif
 
 	SetBlend(PolyFlags);
@@ -233,10 +241,17 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	checkSlow(Surface.Texture);
 
 	// Metallicafan212:	Just use the lightmap for color?
-	FPlane TestColor = FPlane(1.f, 1.f, 1.f, 1.f);
+	FPlane TestColor	= FPlane(1.f, 1.f, 1.f, 1.f);
+	FPlane Fog			= FPlane(0.f, 0.f, 0.f, 0.f);
 
 #if DX11_HP2
 	TestColor.W *= AlphaMult;
+
+	if (PolyFlags & PF_VertexColored)
+	{
+		Fog = Surface.VertexColor;
+	}
+
 #endif
 
 	// Metallicafan212:	Selection testing!!!!
@@ -340,9 +355,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 #endif
 
 #if EXTRA_VERT_INFO
-	BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff, UVInfo);
+	BufferAndIndex(Facet, TestColor, Fog, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff, UVInfo);
 #else
-	BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff);
+	BufferAndIndex(Facet, TestColor, Fog, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff);
 #endif
 
 	AdvanceVertPos();
@@ -354,6 +369,11 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	{
 		// Metallicafan212:	We have to draw the previous indexed surface first!!!!
 		EndBuffering();
+
+		// Metallicafan212:	Remove vertex coloring
+#if DX11_HP2
+		PolyFlags &= ~PF_VertexColored;
+#endif
 
 		// Metallicafan212:	Start buffering now
 		StartBuffering(BT_BSP);
@@ -368,6 +388,8 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		SetTexture(2, nullptr, 0);
 		SetTexture(3, nullptr, 0);
 		SetTexture(4, nullptr, 0);
+
+		Fog = FPlane(0.0f, 0.0f, 0.0f, 0.f);
 
 #if	1//DX11_HP2
 		SetBlend(PF_AlphaBlend);
@@ -414,9 +436,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 		// Metallicafan212:	Rebuffer the verts (again)
 #if EXTRA_VERT_INFO
-		BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff, UVInfo);
+		BufferAndIndex(Facet, TestColor, Fog, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff, UVInfo);
 #else
-		BufferAndIndex(Facet, TestColor, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff);
+		BufferAndIndex(Facet, TestColor, Fog, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff);
 #endif
 
 		AdvanceVertPos();

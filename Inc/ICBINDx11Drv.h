@@ -663,6 +663,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	TODO! Generalized D3D variables
 	ID3D11Device*				m_D3DDevice;
 
+	// Metallicafan212:	This device version is only needed for the raster description
+	ID3D11Device1*				m_D3DDevice1;
+
 	IDXGISwapChain1*			m_D3DSwapChain;
 	ID3D11DeviceContext*		m_D3DDeviceContext;
 

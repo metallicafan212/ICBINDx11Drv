@@ -76,16 +76,19 @@ PSInput VertShader(VSInput input)
 	PSInput output = (PSInput)0;
 	
 	// Metallicafan212:	Set the W to 1 so matrix math works
-	input.pos.w 	= 1.0f;
+	input.pos.w 		= 1.0f;
 	
 	// Metallicafan212:	Transform it out
-	output.pos 		= mul(input.pos, Proj);
-	output.color	= input.color;
+	output.pos 			= mul(input.pos, Proj);
+	output.color		= input.color;
+	
+	// Metallicafan212:	Mix in the vertex color from the fog value
+	output.color.xyz   += (input.fog.xyz * input.fog.w);
 	
 	#if EXTRA_VERT_INFO && !COMPLEX_SURF_MANUAL_UVs
 	// Metallicafan212:	TODO! I'm lazy, just define the variables here
-	float4 XAxis 	= input.XAxis;
-	float4 YAxis	= input.YAxis;
+	float4 XAxis 		= input.XAxis;
+	float4 YAxis		= input.YAxis;
 	
 	float4 PanScale[5];
 	PanScale[0]			= input.PanScale1;
