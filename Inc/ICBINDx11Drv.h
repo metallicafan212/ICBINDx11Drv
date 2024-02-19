@@ -693,6 +693,9 @@ class UICBINDx11RenderDevice : public URenderDevice
 	// Metallicafan212:	If to use geo shaders at all (Shader version 3.0 has no geo shaders)
 	UBOOL						bUseGeoShaders;
 
+	// Metallicafan212:	If we can use ForcedSampleCount
+	UBOOL						bSupportsForcedSampleCount;
+
 	// Metallicafan212:	For debugging only (will be removed later)
 	ID3D11Debug*				m_D3DDebug;
 	ID3D11InfoQueue*			m_D3DQueue;

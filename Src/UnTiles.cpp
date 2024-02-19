@@ -38,7 +38,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 
 	PolyFlags &= ~PF_RenderFog;
 #else
-	SetRasterState(DXRS_Normal);
+	SetRasterState(DXRS_Normal | DXRS_NoAA);
 
 	if(m_nearZRangeHackProjectionActive)
 		SetProjectionStateNoCheck(false);

@@ -13,6 +13,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	// Metallicafan212: Detect windows version and wine on non-HP2 engines
 #if !DX11_HP2
+	// Metallicafan212:	TODO!!!!! This will NOT work since windows will always report a lower OS number to apps with a older manifest....
 	SetupWindowsVersionCheck();
 #endif
 
@@ -165,6 +166,9 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	D3D_FEATURE_LEVEL* FLPtr = &FLList[0];
 
+	// Metallicafan212:	TODO! Find a work around that allows for actually checking for the direct windows version....
+	//					I might have to query cmd.....
+#if DX11_HP2
 	if (!GWin10)
 	{
 		// Metallicafan212:	Don't attempt to use feature levels 12_1 and 12_0
@@ -178,6 +182,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 		FLPtr++;
 		FLCount--;
 	}
+#endif
 
 	// Metallicafan212:	On my system, the multithreaded supported device runs ever so slightly faster, for no reason
 	UINT Flags =	D3D11_CREATE_DEVICE_BGRA_SUPPORT
@@ -230,7 +235,8 @@ MAKE_DEVICE:
 	//bUseGeoShaders = !GWineAndDine;
 
 	// Metallicafan212:	Fix broken use of geo shaders
-	bUseGeoShaders	= 1;
+	bUseGeoShaders				= 1;
+	bSupportsForcedSampleCount	= 0;
 
 	// Metallicafan212:	When using wine, force use of the precompiled shaders!
 	if (GWineAndDine)
@@ -247,9 +253,11 @@ MAKE_DEVICE:
 
 	switch (m_FeatureLevel)
 	{
+		// Metallicafan212:	Level 12_1 explicitly supports it, anything else has to be queried
 		case D3D_FEATURE_LEVEL_12_1:
 		{
 			FLStr = TEXT("12.1");
+			bSupportsForcedSampleCount = 1;
 			break;
 		}
 
@@ -386,6 +394,24 @@ MAKE_DEVICE:
 	}
 
 	GLog->Logf(TEXT("DX11: Using feature level %s"), FLStr);
+
+	// Metallicafan212:	Check for ForcedSampleCount support
+	if (!bSupportsForcedSampleCount)
+	{
+		D3D11_FEATURE_DATA_D3D11_OPTIONS Options;
+
+		hr = m_D3DDevice->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS, &Options, sizeof(D3D11_FEATURE_DATA_D3D11_OPTIONS));
+
+		if (SUCCEEDED(hr))
+		{
+			bSupportsForcedSampleCount = Options.MultisampleRTVWithForcedSampleCountOne;
+		}
+	}
+
+	if (bSupportsForcedSampleCount)
+	{
+		GLog->Logf(TEXT("DX11: Device supports multisample render targets with forced sample count of one. Tiles will be rendered without MSAA"));
+	}
 
 	// Metallicafan212:	Make the query
 	D3D11_QUERY_DESC qDesc = { D3D11_QUERY_EVENT, 0 };
@@ -626,7 +652,7 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 	State |= ExtraRasterFlags;
 
 	// Metallicafan212:	If we don't have a windows 8 device, don't allow for the no AA option
-	if(m_D3DDevice1 == nullptr)
+	if(m_D3DDevice1 == nullptr || !bSupportsForcedSampleCount)
 		State &= ~(DXRS_NoAA);
 
 	if (State != CurrentRasterState)
