@@ -137,6 +137,10 @@ functionCode    = "void FShaderManager::LoadHardcodedShaders()" + newline + "{" 
 
 endOfFunction   = tabbedLine + "unguard;" + newline + "}"; 
 
+# Metallicafan212: Shader directory
+#                  This'll automatically use the macro in the C++ code, or can be redefined here
+shaderFolder    = "SHADER_FOLDER ";
+
 '''
 void FShaderManager::LoadHardcodedShaders()
 {
@@ -171,7 +175,7 @@ for Shad in ShaderArray :
             generatedShader     = generatedNamespace + ".h";
 
             # Metallicafan212: TODO! Should probably make it so that the code in the driver doesn't expect a real path, and instead relies just on the filename
-            generatedKey        = "..\\\\Shaders\\\\" + Shad.file + ":" + Entry.entrypoint + ":" + Lang.target;
+            generatedKey        = shaderFolder + "TEXT(\"" + Shad.file + ":" + Entry.entrypoint + ":" + Lang.target + "\")";
             generatedBytes      = generatedNamespace + "::g_" + Entry.entrypoint;
 
             compileCommand = [
@@ -196,7 +200,7 @@ for Shad in ShaderArray :
 
                 # Metallicafan212: Add the code to set the data
                 functionCode += "// Metallicafan212: Load " + generatedNamespace + tabbedLine;
-                functionCode += "Shad = &Bytecode.Set(TEXT(\"" + generatedKey + "\"), TArray<BYTE>());" + tabbedLine;
+                functionCode += "Shad = &Bytecode.Set(" + generatedKey + ", TArray<BYTE>());" + tabbedLine;
                 functionCode += "Shad->Add(ARRAY_COUNT(" + generatedBytes + "));" + tabbedLine + tabbedLine;
                 functionCode += "appMemcpy(Shad->GetData(), " + generatedBytes + ", ARRAY_COUNT(" + generatedBytes + "));"
                 functionCode += tabbedLine + tabbedLine;
