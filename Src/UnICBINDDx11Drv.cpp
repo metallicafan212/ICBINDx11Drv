@@ -1264,8 +1264,11 @@ void UICBINDx11RenderDevice::SetupResources()
 		//					I need to analyse and see what exactly it's modifying about the window and reverse that change
 		bAllowTearing = (!GIsEditor
 		
+		// Metallicafan212:	This WONT work on UT469, since there's no app manifest
+		// 
+		// 
 		// Metallicafan212:	2024, I added simple windows version checking to the driver for non-HP2 targets
-#if 1//DX11_HP2
+#if DX11_HP2
 			&& GWin10
 #endif
 			);
