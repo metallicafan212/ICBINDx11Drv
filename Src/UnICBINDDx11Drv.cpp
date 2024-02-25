@@ -1835,6 +1835,11 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_RELEASE(IndexBuffer);
 	SAFE_RELEASE(SecondaryVertexBuffer);
 
+	// Metallicafan212:	2024, also free the buffers holy shit
+	SAFE_RELEASE(FrameConstantsBuffer);
+	SAFE_RELEASE(GlobalDistFogBuffer);
+	SAFE_RELEASE(GlobalPolyflagsBuffer);
+
 	m_D3DDeviceContext->ClearState();
 
 	// Metallicafan212:	Clear the RT textures
@@ -1916,10 +1921,8 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_RELEASE(BlankResourceView);
 	SAFE_RELEASE(BlankSampler);
 
-
 	SAFE_RELEASE(m_DefaultZState);
 	SAFE_RELEASE(m_DefaultNoZState);
-
 
 	FlushRasterStates();
 
@@ -1928,6 +1931,13 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_RELEASE(m_D3DSwapChain);
 
 	SAFE_RELEASE(m_D3DQuery);
+
+	// Metallicafan212:	2024, missed resources
+	SAFE_RELEASE(m_MSAAResolveSRV);
+	SAFE_RELEASE(m_MSAAResolveTex);
+
+	SAFE_RELEASE(m_SelectionDSV);
+	SAFE_RELEASE(m_SelectionDSTex);
 
 #if DX11_HP2
 	// Metallicafan212:	HP2 specific
