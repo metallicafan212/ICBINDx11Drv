@@ -350,6 +350,9 @@ struct FD3DTexture
 	// Metallicafan212:	If this is really a RT texture
 	UBOOL				bIsRT;
 
+	// Metallicafan212:	If this texture needs to be decompressed (BC1-7 in non-pow2 sizes)
+	UBOOL				bDecompress;
+
 	// Metallicafan212:	If mip 0 is "dead"
 	//UBOOL			bSkipMipZero;
 

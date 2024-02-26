@@ -534,7 +534,7 @@ MAKE_DEVICE:
 	SetRasterState(DXRS_Normal);
 
 	// Metallicafan212:	Reset the shader state
-	FogShaderVars	= FFogShaderVars();
+	FogShaderVars		= FFogShaderVars();
 	FrameShaderVars		= FFrameShaderVars();
 
 	// Metallicafan212:	Recreate the constant buffer as well
@@ -551,6 +551,8 @@ MAKE_DEVICE:
 	m_RenderContext->PSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
 	m_RenderContext->CSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
 
+	// Metallicafan212:	Don't even create it if we're not in HP2
+#if DX11_HP2
 	// Metallicafan212:	Now create one for the distance fog settings
 	//D3D11_BUFFER_DESC DistConst = { sizeof(FDistFogVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
 	D3D11_BUFFER_DESC DistConst = { sizeof(FDistFogVars), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
@@ -562,6 +564,7 @@ MAKE_DEVICE:
 	m_RenderContext->GSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
 	m_RenderContext->PSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
 	m_RenderContext->CSSetConstantBuffers(1, 1, &GlobalDistFogBuffer);
+#endif
 
 	// Metallicafan212:	And now the dynamic polyflags buffer
 	D3D11_BUFFER_DESC PolyConst = { sizeof(FPolyflagVars), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
@@ -2171,8 +2174,10 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	FlashScale		= InFlashScale;
 	FlashFog		= InFlashFog;
 
+#if DX11_HP2
 	if (FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues)
 		TickDistanceFog();
+#endif
 
 	// Metallicafan212:	Update the shader variables
 	UpdateGlobalShaderVars();

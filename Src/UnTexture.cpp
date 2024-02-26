@@ -162,7 +162,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 	unguardSlow;
 }
 
-FORCEINLINE UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch, INT& MipW, INT& MipH)
+/*FORCEINLINE*/ UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexture* Tex, BYTE* ConversionMem, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch, INT& MipW, INT& MipH)
 {
 #if DX11_HP2
 	FMipmap* Mip = Info.Mips[MipNum];
@@ -184,7 +184,7 @@ FORCEINLINE UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, 
 	MipW	= Mip->USize;
 	MipH	= Mip->VSize;
 
-	SourcePitch = Type->GetPitch(Mip->USize);
+	SourcePitch = Tex->Type->GetPitch(Mip->USize);
 
 	if (Size <= 0)
 	{
@@ -199,12 +199,30 @@ FORCEINLINE UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, 
 
 	UBOOL Compressed	= FIsCompressedFormat(Info.Format);
 	FMipmap* Mip		= Info.Texture ? (Compressed ? &Info.Texture->CompMips(MipNum) : &Info.Texture->Mips(MipNum)) : nullptr;
-	if (Mip)
+	if (Mip != nullptr)
 	{
-		Mip->LoadMip();
-		DataPtr = Mip->DataPtr;
-		Size    = Mip->DataArray.Num();
-		SourcePitch = FTextureBlockBytes(Info.Format) * FTextureBlockAlignedWidth(Info.Format, Mip->USize) / FTextureBlockWidth(Info.Format);
+		// Metallicafan212:	See if it needs to be decompressed!
+		if (Tex->bDecompress)
+		{
+			Mip->LoadMip();
+			TArray<BYTE> Decomp = UTexture::DecompressMip(Info.Format, Mip, TEXF_BGRA8);
+
+			if (Decomp.Num())
+			{
+				appMemcpy(ConversionMem, &Decomp(0), Decomp.Num());
+
+				DataPtr			= ConversionMem;
+				Size			= Decomp.Num();
+				SourcePitch		= FTextureBlockBytes(TEXF_BGRA8) * FTextureBlockAlignedWidth(TEXF_BGRA8, Mip->USize) / FTextureBlockWidth(TEXF_BGRA8);
+			}
+		}
+		else
+		{
+			Mip->LoadMip();
+			DataPtr		= Mip->DataPtr;
+			Size		= Mip->DataArray.Num();
+			SourcePitch = FTextureBlockBytes(Info.Format) * FTextureBlockAlignedWidth(Info.Format, Mip->USize) / FTextureBlockWidth(Info.Format);
+		}
 
 		// Metallicafan212:	Provide out the mip's size
 		MipW	= Mip->USize;
@@ -214,8 +232,8 @@ FORCEINLINE UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexType* Type, INT MipNum, 
 	{	
 		// probably a light or fog map	
 		FMipmapBase* MipBase = Info.Mips[MipNum];
-		DataPtr = MipBase->DataPtr;
-		Size    = FTextureBytes(Info.Format, MipBase->USize, MipBase->VSize);
+		DataPtr		= MipBase->DataPtr;
+		Size		= FTextureBytes(Info.Format, MipBase->USize, MipBase->VSize);
 		SourcePitch = FTextureBlockBytes(Info.Format) * FTextureBlockAlignedWidth(Info.Format, MipBase->USize) / FTextureBlockWidth(Info.Format);
 
 		// Metallicafan212:	Provide out the mip's size
@@ -352,9 +370,28 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG 
 
 		Type = f != SupportedTextures.end() ? &f->second : nullptr;
 #endif
-
 		if (Type == nullptr)
+		{
 			appErrorf(TEXT("Metallicafan212 you idiot, you forgot to add a descriptor for %d"), DaTex->Format);
+		}
+
+		// Metallicafan212:	Test here if we need to conver it to a different format
+		if (Type->bIsCompressed)
+		{
+			UBOOL bNeedsConversion = __popcnt(Info.USize) != 1 || __popcnt(Info.VSize) != 1;
+
+			if (bNeedsConversion)
+			{
+				// Metallicafan212:	New destination will be RGBA8
+#if DX11_HP2 || DX11_UT_469
+				Type = &SupportedTextures.find(TEXF_BGRA8)->second;
+#else
+				Type = &SupportedTextures.find(TEXF_RGBA8)->second;
+#endif
+
+				DaTex->bDecompress = 1;
+			}
+		}
 
 		DaTex->D3DTexType = Type;
 
@@ -471,7 +508,7 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG 
 	if (DaTex->m_Tex == nullptr)
 	{
 		// Metallicafan212:	Check for the info
-		DaTex->Format		= Info.Format;
+		DaTex->Format		= Type->Format;//Info.Format;
 		DaTex->TexFormat	= Type->DXFormat;
 
 		// Metallicafan212:	Create the texture
@@ -631,7 +668,7 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG 
 			guardSlow(ConvertTexture);
 
 			// Metallicafan212:	Convert the mip (could be P8 or RGBA7)
-			UBOOL bMaskedHack	= (Info.Format == TEXF_P8 && PolyFlags & PF_Masked);
+			UBOOL bMaskedHack	= (Type->Format == TEXF_P8 && PolyFlags & PF_Masked);
 
 			// Metallicafan212:	TODO! Mask hack it!!
 			FColor OldMasked	= (Info.Palette != nullptr ? Info.Palette[0] : FColor(0, 0, 0, 0));
@@ -789,7 +826,7 @@ void UICBINDx11RenderDevice::DirectCP(FTextureInfo& Info, FD3DTexture* Tex, INT 
 	INT	H		= 0;
 
 	// Metallicafan212:	TODO! Do this more optimized!
-	if (GetMipInfo(Info, Tex->D3DTexType, Mip, Data, Size, Pitch, W, H))
+	if (GetMipInfo(Info, Tex, ConversionMemory, Mip, Data, Size, Pitch, W, H))
 	{
 		if (!bPartial)
 		{
@@ -841,7 +878,7 @@ void UICBINDx11RenderDevice::RGBA7To8(FTextureInfo& Info, FD3DTexture* Tex, INT 
 	INT	H		= 0;
 
 	// Metallicafan212:	TODO! Do this more optimized!
-	if (GetMipInfo(Info, Tex->D3DTexType, Mip, Data, Size, Pitch, W, H))
+	if (GetMipInfo(Info, Tex, ConversionMemory, Mip, Data, Size, Pitch, W, H))
 	{
 		// Metallicafan212:	TODO! Partial uploads
 		if (bPartial)
@@ -1005,7 +1042,7 @@ void UICBINDx11RenderDevice::P8ToRGBA(FTextureInfo& Info, FD3DTexture* Tex, INT 
 	// Metallicafan212:	TODO! Partial uploads!
 
 	// Metallicafan212:	TODO! Do this more optimized!
-	if (GetMipInfo(Info, Tex->D3DTexType, Mip, Data, Size, Pitch, W, H))
+	if (GetMipInfo(Info, Tex, ConversionMemory, Mip, Data, Size, Pitch, W, H))
 	{
 		// Metallicafan212:	Update each 4 byte block
 		SIZE_T	Read	= 0;
