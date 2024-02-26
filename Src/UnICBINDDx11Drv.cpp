@@ -405,6 +405,15 @@ MAKE_DEVICE:
 		if (SUCCEEDED(hr))
 		{
 			bSupportsForcedSampleCount = Options.MultisampleRTVWithForcedSampleCountOne;
+
+			if (bSupportsForcedSampleCount)
+			{
+				GLog->Logf(TEXT("DX11: Device does not support multisample render targets with forced sample count of one. Tiles will be rendered WITH MSAA"));
+			}
+		}
+		else
+		{
+			GLog->Logf(TEXT("DX11: Faild to query for DirectX 11.1 specific features"));
 		}
 	}
 
