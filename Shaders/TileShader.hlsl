@@ -84,6 +84,8 @@ float4 PxShader(PSInput input) : SV_TARGET
 		DiffColor = DoPixelFog(Fog, DiffColor);
 	}
 	
+	bRejectBW = input.bRejectBW;
+	
 	DiffColor = DoFinalColor(DiffColor);
 
 	return DiffColor;

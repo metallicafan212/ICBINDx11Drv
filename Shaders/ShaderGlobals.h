@@ -158,6 +158,9 @@ float DoDistanceFog(float InZ)//float4 InPos)
 // Metallicafan212:	Global selection color
 static float4 SelectionColor;
 
+// Metallicafan212:	HACK!!! To reject black and white on UI tiles, I don't want to have to update all the shaders...
+static bool		bRejectBW;
+
 // Metallicafan212:	Color masking is currently unimplemented and may not be reimplemented
 
 // Metallicafan212:	Do masked rejection
@@ -218,7 +221,7 @@ float4 DoFinalColor(float4 ColorIn)
 	ColorIn.xyz = clamp(ColorIn.xyz, 0.0, 1.0);
 	
 	// Metallicafan212:	Early return
-	if(BWPercent <= 0.0f)
+	if(BWPercent <= 0.0f || bRejectBW)
 	{
 		return ColorIn;
 	}

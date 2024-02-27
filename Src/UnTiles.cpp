@@ -109,35 +109,18 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 #if 0//DX11_UT_469
 	UBOOL bFontHack = (PolyFlags & (PF_NoSmooth | PF_Highlighted)) == (PF_NoSmooth | PF_Highlighted);
 #else
-	UBOOL bFontHack = (PolyFlags & PF_NoSmooth | PF_Masked) == (PolyFlags & PF_NoSmooth | PF_Masked);//(PolyFlags & (PF_NoSmooth | PF_Masked)) == (PF_NoSmooth | PF_Masked);
+	UBOOL bFontHack = ((PolyFlags & PF_NoSmooth | PF_Masked) == (PF_NoSmooth | PF_Masked));//(PolyFlags & (PF_NoSmooth | PF_Masked)) == (PF_NoSmooth | PF_Masked);
 #endif
 
 	// Metallicafan212:	Per CacoFFF's suggestion, add/remove 0.1f * U/VSize when rendering fonts
 	FLOAT ExtraU = 0.0f;
 	FLOAT ExtraV = 0.0f;
 
-	if (bFontHack && (NumAASamples > 1 || bIsNV))
+	if ((bFontHack && ( (NumAASamples > 1 && !bSupportsForcedSampleCount) || bIsNV)))
 	{
-		//ExtraU = 0.1f / Info.USize;
 		ExtraU = TileAAUVMove / Info.USize;
-		//ExtraV = 0.1f / Info.VSize;
 		ExtraV = TileAAUVMove / Info.VSize;
 	}
-	// Metallicafan212:	New approach for tiles, when using MSAA.
-	//					Based on dpjudas' approach
-	//else
-
-	/*
-	if ((NumAASamples > 1)) //|| bIsNV) && bFontHack)
-	{
-		XL	= appFloor(X + XL + 0.5f);
-		YL	= appFloor(Y + YL + 0.5f);
-		X	= appFloor(X + 0.5f);
-		Y	= appFloor(Y + 0.5f);
-		XL	= XL - X;
-		YL	= YL - Y;
-	}
-	*/
 
 	// Metallicafan212:	Use a separate centroid UV input if we have a font tile (no smooth) and have MSAA on!
 	FTileShader->bDoMSAAFontHack = 0;//bFontHack && bIsNV;//(bFontHack && (NumAASamples > 1));
