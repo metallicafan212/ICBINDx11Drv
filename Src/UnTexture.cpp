@@ -205,7 +205,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 		if (Tex->bDecompress)
 		{
 			Mip->LoadMip();
-			TArray<BYTE> Decomp = UTexture::DecompressMip(Info.Format, Mip, TEXF_BGRA8);
+			TArray<BYTE> Decomp = UTexture::DecompressMip(Info.Format, Mip, TEXF_RGBA8_);//TEXF_BGRA8);
 
 			if (Decomp.Num())
 			{
@@ -378,7 +378,8 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG 
 		// Metallicafan212:	Test here if we need to conver it to a different format
 		if (Type->bIsCompressed)
 		{
-			UBOOL bNeedsConversion = __popcnt(Info.USize) != 1 || __popcnt(Info.VSize) != 1;
+			// Metallicafan212:	Check if it's not pow2, and if so, if the U and V sizes are different
+			UBOOL bNeedsConversion = (__popcnt(Info.USize) != 1 || __popcnt(Info.VSize) != 1) && Info.USize != Info.VSize;
 
 			if (bNeedsConversion)
 			{
