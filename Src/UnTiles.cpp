@@ -5,15 +5,6 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 {
 	guard(UICBINDx11RenderDevice::DrawTile);
 
-	// Metallicafan212:	THIS DOESN'T FUCKING WORK!
-	//					DX11 doesn't allow you to toggle the AA state!
-	//					I'm going to have to investigate some pixel shader approach, or not use MSAA!!!
-	/*
-	// Metallicafan212:	Turn off AA for tiles
-	//					TODO! Maybe make this an ini option?
-	SetRasterState(DXRS_Normal | DXRS_NoAA);
-	*/
-
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Tiles);
 
@@ -91,7 +82,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	//					This should be disabled if the UL and VL will make it loop
 	//if ((abs(U + UL) <= Info.USize && abs(V + VL) <= Info.VSize))
 
-	// Metallicafan212:	Reversed this check, as it needs to see if the UVs loop or cross a barrior
+	// Metallicafan212:	Reversed and revised this check, as it needs to see if the UVs loop or cross a barrior
 	if (abs(UF) > 1.0f || abs(VF) > 1.0f || UL < U || VL < V)
 	{
 		PolyFlags &= ~PF_ClampUVs;
@@ -132,8 +123,9 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 
 	if ((bFontHack && ( (NumAASamples > 1 && !bSupportsForcedSampleCount) || bIsNV)))
 	{
-		ExtraU = TileAAUVMove / Info.USize;
-		ExtraV = TileAAUVMove / Info.VSize;
+		// Metallicafan212:	Correct this based on the mip size as well
+		ExtraU = TileAAUVMove * TexInfoUMult;/// Info.USize;
+		ExtraV = TileAAUVMove * TexInfoVMult;/// Info.VSize;
 	}
 
 	// Metallicafan212:	Use a separate centroid UV input if we have a font tile (no smooth) and have MSAA on!
@@ -199,12 +191,10 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 		Color = FPlane(1.f, 1.f, 1.f, 1.f);
 	}
 
-
 	// Metallicafan212:	Selection testing!!!!
 	if (m_HitData != nullptr)
 		Color = CurrentHitColor;
 
-	//LockVertexBuffer(6 * sizeof(FD3DVert));
 	LockVertAndIndexBuffer(6);
 
 	FLOAT SU1			= (U * TexInfoUMult)		+ ExtraU;
@@ -255,13 +245,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	m_VertexBuff[5].U		= SU1;
 	m_VertexBuff[5].V		= SV2;
 
-	//UnlockVertexBuffer();
-	//UnlockBuffers();
-
-	// Metallicafan212:	Now draw
-	//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	AdvanceVertPos();//6);
+	AdvanceVertPos();
 
 
 	unguard;

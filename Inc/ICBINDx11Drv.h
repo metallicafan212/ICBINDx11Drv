@@ -86,7 +86,7 @@ typedef unsigned short INDEX;
 
 #define DX11_USE_MSAA_SHADER 1
 
-#define D3D_DRIVER_VERSION TEXT("0.89 Alfalfa-Alpha")
+#define D3D_DRIVER_VERSION TEXT("0.9 Alfalfa-Alpha")
 
 // Metallicafan212:	Compile time
 #define COMPILED_AT			*FString::Printf(TEXT("%s @ %s"), appFromAnsi(__DATE__), appFromAnsi(__TIME__))
@@ -96,10 +96,12 @@ typedef unsigned short INDEX;
 #include <dxgi1_5.h>
 #include <d2d1.h>
 #include <d2d1_1.h>
+#if DX11_HP2
 #include <dwrite.h>
 #include <dwrite_1.h>
 #include <dwrite_2.h>
 //#include <dwrite_3.h>
+#endif
 #include <DirectXMath.h>
 #include <DirectXColors.h>
 #include <d3dcompiler.h>
@@ -158,7 +160,7 @@ class UDX11RenderTargetTexture : public UTexture
 	DECLARE_CLASS(UDX11RenderTargetTexture, UTexture, CLASS_Config | CLASS_Transient | CLASS_NoUserCreate, D3D11Drv);
 
 	// Metallicafan212:	Pointer to our render device
-	class UICBINDx11RenderDevice*				D3DDev;
+	class UICBINDx11RenderDevice*			D3DDev;
 
 	// Metallicafan212:	Vars to hold the targets
 	MS::ComPtr<ID3D11Texture2D>				RTTex;
@@ -191,7 +193,8 @@ class UDX11RenderTargetTexture : public UTexture
 		NonMSAATex(nullptr),
 		RTD2D(nullptr),
 		RTDXGI(nullptr),
-		RTTexCopy(nullptr)
+		RTTexCopy(nullptr),
+		D3DDev(nullptr)
 	{
 
 	}
@@ -301,7 +304,8 @@ struct FFogShaderVars
 		LastFogSettings(0.0f, 0.0f, 0.0f, 0.0f),
 		FogFadeRate(0.0f),
 		bFadeFogValues(0),
-		FogSetTime(0.0f)
+		FogSetTime(0.0f),
+		bDoDistanceFog(0)
 
 	{
 
@@ -536,19 +540,20 @@ struct std::hash<FString>
 };
 #endif
 
+#if DX11_UT_469
+#define RD_CLASS URenderDeviceOldUnreal469
+#else
+#define RD_CLASS URenderDevice
+#endif
+
+
 // Metallicafan212:	Different shader definitions
 #include "UnD3DShader.h"
 
 // Metallicafan212:	Define an exported renderer
-#if DX11_UT_469
-class UICBINDx11RenderDevice : public URenderDeviceOldUnreal469
+class UICBINDx11RenderDevice : public RD_CLASS
 {
-	DECLARE_CLASS(UICBINDx11RenderDevice, URenderDeviceOldUnreal469, CLASS_Config, ICBINDx11Drv);
-#else
-class UICBINDx11RenderDevice : public URenderDevice
-{
-	DECLARE_CLASS(UICBINDx11RenderDevice, URenderDevice, CLASS_Config, ICBINDx11Drv);
-#endif
+	DECLARE_CLASS(UICBINDx11RenderDevice, RD_CLASS, CLASS_Config, ICBINDx11Drv);
 
 	// Metallicafan212:	User options
 	INT							NumAASamples;
@@ -1617,6 +1622,8 @@ class UICBINDx11RenderDevice : public URenderDevice
 	virtual void Lock(FPlane FlashScale, FPlane FlashFog, FPlane ScreenClear, DWORD RenderLockFlags, BYTE* HitData, INT* HitSize);
 
 	virtual void Unlock(UBOOL Blit);
+
+	virtual void DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, PFLAG PolyFlags);
 #if DX11_HP2
 	// Metallicafan212:	TODO! More particle related code
 	virtual INT MaxVertices() { return 256; };
@@ -1624,23 +1631,19 @@ class UICBINDx11RenderDevice : public URenderDevice
 	virtual void DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, INT NumPts, _WORD* Indices, INT NumIndices, PFLAG PolyFlags, FSpanBuffer* Span);
 
 	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo & Surface, FSurfaceFacet & Facet, PFLAG PolyFlags, FLOAT Alpha);
-	
-	virtual void DrawTile(FSceneNode* Frame, FTextureInfo & Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, class FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, PFLAG PolyFlags);
 
-	virtual void DrawRotatedTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, class FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, PFLAG PolyFlags, FCoords InCoords = GMath.UnitCoords);
+	virtual void DrawRotatedTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, PFLAG PolyFlags, FCoords InCoords = GMath.UnitCoords);
 
-	virtual int DrawString(QWORD Flags, UFont * Font, INT & DrawX, INT & DrawY, const TCHAR * Text, const FPlane & Color, FLOAT Scale = 1.0f, FLOAT SpriteScaleX = 1.0f, FLOAT SpriteScaleY = 1.0f);
-#elif DX11_UT_469
-
-	virtual void DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, DWORD PolyFlags);
+	virtual int DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, FLOAT Scale = 1.0f, FLOAT SpriteScaleX = 1.0f, FLOAT SpriteScaleY = 1.0f);
+#elif DX11_UT_469	
 	
-	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet & Facet);
+	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet);
 	
-	virtual void DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, int NumPts, DWORD PolyFlags, FSpanBuffer* Span);
+	virtual void DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, int NumPts, PFLAG PolyFlags, FSpanBuffer* Span);
 	
 	virtual UBOOL SupportsTextureFormat(ETextureFormat Format);
 	
-	virtual void DrawGouraudTriangles(const FSceneNode* Frame, const FTextureInfo& Info, FTransTexture* const Pts, INT NumPts, DWORD PolyFlags, DWORD DataFlags, FSpanBuffer* Span);
+	virtual void DrawGouraudTriangles(const FSceneNode* Frame, const FTextureInfo& Info, FTransTexture* const Pts, INT NumPts, PFLAG PolyFlags, DWORD DataFlags, FSpanBuffer* Span);
 
 	// Metallicafan212:	Support partial uploads
 	virtual void UpdateTextureRect(FTextureInfo& Info, INT U, INT V, INT UL, INT VL);
