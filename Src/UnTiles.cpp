@@ -76,9 +76,14 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	Color.W = 1.0f;
 #endif
 
+	SetTexture(0, &Info, PolyFlags);
+
+	FLOAT TexInfoUMult = BoundTextures[0].UMult;
+	FLOAT TexInfoVMult = BoundTextures[0].VMult;
+
 	// Metallicafan212:	Tile check, see if it's beyond a full tile
-	FLOAT UF = (UL - U) / Info.USize;
-	FLOAT VF = (VL - V) / Info.VSize;
+	FLOAT UF = (UL - U) * TexInfoUMult;/// Info.USize;
+	FLOAT VF = (VL - V) * TexInfoVMult;/// Info.VSize;
 
 	// Metallicafan212:	Needed for tiles
 	//					Basically, non-looping tiles have AF issues, so I auto clamp to reduce these issues
@@ -87,7 +92,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	//if ((abs(U + UL) <= Info.USize && abs(V + VL) <= Info.VSize))
 
 	// Metallicafan212:	Reversed this check, as it needs to see if the UVs loop or cross a barrior
-	if (abs(UF) > 1.0f || abs(VF) > 1.0f || std::signbit(UL) != std::signbit(U) || std::signbit(VL) != std::signbit(V))
+	if (abs(UF) > 1.0f || abs(VF) > 1.0f || UL < U || VL < V)
 	{
 		PolyFlags &= ~PF_ClampUVs;
 	}
@@ -114,8 +119,6 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 			SetSceneNode(Frame);
 		}
 	}
-
-	SetTexture(0, &Info, PolyFlags);
 
 #if 0//DX11_UT_469
 	UBOOL bFontHack = (PolyFlags & (PF_NoSmooth | PF_Highlighted)) == (PF_NoSmooth | PF_Highlighted);
@@ -203,9 +206,6 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 
 	//LockVertexBuffer(6 * sizeof(FD3DVert));
 	LockVertAndIndexBuffer(6);
-
-	FLOAT TexInfoUMult = BoundTextures[0].UMult;
-	FLOAT TexInfoVMult = BoundTextures[0].VMult;
 
 	FLOAT SU1			= (U * TexInfoUMult)		+ ExtraU;
 	FLOAT SU2			= ((U + UL) * TexInfoUMult) + ExtraU;
