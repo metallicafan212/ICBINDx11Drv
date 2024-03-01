@@ -76,14 +76,25 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	Color.W = 1.0f;
 #endif
 
+	// Metallicafan212:	Tile check, see if it's beyond a full tile
+	FLOAT UF = (UL - U) / Info.USize;
+	FLOAT VF = (VL - V) / Info.VSize;
+
 	// Metallicafan212:	Needed for tiles
 	//					Basically, non-looping tiles have AF issues, so I auto clamp to reduce these issues
 	//					Fixes editor icons and the like
 	//					This should be disabled if the UL and VL will make it loop
-	if ((abs(U + UL) <= Info.USize && abs(V + VL) <= Info.VSize))
-		PolyFlags |= PF_ClampUVs;
-	else
+	//if ((abs(U + UL) <= Info.USize && abs(V + VL) <= Info.VSize))
+
+	// Metallicafan212:	Reversed this check, as it needs to see if the UVs loop or cross a barrior
+	if (abs(UF) > 1.0f || abs(VF) > 1.0f || std::signbit(UL) != std::signbit(U) || std::signbit(VL) != std::signbit(V))
+	{
 		PolyFlags &= ~PF_ClampUVs;
+	}
+	else
+	{
+		PolyFlags |= PF_ClampUVs;
+	}
 
 #if DX11_HP2
 	if (PolyFlags & PF_AlphaBlend)
