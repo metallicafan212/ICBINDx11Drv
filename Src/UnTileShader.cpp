@@ -20,7 +20,8 @@ struct FTileMatrixDef : FShaderVarCommon
 FD3DTileShader::FD3DTileShader(UICBINDx11RenderDevice* InParent)
 	: FD3DShader(InParent),
 	bDoTileRotation(0),
-	TileCoords(GMath.UnitCoords)
+	TileCoords(GMath.UnitCoords),
+	bDoMSAAFontHack(0)
 {
 	guard(FD3DTileShader::FD3DTileShader);
 	

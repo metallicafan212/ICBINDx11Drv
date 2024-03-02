@@ -339,7 +339,8 @@ public:
 	FD3DTileShader() :
 		FD3DShader(),
 		bDoTileRotation(0),
-		TileCoords()
+		TileCoords(),
+		bDoMSAAFontHack(0)
 	{
 		//ShaderFile	= TEXT("..\\Shaders\\TileShader.hlsl");
 		VertexFile	= SHADER_FOLDER TEXT("TileShader.hlsl");

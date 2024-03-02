@@ -63,14 +63,59 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	Color.W = 1.0f;
 #endif
 
-	SetTexture(0, &Info, PolyFlags);
+	// Metallicafan212:	Calculate the UV division
+	FLOAT UScale = (Info.UScale * Info.USize);
+	FLOAT VScale = (Info.VScale * Info.VSize);
+	FLOAT UDiv = 1.0f / UScale;
+	FLOAT VDiv = 1.0f / VScale;
 
-	FLOAT TexInfoUMult = BoundTextures[0].UMult;
-	FLOAT TexInfoVMult = BoundTextures[0].VMult;
+	// Metallicafan212:	Convert to floating point UVs
+	FLOAT UF	= U * UDiv;
+	FLOAT ULF	= (U + UL) * UDiv;
+	FLOAT VF	= V * VDiv;
+	FLOAT VLF	= (V + VL) * VDiv;
 
+	// Metallicafan212:	Ceil the values to make sure they don't cross into multiple squares
+	FLOAT UC	= appCeil(UF);
+	FLOAT ULC	= appCeil(ULF);
+	FLOAT VC	= appCeil(VF);
+	FLOAT VLC	= appCeil(VLF);
+	
+	// Metallicafan212:	FUCK IT! No more UV shifting, just going to test if the UVs are in 0-1
+	if (
+			UF < 0.0f || ULF < 0.0f || VF < 0.0f || VLF < 0.0f
+		// Metallicafan212:	Does the UVs cross into a second square
+		||	(abs(UC - ULC) > 1.0f || abs(VC - VLC) > 1.0f)
+		)
+	{
+		PolyFlags &= ~PF_ClampUVs;
+	}
+	else
+	{
+		PolyFlags |= PF_ClampUVs;
+	}
+	/*
+	// Metallicafan212:	Does the UVs cross into a second square
+	if (abs(UC - ULC) > 1.0f || abs(VC - VLC) > 1.0)
+	{
+		PolyFlags &= ~PF_ClampUVs;
+	}
+	else
+	{
+		PolyFlags |= PF_ClampUVs;
+
+		// Metallicafan212:	It's within a full square, move it to the right location
+		U	-= appFloor(UF) * UScale;
+		V	-= appFloor(VF) * VScale;
+	}
+	*/
+
+	/*
 	// Metallicafan212:	Tile check, see if it's beyond a full tile
-	FLOAT UF = (UL - U) * TexInfoUMult;/// Info.USize;
-	FLOAT VF = (VL - V) * TexInfoVMult;/// Info.VSize;
+	FLOAT UF	= (UL - U) * TexInfoUMult;/// Info.USize;
+	FLOAT VF	= (VL - V) * TexInfoVMult;/// Info.VSize;
+	FLOAT UFN	= (UL + U) * TexInfoUMult;
+	FLOAT VFN	= (VL + V) * TexInfoVMult;
 
 	// Metallicafan212:	Needed for tiles
 	//					Basically, non-looping tiles have AF issues, so I auto clamp to reduce these issues
@@ -79,14 +124,21 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	//if ((abs(U + UL) <= Info.USize && abs(V + VL) <= Info.VSize))
 
 	// Metallicafan212:	Reversed and revised this check, as it needs to see if the UVs loop or cross a barrior
-	if (abs(UF) > 1.0f || abs(VF) > 1.0f || UL < U || VL < V)
+	//if (abs(UF) > 1.0f || abs(VF) > 1.0f || std::signbit(UL) != std::signbit(U) || std::signbit(VL) != std::signbit(V))
 	{
 		PolyFlags &= ~PF_ClampUVs;
 	}
-	else
-	{
-		PolyFlags |= PF_ClampUVs;
-	}
+	//else
+	//{
+	//	PolyFlags |= PF_ClampUVs;
+	//}
+	*/
+
+	SetTexture(0, &Info, PolyFlags);
+
+
+	FLOAT TexInfoUMult = UDiv;//BoundTextures[0].UMult;
+	FLOAT TexInfoVMult = VDiv;//BoundTextures[0].VMult;
 
 #if DX11_HP2
 	if (PolyFlags & PF_AlphaBlend)
@@ -125,7 +177,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	}
 
 	// Metallicafan212:	Use a separate centroid UV input if we have a font tile (no smooth) and have MSAA on!
-	FTileShader->bDoMSAAFontHack = 0;//bFontHack && bIsNV;//(bFontHack && (NumAASamples > 1));
+	//FTileShader->bDoMSAAFontHack = 0;//bFontHack && bIsNV;//(bFontHack && (NumAASamples > 1));
 
 
 	//Adjust Z coordinate if Z range hack is active
@@ -133,7 +185,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	if(1)
 	{
 		// Metallicafan212:	Likely the hud, hack it!
-		if ((Z >= 0.0f) && (Z < 8.0f))//5f) && (Z < 8.0f))
+		if ((Z > 1.0f) && (Z < 8.0f))//5f) && (Z < 8.0f))
 		{
 			// Metallicafan212:	TODO! There's been some glitchyness due to actor triangles drawing through hud elements, so forcing 0.5 might be needed, or maybe requesting near z range instead
 			Z = 0.5f;

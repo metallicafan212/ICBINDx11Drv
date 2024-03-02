@@ -1326,8 +1326,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		m_ILockCount = 0;
 	}
 
-	/*FORCEINLINE*/ void EndBuffering()
+	FORCEINLINE void EndBuffering()
 	{
+#if DX11_HP2
 		if (m_CurrentBuff == BT_Strings && BufferedStrings.Num())
 		{
 			// Metallicafan212:	Draw all the strings
@@ -1361,7 +1362,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 			m_CurrentD2DRT->EndDraw();
 		}
-		else if (m_BufferedVerts != 0 && m_CurrentBuff != BT_None)
+		else
+#endif
+			if (m_BufferedVerts != 0 && m_CurrentBuff != BT_None)
 		{
 			// Metallicafan212:	We only lock once to save on performance 
 			UnlockBuffers();
