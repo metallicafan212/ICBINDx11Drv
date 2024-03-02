@@ -52,6 +52,8 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		// Metallicafan212:	Start buffering now
 		StartBuffering(BT_Lines);
 
+		SetBlend(PF_Highlighted | PF_Occlude);
+
 #if DX11_HP2
 		// Metallicafan212:	Make the alpha reversed as well
 		//					I may want to make alpha'd lines in the future
@@ -102,13 +104,10 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 				SetProjectionStateNoCheck(false);
 		}
 
-		SetBlend(PF_Highlighted | PF_Occlude);
-
 		// Metallicafan212:	TODO! Line specific shader for making the lines thiccc
 		if(CurrentShader != FLineShader)
 			FLineShader->Bind(m_RenderContext);
 
-		//LockVertexBuffer(2 * sizeof(FD3DVert));
 		LockVertAndIndexBuffer(2);
 
 		m_VertexBuff[0].X		= P1.X;
@@ -125,14 +124,7 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		// Metallicafan212:	Line thickness
 		m_VertexBuff[1].Fog		= LineThick;
 
-		// Metallicafan212:	Now render
-		//UnlockVertexBuffer();
-
-		//UnlockBuffers();
-
-		//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-
-		AdvanceVertPos();//2);
+		AdvanceVertPos();
 	}
 
 
@@ -160,6 +152,9 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Lines);
 
+
+	SetBlend(PF_Highlighted | PF_Occlude);
+
 #if DX11_HP2
 	// Metallicafan212:	Make the alpha reversed as well
 	//					I may want to make alpha'd lines in the future
@@ -185,8 +180,6 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 
 #endif
 
-	SetBlend(PF_Highlighted | PF_Occlude);
-
 	// Metallicafan212:	TODO! Same as above, HP2 has a button on the viewport to toggle on line hack projection
 #if DX11_HP2
 	if (LineFlags & LINE_DrawOver || Viewport->Actor->ShowFlags & SHOW_Lines)
@@ -201,24 +194,16 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 			SetProjectionStateNoCheck(false);
 	}
 
-	// Metallicafan212:	TODO! Line specific shader
 	if (CurrentShader != FLineShader)
 		FLineShader->Bind(m_RenderContext);
 
-	//LockVertexBuffer(2 * sizeof(FD3DVert));
 	LockVertAndIndexBuffer(2);
 
-	//Get line coordinates back in 3D
+	// Metallicafan212:	Convert the line positions into 3D
 	FLOAT X1Pos = m_RFX2 * (P1.X - ScaledFX2);
 	FLOAT Y1Pos = m_RFY2 * (P1.Y - ScaledFY2);
 	FLOAT X2Pos = m_RFX2 * (P2.X - ScaledFX2);
 	FLOAT Y2Pos = m_RFY2 * (P2.Y - ScaledFY2);
-
-	// Metallicafan212:	Scale it if needed
-	//X1Pos *= ExtraScale;
-	//Y1Pos *= ExtraScale;
-	//X2Pos *= ExtraScale;
-	//Y2Pos *= ExtraScale;
 
 	// Metallicafan212:	Selection testing
 	if (m_HitData != nullptr)
@@ -254,13 +239,8 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	// Metallicafan212:	Line thickness
 	m_VertexBuff[1].Fog		= LineThick;
 
-	// Metallicafan212:	Now draw
-	//UnlockVertexBuffer();
-	//UnlockBuffers();
-	
-	//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
-	AdvanceVertPos();//2);
+	AdvanceVertPos();
 
 	unguard;
 }
@@ -289,6 +269,8 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 	X2 *= ExtraScale;
 	Y2 *= ExtraScale;
 
+	SetBlend(PF_Highlighted | PF_Occlude);
+
 #if DX11_HP2
 	// Metallicafan212:	Make the alpha reversed as well
 	//					I may want to make alpha'd lines in the future
@@ -309,10 +291,6 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 	SetRasterState(DXRS_Normal);
 #endif
 
-	// Metallicafan212:	TODO! Point/line shader
-	SetBlend(PF_Highlighted | PF_Occlude);
-
-
 	if (LineFlags & LINE_DrawOver || Viewport->Actor->ShowFlags & SHOW_Lines)
 	{
 		if(!m_nearZRangeHackProjectionActive)
@@ -326,7 +304,6 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 
 	FGenShader->Bind(m_RenderContext);
 
-	//LockVertexBuffer(sizeof(FD3DVert) * 6);
 	LockVertAndIndexBuffer(6);
 
 
@@ -347,12 +324,6 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 	FLOAT Y1Pos = m_RFY2 * (Y1 - ScaledFY2);
 	FLOAT X2Pos = m_RFX2 * (X2 - ScaledFX2);
 	FLOAT Y2Pos = m_RFY2 * (Y2 - ScaledFY2);
-
-	// Metallicafan212:	Scale it if needed
-	//X1Pos *= ExtraScale;
-	//Y1Pos *= ExtraScale;
-	//X2Pos *= ExtraScale;
-	//Y2Pos *= ExtraScale;
 
 	if (Frame->Viewport->IsOrtho())
 	{
@@ -406,14 +377,7 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 	m_VertexBuff[5].Z		= Z;
 	m_VertexBuff[5].Color	= Color;
 
-	// Metallicafan212:	Render
-	//UnlockVertexBuffer();
-
-	//UnlockBuffers();
-
-	//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	AdvanceVertPos();//6);
+	AdvanceVertPos();
 
 	unguard;
 }

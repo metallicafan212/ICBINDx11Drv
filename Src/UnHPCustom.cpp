@@ -367,12 +367,16 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 		// Metallicafan212:	PF_Invisible says to just calc the rect
 		if (!(Flags & PF_Invisible))
 		{
+			// Metallicafan212:	TODO! Add the ability to bunch up string draws, to speedup wine rendering!
+			//EndBuffering();
+			StartBuffering(BT_Strings);
+
 			SetRasterState(DXRS_Normal | DXRS_NoAA);
 			// Metallicafan212:	IMPORTANT!!!! D2D seems to actually somewhat RESPECT the current shaders, so we need to use a generic shader for this
 			FGenShader->Bind(m_RenderContext);
 
 			// Metallicafan212:	Actually draw it now
-			m_CurrentD2DRT->BeginDraw();
+			//m_CurrentD2DRT->BeginDraw();
 
 			ID2D1SolidColorBrush* ColBrush = nullptr;
 			m_CurrentD2DRT->CreateSolidColorBrush(D2D1::ColorF(LocalColor.X, LocalColor.Y, LocalColor.Z, 1.f - LocalColor.W), &ColBrush);
@@ -393,6 +397,8 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 				//H = Canvas->ClipY - Y;
 				//layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);//->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 			}
+
+			/*
 #if DO_MANUAL_SCALE
 			if (BoundRT == nullptr)
 			{
@@ -416,10 +422,19 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 			}
 #endif
 #endif
+			*/
 
 			layout->SetMaxWidth(W);
 			layout->SetMaxHeight(H);
 
+			// Metallicafan212:	Now cache the draw
+			FD2DStringDraw& D = BufferedStrings(BufferedStrings.Add());
+
+			D.Layout	= layout;
+			D.Color		= ColBrush;
+			D.Point		= D2D1::Point2F(X, Y);
+
+			/*
 			//m_D2DRT->FillRectangle(D2D1::RectF(0, 0, 1920, 1080), ColBrush);
 			m_CurrentD2DRT->DrawTextLayout(D2D1::Point2F(X, Y), layout, ColBrush, D2D1_DRAW_TEXT_OPTIONS_NONE); //D2D1_DRAW_TEXT_OPTIONS_CLIP);
 			
@@ -427,10 +442,14 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 			m_CurrentD2DRT->EndDraw();
 
 			ColBrush->Release();
+			*/
 		}
-
-		// Metallicafan212:	Release it outside the if lmao
-		layout->Release();
+		else
+		{
+			// Metallicafan212:	Only release it if we're just measuring it
+			//					TODO! Maybe cache it????
+			layout->Release();
+		}
 	}
 
 	return 1;

@@ -126,6 +126,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 	// Metallicafan212:	Depth states for PF_Occlude
 	SAFE_RELEASE(m_DefaultZState);
 	SAFE_RELEASE(m_DefaultNoZState);
+	SAFE_RELEASE(m_DefaultNoZWriteState);
 
 	// Metallicafan212:	Clear the mode, if the device context is already existing!
 	if (m_D3DDeviceContext != nullptr)
@@ -654,8 +655,6 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 {
 	guardSlow(UICBINDx11RenderDevice::SetRasterState);
 
-	// Metallicafan212:	Don't allow for changing raster sates
-
 	// Metallicafan212:	See if the raster state differs
 	//					TODO! Add more flags
 	State &= (DXRS_Wireframe | DXRS_NoAA);
@@ -690,25 +689,11 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 				// Metallicafan212: We want no backface culling
 				Desc.CullMode					= D3D11_CULL_NONE;
 
-				// Metallicafan212:	These are defaults
-				//Desc.DepthBias					= 0;
-				//Desc.DepthBiasClamp				= 0.0f;
-				//Desc.DepthClipEnable			= TRUE;
-				//Desc.FrontCounterClockwise		= FALSE;
-				//Desc.ScissorEnable				= FALSE;
-
 				// Metallicafan212:	Now check the flags
 				if (State & DXRS_Wireframe)
 				{
 					Desc.FillMode = D3D11_FILL_WIREFRAME;
 				}
-				// Metallicafan212:	This is default
-				/*
-				else
-				{
-					Desc.FillMode = D3D11_FILL_SOLID;
-				}
-				*/
 
 				// Metallicafan212:	TODO!!!! This does NOTHING in real DX11 modes!!!
 				if (State & DXRS_NoAA)
@@ -742,25 +727,11 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 				// Metallicafan212: We want no backface culling
 				Desc.CullMode					= D3D11_CULL_NONE;
 
-				// Metallicafan212:	These are defaults
-				//Desc.DepthBias					= 0;
-				//Desc.DepthBiasClamp				= 0.0f;
-				//Desc.DepthClipEnable			= TRUE;
-				//Desc.FrontCounterClockwise		= FALSE;
-				//Desc.ScissorEnable				= FALSE;
-
 				// Metallicafan212:	Now check the flags
 				if (State & DXRS_Wireframe)
 				{
 					Desc.FillMode = D3D11_FILL_WIREFRAME;
 				}
-				// Metallicafan212:	This is default
-				/*
-				else
-				{
-					Desc.FillMode = D3D11_FILL_SOLID;
-				}
-				*/
 
 				// Metallicafan212:	TODO!!!! This does NOTHING in real DX11 modes!!!
 				if (State & DXRS_NoAA)
@@ -788,8 +759,55 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 		}
 
 		// Metallicafan212:	Set it
-		if(m_s != nullptr)
+		if (m_s != nullptr)
+		{
+			ID3D11DepthStencilView* DSV = nullptr;
+			ID3D11RenderTargetView* RTV = nullptr;
+
+			UBOOL bNoDepth = (State & DXRS_NoAA) == DXRS_NoAA;
+
+			// Metallicafan212:	Set the right RTV and DTV based on what rendering we're currently doing
+			if (BoundRT != nullptr)
+			{
+				RTV = BoundRT->RTView.Get();
+				DSV = BoundRT->DTView.Get();
+			}
+			else if (FrameShaderVars.bDoSelection)
+			{
+				RTV = m_BackBuffRT;
+				DSV = m_SelectionDSV;
+			}
+			else
+			{
+				RTV = m_D3DScreenRTV;
+				DSV = m_D3DScreenDSV;
+			}
+
+			if (bNoDepth)
+			{
+				DSV = nullptr;
+			}
+
+			// Metallicafan212:	We have to set the render target here, so we can clear the depth target (I wish it was a separate function...)
+			m_RenderContext->OMSetRenderTargets(1, &RTV, DSV);
+
+			// Metallicafan212:	Now disable Z writing, as we can't have it on at all....
+			if (!bNoDepth && (CurrentPolyFlags & PF_Occlude))
+			{
+				m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);
+			}
+			// Metallicafan212:	We have to keep around a state for JUST turning off z checking
+			else if (bNoDepth)
+			{
+				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZWriteState, 0);
+			}
+			else
+			{
+				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+			}
+
 			m_RenderContext->RSSetState(m_s);
+		}
 
 		CurrentRasterState = State;
 	}
@@ -854,8 +872,9 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	BlankSampler		= nullptr;
 
 	// Metallicafan212:	Raster states for turning on and off occlusion
-	m_DefaultZState		= nullptr;
-	m_DefaultNoZState	= nullptr;
+	m_DefaultZState			= nullptr;
+	m_DefaultNoZState		= nullptr;
+	m_DefaultNoZWriteState	= nullptr;
 
 	ScreenSamp			= nullptr;
 
@@ -1189,6 +1208,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	// Metallicafan212:	Depth stencil states
 	SAFE_RELEASE(m_DefaultZState);
 	SAFE_RELEASE(m_DefaultNoZState);
+	SAFE_RELEASE(m_DefaultNoZWriteState);
 
 	// Metallicafan212:	Recreate the texture samplers
 	FlushTextureSamplers();
@@ -1717,12 +1737,12 @@ void UICBINDx11RenderDevice::SetupResources()
 	D3D11_DEPTH_STENCIL_DESC dsDesc;
 
 	// Depth test parameters
-	dsDesc.DepthEnable					= true;
+	dsDesc.DepthEnable					= TRUE;
 	dsDesc.DepthWriteMask				= D3D11_DEPTH_WRITE_MASK_ALL;
 	dsDesc.DepthFunc					= D3D11_COMPARISON_LESS_EQUAL;
 
 	// Stencil test parameters
-	dsDesc.StencilEnable				= true;
+	dsDesc.StencilEnable				= TRUE;
 	dsDesc.StencilReadMask				= 0xFF;
 	dsDesc.StencilWriteMask				= 0xFF;
 
@@ -1750,6 +1770,13 @@ void UICBINDx11RenderDevice::SetupResources()
 	dsDesc.DepthWriteMask					= D3D11_DEPTH_WRITE_MASK_ZERO;
 	dsDesc.DepthFunc						= D3D11_COMPARISON_LESS_EQUAL;
 	hr = m_D3DDevice->CreateDepthStencilState(&dsDesc, &m_DefaultNoZState);
+	ThrowIfFailed(hr);
+
+	// Metallicafan212:	Create a z state for when we need NO depth or stencil writing
+	dsDesc.DepthEnable						= FALSE;
+	dsDesc.StencilEnable					= FALSE;
+
+	hr = m_D3DDevice->CreateDepthStencilState(&dsDesc, &m_DefaultNoZWriteState);
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Set the index and vertex buffers now (since we don't swap them in and out)
@@ -1935,6 +1962,7 @@ void UICBINDx11RenderDevice::Exit()
 
 	SAFE_RELEASE(m_DefaultZState);
 	SAFE_RELEASE(m_DefaultNoZState);
+	SAFE_RELEASE(m_DefaultNoZWriteState);
 
 	FlushRasterStates();
 
@@ -2126,6 +2154,9 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 		ExtraRasterFlags = 0;
 	}
 #endif
+	
+	// Metallicafan212:	Setup the default raster state
+	SetRasterState(DXRS_Normal);
 
 #if DX11_HP2
 	FrameShaderVars.bDepthDraw				= Viewport->Actor != nullptr ? Viewport->Actor->RendMap == REN_Depth : 0;

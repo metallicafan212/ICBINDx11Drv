@@ -546,6 +546,14 @@ struct std::hash<FString>
 #define RD_CLASS URenderDevice
 #endif
 
+// Metallicafan212:	Stores a single line of text to draw, so we can try to do less thrashing on the render device
+struct FD2DStringDraw
+{
+	IDWriteTextLayout*		Layout;
+	ID2D1SolidColorBrush*	Color;
+	D2D1_POINT_2F			Point;
+};
+
 
 // Metallicafan212:	Different shader definitions
 #include "UnD3DShader.h"
@@ -767,6 +775,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	Default state with no z writing
 	ID3D11DepthStencilState*	m_DefaultNoZState;
 
+	// Metallicafan212:	State for the special no AA mode when drawing tiles
+	ID3D11DepthStencilState*	m_DefaultNoZWriteState;
+
 	// Metallicafan212:	Raster states
 #if !USE_UNODERED_MAP_EVERYWHERE
 	TMap<DWORD, ID3D11RasterizerState*> RasterMap;
@@ -987,7 +998,8 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		BT_Lines,
 		BT_Points,
 		BT_BSP,
-		BT_ScreenFlash
+		BT_ScreenFlash,
+		BT_Strings
 	};
 
 	// Metallicafan212:	We'll only call do drawing when we need to
@@ -1072,6 +1084,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	If it should be cleared on next draw
 	UBOOL						bClearSec;
+
+	// Metallicafan212:	Cached string draw call
+	TArray<FD2DStringDraw>		BufferedStrings;
 
 	inline const TCHAR* GetD3DDebugSeverity(D3D11_MESSAGE_SEVERITY s)
 	{
@@ -1311,19 +1326,50 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		m_ILockCount = 0;
 	}
 
-	FORCEINLINE void EndBuffering()
+	/*FORCEINLINE*/ void EndBuffering()
 	{
-		if (m_BufferedVerts != 0 && m_CurrentBuff != BT_None)
+		if (m_CurrentBuff == BT_Strings && BufferedStrings.Num())
+		{
+			// Metallicafan212:	Draw all the strings
+			m_CurrentD2DRT->BeginDraw();
+
+#if !RES_SCALE_IN_PROJ
+			if (BoundRT == nullptr && ResolutionScale != 1.0f)
+			{
+				D2D1::Matrix3x2F s = D2D1::Matrix3x2F::Scale(ResolutionScale, ResolutionScale);
+
+				// Metallicafan212:	Now apply the scale!!!
+				m_CurrentD2DRT->SetTransform(s);
+			}
+			else
+			{
+				m_CurrentD2DRT->SetTransform(D2D1::Matrix3x2F::Identity());
+			}
+#endif
+
+			for (INT i = 0; i < BufferedStrings.Num(); i++)
+			{
+				FD2DStringDraw& D = BufferedStrings(i);
+
+				m_CurrentD2DRT->DrawTextLayout(D.Point, D.Layout, D.Color, D2D1_DRAW_TEXT_OPTIONS_NONE);
+
+				D.Layout->Release();
+				D.Color->Release();
+			}
+
+			BufferedStrings.Empty();
+
+			m_CurrentD2DRT->EndDraw();
+		}
+		else if (m_BufferedVerts != 0 && m_CurrentBuff != BT_None)
 		{
 			// Metallicafan212:	We only lock once to save on performance 
 			UnlockBuffers();
-
 			m_RenderContext->DrawIndexed(m_BufferedIndices, m_DrawnIndices, m_DrawnVerts);
 
 			// Metallicafan212:	Increment the buffer counters
 			m_DrawnIndices	+= m_BufferedIndices;
 			m_DrawnVerts	+= m_BufferedVerts;
-
 			// Metallicafan212:	Init the values
 			m_BufferedIndices	= 0;
 			m_BufferedVerts		= 0;

@@ -16,10 +16,6 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	if(ExtraRasterFlags & DXRS_Wireframe)
 		ExtraRasterFlags = 0;
 
-	SetRasterState(DXRS_Normal | DXRS_NoAA);
-
-	ExtraRasterFlags = OldFlags;
-
 	if(m_nearZRangeHackProjectionActive)
 		SetProjectionStateNoCheck(false);
 
@@ -29,7 +25,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 
 	PolyFlags &= ~PF_RenderFog;
 #else
-	SetRasterState(DXRS_Normal | DXRS_NoAA);
+	//SetRasterState(DXRS_Normal | DXRS_NoAA);
 
 	if(m_nearZRangeHackProjectionActive)
 		SetProjectionStateNoCheck(false);
@@ -137,14 +133,28 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	if(1)
 	{
 		// Metallicafan212:	Likely the hud, hack it!
-		if ((Z >= 0.5f) && (Z < 8.0f))
+		if ((Z >= 0.0f) && (Z < 8.0f))//5f) && (Z < 8.0f))
 		{
 			// Metallicafan212:	TODO! There's been some glitchyness due to actor triangles drawing through hud elements, so forcing 0.5 might be needed, or maybe requesting near z range instead
 			Z = 0.5f;
 			//SetProjectionStateNoCheck(false);
 			//Z = (((Z - 0.5f) / 7.5f) * 2.0f) + 2.0f; 
+
+			// Metallicafan212:	Request no AA if we're a hud tile
+			SetRasterState(DXRS_Normal | DXRS_NoAA);
+		}
+		else
+		{
+			// Metallicafan212:	For normal tiles in the worldspace, request AA with depth (otherwise we get yelled at by DX11)
+			SetRasterState(DXRS_Normal);
 		}
 	}
+
+	// Metallicafan212:	Restore the extra rasterization flags
+#if DX11_HP2
+	ExtraRasterFlags = OldFlags;
+#endif
+
 
 	// Metallicafan212:	Bind the tile shader
 	FTileShader->Bind(m_RenderContext);
