@@ -16,7 +16,7 @@ FMipmap* GetBaseMip(FTextureInfo& Info)
 }
 
 // Metallicafan212:	Texturing related functions (since there's going to be quite a bit)
-void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG PolyFlags)
+void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG PolyFlags, UBOOL bNoAF)
 {
 	guardSlow(UICBINDx11RenderDevice::SetTexture);
 
@@ -135,7 +135,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 
 		m_RenderContext->PSSetShaderResources(TexNum, 1, TexTemp->RTSRView.GetAddressOf());
 
-		ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->MipSkip, 0);//DaTex->bSkipMipZero ? 1 : 0, 0);
+		ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->MipSkip, 0, bNoAF);//DaTex->bSkipMipZero ? 1 : 0, 0);
 		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
 		//m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
 
@@ -153,7 +153,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 
 		m_RenderContext->PSSetShaderResources(TexNum, 1, &DaTex->m_View);
 
-		ID3D11SamplerState* Temp = GetSamplerState(PolyFlags, DaTex->MipSkip, 0);
+		ID3D11SamplerState* Temp = GetSamplerState(PolyFlags, DaTex->MipSkip, 0, bNoAF);
 		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
 
 		TX.Flags = PolyFlags;

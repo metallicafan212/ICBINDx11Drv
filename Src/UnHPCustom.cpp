@@ -371,7 +371,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 			//EndBuffering();
 			StartBuffering(BT_Strings);
 
-			SetRasterState(DXRS_Normal | DXRS_NoAA);
+			SetRasterState(DXRS_Normal); //| DXRS_NoAA);
 			// Metallicafan212:	IMPORTANT!!!! D2D seems to actually somewhat RESPECT the current shaders, so we need to use a generic shader for this
 			FGenShader->Bind(m_RenderContext);
 
@@ -428,7 +428,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 			layout->SetMaxHeight(H);
 
 			// Metallicafan212:	Now cache the draw
-			FD2DStringDraw& D = BufferedStrings(BufferedStrings.Add());
+			FD2DStringDraw& D = BufferedStrings[BufferedStrings.Add()];
 
 			D.Layout	= layout;
 			D.Color		= ColBrush;

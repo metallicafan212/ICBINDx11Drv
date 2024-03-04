@@ -88,12 +88,55 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 		||	(abs(UC - ULC) > 1.0f || abs(VC - VLC) > 1.0f)
 		)
 	{
+		// Metallicafan212:	The user might've actually wanted it to be clamped
+#if !DX11_HP2
 		PolyFlags &= ~PF_ClampUVs;
+#endif
 	}
 	else
 	{
 		PolyFlags |= PF_ClampUVs;
 	}
+
+#if DX11_HP2
+	if (PolyFlags & PF_AlphaBlend)
+		PolyFlags &= ~(PF_ForceZWrite | PF_Occlude);
+#endif
+
+	// Metallicafan212:	Setup blending
+	SetBlend(PolyFlags);
+
+	UBOOL bNoAF = 0;
+
+	//Adjust Z coordinate if Z range hack is active
+	//if (1)//(m_useZRangeHack)
+	if (1)
+	{
+		// Metallicafan212:	Likely the hud, hack it!
+		if ((Z >= 0.0f) && (Z < 8.0f))//1.0f) && (Z < 8.0f))//5f) && (Z < 8.0f))
+		{
+			// Metallicafan212:	TODO! There's been some glitchyness due to actor triangles drawing through hud elements, so forcing 0.5 might be needed, or maybe requesting near z range instead
+			Z = 0.5f;
+			//SetProjectionStateNoCheck(false);
+			//Z = (((Z - 0.5f) / 7.5f) * 2.0f) + 2.0f; 
+
+			// Metallicafan212:	Request no AA if we're a hud tile
+			SetRasterState(DXRS_Normal | DXRS_NoAA);
+
+			bNoAF = 1;
+		}
+		else
+		{
+			// Metallicafan212:	For normal tiles in the worldspace, request AA with depth (otherwise we get yelled at by DX11)
+			SetRasterState(DXRS_Normal);
+		}
+	}
+
+	// Metallicafan212:	Restore the extra rasterization flags
+#if DX11_HP2
+	ExtraRasterFlags = OldFlags;
+#endif
+
 	/*
 	// Metallicafan212:	Does the UVs cross into a second square
 	if (abs(UC - ULC) > 1.0f || abs(VC - VLC) > 1.0)
@@ -134,19 +177,11 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	//}
 	*/
 
-	SetTexture(0, &Info, PolyFlags);
+	SetTexture(0, &Info, PolyFlags, bNoAF);
 
 
 	FLOAT TexInfoUMult = UDiv;//BoundTextures[0].UMult;
 	FLOAT TexInfoVMult = VDiv;//BoundTextures[0].VMult;
-
-#if DX11_HP2
-	if (PolyFlags & PF_AlphaBlend)
-		PolyFlags &= ~(PF_ForceZWrite | PF_Occlude);
-#endif
-
-	// Metallicafan212:	Setup blending
-	SetBlend(PolyFlags);
 
 	//if (SceneNodeHack) //&& !bUsingRT) 
 	//if(1)
@@ -162,7 +197,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 #if 0//DX11_UT_469
 	UBOOL bFontHack = (PolyFlags & (PF_NoSmooth | PF_Highlighted)) == (PF_NoSmooth | PF_Highlighted);
 #else
-	UBOOL bFontHack = ((PolyFlags & PF_NoSmooth | PF_Masked) == (PF_NoSmooth | PF_Masked));//(PolyFlags & (PF_NoSmooth | PF_Masked)) == (PF_NoSmooth | PF_Masked);
+	UBOOL bFontHack = ((PolyFlags & (PF_NoSmooth | PF_Masked)) == (PF_NoSmooth | PF_Masked));//(PolyFlags & (PF_NoSmooth | PF_Masked)) == (PF_NoSmooth | PF_Masked);
 #endif
 
 	// Metallicafan212:	Per CacoFFF's suggestion, add/remove 0.1f * U/VSize when rendering fonts
@@ -175,37 +210,6 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 		ExtraU = TileAAUVMove * TexInfoUMult;/// Info.USize;
 		ExtraV = TileAAUVMove * TexInfoVMult;/// Info.VSize;
 	}
-
-	// Metallicafan212:	Use a separate centroid UV input if we have a font tile (no smooth) and have MSAA on!
-	//FTileShader->bDoMSAAFontHack = 0;//bFontHack && bIsNV;//(bFontHack && (NumAASamples > 1));
-
-
-	//Adjust Z coordinate if Z range hack is active
-	//if (1)//(m_useZRangeHack)
-	if(1)
-	{
-		// Metallicafan212:	Likely the hud, hack it!
-		if ((Z > 1.0f) && (Z < 8.0f))//5f) && (Z < 8.0f))
-		{
-			// Metallicafan212:	TODO! There's been some glitchyness due to actor triangles drawing through hud elements, so forcing 0.5 might be needed, or maybe requesting near z range instead
-			Z = 0.5f;
-			//SetProjectionStateNoCheck(false);
-			//Z = (((Z - 0.5f) / 7.5f) * 2.0f) + 2.0f; 
-
-			// Metallicafan212:	Request no AA if we're a hud tile
-			SetRasterState(DXRS_Normal | DXRS_NoAA);
-		}
-		else
-		{
-			// Metallicafan212:	For normal tiles in the worldspace, request AA with depth (otherwise we get yelled at by DX11)
-			SetRasterState(DXRS_Normal);
-		}
-	}
-
-	// Metallicafan212:	Restore the extra rasterization flags
-#if DX11_HP2
-	ExtraRasterFlags = OldFlags;
-#endif
 
 
 	// Metallicafan212:	Bind the tile shader

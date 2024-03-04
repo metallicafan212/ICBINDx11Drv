@@ -1326,11 +1326,15 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		m_ILockCount = 0;
 	}
 
-	FORCEINLINE void EndBuffering()
+	/*FORCEINLINE*/ void EndBuffering()
 	{
 #if DX11_HP2
 		if (m_CurrentBuff == BT_Strings && BufferedStrings.Num())
 		{
+			//SetRasterState(DXRS_Normal); //| DXRS_NoAA);
+			// Metallicafan212:	IMPORTANT!!!! D2D seems to actually somewhat RESPECT the current shaders, so we need to use a generic shader for this
+			//FGenShader->Bind(m_RenderContext);
+
 			// Metallicafan212:	Draw all the strings
 			m_CurrentD2DRT->BeginDraw();
 
@@ -1451,7 +1455,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	void RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, UBOOL bIsCompressed = 0, INT ByteOrBlockSize = 4, FD3DTexType::GetTypePitch PitchFunc = &FD3DTexType::RawPitch, UploadFunc UFunc = &DirectCP);//, FD3DTexType::ConversionFunc UConv = nullptr);
 
 	// Metallicafan212:	Texture setting code
-	void SetTexture(INT TexNum, FTextureInfo* Info, PFLAG PolyFlags);
+	void SetTexture(INT TexNum, FTextureInfo* Info, PFLAG PolyFlags, UBOOL bNoAF = 0);
 
 	FD3DTexture* CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlags, UBOOL bJustSampler = 0);
 
@@ -1501,7 +1505,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	void SetRasterState(DWORD State);
 
-	FORCEINLINE ID3D11SamplerState* GetSamplerState(PFLAG PolyFlags, INT MinMip, INT MipBias)
+	FORCEINLINE ID3D11SamplerState* GetSamplerState(PFLAG PolyFlags, INT MinMip, INT MipBias, UBOOL bForceNoAf = 0)
 	{
 		guardSlow(UICBINDx11RenderDevice::GetSamplerState);
 
@@ -1512,7 +1516,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 		// Metallicafan212:	Shift the mipbias by 4 to bitpack this. It'll max be like 2 anyways, so a bitshift of 4 is 32
 		//					MinMip is (usually) always 0, so I'm not worried. This leaves the rest for polyflags
-		QWORD Key = (PolyFlags & (PF_NoSmooth | PF_ClampUVs)) + (MipBias << 4) + MinMip;
+		QWORD Key = ((PolyFlags & (PF_NoSmooth | PF_ClampUVs)) << 4) + (MipBias << 4) + MinMip + (bForceNoAf << 8);
 
 #if !USE_UNODERED_MAP_EVERYWHERE
 		ID3D11SamplerState* S = SampMap.FindRef(Key);
@@ -1537,7 +1541,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 			SDesc.MinLOD			= MinMip;//-D3D11_FLOAT32_MAX;
 			SDesc.MaxLOD			= D3D11_FLOAT32_MAX;
 			SDesc.MipLODBias		= MipBias;//0.0f;
-			SDesc.MaxAnisotropy		= PolyFlags & PF_NoSmooth ? 8 : NumAFSamples;//16;//16;
+			SDesc.MaxAnisotropy		= (PolyFlags & PF_NoSmooth) || bForceNoAf ? 1 : NumAFSamples;//16;//16;
 			SDesc.ComparisonFunc	= D3D11_COMPARISON_NEVER;
 
 			HRESULT hr = m_D3DDevice->CreateSamplerState(&SDesc, &S);
