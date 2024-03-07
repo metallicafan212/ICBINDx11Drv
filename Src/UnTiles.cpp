@@ -113,12 +113,10 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	if (1)
 	{
 		// Metallicafan212:	Likely the hud, hack it!
-		if ((Z >= 0.0f) && (Z < 8.0f))//1.0f) && (Z < 8.0f))//5f) && (Z < 8.0f))
+		if ((Z >= 0.0f) && (Z < 8.0f))
 		{
 			// Metallicafan212:	TODO! There's been some glitchyness due to actor triangles drawing through hud elements, so forcing 0.5 might be needed, or maybe requesting near z range instead
 			Z = 0.5f;
-			//SetProjectionStateNoCheck(false);
-			//Z = (((Z - 0.5f) / 7.5f) * 2.0f) + 2.0f; 
 
 			// Metallicafan212:	Request no AA if we're a hud tile
 			SetRasterState(DXRS_Normal | DXRS_NoAA);
@@ -180,11 +178,9 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	SetTexture(0, &Info, PolyFlags, bNoAF);
 
 
-	FLOAT TexInfoUMult = UDiv;//BoundTextures[0].UMult;
-	FLOAT TexInfoVMult = VDiv;//BoundTextures[0].VMult;
+	FLOAT TexInfoUMult = UDiv;
+	FLOAT TexInfoVMult = VDiv;
 
-	//if (SceneNodeHack) //&& !bUsingRT) 
-	//if(1)
 	if(SceneNodeHack)
 	{
 		if ((Frame->X != m_sceneNodeX) || (Frame->Y != m_sceneNodeY))
@@ -197,7 +193,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 #if 0//DX11_UT_469
 	UBOOL bFontHack = (PolyFlags & (PF_NoSmooth | PF_Highlighted)) == (PF_NoSmooth | PF_Highlighted);
 #else
-	UBOOL bFontHack = ((PolyFlags & (PF_NoSmooth | PF_Masked)) == (PF_NoSmooth | PF_Masked));//(PolyFlags & (PF_NoSmooth | PF_Masked)) == (PF_NoSmooth | PF_Masked);
+	UBOOL bFontHack = ((PolyFlags & (PF_NoSmooth))); //| PF_Masked)) == (PF_NoSmooth | PF_Masked));//(PolyFlags & (PF_NoSmooth | PF_Masked)) == (PF_NoSmooth | PF_Masked);
 #endif
 
 	// Metallicafan212:	Per CacoFFF's suggestion, add/remove 0.1f * U/VSize when rendering fonts
@@ -207,8 +203,8 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	if ((bFontHack && ( (NumAASamples > 1 && !bSupportsForcedSampleCount) || bIsNV)))
 	{
 		// Metallicafan212:	Correct this based on the mip size as well
-		ExtraU = TileAAUVMove * TexInfoUMult;/// Info.USize;
-		ExtraV = TileAAUVMove * TexInfoVMult;/// Info.VSize;
+		ExtraU = TileAAUVMove * TexInfoUMult;
+		ExtraV = TileAAUVMove * TexInfoVMult;
 	}
 
 
