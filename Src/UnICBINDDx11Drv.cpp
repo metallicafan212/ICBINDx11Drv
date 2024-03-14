@@ -663,7 +663,8 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 	State |= ExtraRasterFlags;
 
 	// Metallicafan212:	If we don't have a windows 8 device, don't allow for the no AA option
-	if(m_D3DDevice1 == nullptr || !bSupportsForcedSampleCount)
+	//					Also don't request it if we aren't even using AA, there's no point to
+	if(m_D3DDevice1 == nullptr || !bSupportsForcedSampleCount || NumAASamples <= 1)
 		State &= ~(DXRS_NoAA);
 
 	if (State != CurrentRasterState)
