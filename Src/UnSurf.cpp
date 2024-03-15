@@ -205,6 +205,8 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 #endif
 
+	ADJUST_PFLAGS(PolyFlags);
+
 	SetBlend(PolyFlags);
 
 	// Metallicafan212:	Raster state

@@ -1125,6 +1125,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 {
 	guardSlow(UICBINDx11RenderDevice::SetBlend);
 
+	/*
 	// Metallicafan212:	Cut it down to only specific flags
 	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected)))
 	{
@@ -1140,6 +1141,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 	{
 		PolyFlags = (PolyFlags & ~(PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected));//| PF_AlphaBlend;
 	}
+	*/
 
 	// Metallicafan212:	Check if the input blend flags are relevant
 #if DX11_HP2

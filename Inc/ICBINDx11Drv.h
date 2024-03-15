@@ -76,6 +76,45 @@ typedef unsigned short INDEX;
 #define PFLAG DWORD
 #endif
 
+// Metallicafan212:	Macro to adjust polyflags using presidence rules
+//					HP2, Privet drive has a translucent and masked surface....... So we can't reverse the check
+#if DX11_UT_469
+#define ADJUST_PFLAGS(PolyFlags) \
+	/* Metallicafan212:	Cut it down to only specific flags */ \
+	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected))) \
+	{ \
+		PolyFlags |= PF_Occlude; \
+	} \
+	/* Metallicafan212: For UT, remove translucent if masked */ \
+	else if (PolyFlags & PF_Masked) \
+	{ \
+		PolyFlags &= ~(PF_Translucent); \
+	} \
+	/* Metallicafan212:	Pixel based selection requires that we have alpha blending and nothing else */ \
+	if (GIsEditor && m_HitData != nullptr) \
+	{ \
+		PolyFlags = (PolyFlags & ~(PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected)); \
+	}
+
+#else
+
+#define ADJUST_PFLAGS(PolyFlags) \
+	/* Metallicafan212:	Cut it down to only specific flags */ \
+	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected))) \
+	{ \
+		PolyFlags |= PF_Occlude; \
+	} \
+	else if (PolyFlags & PF_Translucent) \
+	{ \
+		PolyFlags &= ~(PF_Masked | PF_ColorMask); \
+	} \
+	/* Metallicafan212:	Pixel based selection requires that we have alpha blending and nothing else */ \
+	if (GIsEditor && m_HitData != nullptr) \
+	{ \
+		PolyFlags = (PolyFlags & ~(PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected)); \
+	}
+
+#endif
 
 
 // Metallicafan212:	Maybe?
