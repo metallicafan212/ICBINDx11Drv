@@ -67,7 +67,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Triangles);
 
-	ADJUST_PFLAGS(PolyFlags);
+	//ADJUST_PFLAGS(PolyFlags);
 
 	SetBlend(PolyFlags);
 
@@ -197,7 +197,7 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Triangles);
 
-	ADJUST_PFLAGS(PolyFlags);
+	//ADJUST_PFLAGS(PolyFlags);
 
 	SetBlend(PolyFlags);
 
@@ -326,7 +326,7 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	FLOAT UScale	= Info.UScale * Info.USize / 256.0f;
 	FLOAT VScale	= Info.VScale * Info.VSize / 256.0f;
 
-	ADJUST_PFLAGS(PolyFlags);
+	//ADJUST_PFLAGS(PolyFlags);
 
 	SetBlend(PolyFlags);
 

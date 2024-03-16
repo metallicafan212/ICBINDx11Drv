@@ -1125,6 +1125,8 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 {
 	guardSlow(UICBINDx11RenderDevice::SetBlend);
 
+	ADJUST_PFLAGS(PolyFlags);
+
 	/*
 	// Metallicafan212:	Cut it down to only specific flags
 	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected)))

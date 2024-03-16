@@ -205,7 +205,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 #endif
 
-	ADJUST_PFLAGS(PolyFlags);
+	//ADJUST_PFLAGS(PolyFlags);
 
 	SetBlend(PolyFlags);
 
