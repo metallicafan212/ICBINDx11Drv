@@ -104,7 +104,9 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 #endif
 
 	// Metallicafan212:	Setup blending
+#if DX11_UT_469
 	ADJUST_PFLAGS(PolyFlags);
+#endif
 	SetBlend(PolyFlags);
 
 	UBOOL bNoAF = 0;
