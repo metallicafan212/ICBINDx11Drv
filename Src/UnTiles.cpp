@@ -104,7 +104,8 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 #endif
 
 	// Metallicafan212:	Setup blending
-#if DX11_UT_469
+	//					Per Buggie, this causes issues with tiles in his mod, so removing it
+#if 0//DX11_UT_469
 	ADJUST_PFLAGS(PolyFlags);
 #endif
 	SetBlend(PolyFlags);
