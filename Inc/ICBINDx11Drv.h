@@ -78,7 +78,7 @@ typedef unsigned short INDEX;
 
 // Metallicafan212:	Macro to adjust polyflags using presidence rules
 //					HP2, Privet drive has a translucent and masked surface....... So we can't reverse the check
-#if DX11_UT_469
+#if 0//DX11_UT_469
 #define ADJUST_PFLAGS(PolyFlags) \
 	/* Metallicafan212:	Cut it down to only specific flags */ \
 	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected))) \
