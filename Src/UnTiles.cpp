@@ -64,6 +64,13 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 #endif
 
 	// Metallicafan212:	Calculate the UV division
+	
+	// Metallicafan212:	Debugging hack!
+	//if (Info.Texture->GetFName() == TEXT("HudBk2"))
+	//{
+	//	appDebugBreak();
+	//}
+
 	FLOAT UScale = (Info.UScale * Info.USize);
 	FLOAT VScale = (Info.VScale * Info.VSize);
 	FLOAT UDiv = 1.0f / UScale;
@@ -83,9 +90,9 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	
 	// Metallicafan212:	FUCK IT! No more UV shifting, just going to test if the UVs are in 0-1
 	if (
-			UF < 0.0f || ULF < 0.0f || VF < 0.0f || VLF < 0.0f
+			//UF < 0.0f || ULF < 0.0f || VF < 0.0f || VLF < 0.0f
 		// Metallicafan212:	Does the UVs cross into a second square
-		||	(abs(UC - ULC) > 1.0f || abs(VC - VLC) > 1.0f)
+		/*||*/ 	((abs(UC - ULC) > 1.0f || abs(VC - VLC) > 1.0f))//&& (UC <= 1.0f && VC <= 1.0f))
 		)
 	{
 		// Metallicafan212:	The user might've actually wanted it to be clamped
@@ -96,6 +103,22 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	else
 	{
 		PolyFlags |= PF_ClampUVs;
+
+		// Metallicafan212:	Shift UVs into the correct quadrant
+		//					TODO! Handle mirrored tiles
+		FLOAT Temp;
+
+		// Metallicafan212:	Wrap in the "X" direction if it's above one square
+		if ( abs(ULF) > 1.0f )//&& (UL - U >= 0.0f))
+		{
+			U	= std::modff(U, &Temp);
+		}
+
+		// Metallicafan212:	Wrap in the "Y" direction if it's above one square
+		if (abs(VLF) > 1.0f )//&& (VL - V >= 0.0f))//&& V < VL)
+		{
+			V	= std::modff(V, &Temp);
+		}
 	}
 
 #if DX11_HP2
