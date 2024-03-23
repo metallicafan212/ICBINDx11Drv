@@ -215,7 +215,7 @@ PSOutput PxShader(PSInput input)
 	//					This just modulates the color, like the lightmap
 	if(bTexturesBound[0].z != 0)
 	{
-		DiffColor.xyz *= Macro.SampleBias(MacroState, input.mUV, 0.0f).xyz;
+		DiffColor.xyz *= Macro.SampleBias(MacroState, input.mUV, 0.0f).xyz * 2.0f;
 	}
 	
 	//float lAlpha = 1.0f;
