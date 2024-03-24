@@ -45,6 +45,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	PrefersDeferredLoad = 0;
 	SupportsTC			= 1;
 
+	// Metallicafan212:	Mark it as certified
+	DescFlags |= RDDESCF_Certified;
+
 #if DX11_HP2
 	// Metallicafan212:	HP2 Rendertarget textures
 	bSupportsRTTextures = 1;
