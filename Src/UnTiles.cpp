@@ -41,7 +41,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 
 #if DX11_HP2
 	// Metallicafan212:	Adjust the polyflags if we're using alpha
-	if (Color.W != 0.0f)
+	if (Color.W != 0.0f && !(PolyFlags & (PF_Translucent | PF_Modulated)))
 	{
 		PolyFlags |= PF_AlphaBlend;
 	}

@@ -39,8 +39,14 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 		TX.m_SRV		= BlankResourceView;
 		TX.Flags		= 0;
 
+#if !DO_BUFFERED_DRAWS
 		m_RenderContext->PSSetShaderResources(TexNum, 1, &BlankResourceView);
 		m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
+#else
+		// Metallicafan212:	Set it on the maps
+		CurrentDraw->TBinds[TexNum] = BlankResourceView;
+		CurrentDraw->SBinds[TexNum]	= BlankSampler;
+#endif
 
 		return;
 	}
@@ -133,10 +139,19 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 	{
 		UDX11RenderTargetTexture* TexTemp = (UDX11RenderTargetTexture*)Info->Texture;
 
+#if !DO_BUFFERED_DRAWS
 		m_RenderContext->PSSetShaderResources(TexNum, 1, TexTemp->RTSRView.GetAddressOf());
+#else
+		CurrentDraw->TBinds[TexNum] = TexTemp->RTSRView.Get();
+#endif
 
 		ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->MipSkip, 0, bNoAF);//DaTex->bSkipMipZero ? 1 : 0, 0);
+
+#if !DO_BUFFERED_DRAWS
 		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
+#else
+		CurrentDraw->SBinds[TexNum] = Temp;
+#endif
 		//m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
 
 		// Metallicafan212:	So we can find whatever is still bound as the RT when we call OMSetRenderTargets
@@ -151,10 +166,19 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 	{
 		TX.m_SRV = DaTex->m_View;
 
+#if !DO_BUFFERED_DRAWS
 		m_RenderContext->PSSetShaderResources(TexNum, 1, &DaTex->m_View);
+#else
+		CurrentDraw->TBinds[TexNum] = DaTex->m_View;
+#endif
 
 		ID3D11SamplerState* Temp = GetSamplerState(PolyFlags, DaTex->MipSkip, 0, bNoAF);
+
+#if !DO_BUFFERED_DRAWS
 		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
+#else
+		CurrentDraw->SBinds[TexNum] = Temp;
+#endif
 
 		TX.Flags = PolyFlags;
 	}
@@ -1127,24 +1151,6 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 
 	ADJUST_PFLAGS(PolyFlags);
 
-	/*
-	// Metallicafan212:	Cut it down to only specific flags
-	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected)))
-	{
-		PolyFlags |= PF_Occlude;
-	}
-	else if (PolyFlags & PF_Translucent)
-	{
-		PolyFlags &= ~(PF_Masked | PF_ColorMask);
-	}
-
-	// Metallicafan212:	Pixel based selection requires that we have alpha blending and nothing else
-	if (GIsEditor && m_HitData != nullptr)
-	{
-		PolyFlags = (PolyFlags & ~(PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected));//| PF_AlphaBlend;
-	}
-	*/
-
 	// Metallicafan212:	Check if the input blend flags are relevant
 #if DX11_HP2
 	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage);
@@ -1202,18 +1208,6 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 						bState = CreateBlend(PF_Invisible, D3D11_BLEND_ZERO, D3D11_BLEND_ONE, D3D11_COLOR_WRITE_ENABLE_ALPHA);
 					}
 				}
-				/*
-				else if (blendFlags == PF_Highlighted)
-				{
-					//FindAndSetBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
-					bState = GetBlendState(PF_Highlighted);
-
-					if (bState == nullptr)
-					{
-						bState = CreateBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
-					}
-				}
-				*/
 #if DX11_HP2 || DX11_HP1
 #if DX11_HP2
 				else if (blendFlags & PF_Translucent && (blendFlags & PF_Highlighted || blendFlags & PF_AlphaBlend))
@@ -1341,7 +1335,12 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			// Metallicafan212:	If we got a valid blend state, set it
 			if (bState != nullptr)
 			{
+#if !DO_BUFFERED_DRAWS
 				m_RenderContext->OMSetBlendState(bState, nullptr, 0xFFFFFFFF);
+#else
+				CurrentDraw->bSetBlend	= 1;
+				CurrentDraw->BlendState = bState;
+#endif
 			}
 		}
 
@@ -1428,13 +1427,25 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 		// Metallicafan212:	Toggle between the z write and no z write states
 		if (Xor & PF_Occlude)
 		{
+#if DO_BUFFERED_DRAWS
+			CurrentDraw->bSetDState = 1;
+#endif
+
 			if ((blendFlags & PF_Occlude))
 			{
+#if !DO_BUFFERED_DRAWS
 				m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);
+#else
+				CurrentDraw->DSState = m_DefaultZState;
+#endif
 			}
 			else
 			{
+#if !DO_BUFFERED_DRAWS
 				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+#else
+				CurrentDraw->DSState = m_DefaultNoZState;
+#endif
 			}
 		}
 

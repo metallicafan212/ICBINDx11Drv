@@ -454,9 +454,11 @@ public:
 	// Metallicafan212:	Constructor that inits the device pointer
 	FD3DSurfShader(class UICBINDx11RenderDevice* InParent);
 
+#if !EXTRA_VERT_INFO
 	virtual void SetupConstantBuffer();
 
 	virtual void WriteConstantBuffer(void* InMem);
+#endif
 };
 
 

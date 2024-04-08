@@ -3,6 +3,9 @@
 #include "UnBuild.h"
 #include "UnObjVer.h"
 
+// Metallicafan212:	Not finished, support for drawing only when the vertex/index buffers are full
+#define DO_BUFFERED_DRAWS 0
+
 // Metallicafan212:	TODO! Eventually, I should swap back to TMap, but it's really slow when we're doing a lot of lookups
 #define USE_UNODERED_MAP_EVERYWHERE 1
 
@@ -294,6 +297,20 @@ struct FD3DSecondaryVert
 // Metallicafan212:	Cache stuff
 typedef unsigned long long D3DCacheId;
 
+/*
+// Metallicafan212:	Base class for shader variables, so we can support doing multiple draws at a time
+class BaseShaderConstants
+{
+public:
+	// Metallicafan212:	No constructor, children deal with that
+
+	// Metallicafan212:	TODO! Define an interface to deal with the creation/copying of the variable values
+	//					We have to be able to setup most item changes into one call as we can (textures, flags, raster state, etc.)
+	//					Possibly, we should use a child struct to wrap it and make memcpy as easy as possible
+	virtual BaseShaderConstants* GetNewShaderClass() = 0;
+};
+*/
+
 struct FFogShaderVars
 {
 	UBOOL				bDoDistanceFog;
@@ -372,66 +389,66 @@ struct FD3DTexture
 	ID3D11ShaderResourceView*	m_View;
 
 	// Metallicafan212:	Unreal texture pointer, only used for detecting RT textures...
-	UTexture*			Tex;
+	UTexture*					Tex;
 
 	// Metallicafan212:	The DX11 format
-	DXGI_FORMAT			TexFormat;
+	DXGI_FORMAT					TexFormat;
 
 	// Metallicafan212:	UE Format of this texture
-	ETextureFormat		Format;
+	ETextureFormat				Format;
 
 	// Metallicafan212:	Pointer to the texture type, so we can access the info
-	struct FD3DTexType* D3DTexType;
+	struct FD3DTexType*			D3DTexType;
 
 	// Metallicafan212:	Flags this was uploaded as
 	//					This only matters if Masked is toggled on or off
-	PFLAG				PolyFlags;
+	PFLAG						PolyFlags;
 
 	// Metallicafan212:	If this texture should have UVs clamped (UClamp == USize && VClamp == VSize)
-	UBOOL				bShouldUVClamp;
+	UBOOL						bShouldUVClamp;
 
 	// Metallicafan212:	If this is really a RT texture
-	UBOOL				bIsRT;
+	UBOOL						bIsRT;
 
 	// Metallicafan212:	If this texture needs to be decompressed (BC1-7 in non-pow2 sizes)
-	UBOOL				bDecompress;
+	UBOOL						bDecompress;
 
 	// Metallicafan212:	If mip 0 is "dead"
 	//UBOOL			bSkipMipZero;
 
 	// Metallicafan212:	Number of mips to skip
-	INT					MipSkip;
+	INT							MipSkip;
 
 	// Metallicafan212:	The cache ID Unreal provided us when it was uploaded
-	D3DCacheId			CacheID;
+	D3DCacheId					CacheID;
 
 	// Metallicafan212:	Bind information
-	INT					USize;
-	INT					VSize;
+	INT							USize;
+	INT							VSize;
 
 	// Metallicafan212:	Scaling info
-	INT					UClamp;
-	INT					VClamp;
+	INT							UClamp;
+	INT							VClamp;
 
 	// Metallicafan212:	UT469 (and now HP2) tracked number of changes to this texture
-	INT					RealtimeChangeCount;
+	INT							RealtimeChangeCount;
 
 	// Metallicafan212:	Number of mips
-	INT					NumMips;
+	INT							NumMips;
 
 	// Metallicafan212:	Color for the "color masking" system I added
-	FPlane				MaskedColor;
-	FPlane				MaskedGranularity;
+	FPlane						MaskedColor;
+	FPlane						MaskedGranularity;
 
 	// Metallicafan212:	Array of UAVs for this texture
-	TArray<ID3D11UnorderedAccessView*> UAVMips;
+	TArray<ID3D11UnorderedAccessView*>	UAVMips;
 
 	// Metallicafan212:	TODO! Keep around an array of nullptr to reset the compute shader
-	TArray<ID3D11UnorderedAccessView*> UAVBlank;
+	TArray<ID3D11UnorderedAccessView*>	UAVBlank;
 
 	// Metallicafan212:	Conversion texture for the P8 data
-	ID3D11Texture2D* P8ConvTex;
-	ID3D11ShaderResourceView* P8ConvSRV;
+	ID3D11Texture2D*					P8ConvTex;
+	ID3D11ShaderResourceView*			P8ConvSRV;
 };
 
 
@@ -462,41 +479,65 @@ struct FD3DBoundTex
 
 // Metallicafan212:	Cached render state
 //					This is so we can execute as many draw calls at once as we can
+//					This is a HEAVY TODO!!!!!
+//					The idea is that we only set what we need, when we need to
 struct FDrawCall
 {
-	// Metallicafan212:	If to use compressed Z range (or not)
-	//					Changing it results in a new draw call
-	UBOOL					bCompressZ;
+	// Metallicafan212:	Bend state to use, created from Polyflags
+	UBOOL						bSetBlend;
+	ID3D11BlendState*			BlendState;
 
-	// Metallicafan212:	If to clear z
-	UBOOL					bClearZ;
+	// Metallicafan212:	Raster state to use
+	UBOOL						bSetRaster;
+	ID3D11RasterizerState*		RasterState;
 
-	// Metallicafan212:	Flags that were set in this draw call
-	PFLAG					PolyFlags;
+	// Metallicafan212:	Depth-stencil state
+	UBOOL						bSetDState;
+	ID3D11DepthStencilState*	DSState;
 
 	// Metallicafan212:	Vertex range (start and size)
-	SIZE_T					VStart;
-	SIZE_T					VSize;
+	SIZE_T						VStart;
 
-	// Metallicafan212:	Textures bound
-	//					Changing a texture results in a new draw call
-	FD3DBoundTex			TBinds[MAX_TEXTURES];
+	// Metallicafan212:	Not currently needed, as it's inferred by the indices
+	//SIZE_T						VSize;
+
+	// Metallicafan212:	Index range (start and size)
+	SIZE_T						IStart;
+	SIZE_T						ISize;
+
+	// Metallicafan212:	Maps instead, so we can just loop and ONLY set the changed textures
+	std::unordered_map<INT, ID3D11ShaderResourceView*>	TBinds;
+	std::unordered_map<INT, ID3D11SamplerState*>		SBinds;
 
 	// Metallicafan212:	Shader to use for this draw
 	//					Changing the shader results in a new draw call
-	class FD3DShader*		Shader;
-
-	// Metallicafan212:	Distance fog settings (if they changed)
-	UBOOL					bUseDistFog;
-	FPlane					DistanceFogColor;
-	FPlane					DistanceFogSettings;
-
-	// Metallicafan212:	Black and white percent
-	FLOAT					BWPercent;
+	UBOOL						bSetShader;
+	class FD3DShader*			Shader;
 
 	// Metallicafan212:	Render target and depth to set (if needed)
-	ID3D11RenderTargetView*	RTV;
-	ID3D11DepthStencilView*	DSV;
+	UBOOL						bSetRT;
+	ID3D11RenderTargetView*		RTV;
+	ID3D11DepthStencilView*		DSV;
+
+	// Metallicafan212:	TODO! Use TArrays to store the memory
+	UBOOL						bSetFrameConstants;
+	TArray<BYTE>				FrameShaderConstants;
+
+	UBOOL						bSetDFogConstants;
+	TArray<BYTE>				DFogShaderConstants;
+
+	UBOOL						bSetFlagConstants;
+	TArray<BYTE>				FlagShaderConstants;
+
+	UBOOL						bSetUserConstants;
+	TArray<BYTE>				UserConstants;
+
+	// Metallicafan212:	Buffer to set for user constants
+	ID3D11Buffer*				UserBuffer;
+
+	// Metallicafan212:	Topology to set for this draw
+	UBOOL						bSetTopology;
+	D3D_PRIMITIVE_TOPOLOGY		Topology;
 };
 
 
@@ -1127,6 +1168,12 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	Cached string draw call
 	TArray<FD2DStringDraw>		BufferedStrings;
 
+	// Metallicafan212:	Draws to execute at the end of the frame
+	TArray<FDrawCall>			BufferedDraws;
+
+	// Metallicafan212:	Pointer to the current draw
+	FDrawCall*					CurrentDraw;
+
 	inline const TCHAR* GetD3DDebugSeverity(D3D11_MESSAGE_SEVERITY s)
 	{
 		switch (s)
@@ -1251,24 +1298,14 @@ class UICBINDx11RenderDevice : public RD_CLASS
 			if (m_BufferedVerts != 0)
 			{
 				EndBuffering();
+
+#if DO_BUFFERED_DRAWS
+				ExecuteBufferedDraws();
+
+				// Metallicafan212:	Add on a new draw, as now we're in a invalid state
+				CurrentDraw = &BufferedDraws(BufferedDraws.AddZeroed());
+#endif
 			}
-
-			/*
-			// Metallicafan212:	Render now?
-			if (bUseDeferredRendering && m_DrawnVerts != 0)
-			{
-				// Metallicafan212:	Get a command list to execute
-				ID3D11CommandList* CommandList	= nullptr;
-				HRESULT hr						= m_D3DDeferredContext->FinishCommandList(TRUE, &CommandList);
-
-				if (SUCCEEDED(hr))
-				{
-					m_D3DDeviceContext->ExecuteCommandList(CommandList, TRUE);
-
-					CommandList->Release();
-				}
-			}
-			*/
 
 			m_VertexBuffPos = 0;
 			m_IndexBuffPos	= 0;
@@ -1407,11 +1444,16 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		}
 		else
 #endif
-			if (m_BufferedVerts != 0 && m_CurrentBuff != BT_None)
+		if (m_BufferedVerts != 0 && m_CurrentBuff != BT_None)
 		{
+#if !DO_BUFFERED_DRAWS
 			// Metallicafan212:	We only lock once to save on performance 
 			UnlockBuffers();
 			m_RenderContext->DrawIndexed(m_BufferedIndices, m_DrawnIndices, m_DrawnVerts);
+#else
+			// Metallicafan212:	Make a new draw call?
+			CurrentDraw = &BufferedDraws(BufferedDraws.AddZeroed());
+#endif
 
 			// Metallicafan212:	Increment the buffer counters
 			m_DrawnIndices	+= m_BufferedIndices;
@@ -1434,13 +1476,27 @@ class UICBINDx11RenderDevice : public RD_CLASS
 			{
 				case BT_Lines:
 				{
+#if !DO_BUFFERED_DRAWS
 					m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+#else
+					CurrentDraw->bSetTopology	= 1;
+					CurrentDraw->Topology		= D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+#endif
 					break;
 				}
 
 				default:
 				{
-					m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+					// Metallicafan212:	Only set if actually needed to
+					if (m_CurrentBuff == BT_Lines || m_CurrentBuff == BT_None)
+					{
+#if !DO_BUFFERED_DRAWS
+						m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+#else
+						CurrentDraw->bSetTopology	= 1;
+						CurrentDraw->Topology		= D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+#endif
+					}
 				}
 			}
 
@@ -1451,9 +1507,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	Update the global constant buffer in the shaders
 	FORCEINLINE void UpdateGlobalShaderVars()
 	{
-#if 0
-		m_RenderContext->UpdateSubresource(FrameConstantsBuffer, 0, nullptr, &FrameShaderVars, sizeof(FFrameShaderVars), 0);
-#else
+#if !DO_BUFFERED_DRAWS
 		D3D11_MAPPED_SUBRESOURCE Map;
 
 		m_RenderContext->Map(FrameConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
@@ -1461,14 +1515,17 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		appMemcpy(Map.pData, &FrameShaderVars, sizeof(FFrameShaderVars));
 
 		m_RenderContext->Unmap(FrameConstantsBuffer, 0);
+#else
+		// Metallicafan212:	Actually copying the constants will be taken care of when we actually render
+		CurrentDraw->bSetFrameConstants = 1;
+		CurrentDraw->FrameShaderConstants.Add(sizeof(FFrameShaderVars));
+		appMemcpy(&CurrentDraw->FrameShaderConstants(0), &FrameShaderVars, sizeof(FFrameShaderVars));
 #endif
 	}
 
 	FORCEINLINE void UpdatePolyflagsVars()
 	{
-#if 0
-		m_RenderContext->UpdateSubresource(GlobalPolyflagsBuffer, 0, nullptr, &GlobalPolyflagVars, sizeof(FPolyflagVars), 0);
-#else
+#if !DO_BUFFERED_DRAWS
 		D3D11_MAPPED_SUBRESOURCE Map;
 
 		m_RenderContext->Map(GlobalPolyflagsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
@@ -1476,6 +1533,11 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		appMemcpy(Map.pData, &GlobalPolyflagVars, sizeof(FPolyflagVars));
 
 		m_RenderContext->Unmap(GlobalPolyflagsBuffer, 0);
+#else
+		// Metallicafan212:	Actually copying the constants will be taken care of when we actually render
+		CurrentDraw->bSetFlagConstants = 1;
+		CurrentDraw->FlagShaderConstants.Add(sizeof(FPolyflagVars));
+		appMemcpy(&CurrentDraw->FlagShaderConstants(0), &GlobalPolyflagVars, sizeof(FPolyflagVars));
 #endif
 	}
 
@@ -1780,9 +1842,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		GlobalDistFogSettings.DistanceFogSettings	= FogShaderVars.DistanceFogSettings;
 		GlobalDistFogSettings.bDistanceFogEnabled	= FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues;
 
-#if 0
-		m_RenderContext->UpdateSubresource(GlobalDistFogBuffer, 0, nullptr, &GlobalDistFogSettings, sizeof(FDistFogVars), 0);
-#else
+#if !DO_BUFFERED_DRAWS
 		D3D11_MAPPED_SUBRESOURCE Map;
 
 		m_RenderContext->Map(GlobalDistFogBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
@@ -1791,6 +1851,11 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		appMemcpy(Map.pData, &GlobalDistFogSettings, sizeof(FDistFogVars));
 
 		m_RenderContext->Unmap(GlobalDistFogBuffer, 0);
+#else
+		// Metallicafan212:	The constant values will be set when we actually draw
+		CurrentDraw->bSetDFogConstants = 1;
+		CurrentDraw->DFogShaderConstants.Add(sizeof(FDistFogVars));
+		appMemcpy(&CurrentDraw->DFogShaderConstants(0), &GlobalDistFogSettings, sizeof(FDistFogVars));
 #endif
 	}
 
@@ -1837,4 +1902,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		Temp.Empty();
 		RTTextures.Empty();
 	}
+
+	// Metallicafan212:	New buffered drawing state
+	void ExecuteBufferedDraws();
 };

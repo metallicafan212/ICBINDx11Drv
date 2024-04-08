@@ -2067,16 +2067,10 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	Gamma = Viewport->GetOuterUClient()->Brightness * 2.0f;
 #endif
 
-	/*
-	if (bUseDeferredRendering && m_D3DDeferredContext != nullptr)
-	{
-		m_RenderContext = m_D3DDeferredContext;
-	}
-	else
-	{
-		m_RenderContext = m_D3DDeviceContext;
-	}
-	*/
+#if DO_BUFFERED_DRAWS
+	// Metallicafan212:	Add a new draw and set it up
+	CurrentDraw = &BufferedDraws(BufferedDraws.AddZeroed());
+#endif
 
 	// Metallicafan212:	Hold onto the hit related info
 	m_HitData		= HitData;
@@ -2226,6 +2220,110 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	unguard;
 }
 
+void UICBINDx11RenderDevice::ExecuteBufferedDraws()
+{
+	guard(UICBINDx11RenderDevice::ExecuteBufferedDraws);
+
+	UnlockBuffers();
+
+	for (INT i = 0; i < BufferedDraws.Num(); i++)
+	{
+		// Metallicafan212:	Get the draw
+		FDrawCall& Call = BufferedDraws(i);
+
+		// Metallicafan212:	Now set everything needed
+		if (Call.bSetBlend)
+		{
+			m_RenderContext->OMSetBlendState(Call.BlendState, nullptr, 0xFFFFFFFF);
+		}
+
+		if (Call.bSetRaster)
+		{
+			m_RenderContext->RSSetState(Call.RasterState);
+		}
+
+		if (Call.bSetDState)
+		{
+			m_RenderContext->OMSetDepthStencilState(Call.DSState, 0);
+		}
+
+		// Metallicafan212:	Set the RT and depth
+		if (Call.bSetRT)
+		{
+			m_RenderContext->OMSetRenderTargets(Call.RTV != nullptr ? 1 : 0, &Call.RTV, Call.DSV);
+		}
+
+		// Metallicafan212:	Now iterate and set each texture
+		for (auto It = Call.TBinds.begin(); It != Call.TBinds.end(); It++)
+		{
+			m_RenderContext->PSSetShaderResources(It->first, 1, &It->second);
+
+			// Metallicafan212:	Also set the associated sampler
+			m_RenderContext->PSSetSamplers(It->first, 1, &Call.SBinds[It->first]);
+		}
+
+		// Metallicafan212:	Set the shader
+		if (Call.bSetShader)
+		{
+			Call.Shader->Bind(m_RenderContext);
+		}
+
+		// Metallicafan212:	Copy and set constants
+		//					TODO! Bind user constants
+		if (Call.bSetFrameConstants)
+		{
+			D3D11_MAPPED_SUBRESOURCE Map;
+
+			m_RenderContext->Map(FrameConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
+
+			appMemcpy(Map.pData, &Call.FrameShaderConstants(0), sizeof(FFrameShaderVars));
+
+			m_RenderContext->Unmap(FrameConstantsBuffer, 0);
+		}
+
+		if (Call.bSetFlagConstants)
+		{
+			D3D11_MAPPED_SUBRESOURCE Map;
+
+			m_RenderContext->Map(GlobalPolyflagsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
+
+			appMemcpy(Map.pData, &Call.FlagShaderConstants(0), sizeof(FPolyflagVars));
+
+			m_RenderContext->Unmap(GlobalPolyflagsBuffer, 0);
+		}
+
+		if (Call.bSetUserConstants)
+		{
+			// Metallicafan212:	Map and set
+			D3D11_MAPPED_SUBRESOURCE Map;
+
+			m_RenderContext->Map(Call.UserBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
+
+			appMemcpy(Map.pData, &Call.UserConstants(0), Call.UserConstants.Num());
+
+			m_RenderContext->Unmap(Call.UserBuffer, 0);
+
+			m_RenderContext->VSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &Call.UserBuffer);
+			m_RenderContext->GSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &Call.UserBuffer);
+			m_RenderContext->PSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &Call.UserBuffer);
+		}
+
+		// Metallicafan212:	Setup the topology
+		if (Call.bSetTopology)
+		{
+			m_RenderContext->IASetPrimitiveTopology(Call.Topology);
+		}
+
+		// Metallicafan212:	Now render?
+		m_RenderContext->DrawIndexed(Call.ISize, Call.IStart, Call.VStart);
+	}
+
+	BufferedDraws.Empty();
+	CurrentDraw = nullptr;
+
+	unguard;
+}
+
 void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 {
 	guard(UICBINDx11RenderDevice::Unlock);
@@ -2246,22 +2344,11 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 	}
 #endif
 
-	/*
-	// Metallicafan212:	Render now?
-	if (bUseDeferredRendering)
-	{
-		// Metallicafan212:	Get a command list to execute
-		ID3D11CommandList* CommandList	= nullptr;
-		HRESULT hr						= m_D3DDeferredContext->FinishCommandList(TRUE, &CommandList);
-
-		if (SUCCEEDED(hr))
-		{
-			m_D3DDeviceContext->ExecuteCommandList(CommandList, TRUE);
-
-			CommandList->Release();
-		}
-	}
-	*/
+	// Metallicafan212:	Finish execution
+	//					TODO!
+#if DO_BUFFERED_DRAWS
+	ExecuteBufferedDraws();
+#endif
 
 	// Metallicafan212:	Get the selection
 	if (m_HitData != nullptr)
@@ -2279,9 +2366,6 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 		//					So running the shader on top isn't needed
 		if(bDebugSelection)
 			goto JUST_PRESENT;
-		// Metallicafan212:	TODO! Add this as a debug option
-		//if(bDebugSelection)
-		//	Blit = 1;
 	}
 
 	if (Blit)
@@ -2289,172 +2373,9 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 		// Metallicafan212:	Copy to the screen
 		if (NumAASamples > 1)
 		{
-#if DX11_USE_MSAA_SHADER
-
-#if USE_MSAA_COMPUTE
-			/*
-			if (bUseMSAAComputeShader)
-			{
-				// Metallicafan212:	Use a compute shader instead!!!
-				SetTexture(0, nullptr, 0);
-				//SetTexture(1, nullptr, 0);
-
-				m_D3DDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
-
-				m_D3DDeviceContext->CSSetShaderResources(0, 1, &m_ScreenRTSRV);
-				//m_RenderContext->CSSetShaderResources(1, 1, &m_ScreenDTSRV);
-
-				// Metallicafan212:	Now bind the output
-				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, 1, &m_BackBuffUAV, nullptr);
-
-				// Metallicafan212:	Bind the shader
-				FMSAAShader->Bind(m_D3DDeviceContext);
-
-				// Metallicafan212:	Now execute!
-				m_D3DDeviceContext->Dispatch(MSAAThreadX, MSAAThreadY, 1);
-
-				// Metallicafan212:	Wait for it to complete...
-				m_D3DDeviceContext->End(m_D3DQuery);
-
-				// Metallicafan212:	Wait for it
-				BOOL bDone = 0;
-
-				while (m_D3DDeviceContext->GetData(m_D3DQuery, &bDone, sizeof(BOOL), 0) != S_OK && bDone == 0);
-
-				// Metallicafan212:	Clear the render resources!!!
-				constexpr ID3D11ShaderResourceView* SRVTemp[2] = { nullptr, nullptr };
-				m_D3DDeviceContext->CSSetShaderResources(0, 2, SRVTemp);
-
-
-				constexpr ID3D11UnorderedAccessView* Temp[1] = { nullptr };
-				m_D3DDeviceContext->CSSetUnorderedAccessViews(0, 1, Temp, nullptr);
-
-				RestoreRenderTarget();
-				*/
-#else
-
-				// Metallicafan212:	We have to do geometry now...
-				EndBuffering();
-
-				// Metallicafan212:	Order of operations, make sure the alpha rejection is set
-				SetBlend(0);
-
-				SetTexture(0, nullptr, 0);
-				SetTexture(1, nullptr, 0);
-
-				// Metallicafan212:	Manually setup the vars...
-				m_RenderContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
-				m_RenderContext->PSSetShaderResources(0, 1, &m_ScreenRTSRV);
-				m_RenderContext->PSSetShaderResources(1, 1, &m_ScreenDTSRV);
-
-				FMSAAShader->Bind();
-
-				FLOAT Z		= 1.0f;
-				FLOAT X		= 0.0f;
-				FLOAT Y		= 0.0f;
-				FLOAT XL	= ScaledSceneNodeX;//m_sceneNodeX;
-				FLOAT YL	= ScaledSceneNodeY;//m_sceneNodeY;
-
-				// Metallicafan212:	Now make 2 triangles
-				//					I copied this all from the tile rendering, since I'm such a lazy fucking bastard
-				FLOAT PX1	= X - (XL * 0.5f);
-				FLOAT PX2	= PX1 + XL;
-				FLOAT PY1	= Y - (YL * 0.5f);
-				FLOAT PY2	= PY1 + YL;
-
-				FLOAT RPX1	= m_RFX2 * PX1;
-				FLOAT RPX2	= m_RFX2 * PX2;
-				FLOAT RPY1	= m_RFY2 * PY1;
-				FLOAT RPY2	= m_RFY2 * PY2;
-
-				FLOAT SU1 = 0.0f;
-				FLOAT SU2 = 1.0f;
-				FLOAT SV1 = 0.0f;
-				FLOAT SV2 = 1.0f;
-
-				RPX1 *= Z;
-				RPX2 *= Z;
-				RPY1 *= Z;
-				RPY2 *= Z;
-
-
-				// Metallicafan212:	Disable depth lmao
-				//ID3D11DepthStencilState* CurState	= nullptr;
-				//UINT Sten							= 0;
-				//m_RenderContext->OMGetDepthStencilState(&CurState, &Sten);
-				//m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
-
-				LockVertexBuffer(6 * sizeof(FD3DVert));
-
-				//m_RenderContext->IASetInputLayout(nullptr);
-
-				// Metallicafan212:	Start buffering now
-				StartBuffering(BT_ScreenFlash);
-
-				m_VertexBuff[0].X		= RPX1;
-				m_VertexBuff[0].Y		= RPY1;
-				m_VertexBuff[0].Z		= Z;
-				m_VertexBuff[0].U		= SU1;
-				m_VertexBuff[0].V		= SV1;
-
-				m_VertexBuff[1].X		= RPX2;
-				m_VertexBuff[1].Y		= RPY1;
-				m_VertexBuff[1].Z		= Z;
-				m_VertexBuff[1].U		= SU2;
-				m_VertexBuff[1].V		= SV1;
-
-				m_VertexBuff[2].X		= RPX2;
-				m_VertexBuff[2].Y		= RPY2;
-				m_VertexBuff[2].Z		= Z;
-				m_VertexBuff[2].U		= SU2;
-				m_VertexBuff[2].V		= SV2;
-
-				m_VertexBuff[3].X		= RPX1;
-				m_VertexBuff[3].Y		= RPY1;
-				m_VertexBuff[3].Z		= Z;
-				m_VertexBuff[3].U		= SU1;
-				m_VertexBuff[3].V		= SV1;
-
-				m_VertexBuff[4].X		= RPX2;
-				m_VertexBuff[4].Y		= RPY2;
-				m_VertexBuff[4].Z		= Z;
-				m_VertexBuff[4].U		= SU2;
-				m_VertexBuff[4].V		= SV2;
-
-				m_VertexBuff[5].X		= RPX1;
-				m_VertexBuff[5].Y		= RPY2;
-				m_VertexBuff[5].Z		= Z;
-				m_VertexBuff[5].U		= SU1;
-				m_VertexBuff[5].V		= SV2;
-
-				UnlockVertexBuffer();
-
-				//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-				AdvanceVertPos();//6);
-
-				// Metallicafan212:	Draw
-				EndBuffering();
-
-				// Metallicafan212:	Reset Z state
-				//m_RenderContext->OMSetDepthStencilState(CurState, Sten);
-
-				SetTexture(0, nullptr, 0);
-				SetTexture(1, nullptr, 0);
-
-				RestoreRenderTarget();
-#endif
-			/*
-			}
-			else
-			*/
-#endif
-			{
-				//m_D3DDeviceContext->ResolveSubresource(m_BackBuffTex, 0, m_ScreenBuffTex, 0, ScreenFormat);
 				m_D3DDeviceContext->ResolveSubresource(m_MSAAResolveTex, 0, m_ScreenBuffTex, 0, ScreenFormat);
-			}
 		}
 		// Metallicafan212:	Always use the resolution scaling shader, so we can do final effects on the screen
-		//else
 		{
 #if USE_RES_COMPUTE
 			// Metallicafan212:	Use a compute shader instead!!!
@@ -2548,9 +2469,6 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			// Metallicafan212:	Start buffering now
 			StartBuffering(BT_ScreenFlash);
 
-			// Metallicafan212:	Render as a quad 🙃🙃🙃🙃🙃🙃🙃
-			//EndBuffering();
-
 			// Metallicafan212:	Order of operations, make sure the alpha rejection is set
 			SetBlend(PF_Occlude);
 
@@ -2566,114 +2484,24 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 			FResScaleShader->Bind(m_RenderContext);
 
-			/*
-			FLOAT Z = 1.0f;
-			FLOAT X = 0.0f;
-			FLOAT Y = 0.0f;
-			FLOAT XL = SizeX;
-			FLOAT YL = SizeY;
-
-			// Metallicafan212:	Now make 2 triangles
-			//					I copied this all from the tile rendering, since I'm such a lazy fucking bastard
-			FLOAT PX1 = X - (XL * 0.5f);
-			FLOAT PX2 = PX1 + XL;
-			FLOAT PY1 = Y - (YL * 0.5f);
-			FLOAT PY2 = PY1 + YL;
-
-			FLOAT RPX1 = m_RFX2 * PX1;
-			FLOAT RPX2 = m_RFX2 * PX2;
-			FLOAT RPY1 = m_RFY2 * PY1;
-			FLOAT RPY2 = m_RFY2 * PY2;
-
-			FLOAT SU1 = 0.0f;
-			FLOAT SU2 = 1.0f;
-			FLOAT SV1 = 0.0f;
-			FLOAT SV2 = 1.0f;
-
-			//RPX1 *= Z;
-			//RPX2 *= Z;
-			//RPY1 *= Z;
-			//RPY2 *= Z;
-			*/
-
-			//LockVertexBuffer(6 * sizeof(FD3DVert));
 			LockVertAndIndexBuffer(6);
 
 			appMemcpy(m_VertexBuff, ScreenVerts, sizeof(FD3DVert) * 6);
 
-			/*
-			m_VertexBuff[0].X		= RPX1;
-			m_VertexBuff[0].Y		= RPY1;
-			m_VertexBuff[0].Z		= Z;
-			m_VertexBuff[0].U		= SU1;
-			m_VertexBuff[0].V		= SV1;
-			m_VertexBuff[0].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
-
-			m_VertexBuff[1].X		= RPX2;
-			m_VertexBuff[1].Y		= RPY1;
-			m_VertexBuff[1].Z		= Z;
-			m_VertexBuff[1].U		= SU2;
-			m_VertexBuff[1].V		= SV1;
-			m_VertexBuff[1].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
-
-			m_VertexBuff[2].X		= RPX2;
-			m_VertexBuff[2].Y		= RPY2;
-			m_VertexBuff[2].Z		= Z;
-			m_VertexBuff[2].U		= SU2;
-			m_VertexBuff[2].V		= SV2;
-			m_VertexBuff[2].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
-
-			m_VertexBuff[3].X		= RPX1;
-			m_VertexBuff[3].Y		= RPY1;
-			m_VertexBuff[3].Z		= Z;
-			m_VertexBuff[3].U		= SU1;
-			m_VertexBuff[3].V		= SV1;
-			m_VertexBuff[3].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
-
-			m_VertexBuff[4].X		= RPX2;
-			m_VertexBuff[4].Y		= RPY2;
-			m_VertexBuff[4].Z		= Z;
-			m_VertexBuff[4].U		= SU2;
-			m_VertexBuff[4].V		= SV2;
-			m_VertexBuff[4].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
-
-			m_VertexBuff[5].X		= RPX1;
-			m_VertexBuff[5].Y		= RPY2;
-			m_VertexBuff[5].Z		= Z;
-			m_VertexBuff[5].U		= SU1;
-			m_VertexBuff[5].V		= SV2;
-			m_VertexBuff[5].Color	= FPlane(1.f, 1.f, 1.f, 1.f);
-			*/
-
-			//m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			AdvanceVertPos();
 
 			// Metallicafan212:	Draw
 			EndBuffering();
+
+#if DO_BUFFERED_DRAWS
+			ExecuteBufferedDraws();
+#endif
 
 			//SetTexture(0, nullptr, 0);
 			// Metallicafan212:	Fix the shader holding onto the RT texture
 			m_RenderContext->PSSetShaderResources(0, 1, &BlankResourceView);
 
 			RestoreRenderTarget();
-
-			/*
-			// Metallicafan212:	Render now?
-			//					TODO! This should probably be called on the direct device context
-			if (bUseDeferredRendering)
-			{
-				// Metallicafan212:	Get a command list to execute
-				ID3D11CommandList* CommandList	= nullptr;
-				HRESULT hr						= m_D3DDeferredContext->FinishCommandList(TRUE, &CommandList);
-
-				if (SUCCEEDED(hr))
-				{
-					m_D3DDeviceContext->ExecuteCommandList(CommandList, TRUE);
-
-					CommandList->Release();
-				}
-			}
-			*/
 #endif
 		}
 

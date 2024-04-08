@@ -1,5 +1,6 @@
 #include "ICBINDx11Drv.h"
 
+#if !EXTRA_VERT_INFO
 struct FSurfMatrixDef : FShaderVarCommon
 {
 #if !EXTRA_VERT_INFO
@@ -13,6 +14,7 @@ struct FSurfMatrixDef : FShaderVarCommon
 	//FLOAT	Pad2[2];
 #endif
 };
+#endif
 
 // Metallicafan212:	This file defines the mesh (one texture???) rendering shader
 FD3DSurfShader::FD3DSurfShader(UICBINDx11RenderDevice* InParent)
@@ -33,6 +35,7 @@ FD3DSurfShader::FD3DSurfShader(UICBINDx11RenderDevice* InParent)
 
 // Metallicafan212:	Shader interface
 
+#if !EXTRA_VERT_INFO
 // Metallicafan212:	Made this generic so we can copy vars into shaders
 void FD3DSurfShader::SetupConstantBuffer()
 {
@@ -96,3 +99,4 @@ void FD3DSurfShader::WriteConstantBuffer(void* InMem)
 
 	unguardSlow;
 }
+#endif
