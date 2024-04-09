@@ -145,6 +145,8 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(GlobalDistFogBuffer);
 	SAFE_RELEASE(GlobalPolyflagsBuffer);
 
+	SAFE_RELEASE(BoundTexturesBuffer);
+
 	// Metallicafan212:	Set the raster state to an invalid value
 	CurrentRasterState = DXRS_MAX;
 
@@ -587,6 +589,17 @@ MAKE_DEVICE:
 	m_RenderContext->PSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
 	m_RenderContext->CSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
 
+	// Metallicafan212:	Setup the buffer for the bound textures
+	D3D11_BUFFER_DESC TexConst = { sizeof(FBoundTextures), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+	hr = m_D3DDevice->CreateBuffer(&TexConst, nullptr, &BoundTexturesBuffer);
+
+	ThrowIfFailed(hr);
+
+	m_RenderContext->VSSetConstantBuffers(3, 1, &BoundTexturesBuffer);
+	m_RenderContext->GSSetConstantBuffers(3, 1, &BoundTexturesBuffer);
+	m_RenderContext->PSSetConstantBuffers(3, 1, &BoundTexturesBuffer);
+	m_RenderContext->CSSetConstantBuffers(3, 1, &BoundTexturesBuffer);
+
 	// Metallicafan212:	Setup the pre-defined index values array
 	if (!bSetupIValArray)
 	{
@@ -898,6 +911,9 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	FrameConstantsBuffer	= nullptr;
 	GlobalDistFogBuffer		= nullptr;
 	GlobalPolyflagsBuffer	= nullptr;
+	BoundTexturesBuffer		= nullptr;
+
+	bWriteTexturesBuffer	= 0;
 	
 
 	Viewport			= InViewport;
@@ -1879,6 +1895,7 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_RELEASE(FrameConstantsBuffer);
 	SAFE_RELEASE(GlobalDistFogBuffer);
 	SAFE_RELEASE(GlobalPolyflagsBuffer);
+	SAFE_RELEASE(BoundTexturesBuffer);
 
 	m_D3DDeviceContext->ClearState();
 
@@ -2069,7 +2086,8 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 #if DO_BUFFERED_DRAWS
 	// Metallicafan212:	Add a new draw and set it up
-	CurrentDraw = &BufferedDraws(BufferedDraws.AddZeroed());
+	//CurrentDraw = &BufferedDraws(BufferedDraws.AddZeroed());
+	CurrentDraw = AddDrawCall();
 #endif
 
 	// Metallicafan212:	Hold onto the hit related info
@@ -2226,96 +2244,122 @@ void UICBINDx11RenderDevice::ExecuteBufferedDraws()
 
 	UnlockBuffers();
 
+	//FBoundTextures Tex;
+
+	// Metallicafan212:	Start from a clean slate?
+	//appMemzero(&Tex, sizeof(FBoundTextures));
+
 	for (INT i = 0; i < BufferedDraws.Num(); i++)
 	{
 		// Metallicafan212:	Get the draw
-		FDrawCall& Call = BufferedDraws(i);
+		FDrawCall* Call = BufferedDraws(i);
 
 		// Metallicafan212:	Now set everything needed
-		if (Call.bSetBlend)
+		if (Call->bSetBlend)
 		{
-			m_RenderContext->OMSetBlendState(Call.BlendState, nullptr, 0xFFFFFFFF);
+			m_RenderContext->OMSetBlendState(Call->BlendState, nullptr, 0xFFFFFFFF);
 		}
 
-		if (Call.bSetRaster)
+		if (Call->bSetRaster)
 		{
-			m_RenderContext->RSSetState(Call.RasterState);
+			m_RenderContext->RSSetState(Call->RasterState);
 		}
 
-		if (Call.bSetDState)
+		if (Call->bSetDState)
 		{
-			m_RenderContext->OMSetDepthStencilState(Call.DSState, 0);
+			m_RenderContext->OMSetDepthStencilState(Call->DSState, 0);
 		}
 
 		// Metallicafan212:	Set the RT and depth
-		if (Call.bSetRT)
+		if (Call->bSetRT)
 		{
-			m_RenderContext->OMSetRenderTargets(Call.RTV != nullptr ? 1 : 0, &Call.RTV, Call.DSV);
+			m_RenderContext->OMSetRenderTargets(Call->RTV != nullptr ? 1 : 0, &Call->RTV, Call->DSV);
 		}
 
 		// Metallicafan212:	Now iterate and set each texture
-		for (auto It = Call.TBinds.begin(); It != Call.TBinds.end(); It++)
+		if (Call->TBinds.size())
 		{
-			m_RenderContext->PSSetShaderResources(It->first, 1, &It->second);
+			for (auto It = Call->TBinds.begin(); It != Call->TBinds.end(); It++)
+			{
+				m_RenderContext->PSSetShaderResources(It->first, 1, &It->second);
 
-			// Metallicafan212:	Also set the associated sampler
-			m_RenderContext->PSSetSamplers(It->first, 1, &Call.SBinds[It->first]);
+				// Metallicafan212:	Also set the associated sampler
+				m_RenderContext->PSSetSamplers(It->first, 1, &Call->SBinds[It->first]);
+			}
 		}
 
 		// Metallicafan212:	Set the shader
-		if (Call.bSetShader)
+		if (Call->bSetShader)
 		{
-			Call.Shader->Bind(m_RenderContext);
+			//Call->Shader->Bind(m_RenderContext);
+			Call->Shader->SetShaders(m_RenderContext);
 		}
 
 		// Metallicafan212:	Copy and set constants
 		//					TODO! Bind user constants
-		if (Call.bSetFrameConstants)
+		if (Call->bSetFrameConstants)
 		{
 			D3D11_MAPPED_SUBRESOURCE Map;
 
 			m_RenderContext->Map(FrameConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
 
-			appMemcpy(Map.pData, &Call.FrameShaderConstants(0), sizeof(FFrameShaderVars));
+			appMemcpy(Map.pData, &Call->FrameShaderConstants(0), sizeof(FFrameShaderVars));
 
 			m_RenderContext->Unmap(FrameConstantsBuffer, 0);
 		}
 
-		if (Call.bSetFlagConstants)
+		if (Call->bSetFlagConstants)
 		{
 			D3D11_MAPPED_SUBRESOURCE Map;
 
 			m_RenderContext->Map(GlobalPolyflagsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
 
-			appMemcpy(Map.pData, &Call.FlagShaderConstants(0), sizeof(FPolyflagVars));
+			appMemcpy(Map.pData, &Call->FlagShaderConstants(0), sizeof(FPolyflagVars));
 
 			m_RenderContext->Unmap(GlobalPolyflagsBuffer, 0);
 		}
 
-		if (Call.bSetUserConstants)
+		if (Call->bSetUserConstants)
 		{
 			// Metallicafan212:	Map and set
 			D3D11_MAPPED_SUBRESOURCE Map;
 
-			m_RenderContext->Map(Call.UserBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
+			m_RenderContext->Map(Call->UserBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
 
-			appMemcpy(Map.pData, &Call.UserConstants(0), Call.UserConstants.Num());
+			appMemcpy(Map.pData, &Call->UserConstants(0), Call->UserConstants.Num());
 
-			m_RenderContext->Unmap(Call.UserBuffer, 0);
+			m_RenderContext->Unmap(Call->UserBuffer, 0);
 
-			m_RenderContext->VSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &Call.UserBuffer);
-			m_RenderContext->GSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &Call.UserBuffer);
-			m_RenderContext->PSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &Call.UserBuffer);
+			m_RenderContext->VSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &Call->UserBuffer);
+			m_RenderContext->GSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &Call->UserBuffer);
+			m_RenderContext->PSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &Call->UserBuffer);
 		}
 
 		// Metallicafan212:	Setup the topology
-		if (Call.bSetTopology)
+		if (Call->bSetTopology)
 		{
-			m_RenderContext->IASetPrimitiveTopology(Call.Topology);
+			m_RenderContext->IASetPrimitiveTopology(Call->Topology);
+		}
+
+		if (Call->bSetTexConstants)
+		{
+			D3D11_MAPPED_SUBRESOURCE Map;
+
+			m_RenderContext->Map(BoundTexturesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
+
+			appMemcpy(Map.pData, &Call->TexShaderConstants(0), sizeof(FPolyflagVars));
+
+			m_RenderContext->Unmap(BoundTexturesBuffer, 0);
 		}
 
 		// Metallicafan212:	Now render?
-		m_RenderContext->DrawIndexed(Call.ISize, Call.IStart, Call.VStart);
+		if (Call->ISize)
+		{
+			m_RenderContext->DrawIndexed(Call->ISize, Call->IStart, Call->VStart);
+		}
+
+		// Metallicafan212:	Now delete
+		delete Call;
 	}
 
 	BufferedDraws.Empty();
@@ -2373,7 +2417,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 		// Metallicafan212:	Copy to the screen
 		if (NumAASamples > 1)
 		{
-				m_D3DDeviceContext->ResolveSubresource(m_MSAAResolveTex, 0, m_ScreenBuffTex, 0, ScreenFormat);
+			m_D3DDeviceContext->ResolveSubresource(m_MSAAResolveTex, 0, m_ScreenBuffTex, 0, ScreenFormat);
 		}
 		// Metallicafan212:	Always use the resolution scaling shader, so we can do final effects on the screen
 		{
@@ -2474,11 +2518,19 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 			SetTexture(0, nullptr, 0);
 
-			m_RenderContext->PSSetSamplers(0, 1, &ScreenSamp);
 
+#if DO_BUFFERED_DRAWS
+			CheckDrawCall();
+			CurrentDraw->TBinds[0]	= NumAASamples > 1 ? m_MSAAResolveSRV : m_ScreenRTSRV;
+			CurrentDraw->SBinds[0]	= ScreenSamp;
+			CurrentDraw->RTV		= m_BackBuffRT;
+			CurrentDraw->bSetRT		= 1;
+#else
+			m_RenderContext->PSSetSamplers(0, 1, &ScreenSamp);
 			// Metallicafan212:	Manually setup the vars...
 			m_RenderContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
 			m_RenderContext->PSSetShaderResources(0, 1, NumAASamples > 1 ? &m_MSAAResolveSRV : &m_ScreenRTSRV);
+#endif
 
 			SetSceneNode(nullptr);
 
@@ -2638,6 +2690,10 @@ void UICBINDx11RenderDevice::ClearZ(FSceneNode* Frame)
 	// Metallicafan212:	Turn back on Z buffering
 	SetBlend(PF_Occlude);
 
+#if DO_BUFFERED_DRAWS
+	ExecuteBufferedDraws();
+#endif
+
 	// Metallicafan212:	Clear the current DSV instead of the local one
 	if (BoundRT != nullptr)
 	{
@@ -2721,8 +2777,19 @@ void UICBINDx11RenderDevice::EndFlash()
 		// Metallicafan212:	Disable depth lmao
 		ID3D11DepthStencilState* CurState = nullptr;
 		UINT Sten = 0;
+
+#if DO_BUFFERED_DRAWS
+		ExecuteBufferedDraws();
+#endif
+
 		m_RenderContext->OMGetDepthStencilState(&CurState, &Sten);
+#if DO_BUFFERED_DRAWS
+		CheckDrawCall();
+		CurrentDraw->bSetDState = 1;
+		CurrentDraw->DSState	= m_DefaultNoZState;
+#else
 		m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+#endif
 
 		//LockVertexBuffer(6 * sizeof(FD3DVert));
 		LockVertAndIndexBuffer(6);
@@ -2763,7 +2830,12 @@ void UICBINDx11RenderDevice::EndFlash()
 		EndBuffering();
 
 		// Metallicafan212:	Reset Z state
+#if DO_BUFFERED_DRAWS
+		CurrentDraw->bSetDState = 1;
+		CurrentDraw->DSState	= CurState;
+#else
 		m_RenderContext->OMSetDepthStencilState(CurState, Sten);
+#endif
 	}
 
 	unguard;

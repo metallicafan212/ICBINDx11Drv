@@ -87,6 +87,19 @@ void FD3DShader::Init()
 	unguard;
 }
 
+void FD3DShader::SetShaders(ID3D11DeviceContext* UseContext)
+{
+	// Metallicafan212:	Setup this shader for rendering
+	UseContext->VSSetShader(VertexShader, nullptr, 0);
+
+	// Metallicafan212:	Bind the optional geometry shader
+	UseContext->GSSetShader(GeoShader, nullptr, 0);
+
+	UseContext->PSSetShader(PixelShader, nullptr, 0);
+
+	UseContext->IASetInputLayout(InputLayout);
+}
+
 // Metallicafan212:	TODO! This should be re-evalled and the bound textures moved to another constant buffer
 //					Probably causing a lot of issues having multiple, but I'll combine more of them together later
 void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
@@ -97,6 +110,7 @@ void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 
 	if (ParentDevice->CurrentShader != this)
 	{
+		// Metallicafan212:	Flush rendering if needed
 		ParentDevice->EndBuffering();
 
 		ParentDevice->CurrentShader = this;
@@ -108,64 +122,59 @@ void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 	if (!bShaderIsUs)
 	{
 #if !DO_BUFFERED_DRAWS
-		// Metallicafan212:	Setup this shader for rendering
-		UseContext->VSSetShader(VertexShader, nullptr, 0);
-
-		// Metallicafan212:	Bind the optional geometry shader
-		UseContext->GSSetShader(GeoShader, nullptr, 0);
-
-		UseContext->PSSetShader(PixelShader, nullptr, 0);
-
-		UseContext->IASetInputLayout(InputLayout);
+		SetShaders(UseContext);
 #else
 		// Metallicafan212:	Set the shader
 		//					TODO!!!!!! 
+		ParentDevice->CheckDrawCall();
 		ParentDevice->CurrentDraw->Shader		= this;
 		ParentDevice->CurrentDraw->bSetShader	= 1;
-
 #endif
 	}
 
+	if (ShaderConstantsBuffer != nullptr)
+	{
 #if !DO_BUFFERED_DRAWS
-	// Metallicafan212:	Map the matrix(s)
-	D3D11_MAPPED_SUBRESOURCE Map;
-	HRESULT hr = UseContext->Map(ShaderConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
+		// Metallicafan212:	Map the matrix(s)
+		D3D11_MAPPED_SUBRESOURCE Map;
+		HRESULT hr = UseContext->Map(ShaderConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
 
-	// Metallicafan212:	IDK, do something here?
-	ParentDevice->ThrowIfFailed(hr);
+		// Metallicafan212:	IDK, do something here?
+		ParentDevice->ThrowIfFailed(hr);
 
-	// Metallicafan212:	Copy over this shader's constants
-	//					The child shaders can choose to copy more vars to the memory buffer
-	WriteConstantBuffer(Map.pData);
+		// Metallicafan212:	Copy over this shader's constants
+		//					The child shaders can choose to copy more vars to the memory buffer
+		WriteConstantBuffer(Map.pData);
 
-	// Metallicafan212:	Now unmap it
-	UseContext->Unmap(ShaderConstantsBuffer, 0);
+		// Metallicafan212:	Now unmap it
+		UseContext->Unmap(ShaderConstantsBuffer, 0);
 
-	// Metallicafan212:	Now finally set it as a resource
-	if (VertexShader != nullptr)
-		UseContext->VSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
+		// Metallicafan212:	Now finally set it as a resource
+		if (VertexShader != nullptr)
+			UseContext->VSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
 
-	if (GeoShader != nullptr)
-		UseContext->GSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
+		if (GeoShader != nullptr)
+			UseContext->GSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
 
-	if (PixelShader != nullptr)
-		UseContext->PSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
-
+		if (PixelShader != nullptr)
+			UseContext->PSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
 #else
-	// Metallicafan212:	TODO!!!!!! Check for variable differences????
-	ParentDevice->CurrentDraw->UserConstants.Empty();
-	D3D11_BUFFER_DESC Desc;
+		// Metallicafan212:	TODO!!!!!! Check for variable differences????
+		ParentDevice->CurrentDraw->UserConstants.Empty();
+		D3D11_BUFFER_DESC Desc;
 
-	ShaderConstantsBuffer->GetDesc(&Desc);
+		ShaderConstantsBuffer->GetDesc(&Desc);
 
-	ParentDevice->CurrentDraw->UserConstants.Add(Desc.ByteWidth);
+		ParentDevice->CurrentDraw->UserConstants.Empty(Desc.ByteWidth);
+		ParentDevice->CurrentDraw->UserConstants.Add(Desc.ByteWidth);
 
-	// Metallicafan212:	Now write to it
-	WriteConstantBuffer(&ParentDevice->CurrentDraw->UserConstants(0));
+		// Metallicafan212:	Now write to it
+		WriteConstantBuffer(&ParentDevice->CurrentDraw->UserConstants(0));
 
-	ParentDevice->CurrentDraw->bSetUserConstants	= 1;
-	ParentDevice->CurrentDraw->UserBuffer			= ShaderConstantsBuffer;
+		ParentDevice->CurrentDraw->bSetUserConstants	= 1;
+		ParentDevice->CurrentDraw->UserBuffer			= ShaderConstantsBuffer;
 #endif
+	}
 
 	unguardSlow;
 }
@@ -173,6 +182,8 @@ void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 // Metallicafan212:	Made this generic so we can copy vars into shaders
 void FD3DShader::SetupConstantBuffer()
 {
+	// Metallicafan212:	Blank now since we don't do anything in the standard shader now
+	/*
 	guard(FD3DShader::SetupConstantBuffer);
 
 	// Metallicafan212:	Matrix layout
@@ -185,12 +196,17 @@ void FD3DShader::SetupConstantBuffer()
 	ParentDevice->ThrowIfFailed(hr);
 
 	unguard;
+	*/
+
+	ShaderConstantsBuffer = nullptr;
 }
 
+// Metallicafan212:	TODO!!!!! Move this to a separate buffer, and ONLY set when the texture(s) change
 void FD3DShader::WriteConstantBuffer(void* InMem)
 {
 	guardSlow(FD3DShader::WriteConstantBuffer);
 
+	/*
 	// Metallicafan212:	Copy over
 	FShaderVarCommon* MDef			= ((FShaderVarCommon*)InMem);
 
@@ -199,6 +215,7 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 	{
 		MDef->BoundTextures[i] = (ParentDevice->BoundTextures[i].TexInfoHash != 0 || ParentDevice->BoundTextures[i].bIsRT);
 	}
+	*/
 
 	unguardSlow;
 }

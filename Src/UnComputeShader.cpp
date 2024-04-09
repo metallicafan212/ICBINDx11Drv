@@ -291,7 +291,7 @@ void FD3DComputeShader::Init()
 
 void FD3DComputeShader::Bind(ID3D11DeviceContext* UseContext)
 {
-	guard(FD3DComputeShader::Bind);
+	guardSlow(FD3DComputeShader::Bind);
 
 	FD3DShader::Bind(UseContext);
 
@@ -305,7 +305,7 @@ void FD3DComputeShader::Bind(ID3D11DeviceContext* UseContext)
 	// Metallicafan212:	Bind the constant buffer as well
 	UseContext->CSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
 
-	unguard;
+	unguardSlow;
 }
 
 #if USE_COMPUTE_SHADER

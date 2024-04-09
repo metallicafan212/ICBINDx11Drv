@@ -53,8 +53,8 @@ void FTextureCache::Flush()
 	} \
 	Map.clear();
 
-	CLEAR_MAP(DWORDMap);
-	CLEAR_MAP(DWORDMaskedMap);
+	//CLEAR_MAP(DWORDMap);
+	//CLEAR_MAP(DWORDMaskedMap);
 	CLEAR_MAP(QWORDMap);
 	CLEAR_MAP(QWORDMaskedMap);
 
@@ -67,6 +67,7 @@ FD3DTexture* FTextureCache::Find(D3DCacheId InID, PFLAG PolyFlags)
 {
 	guardSlow(FTextureCache::Find);
 
+	/*
 	// Metallicafan212:	Figure out what map this should be in
 	DWORD Truncated = (DWORD)InID;
 
@@ -97,6 +98,7 @@ FD3DTexture* FTextureCache::Find(D3DCacheId InID, PFLAG PolyFlags)
 		}
 	}
 	else
+	*/
 	{
 		// Metallicafan212:	QWORD map
 
@@ -130,6 +132,7 @@ FD3DTexture* FTextureCache::Set(D3DCacheId InID, PFLAG PolyFlags)
 {
 	guardSlow(FTextureCache::Set);
 
+	/*
 	// Metallicafan212:	Figure out what map this should be in
 	DWORD Truncated = (DWORD)InID;
 
@@ -159,6 +162,7 @@ FD3DTexture* FTextureCache::Set(D3DCacheId InID, PFLAG PolyFlags)
 		}
 	}
 	else
+	*/
 	{
 		// Metallicafan212:	QWORD map
 

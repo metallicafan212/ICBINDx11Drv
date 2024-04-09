@@ -529,6 +529,9 @@ struct FDrawCall
 	UBOOL						bSetFlagConstants;
 	TArray<BYTE>				FlagShaderConstants;
 
+	UBOOL						bSetTexConstants;
+	TArray<BYTE>				TexShaderConstants;
+
 	UBOOL						bSetUserConstants;
 	TArray<BYTE>				UserConstants;
 
@@ -538,6 +541,16 @@ struct FDrawCall
 	// Metallicafan212:	Topology to set for this draw
 	UBOOL						bSetTopology;
 	D3D_PRIMITIVE_TOPOLOGY		Topology;
+
+	FDrawCall()
+		:
+		bSetBlend(0), BlendState(nullptr), bSetRaster(0), RasterState(nullptr), bSetDState(0), DSState(nullptr),
+		VStart(0), IStart(0), ISize(0), TBinds(), SBinds(), bSetShader(0), Shader(nullptr), bSetRT(0), RTV(nullptr), DSV(nullptr),
+		bSetFrameConstants(0), bSetDFogConstants(0), bSetFlagConstants(0), bSetTexConstants(0), bSetUserConstants(0), UserBuffer(nullptr),
+		bSetTopology(0), Topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)
+	{
+
+	}
 };
 
 
@@ -948,6 +961,13 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	FPolyflagVars						GlobalPolyflagVars;
 	ID3D11Buffer*						GlobalPolyflagsBuffer;
 
+	// Metallicafan212:	Buffer just for bound textures
+	FBoundTextures						BoundTexturesInfo;
+	ID3D11Buffer*						BoundTexturesBuffer;
+
+	// Metallicafan212:	If to write it out
+	UBOOL								bWriteTexturesBuffer;
+
 	// Metallicafan212:	Blending map
 	//					We have to keep around blend objects (rather than setting render states directly) so they're mapped to the polyflag that it represents
 #if !USE_UNODERED_MAP_EVERYWHERE
@@ -1169,7 +1189,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	TArray<FD2DStringDraw>		BufferedStrings;
 
 	// Metallicafan212:	Draws to execute at the end of the frame
-	TArray<FDrawCall>			BufferedDraws;
+	TArray<FDrawCall*>			BufferedDraws;
 
 	// Metallicafan212:	Pointer to the current draw
 	FDrawCall*					CurrentDraw;
@@ -1295,7 +1315,11 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		if (!bNoOverwrite)
 		{
 			// Metallicafan212:	Ran out of room, check if there's stuff to render
+#if DO_BUFFERED_DRAWS
+			if(BufferedDraws.Num())
+#else
 			if (m_BufferedVerts != 0)
+#endif
 			{
 				EndBuffering();
 
@@ -1303,7 +1327,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 				ExecuteBufferedDraws();
 
 				// Metallicafan212:	Add on a new draw, as now we're in a invalid state
-				CurrentDraw = &BufferedDraws(BufferedDraws.AddZeroed());
+				CurrentDraw = AddDrawCall();
 #endif
 			}
 
@@ -1402,15 +1426,15 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		m_ILockCount = 0;
 	}
 
-	/*FORCEINLINE*/ void EndBuffering()
+	FORCEINLINE void EndBuffering()
 	{
 #if DX11_HP2
 		if (m_CurrentBuff == BT_Strings && BufferedStrings.Num())
 		{
-			//SetRasterState(DXRS_Normal); //| DXRS_NoAA);
-			// Metallicafan212:	IMPORTANT!!!! D2D seems to actually somewhat RESPECT the current shaders, so we need to use a generic shader for this
-			//FGenShader->Bind(m_RenderContext);
-
+#if DO_BUFFERED_DRAWS
+			// Metallicafan212:	Must draw first
+			ExecuteBufferedDraws();
+#endif
 			// Metallicafan212:	Draw all the strings
 			m_CurrentD2DRT->BeginDraw();
 
@@ -1446,13 +1470,22 @@ class UICBINDx11RenderDevice : public RD_CLASS
 #endif
 		if (m_BufferedVerts != 0 && m_CurrentBuff != BT_None)
 		{
+			// Metallicafan212:	Update textures now
+			if (bWriteTexturesBuffer)
+			{
+				UpdateBoundTextures();
+			}
+
 #if !DO_BUFFERED_DRAWS
 			// Metallicafan212:	We only lock once to save on performance 
 			UnlockBuffers();
 			m_RenderContext->DrawIndexed(m_BufferedIndices, m_DrawnIndices, m_DrawnVerts);
 #else
 			// Metallicafan212:	Make a new draw call?
-			CurrentDraw = &BufferedDraws(BufferedDraws.AddZeroed());
+			CurrentDraw->IStart	= m_DrawnIndices;
+			CurrentDraw->ISize	= m_BufferedIndices;
+			CurrentDraw->VStart = m_DrawnVerts;
+			CurrentDraw			= AddDrawCall();
 #endif
 
 			// Metallicafan212:	Increment the buffer counters
@@ -1479,6 +1512,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 #if !DO_BUFFERED_DRAWS
 					m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 #else
+					CheckDrawCall();
 					CurrentDraw->bSetTopology	= 1;
 					CurrentDraw->Topology		= D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 #endif
@@ -1493,6 +1527,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 #if !DO_BUFFERED_DRAWS
 						m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 #else
+						CheckDrawCall();
 						CurrentDraw->bSetTopology	= 1;
 						CurrentDraw->Topology		= D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 #endif
@@ -1517,7 +1552,10 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		m_RenderContext->Unmap(FrameConstantsBuffer, 0);
 #else
 		// Metallicafan212:	Actually copying the constants will be taken care of when we actually render
+		CheckDrawCall();
+
 		CurrentDraw->bSetFrameConstants = 1;
+		CurrentDraw->FrameShaderConstants.Empty(sizeof(FFrameShaderVars));
 		CurrentDraw->FrameShaderConstants.Add(sizeof(FFrameShaderVars));
 		appMemcpy(&CurrentDraw->FrameShaderConstants(0), &FrameShaderVars, sizeof(FFrameShaderVars));
 #endif
@@ -1534,10 +1572,44 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 		m_RenderContext->Unmap(GlobalPolyflagsBuffer, 0);
 #else
+		if (CurrentDraw != nullptr)
+		{
+			// Metallicafan212:	Actually copying the constants will be taken care of when we actually render
+			CurrentDraw->bSetFlagConstants = 1;
+			CurrentDraw->FlagShaderConstants.Empty(sizeof(FPolyflagVars));
+			CurrentDraw->FlagShaderConstants.Add(sizeof(FPolyflagVars));
+			appMemcpy(&CurrentDraw->FlagShaderConstants(0), &GlobalPolyflagVars, sizeof(FPolyflagVars));
+		}
+#endif
+	}
+
+	FORCEINLINE void UpdateBoundTextures()
+	{
+		for (INT i = 0; i < MAX_TEXTURES; i++)
+		{
+			BoundTexturesInfo.BoundTextures[i] = (BoundTextures[i].TexInfoHash != 0 || BoundTextures[i].bIsRT);
+		}
+
+#if !DO_BUFFERED_DRAWS
+		D3D11_MAPPED_SUBRESOURCE Map;
+
+		m_RenderContext->Map(BoundTexturesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
+
+		appMemcpy(Map.pData, &BoundTexturesInfo, sizeof(FBoundTextures));
+
+		m_RenderContext->Unmap(BoundTexturesBuffer, 0);
+
+		bWriteTexturesBuffer = 0;
+#else
 		// Metallicafan212:	Actually copying the constants will be taken care of when we actually render
-		CurrentDraw->bSetFlagConstants = 1;
-		CurrentDraw->FlagShaderConstants.Add(sizeof(FPolyflagVars));
-		appMemcpy(&CurrentDraw->FlagShaderConstants(0), &GlobalPolyflagVars, sizeof(FPolyflagVars));
+		CheckDrawCall();
+
+		CurrentDraw->bSetTexConstants = 1;
+		CurrentDraw->TexShaderConstants.Empty(sizeof(FBoundTextures));
+		CurrentDraw->TexShaderConstants.Add(sizeof(FBoundTextures));
+		appMemcpy(&CurrentDraw->TexShaderConstants(0), &BoundTexturesInfo, sizeof(FBoundTextures));
+
+		bWriteTexturesBuffer = 0;
 #endif
 	}
 
@@ -1562,7 +1634,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	//void MakeTextureSampler(FD3DTexture* Bind, PFLAG PolyFlags);
 
-	inline void FlushTextureSamplers()
+	FORCEINLINE void FlushTextureSamplers()
 	{
 #if !USE_UNODERED_MAP_EVERYWHERE
 		for (TMap<FPLAG, ID3D11SamplerState*>::TIterator It(SampMap); It; ++It)
@@ -1583,7 +1655,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		SAFE_RELEASE(ScreenSamp);
 	}
 
-	inline void FlushRasterStates()
+	FORCEINLINE void FlushRasterStates()
 	{
 #if !USE_UNODERED_MAP_EVERYWHERE
 		for (TMap<DWORD, ID3D11RasterizerState*>::TIterator It(RasterMap); It; ++It)
@@ -1852,10 +1924,13 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 		m_RenderContext->Unmap(GlobalDistFogBuffer, 0);
 #else
+		CheckDrawCall();
 		// Metallicafan212:	The constant values will be set when we actually draw
 		CurrentDraw->bSetDFogConstants = 1;
+		CurrentDraw->DFogShaderConstants.Empty(sizeof(FDistFogVars));
 		CurrentDraw->DFogShaderConstants.Add(sizeof(FDistFogVars));
 		appMemcpy(&CurrentDraw->DFogShaderConstants(0), &GlobalDistFogSettings, sizeof(FDistFogVars));
+
 #endif
 	}
 
@@ -1905,4 +1980,27 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	New buffered drawing state
 	void ExecuteBufferedDraws();
+
+	FORCEINLINE FDrawCall* AddDrawCall()
+	{
+#if DO_BUFFERED_DRAWS
+		FDrawCall* Draw = new FDrawCall();
+
+		BufferedDraws.AddItem(Draw);
+
+		return Draw;
+#else
+		return nullptr;
+#endif
+	}
+
+	FORCEINLINE void CheckDrawCall()
+	{
+#if DO_BUFFERED_DRAWS
+		if (CurrentDraw == nullptr)
+		{
+			CurrentDraw = AddDrawCall();
+		}
+#endif
+	}
 };

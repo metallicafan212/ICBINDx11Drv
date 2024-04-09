@@ -34,8 +34,8 @@ protected:
 	//QWORD_MAP QWORDMap;
 	//QWORD_MAP QWORDMaskedMap;
 
-	std::unordered_map<DWORD, FD3DTexture> DWORDMap;
-	std::unordered_map<DWORD, FD3DTexture> DWORDMaskedMap;
+	//std::unordered_map<DWORD, FD3DTexture> DWORDMap;
+	//std::unordered_map<DWORD, FD3DTexture> DWORDMaskedMap;
 	std::unordered_map<QWORD, FD3DTexture> QWORDMap;
 	std::unordered_map<QWORD, FD3DTexture> QWORDMaskedMap;
 };

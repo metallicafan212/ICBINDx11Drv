@@ -564,14 +564,14 @@ void UICBINDx11RenderDevice::TickDistanceFog()
 
 void UICBINDx11RenderDevice::ForceSetFogColor(FPlane FogColor)
 {
-	guard(UICBINDx11RenderDevice::ForceSetFogColor);
+	guardSlow(UICBINDx11RenderDevice::ForceSetFogColor);
 
 	// Metallicafan212:	TODO!
 	FogShaderVars.DistanceFogColor = FogColor;
 
 	UpdateGlobalShaderVars();
 
-	unguard;
+	unguardSlow;
 }
 
 // Metallicafan212:	Simple BW shader for doing stupid "old-time" looking shit

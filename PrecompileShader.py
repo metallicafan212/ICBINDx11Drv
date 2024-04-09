@@ -11,11 +11,13 @@ class Macro:
             self.define = mac;
             self.value  = val;
 
+# Metallicafan212: TODO! Make this automatically synced to the C++ code! Maybe a shared header?
 global_macros = [
       Macro("EXTRA_VERT_INFO", "1"),
       Macro("COMPLEX_SURF_MANUAL_UVs", "1"),
       Macro("GM_XOpenGL", "0"),
       Macro("GM_DX9", "1"),
+      Macro("FIRST_USER_CONSTBUFF", "b4"),
 ]
 
 # Metallicafan212:  Defined language version

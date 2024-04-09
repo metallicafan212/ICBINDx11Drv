@@ -44,9 +44,12 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 		m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
 #else
 		// Metallicafan212:	Set it on the maps
+		CheckDrawCall();
 		CurrentDraw->TBinds[TexNum] = BlankResourceView;
 		CurrentDraw->SBinds[TexNum]	= BlankSampler;
 #endif
+
+		bWriteTexturesBuffer = 1;
 
 		return;
 	}
@@ -157,6 +160,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 		// Metallicafan212:	So we can find whatever is still bound as the RT when we call OMSetRenderTargets
 		TX.m_SRV = TexTemp->RTSRView.Get();
 
+		bWriteTexturesBuffer = 1;
+
 		return;
 	}
 #endif
@@ -181,6 +186,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 #endif
 
 		TX.Flags = PolyFlags;
+
+		bWriteTexturesBuffer = 1;
 	}
 
 	unguardSlow;
@@ -973,10 +980,10 @@ void UICBINDx11RenderDevice::RGBA7To8(FTextureInfo& Info, FD3DTexture* Tex, INT 
 					{
 						// Metallicafan212:	Move it over
 						//					We multiply by 2 to expand 7 bits to 8
-						*pTex = (Base[Min<DWORD>(x & RUSize, UClamp)]) * 2;
+						*pTex++ = (Base[Min<DWORD>(x & RUSize, UClamp)]) << 1;//* 2;
 
 						// Metallicafan212:	P8 is forcibly converted to ARGB, so we don't need to respect pitch if we already know 32bpp
-						pTex++;
+						//pTex++;
 					}
 				}
 			}
@@ -985,7 +992,7 @@ void UICBINDx11RenderDevice::RGBA7To8(FTextureInfo& Info, FD3DTexture* Tex, INT 
 				while (Read < Size)
 				{
 					DWORD* Addr			= (DWORD*)&Bytes[Read];
-					(*(DWORD*)DBytes)	= (*Addr) * 2;
+					(*(DWORD*)DBytes)	= (*Addr) << 1;//* 2;
 
 					Read	+= 4;
 					DBytes	+= 4;
@@ -1338,6 +1345,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #if !DO_BUFFERED_DRAWS
 				m_RenderContext->OMSetBlendState(bState, nullptr, 0xFFFFFFFF);
 #else
+				CheckDrawCall();
 				CurrentDraw->bSetBlend	= 1;
 				CurrentDraw->BlendState = bState;
 #endif
@@ -1428,6 +1436,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 		if (Xor & PF_Occlude)
 		{
 #if DO_BUFFERED_DRAWS
+			CheckDrawCall();
 			CurrentDraw->bSetDState = 1;
 #endif
 
@@ -1444,7 +1453,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #if !DO_BUFFERED_DRAWS
 				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
 #else
-				CurrentDraw->DSState = m_DefaultNoZState;
+				CurrentDraw->DSState	= m_DefaultNoZState;
 #endif
 			}
 		}
