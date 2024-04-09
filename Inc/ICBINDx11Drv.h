@@ -173,6 +173,14 @@ extern UBOOL GWineAndDine;
 #endif
 */
 
+// Metallicafan212:	Compile-time check for engine revision
+constexpr int c_strcmp(const TCHAR* lhs, const TCHAR* rhs)
+{
+	return (('\0' == lhs[0]) && ('\0' == rhs[0])) ? 0
+		: (lhs[0] != rhs[0]) ? (lhs[0] - rhs[0])
+		: c_strcmp(lhs+1, rhs+1);
+}
+
 #define MAX_TEXTURES 16
 
 enum ERasterFlags
@@ -804,6 +812,8 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	If we can use ForcedSampleCount
 	UBOOL						bSupportsForcedSampleCount;
+
+	UBOOL						bUseForcedSampleCount;
 
 	// Metallicafan212:	For debugging only (will be removed later)
 	ID3D11Debug*				m_D3DDebug;

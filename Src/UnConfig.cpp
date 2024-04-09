@@ -183,6 +183,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	//AddFloatProp(CPP_PROP(TileAAUVMove), 0.001f);
 
+	// Metallicafan212:	Enable this by default, but disable it if it's not supported
+	AddBoolProp(CPP_PROP(bUseForcedSampleCount), 1);
+
 	unguard;
 }
 

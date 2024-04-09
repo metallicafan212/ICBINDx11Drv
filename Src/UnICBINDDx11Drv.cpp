@@ -171,20 +171,28 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	// Metallicafan212:	TODO! Find a work around that allows for actually checking for the direct windows version....
 	//					I might have to query cmd.....
-#if DX11_HP2
-	if (!GWin10)
+#if DX11_HP2 || DX11_UT_469
+
+	// Metallicafan212:	In 469, only do this if compiled for e
+#if DX11_UT_469
+	if (!c_strcmp(ENGINE_REVISION, TEXT("d")))
+#endif
 	{
-		// Metallicafan212:	Don't attempt to use feature levels 12_1 and 12_0
-		FLPtr	+= 2;
-		FLCount -= 2;
+		if (!GWin10)
+		{
+			// Metallicafan212:	Don't attempt to use feature levels 12_1 and 12_0
+			FLPtr	+= 2;
+			FLCount -= 2;
+		}
+
+		if (!GWin81)
+		{
+			// Metallicafan212:	Start with 11_0
+			FLPtr++;
+			FLCount--;
+		}
 	}
 
-	if (!GWin81)
-	{
-		// Metallicafan212:	Start with 11_0
-		FLPtr++;
-		FLCount--;
-	}
 #endif
 
 	// Metallicafan212:	On my system, the multithreaded supported device runs ever so slightly faster, for no reason
@@ -260,7 +268,8 @@ MAKE_DEVICE:
 		case D3D_FEATURE_LEVEL_12_1:
 		{
 			FLStr = TEXT("12.1");
-			bSupportsForcedSampleCount = 1;
+			if(bUseForcedSampleCount)
+				bSupportsForcedSampleCount = 1;
 			break;
 		}
 
@@ -399,7 +408,7 @@ MAKE_DEVICE:
 	GLog->Logf(TEXT("DX11: Using feature level %s"), FLStr);
 
 	// Metallicafan212:	Check for ForcedSampleCount support
-	if (!bSupportsForcedSampleCount)
+	if (!bSupportsForcedSampleCount && bUseForcedSampleCount)
 	{
 		D3D11_FEATURE_DATA_D3D11_OPTIONS Options;
 
@@ -409,7 +418,7 @@ MAKE_DEVICE:
 		{
 			bSupportsForcedSampleCount = Options.MultisampleRTVWithForcedSampleCountOne;
 
-			if (bSupportsForcedSampleCount)
+			if (!bSupportsForcedSampleCount)
 			{
 				GLog->Logf(TEXT("DX11: Device does not support multisample render targets with forced sample count of one. Tiles will be rendered WITH MSAA"));
 			}
@@ -423,6 +432,11 @@ MAKE_DEVICE:
 	if (bSupportsForcedSampleCount)
 	{
 		GLog->Logf(TEXT("DX11: Device supports multisample render targets with forced sample count of one. Tiles will be rendered without MSAA"));
+	}
+	else
+	{
+		// Metallicafan212:	Reset if needed
+		bUseForcedSampleCount = 0;
 	}
 
 	// Metallicafan212:	Make the query
@@ -677,7 +691,7 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 
 	// Metallicafan212:	If we don't have a windows 8 device, don't allow for the no AA option
 	//					Also don't request it if we aren't even using AA, there's no point to
-	if(m_D3DDevice1 == nullptr || !bSupportsForcedSampleCount || NumAASamples <= 1)
+	if(m_D3DDevice1 == nullptr || !bUseForcedSampleCount || NumAASamples <= 1)
 		State &= ~(DXRS_NoAA);
 
 	if (State != CurrentRasterState)
@@ -1317,6 +1331,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		// 
 		// 
 		// Metallicafan212:	2024, I added simple windows version checking to the driver for non-HP2 targets
+		//					TODO! Enable for UT469e!
 #if DX11_HP2
 			&& GWin10
 #endif
