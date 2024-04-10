@@ -9,13 +9,13 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 	COMMON_VARS
 	
 	// Metallicafan212:	The info we use for this specific shader	
-	float	FilterSize				: packoffset(c4.x);
-	float	GaussianSigma 			: packoffset(c4.y);
-	float	CubicB					: packoffset(c4.z);
-	float 	CubicC					: packoffset(c4.w);
-	int		FilterType				: packoffset(c5.x);
-	float3	Pad3					: packoffset(c5.y);
-	float4 	SampleOffsets[8]		: packoffset(c6);
+	float	FilterSize				: packoffset(c0.x);
+	float	GaussianSigma 			: packoffset(c0.y);
+	float	CubicB					: packoffset(c0.z);
+	float 	CubicC					: packoffset(c0.w);
+	int		FilterType				: packoffset(c1.x);
+	float3	Pad3					: packoffset(c1.y);
+	float4 	SampleOffsets[8]		: packoffset(c2);
 };
 
 // Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling

@@ -7,8 +7,8 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 	COMMON_VARS
 	
 	// Metallicafan212:	TODO! More vars
-	int bNoOpacity		: packoffset(c4.x);
-	int3 Pad3			: packoffset(c4.y);
+	int bNoOpacity		: packoffset(c0.x);
+	int3 Pad3			: packoffset(c0.y);
 };
 
 // Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling

@@ -37,8 +37,19 @@ struct VSInput
 #define PI 					(3.1415926535897932f)
 #endif
 
+/*
 #ifndef START_CONST_NUM
 #define START_CONST_NUM		b3
+#endif
+*/
+
+#ifndef FIRST_USER_CONSTBUFF
+#define FIRST_USER_CONSTBUFF b4
+#endif
+
+// Metallicafan212:	OLDVER!
+#ifndef START_CONST_NUM
+#define START_CONST_NUM FIRST_USER_CONSTBUFF
 #endif
 
 // Metallicafan212:	If to define the "final" color function
@@ -52,13 +63,25 @@ struct VSInput
 
 #ifndef MAX_TEX_NUM
 #define MAX_TEX_NUM 16
-// Metallicafan212:	Proton doesn't like math in definitions.....
-#define TEX_ARRAY_SIZE 4//(MAX_TEX_NUM / 4)
+	// Metallicafan212:	Proton doesn't like math in definitions.....
+	#if WINE
+	#define TEX_ARRAY_SIZE 4
+	#else
+	#define TEX_ARRAY_SIZE (MAX_TEX_NUM / 4)
+	#endif
 #endif
 
+// Metallicafan212: Texture vars were moved to another constant buffer (since it could change per draw call or not)
+//					Since per-shader information should be limited, it shouldn't be writing it all the time
+/*
 #ifndef COMMON_VARS	
 	#define COMMON_VARS \
 		int4	bTexturesBound[TEX_ARRAY_SIZE]			: packoffset(c0);
+#endif
+*/
+
+#ifndef COMMON_VARS
+	#define COMMON_VARS
 #endif
 
 #if DO_STANDARD_BUFFER
@@ -67,6 +90,8 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
     COMMON_VARS
 };
 #endif
+
+
 #ifdef DO_FINAL_COLOR
 
 // Metallicafan212:	Define the base constant buffer!!!!
@@ -95,14 +120,6 @@ cbuffer FrameVariables : register (b0)
 	//float3	Paddddddd		: packoffset(c7.y);
 };
 
-// Metallicafan212:	I did the same thing I did for polyflags, and made the whole enum a set of defines
-/*
-// Metallicafan212:	TODO! Find a way to mirror this as defines?
-#define GM_XOpenGL 		0
-#define GM_PerObject	1
-#define GM_DX9			2
-*/
-
 cbuffer DFogVariables : register (b1)
 {
 	float4 	DistanceFogColor 	: packoffset(c0);
@@ -121,6 +138,11 @@ cbuffer PolyflagVars : register (b2)
 	// Metallicafan212: Temp hack until I recode gamma to be screen-based again, using a different algo
 	int		bModulated			: packoffset(c1.x);
 	float3	Pad					: packoffset(c1.y);
+};
+
+cbuffer TextureVariables : register (b3)
+{
+	int4	bTexturesBound[TEX_ARRAY_SIZE]			: packoffset(c0);
 };
 
 // Metallicafan212:	Moved from the ResScaling.hlsl shader
