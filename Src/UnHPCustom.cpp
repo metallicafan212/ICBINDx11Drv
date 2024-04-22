@@ -152,7 +152,7 @@ void ReplaceInText(FString& In, const TCHAR* Match, const TCHAR* With)
 
 #define DO_MANUAL_SCALE 0
 
-int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, FLOAT Scale, FLOAT SpriteScaleX, FLOAT SpriteScaleY)
+int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, UBOOL bHandleApersand, FLOAT Scale)
 {
 	guard(UICBINDx11RenderDevice::DrawString);
 
@@ -162,28 +162,15 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 	if (m_HitData != nullptr)
 		LocalColor = CurrentHitColor;
 
-	// Metallicafan212:	TODO! Draw using Direct2D
-
 	FString RealText = FString(Text);
 
-	// Metallicafan212:	TODO! Probably not needed for Direct2D, since it'll have these special characters that are in the Polish files
 	// Metallicafan212:	Replace the invalid characters
 	ReplaceInText(RealText, TEXT("–"), TEXT("--"));
 	ReplaceInText(RealText, TEXT("…"), TEXT("..."));
 
 	// Metallicafan212:	Use a local string to add a zero width character
-	FString LocalText = RealText;// + TEXT("‌");
+	FString LocalText = RealText;
 
-	/*
-	// Metallicafan212:	Search for a space
-	INT SpaceI = LocalText.InStr(TEXT(" "), 1);
-
-	if (SpaceI == LocalText.Len() - 1)
-	{
-		// Metallicafan212:	Add a & for sizing
-		LocalText.GetCharArray()[SpaceI] = L' ';
-	}
-	*/
 
 	UCanvas* Canvas = Viewport->Canvas;
 
@@ -304,26 +291,6 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 #else
 			FontMap[FontKey] = DaFont;
 #endif
-			/*
-			// Metallicafan212:	Per Scintilla, set the spacing to be consistent
-			DaFont->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-			IDWriteTextLayout* pTextLayout = nullptr;
-			hr = m_D2DWriteFact->CreateTextLayout(TEXT("X"), 1, DaFont, 100.0f, 100.0f, &pTextLayout);
-
-			if (SUCCEEDED(hr) && pTextLayout != nullptr)
-			{
-				constexpr int maxLines = 2;
-				DWRITE_LINE_METRICS lineMetrics[maxLines]{};
-				UINT32 lineCount = 0;
-				hr = pTextLayout->GetLineMetrics(lineMetrics, maxLines, &lineCount);
-
-				pTextLayout->Release();
-				DaFont->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, lineMetrics[0].height, lineMetrics[0].baseline);
-			}
-			*/
-
-			//FontMap.Set(*RealCopy, DaFont);
-
 			DaFont->SetWordWrapping(DWRITE_WORD_WRAPPING_WRAP);
 		}
 	}
@@ -361,8 +328,47 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 		}
 #endif
 
-		DrawX += Met.widthIncludingTrailingWhitespace; /// ResolutionScale;//Met.width;
-		DrawY += Met.height; /// ResolutionScale;
+		// Metallicafan212:	Search for (optional) underlying
+		if (bHandleApersand)
+		{
+			TArray<TCHAR>& Str = LocalText.GetCharArray();
+
+			for (INT i = 0; i < Str.Num(); i++)
+			{
+				TCHAR& C = Str(i);
+
+				if (C == '&')
+				{
+					// Metallicafan212:	See if the next character is valid
+					TCHAR& Next = Str(i + 1);
+					if (Next == '\0')
+					{
+						break;
+					}
+
+					if (Next != ' ' && Next != '&')
+					{
+						// Metallicafan212:	Remove the & and replace it with underline
+						DWRITE_TEXT_RANGE Range;
+
+						Range.length		= 1;
+
+						// Metallicafan212:	i because we're removing this slot
+						Range.startPosition = i;
+
+						layout->SetUnderline(TRUE, Range);
+
+						// Metallicafan212:	Now remove the slot
+						Str.Remove(i);
+
+						// Metallicafan212:	Don't i-- because we already confirmed the next character is fine
+					}
+				}
+			}
+		}
+
+		DrawX += Met.widthIncludingTrailingWhitespace;
+		DrawY += Met.height;
 
 		// Metallicafan212:	PF_Invisible says to just calc the rect
 		if (!(Flags & PF_Invisible))
@@ -392,37 +398,8 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 			{
 				// Center about DrawX.
 				X -= Met.widthIncludingTrailingWhitespace / 2.0f;
-				//Y -= Met.height / 2.0f;
 				W = Canvas->ClipX - X;
-				//H = Canvas->ClipY - Y;
-				//layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);//->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 			}
-
-			/*
-#if DO_MANUAL_SCALE
-			if (BoundRT == nullptr)
-			{
-				X *= ResolutionScale;
-				Y *= ResolutionScale;
-				W *= ResolutionScale;
-				H *= ResolutionScale;
-			}
-#else
-#if !RES_SCALE_IN_PROJ
-			if (BoundRT == nullptr && ResolutionScale != 1.0f)
-			{
-				D2D1::Matrix3x2F s = D2D1::Matrix3x2F::Scale(ResolutionScale, ResolutionScale);
-
-				// Metallicafan212:	Now apply the scale!!!
-				m_CurrentD2DRT->SetTransform(s);
-			}
-			else
-			{
-				m_CurrentD2DRT->SetTransform(D2D1::Matrix3x2F::Identity());
-			}
-#endif
-#endif
-			*/
 
 			layout->SetMaxWidth(W);
 			layout->SetMaxHeight(H);

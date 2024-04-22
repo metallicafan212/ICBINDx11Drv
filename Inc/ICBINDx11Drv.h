@@ -1870,7 +1870,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	virtual void DrawRotatedTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, PFLAG PolyFlags, FCoords InCoords = GMath.UnitCoords);
 
-	virtual int DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, FLOAT Scale = 1.0f, FLOAT SpriteScaleX = 1.0f, FLOAT SpriteScaleY = 1.0f);
+	virtual int DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, UBOOL bHandleApersand = 0, FLOAT Scale = 1.0f);
 #elif DX11_UT_469	
 	
 	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet);
