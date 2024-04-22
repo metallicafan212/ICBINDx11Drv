@@ -307,26 +307,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 			DaFont->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 		}
 
-		// Metallicafan212:	Create a text format to render it
-		IDWriteTextLayout* layout = nullptr;
-		hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, Canvas->ClipX, Canvas->ClipY, &layout);
-		
-		ThrowIfFailed(hr);
-
-		// Metallicafan212:	Now calculate the rect
-		DWRITE_TEXT_METRICS Met;
-		layout->GetMetrics(&Met);
-
-		INT OldDrawX = DrawX;
-		INT OldDrawY = DrawY;
-
-#if DO_MANUAL_SCALE
-		if (BoundRT == nullptr)
-		{
-			Met.width /= ResolutionScale;
-			Met.height /= ResolutionScale;
-		}
-#endif
+		TArray<DWRITE_TEXT_RANGE> Ranges;
 
 		// Metallicafan212:	Search for (optional) underlying
 		if (bHandleApersand)
@@ -349,14 +330,16 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 					if (Next != ' ' && Next != '&')
 					{
 						// Metallicafan212:	Remove the & and replace it with underline
-						DWRITE_TEXT_RANGE Range;
+						DWRITE_TEXT_RANGE& Range = Ranges(Ranges.Add());;
 
 						Range.length		= 1;
 
 						// Metallicafan212:	i because we're removing this slot
 						Range.startPosition = i;
 
-						layout->SetUnderline(TRUE, Range);
+						// Metallicafan212:	TODO! Handle multiple underlines
+
+						//layout->SetUnderline(TRUE, Range);
 
 						// Metallicafan212:	Now remove the slot
 						Str.Remove(i);
@@ -366,6 +349,33 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 				}
 			}
 		}
+
+		// Metallicafan212:	Create a text format to render it
+		IDWriteTextLayout* layout = nullptr;
+		hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, Canvas->ClipX, Canvas->ClipY, &layout);
+		
+		ThrowIfFailed(hr);
+
+		// Metallicafan212:	Set the underlines
+		for (INT i = 0; i < Ranges.Num(); i++)
+		{
+			layout->SetUnderline(TRUE, Ranges(i));
+		}
+
+		// Metallicafan212:	Now calculate the rect
+		DWRITE_TEXT_METRICS Met;
+		layout->GetMetrics(&Met);
+
+		INT OldDrawX = DrawX;
+		INT OldDrawY = DrawY;
+
+#if DO_MANUAL_SCALE
+		if (BoundRT == nullptr)
+		{
+			Met.width /= ResolutionScale;
+			Met.height /= ResolutionScale;
+		}
+#endif
 
 		DrawX += Met.widthIncludingTrailingWhitespace;
 		DrawY += Met.height;
