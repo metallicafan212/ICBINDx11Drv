@@ -136,6 +136,10 @@ void UICBINDx11RenderDevice::SetupDevice()
 	}
 
 	SAFE_RELEASE(m_D3DDeviceContext);
+
+	// Metallicafan212:	Always reset the render context, so we don't have a dangling nullptr
+	m_RenderContext = nullptr;
+
 	SAFE_RELEASE(m_D3DDevice1);
 	SAFE_RELEASE(m_D3DDevice);
 	SAFE_RELEASE(m_D3DDeferredContext);
@@ -2025,6 +2029,10 @@ void UICBINDx11RenderDevice::Exit()
 	m_D3DDeviceContext->Flush();
 
 	SAFE_RELEASE(m_D3DDeviceContext);
+
+	// Metallicafan212:	Always reset the render context, so we don't have a dangling nullptr
+	m_RenderContext = nullptr;
+
 	SAFE_RELEASE(m_D3DDeferredContext);
 	SAFE_RELEASE(m_D3DCommandList);
 	SAFE_RELEASE(m_D3DDevice1);

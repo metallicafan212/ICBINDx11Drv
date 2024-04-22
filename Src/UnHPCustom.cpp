@@ -85,8 +85,8 @@ void UDX11RenderTargetTexture::Destroy()
 {
 	guard(UDX11RenderTargetTexture::Destroy);
 
-	// Metallicafan212:	Make sure it's not bound?
-	if (D3DDev != nullptr)
+	// Metallicafan212:	Make sure it's not bound? And if the device is actually alive.....
+	if (D3DDev != nullptr && D3DDev->m_RenderContext != nullptr)
 	{
 		for (INT i = 0; i < MAX_TEXTURES; i++)
 		{
