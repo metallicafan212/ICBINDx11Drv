@@ -27,6 +27,10 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	EditorInfo.EditorIcon	= IMG_FOLDER TEXT("inres\\viewport\\RD_D11");
 	EditorInfo.Name			= TEXT("Directx 11 Render Device");
 	EditorInfo.ToolTip		= TEXT("Directx 11 Rendering");
+
+	// Metallicafan212:	Tell Render.dll to not clamp the final output values for actor mesh verts
+	bSupportsUnclampedMeshLighting = 1;
+
 #endif
 
 	// Metallicafan212:	Tell the engine that we support the lighting shader
