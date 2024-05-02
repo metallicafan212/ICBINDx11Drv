@@ -164,6 +164,35 @@ void FShaderManager::LoadHardcodedShaders()
 #                  Note that the FXC path is hard-coded here because it's not on the path variable
 fxc_path = 'C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\x86\\fxc.exe';
 
+# Metallicafan212: Per AnthraX, check first if we're running from within a VS command prompt, as that'll have the current windows kit on the path variable
+#if True:
+try:
+    check_fxc = subprocess.run("fxc /?", text=True, check=False, capture_output=True);
+    #print("Output was " + check_fxc.stdout); 
+    # Metallicafan212: TODO! Check if it was actually FXC? This would conflict with "future" replacements if they don't output the same info, for now just assume if we got output that it works
+    if (check_fxc.stdout != ""):
+        # Metallicafan212: TODO! Reevaluate this, this fucking blows since the env variable adds the \\ onto the end that the folder has... We just want to print the version number.
+        #                  Perhaps find a different env var?
+        fxc_eval = subprocess.run("where fxc", text=True, check=False, capture_output=True).stdout;#.split('\n')[0];
+        
+        # Metallicafan212: Check for a newline
+        if('\n' in fxc_eval):
+            fxc_eval = fxc_eval.split('\n')[0];
+        
+        # Metallicafan212: Lookup the current windows SDK version (in case it doesn't match the FXC path)
+        windows_kit = os.environ["WINDOWSSDKVERSION"];
+        
+        # Metallicafan212: It has a slash for me, so remove it for clarity sake
+        if('\\' in windows_kit):
+            windows_kit = windows_kit.split('\\')[0];
+        
+        print("Found FXC (" + fxc_eval + ") in the current path/path env var, the current windows kit is " + windows_kit);
+        fxc = 'fxc.exe';
+#else:   
+except:
+    # Metallicafan212: Wasn't found, so don't override it.
+    print("FXC not found on the path variable, defaulting to " + fxc_path);
+
 for Shad in ShaderArray :
     # Metallicafan212: Process this shader
     for Entry in Shad.entrypoints:
