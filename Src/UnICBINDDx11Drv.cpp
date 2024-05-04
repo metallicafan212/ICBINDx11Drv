@@ -1864,8 +1864,8 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 {
 	guard(UICBINDx11RenderDevice::SetRes);
 
-	INT TestX = Max(NewX, 2);
-	INT TestY = Max(NewY, 2);
+	INT TestX = Clamp(NewX, 2, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);//Max(NewX, 2);
+	INT TestY = Clamp(NewY, 2, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);//Max(NewY, 2);
 
 	if (Viewport != nullptr)
 	{
@@ -1890,7 +1890,7 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 
 	return 1;
 
-	unguard;
+	unguardf((TEXT("NewX: %d NewY: %d ColorBytes: %d Fullscreen %s"), NewX, NewY, NewColorBytes, Fullscreen ? TEXT("True") : TEXT("False")));
 }
 
 void UICBINDx11RenderDevice::Exit()
