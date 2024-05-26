@@ -1,9 +1,8 @@
 #include "ICBINDx11Drv.h"
 
-FMipmap* GetBaseMip(FTextureInfo& Info)
+FORCEINLINE FMipmap* GetBaseMip(FTextureInfo& Info)
 {
 	// Metallicafan212:	Get the 0th mip of this texture
-
 	if (Info.NumMips == 0)
 		return nullptr;
 
@@ -227,11 +226,6 @@ FORCEINLINE UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexture* Tex, BYTE* Convers
 	}
 
 #elif DX11_UT_469
-
-	// Metallicafan212:	Add on the texture LOD setting
-	//if(Info.Texture != nullptr)
-	//	MipNum += Info.LOD;
-
 	UBOOL Compressed	= FIsCompressedFormat(Info.Format);
 	FMipmap* Mip		= Info.Texture ? (Compressed ? &Info.Texture->CompMips(MipNum) : &Info.Texture->Mips(MipNum)) : nullptr;
 	if (Mip != nullptr)
@@ -579,57 +573,6 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG 
 
 		ThrowIfFailed(hr);
 
-#if P8_COMPUTE_SHADER
-		guardSlow(CreateUAVViews);
-
-		if (Info.Format == TEXF_P8)
-		{
-			// Metallicafan212:	Create the UAV for this mip
-			DaTex->UAVMips.Add(Info.NumMips);
-			DaTex->UAVBlank.AddZeroed(Info.NumMips);
-
-			CD3D11_UNORDERED_ACCESS_VIEW_DESC UAVDesc = CD3D11_UNORDERED_ACCESS_VIEW_DESC(DaTex->m_Tex, D3D11_UAV_DIMENSION_TEXTURE2D, DXGI_FORMAT_R8G8B8A8_UNORM);
-			for (INT i = 0; i < Info.NumMips; i++)
-			{
-				UAVDesc.Texture2D.MipSlice = i;
-				hr = m_D3DDevice->CreateUnorderedAccessView(DaTex->m_Tex, &UAVDesc, &DaTex->UAVMips(i));
-
-				ThrowIfFailed(hr);
-			}
-
-			// Metallicafan212:	Now create a texture to hold onto the P8 info when converting it
-			//CD3D11_TEXTURE2D_DESC tempDesc = CD3D11_TEXTURE2D_DESC(DXGI_FORMAT_R8_UNORM, Info.USize, Info.VSize, 1U, Info.NumMips);
-			Desc.Format				= DXGI_FORMAT_R8_TYPELESS;
-			Desc.Width				= DaTex->USize;
-			Desc.Height				= DaTex->VSize;
-			Desc.MipLevels			= Info.NumMips;
-			Desc.Usage				= D3D11_USAGE_DEFAULT;
-			Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-			Desc.ArraySize			= 1;
-			Desc.CPUAccessFlags		= 0;//D3D11_CPU_ACCESS_WRITE;
-			Desc.SampleDesc.Count	= 1;
-
-			hr = m_D3DDevice->CreateTexture2D(&Desc, nullptr, &DaTex->P8ConvTex);
-
-			ThrowIfFailed(hr);
-
-			// Metallicafan212:	Now the shader resource view
-			D3D11_SHADER_RESOURCE_VIEW_DESC vDesc;
-			appMemzero(&vDesc, sizeof(vDesc));
-
-			vDesc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
-			vDesc.Texture2D.MipLevels		= Info.NumMips;
-			vDesc.Texture2D.MostDetailedMip = 0;
-			vDesc.BufferEx.FirstElement		= 0;
-			vDesc.Format					= DXGI_FORMAT_R8_UINT;
-			hr = m_D3DDevice->CreateShaderResourceView(DaTex->P8ConvTex, &vDesc, &DaTex->P8ConvSRV);
-
-			ThrowIfFailed(hr);
-		}
-
-		unguardSlow;
-#endif
-
 		// Metallicafan212:	Check if the texture needs UV clamping
 		if (((DaTex->UClamp ^ DaTex->USize) | (DaTex->VClamp ^ DaTex->VSize)) != 0)
 		{
@@ -662,38 +605,7 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG 
 
 			for (INT i = 0; i < Info.NumMips; i++)
 			{	
-				//INT CurDMip = i + DaTex->MipSkip;//(DaTex->bSkipMipZero ? i + 1 : i);
-
-				(this->*Type->TexUploadFunc)(Info, DaTex, i, 0, 0, 0, 0, 0);//MipData, MipSize, MipPitch, DaTex, this, Info.Mips[i]->USize, Info.Mips[i]->VSize, CurDMip, 0, 0, MipW, MipH);
-
-				/*
-				if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch, MipW, MipH))
-				{
-					
-					// Metallicafan212:	If it's lower than 4, fix it....
-					//if (Type->bIsCompressed)
-					//{
-					//	MipW = Clamp(MipW, 4, MipW);
-					//	MipH = Clamp(MipH, 4, MipH);
-					//}
-
-					// Metallicafan212:	Handle bad DXT textures
-					//					TODO! This STILL doesn't work, as it can't even update lower than 4x4 pixels.....
-					//if (Type->bIsCompressed && ((MipW == 2 && MipH != 2) || (MipH == 2 && MipW != 2)))
-					//{
-					//	if (MipW == 2)
-					//	{
-					//		// Metallicafan212:	Stretch to the right
-					//		Type->TexUploadFunc(MipData, MipSize, MipPitch, DaTex, this, Info.Mips[i]->USize, Info.Mips[i]->VSize, i, 2, 0, MipW + 2, MipH);
-					//	}
-					//	else
-					//	{
-					//		// Metallicafan212:	Stretch to the bottom
-					//		Type->TexUploadFunc(MipData, MipSize, MipPitch, DaTex, this, Info.Mips[i]->USize, Info.Mips[i]->VSize, i, 0, 2, MipW, MipH + 2);
-					//	}
-					//}
-				}
-				*/
+				(this->*Type->TexUploadFunc)(Info, DaTex, i, 0, 0, 0, 0, 0);
 			}
 
 			unguardSlow;
@@ -709,103 +621,12 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG 
 			// Metallicafan212:	TODO! Mask hack it!!
 			FColor OldMasked	= (Info.Palette != nullptr ? Info.Palette[0] : FColor(0, 0, 0, 0));
 
-			if (bMaskedHack)
+			if (bMaskedHack && Info.Palette != nullptr)
 				Info.Palette[0] = FColor(0, 0, 0, 0);
 
-#if P8_COMPUTE_SHADER
-			// Metallicafan212:	TODO! Move this around to allow the child convert functions to loop
-			//					This way, I don't need a specific P8 hack!!!
-			if (Info.Format == TEXF_P8)
+			for (INT i = 0; i < Info.NumMips; i++)
 			{
-				for (INT i = 0; i < Info.NumMips; i++)
-				{
-					MipData		= nullptr;
-					MipPitch	= 0;
-
-					if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch))
-					{
-						m_RenderContext->UpdateSubresource(DaTex->P8ConvTex, i, nullptr, MipData, MipPitch, 0);
-					}
-				}
-
-				INT SavedTexAddress = -1;
-
-				// Metallicafan212:	Figure out if it's set!
-				for (INT i = 0; i < ARRAY_COUNT(BoundTextures); i++)
-				{
-					if (BoundTextures[i].m_SRV == DaTex->m_View)
-					{
-						SetTexture(i, nullptr, 0);
-						SavedTexAddress = i;
-						break;
-					}
-				}
-
-
-				// Metallicafan212:	Use the shader for this purpose!!!!
-				INT X = appCeil(Info.USize / 32.0f);
-				INT Y = appCeil(Info.VSize / 32.0f);
-
-				// Metallicafan212:	Update the palette colors
-				//					This is probably dangerous to do this way, but it's much much quicker
-				for (INT i = 0; i < 256; i++)
-				{
-					((DWORD*)ConversionMemory)[i] = GET_COLOR_DWORD(Info.Palette[i]);
-				}
-				//m_RenderContext->UpdateSubresource(PaletteTexture, 0, nullptr, (void*)Info.Palette, 256 * 4, 0);
-				m_RenderContext->UpdateSubresource(PaletteTexture, 0, nullptr, ConversionMemory, 256 * 4, 0);
-
-				// Metallicafan212:	Now bind the input
-				ID3D11ShaderResourceView* InSRV[2] = { DaTex->P8ConvSRV, PaletteSRV };
-				m_RenderContext->CSSetShaderResources(0, 2, InSRV);
-
-				m_RenderContext->CSSetUnorderedAccessViews(0, Info.NumMips, (ID3D11UnorderedAccessView**)DaTex->UAVMips.GetData(), nullptr);
-
-				// Metallicafan212:	Bind the P8 upload shader
-				FP8ToRGBAShader->USize	= Info.USize;
-				FP8ToRGBAShader->VSize	= Info.VSize;
-				FP8ToRGBAShader->Bind();
-
-				// Metallicafan212:	Now execute
-				m_RenderContext->Dispatch(X, Y, Info.NumMips);
-
-				// Metallicafan212:	Wait for it to complete...
-				m_RenderContext->End(m_D3DQuery);
-
-				// Metallicafan212:	Wait for it
-				BOOL bDone = 0;
-
-				while (m_RenderContext->GetData(m_D3DQuery, &bDone, sizeof(BOOL), 0) != S_OK && bDone == 0);
-
-				// Metallicafan212:	Clear the render resources!!!
-				constexpr ID3D11ShaderResourceView* SRVTemp[2] = { nullptr, nullptr };
-				m_RenderContext->CSSetShaderResources(0, 2, SRVTemp);
-
-				m_RenderContext->CSSetUnorderedAccessViews(0, Info.NumMips, (ID3D11UnorderedAccessView**)DaTex->UAVBlank.GetData(), nullptr);
-
-				Info.bRealtimeChanged = 0;
-
-				if (SavedTexAddress != -1)
-				{
-					SetTexture(SavedTexAddress, &Info, PolyFlags);
-				}
-			}
-			else
-#endif
-			{
-
-				for (INT i = 0; i < Info.NumMips; i++)
-				{
-					//if (GetMipInfo(Info, Type, i, MipData, MipSize, MipPitch, MipW, MipH))
-					//{
-					// Metallicafan212:	Sigh.... We need to map dynamic memory to do this!!!!!
-					// Metallicafan212:	Do the conversion over
-					//SIZE_T Size = (MipSize == 0 ? 4 * Info.Mips[i]->USize * Info.Mips[i]->VSize : MipSize);
-					//checkSlow(Size <= 4 * Info.USize * Info.VSize);
-					(this->*Type->TexUploadFunc)(Info, DaTex, i, 0, 0, 0, 0, 0);//Info.Palette, MipData, Size, (Type->*P)(Info.Mips[i]->USize), DaTex, this, Info.Mips[i]->USize, Info.Mips[i]->VSize, i, 0, 0, MipW, MipH);
-					//}
-
-				}
+				(this->*Type->TexUploadFunc)(Info, DaTex, i, 0, 0, 0, 0, 0);
 			}
 
 			// Metallicafan212:	Restore
@@ -887,21 +708,6 @@ void UICBINDx11RenderDevice::DirectCP(FTextureInfo& Info, FD3DTexture* Tex, INT 
 
 	unguardSlow;
 }
-
-/*
-// Metallicafan212:	Texture uploading functions
-void MemcpyTexUpload(void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
-{
-	guardSlow(MemcpyTexUpload);
-
-	// Metallicafan212:	Just copy over, todo!!!!
-	//D3D11_BOX B = { UpdateX, UpdateY, 0, UpdateW, UpdateH, 1 };
-
-	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, Source, SourcePitch, 0);
-
-	unguardSlow;
-}
-*/
 
 void UICBINDx11RenderDevice::RGBA7To8(FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
 {
@@ -1007,64 +813,6 @@ void UICBINDx11RenderDevice::RGBA7To8(FTextureInfo& Info, FD3DTexture* Tex, INT 
 	unguardSlow;
 }
 
-/*
-void RGBA7To8(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
-{
-	guardSlow(RGBA7To8);
-
-	DWORD* pTex = (DWORD*)inDev->ConversionMemory;
-
-	// Metallicafan212:	Get each color
-	//					TODO! Support masking????
-	SIZE_T Read		= 0;
-	BYTE* Bytes		= (BYTE*)Source;
-	BYTE* DBytes	= (BYTE*)inDev->ConversionMemory;
-
-	// Metallicafan212:	Sigh.. We have to clamp!
-	//					Took my recoded RGBA7 upload from the DX9 driver
-	if (tex->UClamp != tex->USize || tex->VClamp != tex->VSize)
-	{
-		INT		RUSize = USize - 1;
-		INT		RVSize = VSize - 1;
-		INT		UClamp = (tex->UClamp >> Mip) - 1;
-		INT		VClamp = (tex->VClamp >> Mip) - 1;
-
-		// Metallicafan212:	Loop and get the color
-		for (INT y = 0; y < VSize; y++)
-		{
-			// Metallicafan212:	Current pointer
-			DWORD* Base = ((DWORD*)Source) + Min<DWORD>(y & RVSize, VClamp) * USize;
-
-			// Metallicafan212:	Now the X direction
-			for (INT x = 0; x < USize; x++)
-			{
-				// Metallicafan212:	Move it over
-				//					We multiply by 2 to expand 7 bits to 8
-				*pTex = (Base[Min<DWORD>(x & RUSize, UClamp)]) * 2;
-
-				// Metallicafan212:	P8 is forcibly converted to ARGB, so we don't need to respect pitch if we already know 32bpp
-				pTex++;
-			}
-		}
-	}
-	else
-	{
-		while (Read < SourceLength)
-		{
-			DWORD* Addr			= (DWORD*)&Bytes[Read];
-			(*(DWORD*)DBytes)	= (*Addr) * 2;
-
-			Read	+= 4;
-			DBytes	+= 4;
-		}
-	}
-
-	// Metallicafan212:	Now update
-	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, inDev->ConversionMemory, SourcePitch, 0);
-	unguardSlow;
-}
-*/
-
 void UICBINDx11RenderDevice::P8ToRGBA(FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
 {
 	guardSlow(P8ToRGBA);
@@ -1089,18 +837,7 @@ void UICBINDx11RenderDevice::P8ToRGBA(FTextureInfo& Info, FD3DTexture* Tex, INT 
 		//					There might be a quicker way to do this, but this was the easiest to write lmao
 		for (INT i = 0; i < Size; i++)
 		{
-#if DX11_HP2
-			(*DBytes) = Info.Palette[*Bytes].Int4;
-#else
 			(*DBytes) = GET_COLOR_DWORD(Info.Palette[*Bytes]);
-#endif
-			// Metallicafan212:	Fix broken palettes on specific textures in UT!!!
-			//if (*Bytes != 0)
-			//{
-			//	// Metallicafan212:	This forces colors that aren't 0 to be full alpha on P8, while the 0th entry is taken care of above
-			//	(*DBytes) |= 0xFF000000;
-			//}
-
 			Bytes++;
 			DBytes++;
 		}
@@ -1113,44 +850,6 @@ void UICBINDx11RenderDevice::P8ToRGBA(FTextureInfo& Info, FD3DTexture* Tex, INT 
 	unguardSlow;
 }
 
-/*
-void P8ToRGBA(FColor* Palette, void* Source, SIZE_T SourceLength, SIZE_T SourcePitch, FD3DTexture* tex, UICBINDx11RenderDevice* inDev, INT USize, INT VSize, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
-{
-	guardSlow(P8ToRGBA);
-
-	// Metallicafan212:	Update each 4 byte block
-	SIZE_T	Read	= 0;
-	BYTE*	Bytes	= (BYTE*)Source;
-	DWORD*	DBytes	= (DWORD*)inDev->ConversionMemory;
-
-	// Metallicafan212:	Just read across
-	//					There might be a quicker way to do this, but this was the easiest to write lmao
-	for(INT i = 0; i < SourceLength; i++)
-	{
-#if DX11_HP2
-		(*DBytes) = Palette[*Bytes].Int4;
-#else
-		(*DBytes) = GET_COLOR_DWORD(Palette[*Bytes]);
-#endif
-		// Metallicafan212:	Fix broken palettes on specific textures in UT!!!
-		//if (*Bytes != 0)
-		//{
-		//	// Metallicafan212:	This forces colors that aren't 0 to be full alpha on P8, while the 0th entry is taken care of above
-		//	(*DBytes) |= 0xFF000000;
-		//}
-
-		Bytes++;
-		DBytes++;
-	}
-
-
-	// Metallicafan212:	Now update
-	inDev->m_RenderContext->UpdateSubresource(tex->m_Tex, Mip, nullptr, inDev->ConversionMemory, SourcePitch, 0);
-
-	unguardSlow;
-}
-*/
-
 // Metallicafan212:	Based on the DX9 version, but HEAVILY modified
 void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 {
@@ -1160,7 +859,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 
 	// Metallicafan212:	Check if the input blend flags are relevant
 #if DX11_HP2
-	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage);
+	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage | PF_Opacity);
 #else
 	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_AlphaBlend);
 #endif
@@ -1178,7 +877,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 
 		// Metallicafan212:	Again, the DX9 driver saves the day
 #if DX11_HP2
-		const PFLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_Invisible | PF_AlphaBlend | PF_AlphaToCoverage | PF_Masked | PF_ColorMask;
+		const PFLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_Invisible | PF_AlphaBlend | PF_AlphaToCoverage | PF_Masked | PF_ColorMask | PF_Opacity;
 #else
 		const PFLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_Invisible | PF_Masked | PF_AlphaBlend | PF_Invisible;
 #endif
@@ -1205,136 +904,135 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			{
 				GlobalPolyflagVars.bAlphaEnabled = 1;
 
-				// Metallicafan212:	DX9 allows you to completely turn off color drawing. We achieve the same effect here by using a 0 source blend and a 1 dest blend (since it will keep the dst color)
-				if (blendFlags & PF_Invisible)
-				{
-					bState = GetBlendState(PF_Invisible);
+				// Metallicafan212:	See if it's encountered this blend state before!
+				//bState = GetBlendState(blendFlags);
 
-					if (bState == nullptr)
+#if !USE_UNODERED_MAP_EVERYWHERE
+				bState = BlendCache.FindRef(blendFlags);
+#else
+				auto f = BlendCache.find(blendFlags);
+
+				bState = f != BlendCache.end() ? f->second : nullptr;
+#endif
+
+				if (bState == nullptr)
+				{
+					// Metallicafan212:	DX9 allows you to completely turn off color drawing. We achieve the same effect here by using a 0 source blend and a 1 dest blend (since it will keep the dst color)
+					if (blendFlags & PF_Invisible)
 					{
-						bState = CreateBlend(PF_Invisible, D3D11_BLEND_ZERO, D3D11_BLEND_ONE, D3D11_COLOR_WRITE_ENABLE_ALPHA);
+						bState = GetBlendState(PF_Invisible);
+
+						if (bState == nullptr)
+						{
+							bState = CreateBlend(PF_Invisible, D3D11_BLEND_ZERO, D3D11_BLEND_ONE, D3D11_COLOR_WRITE_ENABLE_ALPHA);
+						}
 					}
-				}
 #if DX11_HP2 || DX11_HP1
-#if DX11_HP2
-				else if (blendFlags & PF_Translucent && (blendFlags & PF_Highlighted || blendFlags & PF_AlphaBlend))
-#elif DX11_HP1
-				else if ((blendFlags & (PF_Translucent | PF_Highlighted)) == (PF_Translucent | PF_Highlighted))//blendFlags & PF_Translucent && (blendFlags & PF_Highlighted))
-#endif
-				{
-					//FindAndSetBlend(PF_Translucent | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
-					bState = GetBlendState(PF_Translucent | PF_AlphaBlend);
-
-					if (bState == nullptr)
+					else if ((blendFlags & (PF_Translucent | PF_Highlighted)) == (PF_Translucent | PF_Highlighted))
 					{
-						bState = CreateBlend(PF_Translucent | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
-					}
-				}
-#endif
-				else if (blendFlags & PF_Translucent)
-				{
-					//FindAndSetBlend(PF_Translucent, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_COLOR);
-					bState = GetBlendState(PF_Translucent);
-
-					if (bState == nullptr)
-					{
-						bState = CreateBlend(PF_Translucent, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_COLOR);
-					}
-				}
-				else if (blendFlags & PF_Modulated)
-				{
-					GlobalPolyflagVars.bModulated = 1;
-					//FindAndSetBlend(PF_Modulated, D3D11_BLEND_DEST_COLOR, D3D11_BLEND_SRC_COLOR);
-					bState = GetBlendState(PF_Modulated);
-
-					if (bState == nullptr)
-					{
-						bState = CreateBlend(PF_Modulated, D3D11_BLEND_DEST_COLOR, D3D11_BLEND_SRC_COLOR);
-					}
-				}
-#if DX11_HP2
-				// Metallicafan212:	New engine QWORD lumos
-				else if (blendFlags & PF_LumosAffected)
-				{
-					// Metallicafan212:	I've reversed the reversed lumos alpha, as it seems that INV_SRC_ALPHA in DX11 doesn't write full alpha for some reason...
-					//FindAndSetBlend(PF_LumosAffected, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);//D3D11_BLEND_INV_SRC_ALPHA, D3D11_BLEND_SRC_ALPHA);
-					bState = GetBlendState(PF_LumosAffected);
-
-					if (bState == nullptr)
-					{
-						bState = CreateBlend(PF_LumosAffected, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
-					}
-				}
-#endif
-				else if (blendFlags & PF_Highlighted)
-				{
-#if 1//DX11_HP2
-					if (blendFlags & PF_AlphaBlend)
-					{
-						//FindAndSetBlend(PF_Highlighted | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
-						bState = GetBlendState(PF_Highlighted | PF_AlphaBlend);
+						bState = GetBlendState(PF_Translucent | PF_Highlighted);
 
 						if (bState == nullptr)
 						{
-							bState = CreateBlend(PF_Highlighted | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+							bState = CreateBlend(PF_Opacity, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
 						}
 					}
-					else
 #endif
+					else if (blendFlags & PF_Translucent)
 					{
-						//FindAndSetBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
-						bState = GetBlendState(PF_Highlighted);
+						bState = GetBlendState(PF_Translucent);
 
 						if (bState == nullptr)
 						{
-							bState = CreateBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
+							bState = CreateBlend(PF_Translucent, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_COLOR);
 						}
 					}
-				}
+					else if (blendFlags & PF_Modulated)
+					{
+						GlobalPolyflagVars.bModulated = 1;
+						bState = GetBlendState(PF_Modulated);
+
+						if (bState == nullptr)
+						{
+							bState = CreateBlend(PF_Modulated, D3D11_BLEND_DEST_COLOR, D3D11_BLEND_SRC_COLOR);
+						}
+					}
 #if DX11_HP2
-				// Metallicafan212:	Alpha to coverage is considered alpha blend, since that's what it's usually used for
-				//					TODO! Maybe re-evaluate this????
-				else if (blendFlags & PF_AlphaToCoverage)
-				{
-					//FindAndSetBlend(PF_AlphaBlend | PF_AlphaToCoverage, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
-					bState = GetBlendState(PF_AlphaBlend | PF_AlphaToCoverage);
-
-					if (bState == nullptr)
+					// Metallicafan212:	New engine QWORD lumos
+					else if (blendFlags & PF_LumosAffected)
 					{
-						bState = CreateBlend(PF_AlphaBlend | PF_AlphaToCoverage, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
+						// Metallicafan212:	I've reversed the reversed lumos alpha, as it seems that INV_SRC_ALPHA in DX11 doesn't write full alpha for some reason...
+						//FindAndSetBlend(PF_LumosAffected, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);//D3D11_BLEND_INV_SRC_ALPHA, D3D11_BLEND_SRC_ALPHA);
+						bState = GetBlendState(PF_LumosAffected);
+
+						if (bState == nullptr)
+						{
+							bState = CreateBlend(PF_LumosAffected, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+						}
 					}
-				}
 #endif
-				else if (blendFlags & PF_AlphaBlend)
-				{
-					//FindAndSetBlend(PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
-					bState = GetBlendState(PF_AlphaBlend);
-
-					if (bState == nullptr)
+					else if (blendFlags & PF_Highlighted)
 					{
-						bState = CreateBlend(PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+#if DX11_HP2 || DX11_UT_469
+						if (blendFlags & PF_AlphaBlend)
+						{
+							bState = GetBlendState(PF_Highlighted | PF_AlphaBlend);
+
+							if (bState == nullptr)
+							{
+								bState = CreateBlend(PF_Highlighted | PF_AlphaBlend, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+							}
+						}
+						else
+#endif
+						{
+							bState = GetBlendState(PF_Highlighted);
+
+							if (bState == nullptr)
+							{
+								bState = CreateBlend(PF_Highlighted, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA);
+							}
+						}
 					}
-				}
 #if DX11_HP2
-				else if (blendFlags & PF_ColorMask)
-				{
-					//FindAndSetBlend(PF_ColorMask, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
-					bState = GetBlendState(PF_ColorMask);
-
-					if (bState == nullptr)
+					// Metallicafan212:	Alpha to coverage is considered alpha blend, since that's what it's usually used for
+					//					TODO! Maybe re-evaluate this????
+					else if (blendFlags & PF_AlphaToCoverage)
 					{
-						bState = CreateBlend(PF_ColorMask, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+						//FindAndSetBlend(PF_AlphaBlend | PF_AlphaToCoverage, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
+						bState = GetBlendState(PF_AlphaBlend | PF_AlphaToCoverage);
+
+						if (bState == nullptr)
+						{
+							bState = CreateBlend(PF_AlphaBlend | PF_AlphaToCoverage, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
+						}
 					}
-				}
 #endif
-				else if (blendFlags & PF_Masked)
-				{
-					//FindAndSetBlend(PF_Masked, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
-					bState = GetBlendState(PF_Masked);
-
-					if (bState == nullptr)
+					// Metallicafan212:	Rewrote this to combine them (as they're all the same end result)
+#if DX11_HP2
+					else if (blendFlags & (PF_AlphaBlend | PF_ColorMask | PF_Masked))
+#elif DX11_UT_469
+					else if (blendFlags & (PF_AlphaBlend | PF_Masked))
+#else
+					else if (blendFlags & (PF_Masked))
+#endif
 					{
-						bState = CreateBlend(PF_Masked, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+						bState = GetBlendState(PF_Masked);
+
+						if (bState == nullptr)
+						{
+							bState = CreateBlend(PF_Masked, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+						}
+					}
+
+					// Metallicafan212:	Cache this blend state
+					if (bState != nullptr)
+					{
+#if !USE_UNODERED_MAP_EVERYWHERE
+						BlendCache.Set(blendFlags, bState);
+#else
+						BlendCache[blendFlags] = bState;
+#endif
 					}
 				}
 			}
@@ -1363,7 +1061,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			// Metallicafan212:	Translucent gets combined with a few other flags to set a specific hack
 			//					Sigh.... If only they just added a alpha flag instead of reusing flags, it makes it extremely annoying
 			if (Flags & PF_Translucent && !(Flags & (PF_AlphaBlend | PF_Highlighted)))
-			{;
+			{
 				FogShaderVars.DistanceFogColor = FogShaderVars.TransFogColor;
 				UpdateFogSettings();
 			}
@@ -1381,7 +1079,11 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #endif
 
 		// Metallicafan212:	TODO! Allow the user to specify the alpha reject values
+#if DX11_HP2
 		if (Xor & (PF_Masked | PF_AlphaBlend | PF_LumosAffected | PF_ColorMask | PF_Invisible))
+#else
+		if (Xor & (PF_Masked | PF_AlphaBlend | PF_Invisible))
+#endif
 		{
 #if DX11_HP2
 			if (!(blendFlags & PF_ColorMask))
@@ -1390,41 +1092,28 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 				GlobalPolyflagVars.bColorMasked = 0;
 			}
 #endif
-			// Metallicafan212:	Set a fair alpha reject
-			if (blendFlags & PF_Invisible)
-			{
-				GlobalPolyflagVars.AlphaReject		= 1e-6f;
-				GlobalPolyflagVars.bColorMasked		= 0;
-				GlobalPolyflagVars.bAlphaEnabled	= 1;
-			}
-			else if (blendFlags & PF_AlphaBlend)
+#if DX11_HP2
+			if (blendFlags & (PF_Invisible | PF_AlphaBlend | PF_LumosAffected))
+#elif DX11_UT_469
+			if (blendFlags & (PF_Invisible | PF_AlphaBlend))
+#else
+			if (blendFlags & (PF_Invisible))
+#endif
 			{
 				GlobalPolyflagVars.AlphaReject		= 1e-6f;
 				GlobalPolyflagVars.bColorMasked		= 0;
 				GlobalPolyflagVars.bAlphaEnabled	= 1;
 			}
 #if DX11_HP2
-			else if (blendFlags & PF_ColorMask)
+			else if (blendFlags & (PF_ColorMask | PF_Masked))
+#else
+			else if (blendFlags & PF_Masked)
+#endif
 			{
 				GlobalPolyflagVars.AlphaReject		= MaskedAlphaReject;//0.8f;
 				GlobalPolyflagVars.bColorMasked		= 1;
 				GlobalPolyflagVars.bAlphaEnabled	= 1;
 			}
-#endif
-			else if (blendFlags & PF_Masked)
-			{
-				GlobalPolyflagVars.AlphaReject		= MaskedAlphaReject;//0.8f;
-				GlobalPolyflagVars.bColorMasked		= 0;
-				GlobalPolyflagVars.bAlphaEnabled	= 1;
-			}
-#if DX11_HP2
-			else if (blendFlags & PF_LumosAffected)
-			{
-				GlobalPolyflagVars.AlphaReject		= 1e-6f;
-				GlobalPolyflagVars.bColorMasked		= 0;
-				GlobalPolyflagVars.bAlphaEnabled	= 1;
-			}
-#endif
 			else
 			{
 				GlobalPolyflagVars.AlphaReject		= 1e-6f;

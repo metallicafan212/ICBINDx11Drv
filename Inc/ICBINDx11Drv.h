@@ -981,9 +981,11 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	Blending map
 	//					We have to keep around blend objects (rather than setting render states directly) so they're mapped to the polyflag that it represents
 #if !USE_UNODERED_MAP_EVERYWHERE
-	TMap<FPLAG, ID3D11BlendState*>		BlendMap;
+	TMap<PFLAG, ID3D11BlendState*>		BlendMap;
+	TMap<PFLAG, ID3D11BlendState*>		BlendCache;
 #else
 	std::unordered_map<PFLAG, ID3D11BlendState*> BlendMap;
+	std::unordered_map<PFLAG, ID3D11BlendState*> BlendCache;
 #endif
 
 	// Metallicafan212:	Sampler map
@@ -1860,6 +1862,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	virtual void Unlock(UBOOL Blit);
 
 	virtual void DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, PFLAG PolyFlags);
+
+	// Metallicafan212:	Game specific rendering functions
+	//					Most may follow the UT specifications, and I might just ifdef SupportsTextureFormat
 #if DX11_HP2
 	// Metallicafan212:	TODO! More particle related code
 	virtual INT MaxVertices() { return 256; };

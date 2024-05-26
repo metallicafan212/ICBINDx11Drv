@@ -13,7 +13,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	// Metallicafan212: Detect windows version and wine on non-HP2 engines
 #if !DX11_HP2
-	// Metallicafan212:	TODO!!!!! This will NOT work since windows will always report a lower OS number to apps with a older manifest....
+	// Metallicafan212:	TODO!!!!! This will NOT work with games that don't have a manifest, since windows will always report a lower OS number to apps with a older manifest....
 	SetupWindowsVersionCheck();
 #endif
 
@@ -45,12 +45,14 @@ void UICBINDx11RenderDevice::SetupDevice()
 		It.Value()->Release();
 	}
 	BlendMap.Empty();
+	BlendCache.Empty();
 #else
 	for (auto i = BlendMap.begin(); i != BlendMap.end(); i++)
 	{
 		i->second->Release();
 	}
 	BlendMap.clear();
+	BlendCache.clear();
 #endif
 
 	// Metallicafan212:	Cleanup the sampler map
@@ -1962,12 +1964,14 @@ void UICBINDx11RenderDevice::Exit()
 		It.Value()->Release();
 	}
 	BlendMap.Empty();
+	BlendCache.Empty();
 #else
 	for (auto i = BlendMap.begin(); i != BlendMap.end(); i++)
 	{
 		i->second->Release();
 	}
 	BlendMap.clear();
+	BlendCache.clear();
 #endif
 
 	// Metallicafan212:	Cleanup the sampler map
