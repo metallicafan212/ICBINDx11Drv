@@ -168,6 +168,9 @@ PSOutput PxShader(PSInput input)
 		// Metallicafan212:	Sample it
 		float3 Det = Detail.SampleBias(DetailState, input.dUV.xy, 0.0f).xyz;
 		
+		// Metallicafan212:	Multiply the input color by 2 to make it work like lightmaps
+		Det 	  *= 2.0f;
+		
 		// Metallicafan212:	Now lerp it
 		float alpha = input.dUV.z / 380.0f;
 		Det = lerp(alpha, float3(1.0f, 1.0f, 1.0f), Det);
