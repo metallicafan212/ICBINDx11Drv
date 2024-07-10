@@ -150,8 +150,18 @@ void FShaderManager::Init()
 		}
 		else
 		{
-			// Metallicafan212:	Do nothing
-			CacheTime = 0;
+			if (DXDevice->bUsePrecompiledShaders)
+			{
+				LoadHardcodedShaders();
+
+				// Metallicafan212:	Set it to the max time??
+				CacheTime = ModTime;
+			}
+			else
+			{
+				// Metallicafan212:	Do nothing
+				CacheTime = 0;
+			}
 		}
 
 		bCacheInvalid = 0;
