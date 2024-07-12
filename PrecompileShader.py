@@ -162,7 +162,10 @@ void FShaderManager::LoadHardcodedShaders()
 
 # Metallicafan212: Now that everything is defined, loop through and compile each shader
 #                  Note that the FXC path is hard-coded here because it's not on the path variable
-fxc_path = 'C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\x86\\fxc.exe';
+fxc_path    = 'C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\x86\\fxc.exe';
+
+# Metallicafan212: Default to fxc_path, and run a detection to see if we're currently running within a vs instance
+fxc         = fxc_path;
 
 # Metallicafan212: Per AnthraX, check first if we're running from within a VS command prompt, as that'll have the current windows kit on the path variable
 #if True:
@@ -192,6 +195,7 @@ try:
 except:
     # Metallicafan212: Wasn't found, so don't override it.
     print("FXC not found on the path variable, defaulting to " + fxc_path);
+    fxc = fxc_path;
 
 for Shad in ShaderArray :
     # Metallicafan212: Process this shader
@@ -210,7 +214,7 @@ for Shad in ShaderArray :
             generatedBytes      = generatedNamespace + "::g_" + Entry.entrypoint;
 
             compileCommand = [
-                fxc_path, 
+                fxc, 
                 "/T" + Lang.target, 
                 "/E" + Entry.entrypoint, 
                 "/Fh..\\Inc\\CompiledShaders\\" + generatedShader
