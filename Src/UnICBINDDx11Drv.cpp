@@ -1385,19 +1385,6 @@ void UICBINDx11RenderDevice::SetupResources()
 		hr = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
 
 		ThrowIfFailed(hr);
-		/*
-		if (bAllowTearing)
-		{
-			HWND h = (HWND)Viewport->GetWindow();
-			LONG_PTR s = GetWindowLongPtr(h, GWL_EXSTYLE);
-
-			// Metallicafan212:	Add in WS_EX_NOREDIRECTIONBITMAP, since the freesync mode needs it, if we've removed it
-			s |= WS_EX_NOREDIRECTIONBITMAP;
-
-			SetWindowLongPtr(h, GWL_EXSTYLE, s);
-			SetWindowPos(h, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_DRAWFRAME | SWP_SHOWWINDOW);
-		}
-		*/
 
 		bForceRGBA = 0;
 
@@ -1505,6 +1492,20 @@ void UICBINDx11RenderDevice::SetupResources()
 		{
 			GLog->Logf(TEXT("DX11: Toggling fullscreen"));
 			hr = m_D3DSwapChain->SetFullscreenState(bFullscreen, nullptr);
+
+			ThrowIfFailed(hr);
+		}
+
+		if (bFullscreen)
+		{
+			// Metallicafan212:	Resize the window!
+			DXGI_MODE_DESC ModeDesc{};
+
+			ModeDesc.Width						= SizeX;
+			ModeDesc.Height						= SizeY;
+			ModeDesc.Format						= ScreenFormat;//DXGI_FORMAT_UNKNOWN;
+
+			hr									= m_D3DSwapChain->ResizeTarget(&ModeDesc);
 
 			ThrowIfFailed(hr);
 		}
