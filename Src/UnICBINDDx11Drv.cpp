@@ -1412,7 +1412,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		//swapChainDesc.Scaling				= DXGI_SCALING_NONE;
 		// Metallicafan212:	If we're on windows 10 or above, use the better DXGI mode
 		swapChainDesc.SwapEffect			= (bAllowTearing ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD);
-		swapChainDesc.Flags					|= (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
+		swapChainDesc.Flags					|= (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+		swapChainDesc.Scaling				= DXGI_SCALING_NONE;
 
 		DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsSwapChainDesc = {};
 		fsSwapChainDesc.Windowed			= !bFullscreen;//TRUE;
@@ -1462,7 +1463,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		}
 
 		// Metallicafan212:	Make it stop messing with the window itself
-		dxgiFactory->MakeWindowAssociation((HWND)Viewport->GetWindow(), DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER);
+		dxgiFactory->MakeWindowAssociation((HWND)Viewport->GetWindow(), /*DXGI_MWA_NO_WINDOW_CHANGES |*/ DXGI_MWA_NO_ALT_ENTER);
 
 		// Metallicafan212:	Release all the pointers
 		dxgiFactory->Release();
@@ -1511,7 +1512,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		}
 
 		// Metallicafan212:	Resize it
-		hr = m_D3DSwapChain->ResizeBuffers(2, SizeX, SizeY, ScreenFormat, (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0));
+		hr = m_D3DSwapChain->ResizeBuffers(2, SizeX, SizeY, ScreenFormat, (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
 
 		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
 		{
