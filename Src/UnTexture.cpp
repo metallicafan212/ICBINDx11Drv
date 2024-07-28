@@ -859,7 +859,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 
 	// Metallicafan212:	Check if the input blend flags are relevant
 #if DX11_HP2
-	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage | PF_Opacity);
+	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage | PF_Opacity | PF_NoFog);
 #else
 	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_AlphaBlend);
 #endif
@@ -877,7 +877,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 
 		// Metallicafan212:	Again, the DX9 driver saves the day
 #if DX11_HP2
-		const PFLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_Invisible | PF_AlphaBlend | PF_AlphaToCoverage | PF_Masked | PF_ColorMask | PF_Opacity;
+		const PFLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_Invisible | PF_AlphaBlend | PF_AlphaToCoverage | PF_Masked | PF_ColorMask | PF_Opacity | PF_NoFog;
 #else
 		const PFLAG RELEVANT_BLEND_FLAGS = PF_Translucent | PF_Modulated | PF_Highlighted | PF_Invisible | PF_Masked | PF_AlphaBlend | PF_Invisible;
 #endif
@@ -1053,27 +1053,36 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #if DX11_HP2
 		// Metallicafan212:	Set the correct fake fog values
 		//					Reset fog if the XOR was Translucent or Modulated
-		//					TODO! This can be a bit glitchy in the editor, where it turns all fog into modulated fog
-		if ((FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues) && (Xor & (PF_Translucent | PF_Modulated | PF_AlphaBlend | PF_Highlighted)))
+		if ((FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues) && (Xor & (PF_Translucent | PF_Modulated | PF_AlphaBlend | PF_Highlighted | PF_NoFog)))
 		{
 			PFLAG Flags = (blendFlags & RELEVANT_BLEND_FLAGS);
 
-			// Metallicafan212:	Translucent gets combined with a few other flags to set a specific hack
-			//					Sigh.... If only they just added a alpha flag instead of reusing flags, it makes it extremely annoying
-			if (Flags & PF_Translucent && !(Flags & (PF_AlphaBlend | PF_Highlighted)))
+			if (Flags & PF_NoFog)
 			{
-				FogShaderVars.DistanceFogColor = FogShaderVars.TransFogColor;
-				UpdateFogSettings();
-			}
-			else if (Flags & PF_Modulated)
-			{
-				FogShaderVars.DistanceFogColor = FogShaderVars.ModFogColor;
+				// Metallicafan212:	Disable fogging entirely on this surface/actor
+				FogShaderVars.bForceFogOff = 1;
 				UpdateFogSettings();
 			}
 			else
 			{
-				FogShaderVars.DistanceFogColor = FogShaderVars.DistanceFogFinal;
-				UpdateFogSettings();
+				FogShaderVars.bForceFogOff = 0;
+				// Metallicafan212:	Translucent gets combined with a few other flags to set a specific hack
+				//					Sigh.... If only they just added a alpha flag instead of reusing flags, it makes it extremely annoying
+				if (Flags & PF_Translucent && !(Flags & (PF_AlphaBlend | PF_Highlighted)))
+				{
+					FogShaderVars.DistanceFogColor = FogShaderVars.TransFogColor;
+					UpdateFogSettings();
+				}
+				else if (Flags & PF_Modulated)
+				{
+					FogShaderVars.DistanceFogColor = FogShaderVars.ModFogColor;
+					UpdateFogSettings();
+				}
+				else
+				{
+					FogShaderVars.DistanceFogColor = FogShaderVars.DistanceFogFinal;
+					UpdateFogSettings();
+				}
 			}
 		}
 #endif

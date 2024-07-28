@@ -327,6 +327,7 @@ public:
 struct FFogShaderVars
 {
 	UBOOL				bDoDistanceFog;
+	UBOOL				bForceFogOff;
 
 	// Metallicafan212:	Distance fog related stuff
 	//					These are the values that get sent to the shader immediately
@@ -374,7 +375,8 @@ struct FFogShaderVars
 		FogFadeRate(0.0f),
 		bFadeFogValues(0),
 		FogSetTime(0.0f),
-		bDoDistanceFog(0)
+		bDoDistanceFog(0),
+		bForceFogOff(0)
 
 	{
 
@@ -1932,7 +1934,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		// Metallicafan212:	Now set the vars
 		GlobalDistFogSettings.DistanceFogColor		= FogShaderVars.DistanceFogColor;
 		GlobalDistFogSettings.DistanceFogSettings	= FogShaderVars.DistanceFogSettings;
-		GlobalDistFogSettings.bDistanceFogEnabled	= FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues;
+		GlobalDistFogSettings.bDistanceFogEnabled	= !FogShaderVars.bForceFogOff && (FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues);
 
 #if !DO_BUFFERED_DRAWS
 		D3D11_MAPPED_SUBRESOURCE Map;
