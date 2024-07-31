@@ -31,6 +31,30 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 		SetProjectionStateNoCheck(false);
 #endif
 
+#define DPFONTHACK 0
+
+#if DPFONTHACK
+#if 0//DX11_UT_469
+	UBOOL bFontHack = (PolyFlags & (PF_NoSmooth | PF_Highlighted)) == (PF_NoSmooth | PF_Highlighted);
+#else
+	UBOOL bFontHack = ((PolyFlags & (PF_NoSmooth))); //| PF_Masked)) == (PF_NoSmooth | PF_Masked));//(PolyFlags & (PF_NoSmooth | PF_Masked)) == (PF_NoSmooth | PF_Masked);
+#endif
+
+	// Metallicafan212:	Per CacoFFF's suggestion, add/remove 0.1f * U/VSize when rendering fonts
+	FLOAT ExtraU = 0.0f;
+	FLOAT ExtraV = 0.0f;
+
+	if ((bFontHack && ((NumAASamples > 1 && !bSupportsForcedSampleCount) || bIsNV)))
+	{
+		XL	= std::floor(X + XL + 0.5f);
+		YL	= std::floor(Y + YL + 0.5f);
+		X	= std::floor(X + 0.5f);
+		Y	= std::floor(Y + 0.5f);
+		XL	= XL - X;
+		YL	= YL - Y;
+	}
+#endif
+
 
 #if DX11_HP2
 	if (Info.Palette && !(PolyFlags & PF_Translucent | PF_AlphaBlend))
@@ -217,6 +241,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 		}
 	}
 
+#if !DPFONTHACK
 #if 0//DX11_UT_469
 	UBOOL bFontHack = (PolyFlags & (PF_NoSmooth | PF_Highlighted)) == (PF_NoSmooth | PF_Highlighted);
 #else
@@ -229,10 +254,19 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 
 	if ((bFontHack && ( (NumAASamples > 1 && !bSupportsForcedSampleCount) || bIsNV)))
 	{
+		// Metallicafan212:	Hybrid solution, use dpjudas' flooring method, but also apply a negative UV offset to counteract it
+		XL	= appFloor(X + XL + 0.5f);
+		YL	= appFloor(Y + YL + 0.5f);
+		X	= appFloor(X + 0.5f);
+		Y	= appFloor(Y + 0.5f);
+		XL	= XL - X;
+		YL	= YL - Y;
+
 		// Metallicafan212:	Correct this based on the mip size as well
 		ExtraU = TileAAUVMove * TexInfoUMult;
 		ExtraV = TileAAUVMove * TexInfoVMult;
 	}
+#endif
 
 
 	// Metallicafan212:	Bind the tile shader
