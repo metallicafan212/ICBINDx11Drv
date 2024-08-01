@@ -375,7 +375,24 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 		GLog->Logf(TEXT("DX11: Requesting %d AA samples"), NumAASamples);
 
 	// Metallicafan212:	Use a positive number, fixes text being offset on NV
-	TileAAUVMove = -0.001f;//0.001f;//(GIsEditor ? 0.001f : -0.001f);
+	//TileAAUVMove = -0.001f;//0.001f;//(GIsEditor ? 0.001f : -0.001f);
+
+	// Metallicafan212:	If MSAA is enabled, use a negative offset, if not use a positive
+	switch (NumAASamples)
+	{
+		case 0:
+		case 1:
+		{
+			TileAAUVMove = 0.00001f;
+			break;
+		}
+
+		default:
+		{
+			TileAAUVMove = -0.00001f;//-0.001f;
+			break;
+		}
+	}
 	/*
 	// Metallicafan212:	TODO! Hard-coded offsets to make tiles not look like ass....
 	switch (NumAASamples)

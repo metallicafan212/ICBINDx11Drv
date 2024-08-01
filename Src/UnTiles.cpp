@@ -252,19 +252,43 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	FLOAT ExtraU = 0.0f;
 	FLOAT ExtraV = 0.0f;
 
-	if ((bFontHack && ( (NumAASamples > 1 && !bSupportsForcedSampleCount) || bIsNV)))
+	if ((bFontHack && ( (NumAASamples > 1 && !bUseForcedSampleCount) || bIsNV)))
 	{
 		// Metallicafan212:	Hybrid solution, use dpjudas' flooring method, but also apply a negative UV offset to counteract it
-		XL	= appFloor(X + XL + 0.5f);
-		YL	= appFloor(Y + YL + 0.5f);
-		X	= appFloor(X + 0.5f);
-		Y	= appFloor(Y + 0.5f);
-		XL	= XL - X;
-		YL	= YL - Y;
+		//XL	= appFloor(X + XL + 0.5f);
+		//YL	= appFloor(Y + YL + 0.5f);
+		//X	= appFloor(X + 0.5f);
+		//Y	= appFloor(Y + 0.5f);
+		//XL	= XL - X;
+		//YL	= YL - Y;
 
 		// Metallicafan212:	Correct this based on the mip size as well
-		ExtraU = TileAAUVMove * TexInfoUMult;
-		ExtraV = TileAAUVMove * TexInfoVMult;
+		ExtraU = TileAAUVMove; /// TexInfoUMult;
+		ExtraV = TileAAUVMove; /// TexInfoVMult;
+
+		//X	-= TileAAUVMove;
+		//Y	-= TileAAUVMove;
+		//XL	-= TileAAUVMove;
+		//YL	-= TileAAUVMove;
+
+		//XL	= appFloor(X + XL + 0.5f);
+		//YL	= appFloor(Y + YL + 0.5f);
+		//X	= appFloor(X + 0.5f);
+		//Y	= appFloor(Y + 0.5f);
+		//XL	= XL - X;
+		//YL	= YL - Y;
+
+		// Metallicafan212:	Recalculate UV?
+		/*
+		UL		= appFloor(U + UL + 0.5f);
+		VL		= appFloor(V + VL + 0.5f);
+		U		= appFloor(U + 0.5f);
+		V		= appFloor(V + 0.5f);
+		UL		= UL - U;
+		VL		= VL - V;
+		*/
+
+		
 	}
 #endif
 
@@ -318,13 +342,15 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	if (m_HitData != nullptr)
 		Color = CurrentHitColor;
 
-	LockVertAndIndexBuffer(6);
+	//LockVertAndIndexBuffer(6);
+	LockVertAndIndexBuffer(4, 6);
 
 	FLOAT SU1			= (U * TexInfoUMult)		+ ExtraU;
 	FLOAT SU2			= ((U + UL) * TexInfoUMult) + ExtraU;
 	FLOAT SV1			= (V * TexInfoVMult)		+ ExtraV;
 	FLOAT SV2			= ((V + VL) * TexInfoVMult) + ExtraV;
 
+	/*
 	// Buffer the tiles
 	m_VertexBuff[0].Color	= Color;
 	m_VertexBuff[0].X		= RPX1;
@@ -367,6 +393,46 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	m_VertexBuff[5].Z		= Z;
 	m_VertexBuff[5].U		= SU1;
 	m_VertexBuff[5].V		= SV2;
+	*/
+
+	// Metallicafan212:	Render as a unquaded quad
+	m_VertexBuff[0].Color	= Color;
+	m_VertexBuff[0].X		= RPX1;
+	m_VertexBuff[0].Y		= RPY1;
+	m_VertexBuff[0].Z		= Z;
+	m_VertexBuff[0].U		= SU1;
+	m_VertexBuff[0].V		= SV1;
+
+	m_VertexBuff[1].Color	= Color;
+	m_VertexBuff[1].X		= RPX2;
+	m_VertexBuff[1].Y		= RPY1;
+	m_VertexBuff[1].Z		= Z;
+	m_VertexBuff[1].U		= SU2;
+	m_VertexBuff[1].V		= SV1;
+
+	m_VertexBuff[2].Color	= Color;
+	m_VertexBuff[2].X		= RPX1;
+	m_VertexBuff[2].Y		= RPY2;
+	m_VertexBuff[2].Z		= Z;
+	m_VertexBuff[2].U		= SU1;
+	m_VertexBuff[2].V		= SV2;
+
+	m_VertexBuff[3].Color	= Color;
+	m_VertexBuff[3].X		= RPX2;
+	m_VertexBuff[3].Y		= RPY2;
+	m_VertexBuff[3].Z		= Z;
+	m_VertexBuff[3].U		= SU2;
+	m_VertexBuff[3].V		= SV2;
+
+	// Metallicafan212:	Now indicies
+	INDEX baseVIndex		= m_BufferedVerts;
+	m_IndexBuff[0]			= baseVIndex;
+	m_IndexBuff[1]			= baseVIndex + 1;
+	m_IndexBuff[2]			= baseVIndex + 3;
+	m_IndexBuff[3]			= baseVIndex + 2;
+	m_IndexBuff[4]			= baseVIndex + 3;
+	m_IndexBuff[5]			= baseVIndex;
+
 
 	AdvanceVertPos();
 
