@@ -389,7 +389,8 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 
 		default:
 		{
-			TileAAUVMove = -0.00001f;//-0.001f;
+			
+			TileAAUVMove = bUseForcedSampleCount ? 0.00001f : -0.00001f;//-0.001f;
 			break;
 		}
 	}

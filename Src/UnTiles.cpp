@@ -252,7 +252,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	FLOAT ExtraU = 0.0f;
 	FLOAT ExtraV = 0.0f;
 
-	if ((bFontHack && ( (NumAASamples > 1 && !bUseForcedSampleCount) || bIsNV)))
+	if ((bFontHack && ( (NumAASamples > 1 /*&& !bUseForcedSampleCount*/) || bIsNV)))
 	{
 		// Metallicafan212:	Hybrid solution, use dpjudas' flooring method, but also apply a negative UV offset to counteract it
 		//XL	= appFloor(X + XL + 0.5f);

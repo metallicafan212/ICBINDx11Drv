@@ -112,7 +112,7 @@ typedef unsigned short INDEX;
 		PolyFlags &= ~(PF_Masked | PF_ColorMask); \
 	} \
 	/* Metallicafan212: If we're showing a selection overlay, disable translucent */\
-	if((PolyFlags & (PF_Translucent | PF_Selected)) == (PF_Translucent | PF_Selected)) \
+	if(GIsEditor && (PolyFlags & (PF_Translucent | PF_Selected)) == (PF_Translucent | PF_Selected)) \
 	{ \
 		PolyFlags &= ~(PF_Translucent); \
 	} \

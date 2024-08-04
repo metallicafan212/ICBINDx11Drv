@@ -403,7 +403,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		{
 			if (PolyFlags & PF_FlatShaded)
 			{
-				if (PolyFlags & PF_Selected)
+				if (GIsEditor && PolyFlags & PF_Selected)
 				{
 					TestColor = (Surface.FlatColor.Plane() * 1.5f);
 					TestColor.W = 1.0f;
