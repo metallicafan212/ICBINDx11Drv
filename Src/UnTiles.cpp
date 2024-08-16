@@ -1,5 +1,7 @@
 #include "ICBINDx11Drv.h"
 
+#define QUAD_TILES 1
+
 // Metallicafan212:	Definitions for tile-related functions
 void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, PFLAG PolyFlags)
 {
@@ -30,31 +32,6 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	if(m_nearZRangeHackProjectionActive)
 		SetProjectionStateNoCheck(false);
 #endif
-
-#define DPFONTHACK 0
-
-#if DPFONTHACK
-#if 0//DX11_UT_469
-	UBOOL bFontHack = (PolyFlags & (PF_NoSmooth | PF_Highlighted)) == (PF_NoSmooth | PF_Highlighted);
-#else
-	UBOOL bFontHack = ((PolyFlags & (PF_NoSmooth))); //| PF_Masked)) == (PF_NoSmooth | PF_Masked));//(PolyFlags & (PF_NoSmooth | PF_Masked)) == (PF_NoSmooth | PF_Masked);
-#endif
-
-	// Metallicafan212:	Per CacoFFF's suggestion, add/remove 0.1f * U/VSize when rendering fonts
-	FLOAT ExtraU = 0.0f;
-	FLOAT ExtraV = 0.0f;
-
-	if ((bFontHack && ((NumAASamples > 1 && !bSupportsForcedSampleCount) || bIsNV)))
-	{
-		XL	= std::floor(X + XL + 0.5f);
-		YL	= std::floor(Y + YL + 0.5f);
-		X	= std::floor(X + 0.5f);
-		Y	= std::floor(Y + 0.5f);
-		XL	= XL - X;
-		YL	= YL - Y;
-	}
-#endif
-
 
 #if DX11_HP2
 	if (Info.Palette && !(PolyFlags & PF_Translucent | PF_AlphaBlend))
@@ -88,13 +65,6 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 #endif
 
 	// Metallicafan212:	Calculate the UV division
-	
-	// Metallicafan212:	Debugging hack!
-	//if (Info.Texture->GetFName() == TEXT("HudBk2"))
-	//{
-	//	appDebugBreak();
-	//}
-
 	FLOAT UScale = (Info.UScale * Info.USize);
 	FLOAT VScale = (Info.VScale * Info.VSize);
 	FLOAT UDiv = 1.0f / UScale;
@@ -151,83 +121,37 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 #endif
 
 	// Metallicafan212:	Setup blending
-	//					Per Buggie, this causes issues with tiles in his mod, so removing it
-#if 0//DX11_UT_469
-	ADJUST_PFLAGS(PolyFlags);
-#endif
 	SetBlend(PolyFlags);
 
 	UBOOL bNoAF = 0;
 
 	//Adjust Z coordinate if Z range hack is active
 	//if (1)//(m_useZRangeHack)
-	if (1)
+#if 1
+	// Metallicafan212:	Likely the hud, hack it!
+	if ((Z >= 0.0f) && (Z < 8.0f))
 	{
-		// Metallicafan212:	Likely the hud, hack it!
-		if ((Z >= 0.0f) && (Z < 8.0f))
-		{
-			// Metallicafan212:	TODO! There's been some glitchyness due to actor triangles drawing through hud elements, so forcing 0.5 might be needed, or maybe requesting near z range instead
-			Z = 0.5f;
+		// Metallicafan212:	TODO! There's been some glitchyness due to actor triangles drawing through hud elements, so forcing 0.5 might be needed, or maybe requesting near z range instead
+		Z = 0.5f;
 
-			// Metallicafan212:	Request no AA if we're a hud tile
-			SetRasterState(DXRS_Normal | DXRS_NoAA);
+		// Metallicafan212:	Request no AA if we're a hud tile
+		SetRasterState(DXRS_Normal | DXRS_NoAA);
 
-			bNoAF = 1;
-		}
-		else
-		{
-			// Metallicafan212:	For normal tiles in the worldspace, request AA with depth (otherwise we get yelled at by DX11)
-			SetRasterState(DXRS_Normal);
-		}
+		bNoAF = 1;
 	}
+	else
+	{
+		// Metallicafan212:	For normal tiles in the worldspace, request AA with depth (otherwise we get yelled at by DX11)
+		SetRasterState(DXRS_Normal);
+	}
+#endif
 
 	// Metallicafan212:	Restore the extra rasterization flags
 #if DX11_HP2
 	ExtraRasterFlags = OldFlags;
 #endif
 
-	/*
-	// Metallicafan212:	Does the UVs cross into a second square
-	if (abs(UC - ULC) > 1.0f || abs(VC - VLC) > 1.0)
-	{
-		PolyFlags &= ~PF_ClampUVs;
-	}
-	else
-	{
-		PolyFlags |= PF_ClampUVs;
-
-		// Metallicafan212:	It's within a full square, move it to the right location
-		U	-= appFloor(UF) * UScale;
-		V	-= appFloor(VF) * VScale;
-	}
-	*/
-
-	/*
-	// Metallicafan212:	Tile check, see if it's beyond a full tile
-	FLOAT UF	= (UL - U) * TexInfoUMult;/// Info.USize;
-	FLOAT VF	= (VL - V) * TexInfoVMult;/// Info.VSize;
-	FLOAT UFN	= (UL + U) * TexInfoUMult;
-	FLOAT VFN	= (VL + V) * TexInfoVMult;
-
-	// Metallicafan212:	Needed for tiles
-	//					Basically, non-looping tiles have AF issues, so I auto clamp to reduce these issues
-	//					Fixes editor icons and the like
-	//					This should be disabled if the UL and VL will make it loop
-	//if ((abs(U + UL) <= Info.USize && abs(V + VL) <= Info.VSize))
-
-	// Metallicafan212:	Reversed and revised this check, as it needs to see if the UVs loop or cross a barrior
-	//if (abs(UF) > 1.0f || abs(VF) > 1.0f || std::signbit(UL) != std::signbit(U) || std::signbit(VL) != std::signbit(V))
-	{
-		PolyFlags &= ~PF_ClampUVs;
-	}
-	//else
-	//{
-	//	PolyFlags |= PF_ClampUVs;
-	//}
-	*/
-
 	SetTexture(0, &Info, PolyFlags, bNoAF);
-
 
 	FLOAT TexInfoUMult = UDiv;
 	FLOAT TexInfoVMult = VDiv;
@@ -236,12 +160,10 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	{
 		if ((Frame->X != m_sceneNodeX) || (Frame->Y != m_sceneNodeY))
 		{
-			//m_sceneNodeHackCount++;
 			SetSceneNode(Frame);
 		}
 	}
 
-#if !DPFONTHACK
 #if 0//DX11_UT_469
 	UBOOL bFontHack = (PolyFlags & (PF_NoSmooth | PF_Highlighted)) == (PF_NoSmooth | PF_Highlighted);
 #else
@@ -254,44 +176,10 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 
 	if ((bFontHack && ( (NumAASamples > 1 /*&& !bUseForcedSampleCount*/) || bIsNV)))
 	{
-		// Metallicafan212:	Hybrid solution, use dpjudas' flooring method, but also apply a negative UV offset to counteract it
-		//XL	= appFloor(X + XL + 0.5f);
-		//YL	= appFloor(Y + YL + 0.5f);
-		//X	= appFloor(X + 0.5f);
-		//Y	= appFloor(Y + 0.5f);
-		//XL	= XL - X;
-		//YL	= YL - Y;
-
 		// Metallicafan212:	Correct this based on the mip size as well
-		ExtraU = TileAAUVMove; /// TexInfoUMult;
-		ExtraV = TileAAUVMove; /// TexInfoVMult;
-
-		//X	-= TileAAUVMove;
-		//Y	-= TileAAUVMove;
-		//XL	-= TileAAUVMove;
-		//YL	-= TileAAUVMove;
-
-		//XL	= appFloor(X + XL + 0.5f);
-		//YL	= appFloor(Y + YL + 0.5f);
-		//X	= appFloor(X + 0.5f);
-		//Y	= appFloor(Y + 0.5f);
-		//XL	= XL - X;
-		//YL	= YL - Y;
-
-		// Metallicafan212:	Recalculate UV?
-		/*
-		UL		= appFloor(U + UL + 0.5f);
-		VL		= appFloor(V + VL + 0.5f);
-		U		= appFloor(U + 0.5f);
-		V		= appFloor(V + 0.5f);
-		UL		= UL - U;
-		VL		= VL - V;
-		*/
-
-		
+		ExtraU = TileAAUVMove;
+		ExtraV = TileAAUVMove;		
 	}
-#endif
-
 
 	// Metallicafan212:	Bind the tile shader
 	FTileShader->Bind(m_RenderContext);
@@ -307,7 +195,6 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	FLOAT RPY1 = m_RFY2 * PY1;
 	FLOAT RPY2 = m_RFY2 * PY2;
 
-#if 1//!RES_SCALE_IN_PROJ
 	if (BoundRT == nullptr && ResolutionScale != 1.0f)
 	{
 		RPX1 *= ResolutionScale;
@@ -315,8 +202,6 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 		RPY1 *= ResolutionScale;
 		RPY2 *= ResolutionScale;
 	}
-#endif
-
 
 	if (Frame->Viewport->Actor != nullptr && Frame->Viewport->IsOrtho())
 	{
@@ -342,15 +227,53 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	if (m_HitData != nullptr)
 		Color = CurrentHitColor;
 
-	//LockVertAndIndexBuffer(6);
-	LockVertAndIndexBuffer(4, 6);
-
 	FLOAT SU1			= (U * TexInfoUMult)		+ ExtraU;
 	FLOAT SU2			= ((U + UL) * TexInfoUMult) + ExtraU;
 	FLOAT SV1			= (V * TexInfoVMult)		+ ExtraV;
 	FLOAT SV2			= ((V + VL) * TexInfoVMult) + ExtraV;
 
-	/*
+#if QUAD_TILES
+	LockVertAndIndexBuffer(4, 6);
+
+	// Metallicafan212:	Render as a unquaded quad
+	m_VertexBuff[0].Color	= Color;
+	m_VertexBuff[0].X		= RPX1;
+	m_VertexBuff[0].Y		= RPY1;
+	m_VertexBuff[0].Z		= Z;
+	m_VertexBuff[0].U		= SU1;
+	m_VertexBuff[0].V		= SV1;
+
+	m_VertexBuff[1].Color	= Color;
+	m_VertexBuff[1].X		= RPX2;
+	m_VertexBuff[1].Y		= RPY1;
+	m_VertexBuff[1].Z		= Z;
+	m_VertexBuff[1].U		= SU2;
+	m_VertexBuff[1].V		= SV1;
+
+	m_VertexBuff[2].Color	= Color;
+	m_VertexBuff[2].X		= RPX1;
+	m_VertexBuff[2].Y		= RPY2;
+	m_VertexBuff[2].Z		= Z;
+	m_VertexBuff[2].U		= SU1;
+	m_VertexBuff[2].V		= SV2;
+
+	m_VertexBuff[3].Color	= Color;
+	m_VertexBuff[3].X		= RPX2;
+	m_VertexBuff[3].Y		= RPY2;
+	m_VertexBuff[3].Z		= Z;
+	m_VertexBuff[3].U		= SU2;
+	m_VertexBuff[3].V		= SV2;
+
+	// Metallicafan212:	Now indicies
+	INDEX baseVIndex		= m_BufferedVerts;
+	m_IndexBuff[0]			= baseVIndex;
+	m_IndexBuff[1]			= baseVIndex + 1;
+	m_IndexBuff[2]			= baseVIndex + 3;
+	m_IndexBuff[3]			= baseVIndex + 2;
+	m_IndexBuff[4]			= baseVIndex + 3;
+	m_IndexBuff[5]			= baseVIndex;
+#else
+	LockVertAndIndexBuffer(6);
 	// Buffer the tiles
 	m_VertexBuff[0].Color	= Color;
 	m_VertexBuff[0].X		= RPX1;
@@ -393,46 +316,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	m_VertexBuff[5].Z		= Z;
 	m_VertexBuff[5].U		= SU1;
 	m_VertexBuff[5].V		= SV2;
-	*/
-
-	// Metallicafan212:	Render as a unquaded quad
-	m_VertexBuff[0].Color	= Color;
-	m_VertexBuff[0].X		= RPX1;
-	m_VertexBuff[0].Y		= RPY1;
-	m_VertexBuff[0].Z		= Z;
-	m_VertexBuff[0].U		= SU1;
-	m_VertexBuff[0].V		= SV1;
-
-	m_VertexBuff[1].Color	= Color;
-	m_VertexBuff[1].X		= RPX2;
-	m_VertexBuff[1].Y		= RPY1;
-	m_VertexBuff[1].Z		= Z;
-	m_VertexBuff[1].U		= SU2;
-	m_VertexBuff[1].V		= SV1;
-
-	m_VertexBuff[2].Color	= Color;
-	m_VertexBuff[2].X		= RPX1;
-	m_VertexBuff[2].Y		= RPY2;
-	m_VertexBuff[2].Z		= Z;
-	m_VertexBuff[2].U		= SU1;
-	m_VertexBuff[2].V		= SV2;
-
-	m_VertexBuff[3].Color	= Color;
-	m_VertexBuff[3].X		= RPX2;
-	m_VertexBuff[3].Y		= RPY2;
-	m_VertexBuff[3].Z		= Z;
-	m_VertexBuff[3].U		= SU2;
-	m_VertexBuff[3].V		= SV2;
-
-	// Metallicafan212:	Now indicies
-	INDEX baseVIndex		= m_BufferedVerts;
-	m_IndexBuff[0]			= baseVIndex;
-	m_IndexBuff[1]			= baseVIndex + 1;
-	m_IndexBuff[2]			= baseVIndex + 3;
-	m_IndexBuff[3]			= baseVIndex + 2;
-	m_IndexBuff[4]			= baseVIndex + 3;
-	m_IndexBuff[5]			= baseVIndex;
-
+#endif
 
 	AdvanceVertPos();
 
