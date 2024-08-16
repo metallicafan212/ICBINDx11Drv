@@ -1,25 +1,23 @@
 #include "ICBINDx11Drv.h"
 
-FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, PFLAG PolyFlags, UBOOL bDoFog, FLOAT UMult, FLOAT VMult, UBOOL bDoSelection, FPlane SelectionColor)
+// Metallicafan212:	TODO! Move these into the shader?
+static FPlane ModulatedColor	= FPlane(1.f, 1.f, 1.f, 1.f);
+static FPlane NoFog				= FPlane(0.f, 0.f, 0.f, 0.f);
+
+FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, PFLAG& PolyFlags, UBOOL& bDoFog, FLOAT& UMult, FLOAT& VMult)//UBOOL bDoSelection, FPlane& SelectionColor)
 {
-	m_Vert->X	= P->Point.X;
-	m_Vert->Y	= P->Point.Y;
-	m_Vert->Z	= P->Point.Z;
+	//m_Vert->X	= P->Point.X;
+	//m_Vert->Y	= P->Point.Y;
+	//m_Vert->Z	= P->Point.Z;
+
+	// Metallicafan212:	Speed this up by just copying it
+	appMemcpy(&m_Vert->X, &P->Point.X, sizeof(FLOAT) * 3);
+
+	// Metallicafan212:	TODO! This might be quicker to copy too
 	m_Vert->U	= P->U * UMult;
 	m_Vert->V	= P->V * VMult;
 
 	/*
-	// Metallicafan212:	Turn off Light A if bNoLightOpcacity
-	if (bNoLightOpcacity)
-	{
-		P->Light.W = 1.0f;
-
-		// Metallicafan212:	Force no loss of alpha if the flags aren't there
-		if (!drawFog)
-			P->Fog.W = 1.0f;
-	}
-	*/
-
 	if (bDoSelection)
 	{
 		// Metallicafan212:	Selection testing!!!!
@@ -27,28 +25,34 @@ FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, PFLAG PolyFlags, UBO
 		m_Vert->Fog		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 	else
+	*/
 	{
-
+		/*
 		// Set selection stuff
 		if (GIsEditor && (PolyFlags & PF_Selected))
 		{
-			m_Vert->Color	= SelectionColor;//FPlane(0.0f, 1.0f, 0.0f, 1.0f);
+			m_Vert->Color	= SelectionColor;
 			m_Vert->Fog		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
 		}
+		*/
+		/*
 		else if (PolyFlags & PF_Modulated)
 		{
 			m_Vert->Color	= FPlane(1.0f, 1.0f, 1.0f, 1.0f);
 			m_Vert->Fog		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
 		}
-		else if (bDoFog)
+		*/
+		//else
+		if (bDoFog)
 		{
-			m_Vert->Color	= P->Light;
-			m_Vert->Fog		= P->Fog;
+			appMemcpy(&m_Vert->Color, &P->Light, sizeof(FLOAT) * 8);
+			//m_Vert->Color	= P->Light;
+			//m_Vert->Fog		= P->Fog;
 		}
 		else
 		{
 			m_Vert->Color	= P->Light;
-			m_Vert->Fog		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
+			m_Vert->Fog		= NoFog;//FPlane(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 	}
 }
@@ -67,7 +71,22 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Triangles);
 
-	//ADJUST_PFLAGS(PolyFlags);
+	// Metallicafan212:	TODO! Check if we were rendering something else and then flush it?
+	if (GIsEditor && PolyFlags & PF_Selected)
+	{
+#if DX11_HP2
+		GlobalPolyflagVars.SelectionColor	= ActorSelectionColor.Plane().Vect();
+#else
+		// Metallicafan212:	TODO! Slice warning
+		GlobalPolyflagVars.SelectionColor	= ActorSelectionColor.Plane();
+#endif
+
+		// Metallicafan212:	TODO! Maybe mark a var that sets if we should be flushing the polyflag vars?
+		if (CurrentShader != FMeshShader)
+		{
+			UpdatePolyflagsVars();
+		}
+	}
 
 	SetBlend(PolyFlags);
 
@@ -103,20 +122,14 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	//LockVertexBuffer(NumPts * sizeof(FD3DVert));
 	LockVertAndIndexBuffer(NumPts, NumIndices);
 
+#if !INT_INDEX_BUFF
 	if (Indices != nullptr)
 	{
-#if !INT_INDEX_BUFF
 		// Metallicafan212:	TODO! Do something to be able to draw indexed AND buffer at the same time
 		EndBuffering();
-#endif
 		//LockIndexBuffer(NumIndices);
 	}
-	/*
-	else if (bIndexedBuffered)
-	{
-		EndBuffering();
-	}
-	*/
+#endif
 
 	// Metallicafan212:	Added in distance fog
 	//					All calculations have to be done ourselfs, but at least it's doable
@@ -135,11 +148,12 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 #endif
 
 	// Metallicafan212:	Allow the selection color to be set by the user
-	FPlane ColorOverride;
+	//FPlane ColorOverride;
 
+	/*
 	if (m_HitData != nullptr)
 	{
-		ColorOverride = CurrentHitColor;
+		//ColorOverride = CurrentHitColor;
 	}
 	// Metallicafan212:	Only do this if we're in the editor, no reason to keep passing in the selection color
 	else if (GIsEditor)
@@ -150,10 +164,11 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 		ColorOverride = FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f);
 #endif
 	}
+	*/
 
 	for (INT i = 0; i < NumPts; i++)
 	{
-		DoVert(Pts[i],  &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);//CurrentHitColor);
+		DoVert(Pts[i],  &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult);//m_HitData != nullptr, ColorOverride);//CurrentHitColor);
 	}
 
 	//UnlockVertexBuffer();
@@ -197,7 +212,22 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Triangles);
 
-	//ADJUST_PFLAGS(PolyFlags);
+	// Metallicafan212:	TODO! Check if we were rendering something else and then flush it?
+	if (GIsEditor && PolyFlags & PF_Selected)
+	{
+#if DX11_HP2
+		GlobalPolyflagVars.SelectionColor	= ActorSelectionColor.Plane().Vect();
+#else
+		// Metallicafan212:	TODO! Slice warning
+		GlobalPolyflagVars.SelectionColor	= ActorSelectionColor.Plane();
+#endif
+
+		// Metallicafan212:	TODO! Maybe mark a var that sets if we should be flushing the polyflag vars?
+		if (CurrentShader != FMeshShader)
+		{
+			UpdatePolyflagsVars();
+		}
+	}
 
 	SetBlend(PolyFlags);
 
@@ -220,17 +250,11 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	}
 
 	// Metallicafan212:	TODO!
-
 	FMeshShader->bNoMeshOpacity = 1;
 
 	FMeshShader->Bind(m_RenderContext);
 
 	LockVertAndIndexBuffer(NumPts, (NumPts - 2) * 3);
-
-	//LockVertexBuffer(NumPts * sizeof(FD3DVert));
-
-	//EndBuffering();
-	//LockIndexBuffer((NumPts - 2) * 3);
 
 	// Metallicafan212:	Added in distance fog
 	//					All calculations have to be done ourselfs, but at least it's doable
@@ -245,6 +269,7 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 
 	INDEX baseVIndex = m_BufferedVerts;
 
+	/*
 	// Metallicafan212:	Allow the selection color to be set by the user
 	FPlane ColorOverride;
 
@@ -269,28 +294,20 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	//	Pts[0]->Light.W = 1.0f;
 	//	Pts[1]->Light.W = 1.0f;
 	//}
+	*/
 
-	DoVert(Pts[0], &Mshy[0], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
-	DoVert(Pts[1], &Mshy[1], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
+	DoVert(Pts[0], &Mshy[0], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult);//, m_HitData != nullptr, ColorOverride);
+	DoVert(Pts[1], &Mshy[1], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult);//, m_HitData != nullptr, ColorOverride);
 
 	// Metallicafan212:	First two verts, then we fan out
-
 	for (INT i = 2; i < NumPts; i++)
 	{
-		/*
-#if DX11_HP2
-		// Metallicafan212:	TODO! This should be done in the shader, not here!
-		if (bNoOpacity)
-#endif
-		Pts[i]->Light.W = 1.0f;
-		*/
-
-		DoVert(Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, CurrentHitColor);
+		DoVert(Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult);//, m_HitData != nullptr, CurrentHitColor);
 
 		// Metallicafan212:	Now the indices
 		m_IndexBuff[vIndex++] = baseVIndex;
 		m_IndexBuff[vIndex++] = (i - 1) + baseVIndex;
-		m_IndexBuff[vIndex++] = (i)+baseVIndex;
+		m_IndexBuff[vIndex++] = (i) + baseVIndex;
 	}
 
 	//UnlockVertexBuffer();
@@ -325,8 +342,6 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 
 	FLOAT UScale	= Info.UScale * Info.USize / 256.0f;
 	FLOAT VScale	= Info.VScale * Info.VSize / 256.0f;
-
-	//ADJUST_PFLAGS(PolyFlags);
 
 	SetBlend(PolyFlags);
 

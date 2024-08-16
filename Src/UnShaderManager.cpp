@@ -50,7 +50,7 @@ FArchive& operator<<(FArchive& Ar, FShaderManager* Manager)
 		Manager->bCacheInvalid = 1;
 	}
 
-	QWORD DriverVer = Manager->DXDevice->GPUDriverVer.QuadPart;
+	SQWORD DriverVer = Manager->DXDevice->GPUDriverVer.QuadPart;
 
 	Ar << DriverVer;
 

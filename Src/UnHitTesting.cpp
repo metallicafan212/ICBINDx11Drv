@@ -548,5 +548,14 @@ void UICBINDx11RenderDevice::SetupPixelHitTest()
 		CurrentHitColor = FPlane(Temp.R / 255.0f, Temp.G / 255.0f, Temp.B / 255.0f, 1.0f);
 	}
 
+#if DX11_HP2
+	GlobalPolyflagVars.SelectionColor	= CurrentHitColor.Vect();
+#else
+	// Metallicafan212:	TODO! Slice it
+	GlobalPolyflagVars.SelectionColor	= CurrentHitColor;
+#endif
+
+	UpdatePolyflagsVars();
+
 	unguard;
 }

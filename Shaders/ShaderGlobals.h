@@ -25,9 +25,6 @@ struct VSInput
 	// Metallicafan212:	Per channel UV info
 	float4  DM			: TEXCOORD1;
 	float4	FX			: TEXCOORD2;
-	//float2 D			: TEXCOORD1;
-	//float2 M			: TEXCOORD2;
-	//float2 F			: TEXCOORD3;
 	#endif
 	#endif
 };
@@ -131,13 +128,16 @@ cbuffer DFogVariables : register (b1)
 cbuffer PolyflagVars : register (b2)
 {
 	// Metallicafan212:	New vars for different effects			
-	int		bColorMasked		: packoffset(c0.x);
+	//int		bColorMasked		: packoffset(c0.x);
+	int		bSelected			: packoffset(c0.x);
 	float	AlphaReject			: packoffset(c0.y);
 	float	BWPercent			: packoffset(c0.z);
 	int		bAlphaEnabled		: packoffset(c0.w);
 	// Metallicafan212: Temp hack until I recode gamma to be screen-based again, using a different algo
 	int		bModulated			: packoffset(c1.x);
-	float3	Pad					: packoffset(c1.y);
+	// Metallicafan212:	Pack in the selection color for the editor
+	float3	SelectedColor		: packoffset(c1.y);
+	//float3	Pad					: packoffset(c1.y);
 };
 
 cbuffer TextureVariables : register (b3)
@@ -161,7 +161,7 @@ float3 SRGBToRec2020(float3 In)
 // Metallicafan212:	Distance fog shit
 //					TODO! A better algorithm????
 //					I have just straight ported the assembly code I wrote a while ago (since I'm a lazy fucking bastard)
-float DoDistanceFog(float InZ)//float4 InPos)
+float DoDistanceFog(float InZ)
 {
 	if(!bDoDistanceFog)
 		return 0.0f;
@@ -178,7 +178,7 @@ float DoDistanceFog(float InZ)//float4 InPos)
 }
 
 // Metallicafan212:	Global selection color
-static float4 SelectionColor;
+//static float4 SelectionColor;
 
 // Metallicafan212:	HACK!!! To reject black and white on UI tiles, I don't want to have to update all the shaders...
 static bool		bRejectBW;
@@ -186,7 +186,12 @@ static bool		bRejectBW;
 // Metallicafan212:	Color masking is currently unimplemented and may not be reimplemented
 
 // Metallicafan212:	Do masked rejection
-#define CLIP_PIXEL(ColorIn) if(!bAlphaEnabled) ColorIn.w = 1.0f; SelectionColor = input.color; clip(ColorIn.w - AlphaReject); if(bDepthDraw) ColorIn.xyz = input.origZ / DepthDrawLimit;/*input.pos.z / 1.2;*/
+#define CLIP_PIXEL(ColorIn) \
+	if(!bAlphaEnabled) \
+		ColorIn.w = 1.0f; \
+	clip(ColorIn.w - AlphaReject); \
+	if(bDepthDraw) \
+		ColorIn.xyz = input.origZ / DepthDrawLimit;
 
 float4 DoPixelFog(float DistFog, float4 Color)
 {
@@ -229,7 +234,7 @@ float4 DoFinalColor(float4 ColorIn)
 		}
 		else
 		{
-			return float4(SelectionColor.xyz, 1.0f);
+			return float4(SelectedColor.xyz, 1.0f);//SelectionColor.xyz, 1.0f);
 		}
 	}
 	
@@ -240,7 +245,7 @@ float4 DoFinalColor(float4 ColorIn)
 	}
 	
 	// Metallicafan212:	Clamp the color
-	ColorIn.xyz = clamp(ColorIn.xyz, 0.0, 1.0);
+	ColorIn.xyz = clamp(ColorIn.xyz, 0.0f, 1.0f);
 	
 	// Metallicafan212:	Early return
 	if(BWPercent <= 0.0f || bRejectBW)

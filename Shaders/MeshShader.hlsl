@@ -53,10 +53,26 @@ PSInput VertShader(VSInput input)
 	// Metallicafan212:	Transform it out
 	output.pos 		= mul(input.pos, Proj);
 	
+	// Metallicafan212:	If we're selected, set the light color to the selection color
+	if(bSelected)
+	{
+		output.color	= float4(SelectedColor, 1.0f);
+		output.fog		= float4(0.0f, 0.0f, 0.0f, 0.0f);
+	}
+	// Metallicafan212:	If we're modulated, deal with the color now!
+	else if(bModulated)
+	{
+		output.color	= float4(1.0f, 1.0f, 1.0f, 1.0f);
+		output.fog		= float4(0.0f, 0.0f, 0.0f, 0.0f);
+	}
+	else
+	{
+		output.color	= input.color;
+		output.fog		= input.fog;
+	}
+	
 	// Metallicafan212:	Copy the vert info over
 	output.uv.xy	= input.uv.xy;
-	output.color	= input.color;
-	output.fog		= input.fog;
 	
 	return output;
 }

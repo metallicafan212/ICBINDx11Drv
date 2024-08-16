@@ -859,10 +859,13 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 
 	// Metallicafan212:	Check if the input blend flags are relevant
 #if DX11_HP2
-	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage | PF_Opacity | PF_NoFog);
+	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage | PF_Opacity | PF_NoFog | PF_Selected);
 #else
-	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_AlphaBlend);
+	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_AlphaBlend | PF_Selected);
 #endif
+
+	UBOOL bUpdatePFlagBuff	= 0;
+	UBOOL bUpdateFogBuff	= 0;
 
 	if (blendFlags != CurrentPolyFlags)
 	{
@@ -871,6 +874,13 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 
 		// Metallicafan212:	Check for changes
 		PFLAG Xor = CurrentPolyFlags ^ blendFlags;
+
+		// Metallicafan212:	Check for changes to the selection flag
+		if (GIsEditor && Xor & PF_Selected)
+		{
+			GlobalPolyflagVars.bSelected	= (blendFlags & PF_Selected);// == PF_Selected;
+			bUpdatePFlagBuff				= 1;
+		}
 
 		// Metallicafan212:	Save the blend flags now
 		CurrentPolyFlags = blendFlags;
@@ -887,7 +897,9 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			// Metallicafan212:	Only set when it's actually using it to render (in case of bad flags)
 			GlobalPolyflagVars.bModulated = 0;
 
-			ID3D11BlendState* bState = nullptr;
+			bUpdatePFlagBuff			= 1;
+
+			ID3D11BlendState* bState	= nullptr;
 
 			// Metallicafan212:	Find and set the render state
 			if (!(blendFlags & (RELEVANT_BLEND_FLAGS)))
@@ -914,7 +926,6 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 
 				bState = f != BlendCache.end() ? f->second : nullptr;
 #endif
-
 				if (bState == nullptr)
 				{
 					// Metallicafan212:	DX9 allows you to completely turn off color drawing. We achieve the same effect here by using a 0 source blend and a 1 dest blend (since it will keep the dst color)
@@ -949,7 +960,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 					}
 					else if (blendFlags & PF_Modulated)
 					{
-						GlobalPolyflagVars.bModulated = 1;
+						GlobalPolyflagVars.bModulated		= 1;
 						bState = GetBlendState(PF_Modulated);
 
 						if (bState == nullptr)
@@ -1035,6 +1046,12 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #endif
 					}
 				}
+
+				// Metallicafan212:	Modulated hack
+				if (GetBlendState(PF_Modulated) == bState)
+				{
+					GlobalPolyflagVars.bModulated = 1;
+				}
 			}
 
 			// Metallicafan212:	If we got a valid blend state, set it
@@ -1060,8 +1077,9 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			if (Flags & PF_NoFog)
 			{
 				// Metallicafan212:	Disable fogging entirely on this surface/actor
-				FogShaderVars.bForceFogOff = 1;
-				UpdateFogSettings();
+				FogShaderVars.bForceFogOff	= 1;
+				//UpdateFogSettings();
+				bUpdateFogBuff				= 1;
 			}
 			else
 			{
@@ -1070,18 +1088,21 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 				//					Sigh.... If only they just added a alpha flag instead of reusing flags, it makes it extremely annoying
 				if (Flags & PF_Translucent && !(Flags & (PF_AlphaBlend | PF_Highlighted)))
 				{
-					FogShaderVars.DistanceFogColor = FogShaderVars.TransFogColor;
-					UpdateFogSettings();
+					FogShaderVars.DistanceFogColor	= FogShaderVars.TransFogColor;
+					//UpdateFogSettings();
+					bUpdateFogBuff					= 1;
 				}
 				else if (Flags & PF_Modulated)
 				{
-					FogShaderVars.DistanceFogColor = FogShaderVars.ModFogColor;
-					UpdateFogSettings();
+					FogShaderVars.DistanceFogColor	= FogShaderVars.ModFogColor;
+					//UpdateFogSettings();
+					bUpdateFogBuff					= 1;
 				}
 				else
 				{
-					FogShaderVars.DistanceFogColor = FogShaderVars.DistanceFogFinal;
-					UpdateFogSettings();
+					FogShaderVars.DistanceFogColor	= FogShaderVars.DistanceFogFinal;
+					//UpdateFogSettings();
+					bUpdateFogBuff					= 1;
 				}
 			}
 		}
@@ -1095,11 +1116,15 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #endif
 		{
 #if DX11_HP2
+			/*
 			if (!(blendFlags & PF_ColorMask))
 			{
 				// Metallicafan212:	Disable masked
 				GlobalPolyflagVars.bColorMasked = 0;
 			}
+			*/
+
+			bUpdatePFlagBuff					= 1;
 #endif
 #if DX11_HP2
 			if (blendFlags & (PF_Invisible | PF_AlphaBlend | PF_LumosAffected))
@@ -1110,8 +1135,9 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #endif
 			{
 				GlobalPolyflagVars.AlphaReject		= 1e-6f;
-				GlobalPolyflagVars.bColorMasked		= 0;
+				//GlobalPolyflagVars.bColorMasked		= 0;
 				GlobalPolyflagVars.bAlphaEnabled	= 1;
+
 			}
 #if DX11_HP2
 			else if (blendFlags & (PF_ColorMask | PF_Masked))
@@ -1120,13 +1146,13 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #endif
 			{
 				GlobalPolyflagVars.AlphaReject		= MaskedAlphaReject;//0.8f;
-				GlobalPolyflagVars.bColorMasked		= 1;
+				//GlobalPolyflagVars.bColorMasked		= 1;
 				GlobalPolyflagVars.bAlphaEnabled	= 1;
 			}
 			else
 			{
 				GlobalPolyflagVars.AlphaReject		= 1e-6f;
-				GlobalPolyflagVars.bColorMasked		= 0;
+				//GlobalPolyflagVars.bColorMasked		= 0;
 			}
 		}
 
@@ -1157,7 +1183,15 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 		}
 
 		// Metallicafan212:	Flags changed, update them in the constant buffer
-		UpdatePolyflagsVars();
+		if (bUpdatePFlagBuff)
+		{
+			UpdatePolyflagsVars();
+		}
+
+		if (bUpdateFogBuff)
+		{
+			UpdateFogSettings();
+		}
 	}
 
 	unguardSlow;

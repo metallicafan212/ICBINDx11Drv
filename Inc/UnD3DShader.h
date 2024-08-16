@@ -76,7 +76,7 @@ struct FDistFogVars
 
 struct FPolyflagVars
 {
-	UBOOL	bColorMasked;
+	UBOOL	bSelected;
 	FLOAT	AlphaReject;
 	FLOAT	BWPercent;
 
@@ -86,16 +86,17 @@ struct FPolyflagVars
 	// Metallicafan212:	Temp hack for modulation until I recode gamma again....
 	UBOOL	bModulated;
 
-	// Metallicafan212:	Ending padding
-	FLOAT	Pad[3];
+	// Metallicafan212:	Selection color (no alpha)
+	FVector	SelectionColor;
 
 	FPolyflagVars()
 		:
-		bColorMasked(0),
+		bSelected(0),
 		AlphaReject(1e-6f),
 		BWPercent(0.0f),
 		bAlphaEnabled(0),
-		bModulated(0)
+		bModulated(0),
+		SelectionColor(0.f, 0.f, 0.f)
 	{
 
 	}
