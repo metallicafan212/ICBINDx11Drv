@@ -332,6 +332,23 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Triangles);
 
+	// Metallicafan212:	TODO! Check if we were rendering something else and then flush it?
+	if (GIsEditor && PolyFlags & PF_Selected)
+	{
+#if DX11_HP2
+		GlobalPolyflagVars.SelectionColor	= ActorSelectionColor.Plane().Vect();
+#else
+		// Metallicafan212:	TODO! Slice warning
+		GlobalPolyflagVars.SelectionColor	= ActorSelectionColor.Plane();
+#endif
+
+		// Metallicafan212:	TODO! Maybe mark a var that sets if we should be flushing the polyflag vars?
+		if (CurrentShader != FMeshShader)
+		{
+			UpdatePolyflagsVars();
+		}
+	}
+
 	// Metallicafan212:	We have to implement specific effects ourselves when using this
 	//					Detect them here
 	UBOOL bMirror	= Frame->Mirror < 0.0f;
@@ -376,6 +393,7 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 
 	FD3DVert* Mshy		= (FD3DVert*)m_VertexBuff;
 
+	/*
 	// Metallicafan212:	Allow the selection color to be set by the user
 	FPlane ColorOverride;
 
@@ -392,6 +410,7 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 		ColorOverride = FPlane(ActorSelectionColor.R / 255.0f, ActorSelectionColor.G / 255.0f, ActorSelectionColor.B / 255.0f, ActorSelectionColor.A / 255.0f);
 #endif
 	}
+	*/
 
 	//UBOOL bHasDrawn = 0;
 
@@ -435,9 +454,9 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 			Exchange(Pts[i + 2], Pts[i]);
 		}
 
-		DoVert(&Pts[i],		&Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
-		DoVert(&Pts[i + 1], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
-		DoVert(&Pts[i + 2], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, m_HitData != nullptr, ColorOverride);
+		DoVert(&Pts[i],		&Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult); //m_HitData != nullptr, ColorOverride);
+		DoVert(&Pts[i + 1], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult);//, m_HitData != nullptr, ColorOverride);
+		DoVert(&Pts[i + 2], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult);//, m_HitData != nullptr, ColorOverride);
 	}
 
 	//UnlockVertexBuffer();
