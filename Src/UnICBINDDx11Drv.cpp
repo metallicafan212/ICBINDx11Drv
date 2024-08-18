@@ -1917,7 +1917,7 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 		{
 			FPlane Mode = Modes(i);
 
-			if (Mode.Z == 32)
+			//if (Mode.Z == 32)
 			{
 				INT CalcError = ((Mode.X - TestX) * (Mode.X - TestX)) + ((Mode.Y - TestY) * (Mode.Y - TestY));
 
@@ -1926,7 +1926,13 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 				{
 					Error		= CalcError;
 					ClosestX	= Mode.X;
-					ClosestX	= Mode.Y;
+					ClosestY	= Mode.Y;
+
+					// Metallicafan212:	Found the exact resolution
+					if (Error == 0)
+					{
+						break;
+					}
 				}
 			}
 		}
