@@ -952,9 +952,6 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 
 	SetupDevice();
 
-	// Metallicafan212:	Set res???
-	SetRes(SizeX, SizeY, NewColorBytes, bFullscreen);
-
 	// Metallicafan212:	Get all display modes
 	//					Copied and modified from the DX9 driver (since I'm a lazy bastard)
 	for (INT i = 0; ; i++)
@@ -969,6 +966,9 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 		}
 		Modes.AddUniqueItem(FPlane(Tmp.dmPelsWidth, Tmp.dmPelsHeight, Tmp.dmBitsPerPel, Tmp.dmDisplayFrequency));
 	}
+
+	// Metallicafan212:	Set res???
+	SetRes(SizeX, SizeY, NewColorBytes, bFullscreen);
 
 	GLog->Logf(TEXT("DX11: Registering supported texture formats"));
 
@@ -1906,6 +1906,35 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 
 	INT TestX = Clamp(NewX, 2, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);//Max(NewX, 2);
 	INT TestY = Clamp(NewY, 2, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);//Max(NewY, 2);
+
+	// Metallicafan212:	If we're fullscreen, we need to make sure that we're using a valid fullscreen resolution
+	if (Fullscreen)//&& !bFullscreen)
+	{
+		// Metallicafan212:	Scan for the closest res
+		INT ClosestX = TestX, ClosestY = TestY, Error = INT_MAX;
+
+		for (INT i = 0; i < Modes.Num(); i++)
+		{
+			FPlane Mode = Modes(i);
+
+			if (Mode.Z == 32)
+			{
+				INT CalcError = ((Mode.X - TestX) * (Mode.X - TestX)) + ((Mode.Y - TestY) * (Mode.Y - TestY));
+
+				// Metallicafan212:	Change in res is smaller than the current error?
+				if (CalcError < Error)
+				{
+					Error		= CalcError;
+					ClosestX	= Mode.X;
+					ClosestX	= Mode.Y;
+				}
+			}
+		}
+
+		// Metallicafan212:	Found a closer resolution, or the same exact one
+		TestX	= ClosestX;
+		TestY	= ClosestY;
+	}
 
 	if (Viewport != nullptr)
 	{
