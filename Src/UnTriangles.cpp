@@ -39,7 +39,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	StartBuffering(BT_Triangles);
 
 	// Metallicafan212:	TODO! Check if we were rendering something else and then flush it?
-	if (GIsEditor && PolyFlags & PF_Selected)
+	if (GIsEditor && (PolyFlags & PF_Selected) && m_HitData == nullptr)
 	{
 #if DX11_HP2
 		GlobalPolyflagVars.SelectionColor	= ActorSelectionColor.Plane().Vect();
@@ -145,7 +145,7 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	StartBuffering(BT_Triangles);
 
 	// Metallicafan212:	TODO! Check if we were rendering something else and then flush it?
-	if (GIsEditor && PolyFlags & PF_Selected)
+	if (GIsEditor && (PolyFlags & PF_Selected) && m_HitData == nullptr))
 	{
 #if DX11_HP2
 		GlobalPolyflagVars.SelectionColor	= ActorSelectionColor.Plane().Vect();
@@ -230,7 +230,7 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	StartBuffering(BT_Triangles);
 
 	// Metallicafan212:	TODO! Check if we were rendering something else and then flush it?
-	if (GIsEditor && PolyFlags & PF_Selected)
+	if (GIsEditor && (PolyFlags & PF_Selected) && m_HitData == nullptr))
 	{
 #if DX11_HP2
 		GlobalPolyflagVars.SelectionColor	= ActorSelectionColor.Plane().Vect();
