@@ -738,6 +738,8 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	//					If this is <= 0, the driver will attempt to autodetect it
 	INT							HDRWhiteBalanceNits;
 
+	INT							DetectedWhiteBalance;
+
 	// Metallicafan212:	If we shouldn't multiply lightmaps by 2 in the complex surface shader
 	UBOOL						bOneXLightmaps;
 

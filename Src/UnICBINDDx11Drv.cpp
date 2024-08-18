@@ -1032,6 +1032,8 @@ void UICBINDx11RenderDevice::AutodetectWhiteBalance()
 	// Metallicafan212:	Default to a white balance level of 1.0
 	FrameShaderVars.WhiteLevel	= 1.0f;
 
+	DetectedWhiteBalance		= 80;
+
 	// Metallicafan212:	Get the current display that the swap chain will display to
 	IDXGIOutput* Out			= nullptr;
 	HRESULT hr					= m_D3DSwapChain->GetContainingOutput(&Out);
@@ -1149,8 +1151,9 @@ void UICBINDx11RenderDevice::AutodetectWhiteBalance()
 			else
 			{
 				// Metallicafan212:	Get the value back from windows
-				HDRWhiteBalanceNits = (White.SDRWhiteLevel / 1000) * 80;
-				GLog->Logf(TEXT("DX11: Windows says that the current display has %d nits. Using %f as our white balance multiplier."), HDRWhiteBalanceNits, HDRWhiteBalanceNits / 80.f);
+				//HDRWhiteBalanceNits = (White.SDRWhiteLevel / 1000) * 80;
+				DetectedWhiteBalance = (White.SDRWhiteLevel / 1000) * 80;
+				GLog->Logf(TEXT("DX11: Windows says that the current display has %d nits. Using %f as our white balance multiplier."), DetectedWhiteBalance, DetectedWhiteBalance / 80.f);
 			}
 		}
 		else
@@ -1159,16 +1162,27 @@ void UICBINDx11RenderDevice::AutodetectWhiteBalance()
 		}
 	}
 
+	/*
 	// Metallicafan212:	Set it if we found a value
 	if (HDRWhiteBalanceNits > 0)
 	{
 		FrameShaderVars.WhiteLevel = HDRWhiteBalanceNits / 80.0f;
 	}
+	*/
 
-	LastHDRWhiteBalanceNits = HDRWhiteBalanceNits;
+	//LastHDRWhiteBalanceNits = HDRWhiteBalanceNits;
+
+	if (HDRWhiteBalanceNits > 0)
+	{
+		FrameShaderVars.WhiteLevel = HDRWhiteBalanceNits / 80.0f;
+	}
+	else
+	{
+		FrameShaderVars.WhiteLevel = 1.0f;
+	}
 
 	//GConfig->Flush(0);
-	SaveConfig();
+	//SaveConfig();
 
 	unguard;
 }
@@ -1855,10 +1869,32 @@ void UICBINDx11RenderDevice::SetupResources()
 		GetSamplerState(PF_NoSmooth | PF_ClampUVs, i, 0);
 	}
 
-	if (HDRWhiteBalanceNits <= 0)
+	if (UseHDR)
 	{
 		// Metallicafan212:	Autodetect it
 		AutodetectWhiteBalance();
+
+		// Metallicafan212:	Save the last detected value
+		INT LastWhiteBalance = 0;
+
+		GConfig->GetInt(GetClass()->GetPathName(), TEXT("AutodetectedWhiteBalance"), LastWhiteBalance);
+
+		// Metallicafan212:	If the config value is invalid, or the last autodetected value isn't found, or if the detected white balance doesn't match, reset
+		if (HDRWhiteBalanceNits <= 0 || LastWhiteBalance == 0 || DetectedWhiteBalance != LastWhiteBalance)
+		{
+			GLog->Logf(TEXT("DX11: Invalid HDR option, or last detected HDR value doesn't match the screen's current white balance level. Resetting back to the detected value of %d nits."), DetectedWhiteBalance);
+
+			HDRWhiteBalanceNits			= DetectedWhiteBalance;
+			LastHDRWhiteBalanceNits		= DetectedWhiteBalance;
+
+			FrameShaderVars.WhiteLevel	= HDRWhiteBalanceNits / 80.0f;
+
+			GConfig->SetInt(GetClass()->GetPathName(), TEXT("AutodetectedWhiteBalance"), DetectedWhiteBalance);
+
+			SaveConfig();
+		}
+
+		GConfig->SetInt(GetClass()->GetPathName(), TEXT("AutodetectedWhiteBalance"), DetectedWhiteBalance);
 	}
 
 	unguard;
@@ -2160,6 +2196,11 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 		if (HDRWhiteBalanceNits <= 0)
 		{
 			AutodetectWhiteBalance();
+
+			// Metallicafan212:	Now set it
+			HDRWhiteBalanceNits = DetectedWhiteBalance;
+
+			SaveConfig();
 		}
 
 		FrameShaderVars.WhiteLevel	= HDRWhiteBalanceNits / 80.0f;
@@ -2218,31 +2259,22 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	RestoreRenderTarget();
 	//}
 
-	// Metallicafan212:	Only clear if we're in the editor?
-	if (//GIsEditor || 
-		//(RenderLockFlags & LOCKR_ClearScreen))
-		1)
+	// Metallicafan212:	Always reset, like the DX9 device
 	{
 		SetBlend(PF_Occlude);
 
-		// Metallicafan212:	Only clear if we have the screen clear set
-		//if (RenderLockFlags & LOCKR_ClearScreen)
-		// Metallicafan212:	TODO! Figure out why this fucks up with the loading screen
-		if (1)
+		// Metallicafan212:	If we're hit testing, always clear to the first hit color
+		if (GIsEditor && HitData != nullptr)
 		{
-			// Metallicafan212:	If we're hit testing, always clear to the first hit color
-			if (HitData != nullptr)
-			{
-				constexpr FLOAT FirstIndex[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-				//m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, FirstIndex);
-				m_RenderContext->ClearRenderTargetView(m_BackBuffRT, FirstIndex);
+			constexpr FLOAT FirstIndex[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			m_RenderContext->ClearRenderTargetView(m_BackBuffRT, FirstIndex);
 
-				m_RenderContext->ClearDepthStencilView(m_SelectionDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-			}
-			else
-			{
-				m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, &ScreenClear.X);
-			}
+			m_RenderContext->ClearDepthStencilView(m_SelectionDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		}
+		// Metallicafan212:	Only clear if we have the screen clear set
+		else if (RenderLockFlags & LOCKR_ClearScreen)
+		{
+			m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, &ScreenClear.X);
 		}
 
 		// Metallicafan212:	However, always clear depth
@@ -2743,6 +2775,8 @@ void UICBINDx11RenderDevice::ClearZ(FSceneNode* Frame)
 	unguard;
 }
 
+// Metallicafan212:	TODO! Increase performance by writing hard-coded verts it just memcpys to the vertex pool, and then set the color as a shader paramteter
+//					Same with the final screen
 void UICBINDx11RenderDevice::EndFlash()
 {
 	guard(UICBINDx11RenderDevice::EndFlash);
