@@ -133,7 +133,7 @@ typedef unsigned short INDEX;
 
 #define DX11_USE_MSAA_SHADER 1
 
-#define D3D_DRIVER_VERSION TEXT("0.9 Alfalfa-Alpha")
+#define D3D_DRIVER_VERSION TEXT("0.92 Alfalfa-Alpha")
 
 // Metallicafan212:	Compile time
 #define COMPILED_AT			*FString::Printf(TEXT("%s @ %s"), appFromAnsi(__DATE__), appFromAnsi(__TIME__))
