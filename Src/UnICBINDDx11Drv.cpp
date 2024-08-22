@@ -2307,16 +2307,18 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 			constexpr FLOAT FirstIndex[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 			m_RenderContext->ClearRenderTargetView(m_BackBuffRT, FirstIndex);
 
-			m_RenderContext->ClearDepthStencilView(m_SelectionDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+			m_RenderContext->ClearDepthStencilView(m_SelectionDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 		}
 		// Metallicafan212:	Only clear if we have the screen clear set
 		else if (RenderLockFlags & LOCKR_ClearScreen)
 		{
+			//ScreenClear.W = 1.0f;
+			//m_RenderContext->ClearRenderTargetView(m_BackBuffRT, &ScreenClear.X);
 			m_RenderContext->ClearRenderTargetView(m_D3DScreenRTV, &ScreenClear.X);
 		}
 
 		// Metallicafan212:	However, always clear depth
-		m_RenderContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		m_RenderContext->ClearDepthStencilView(m_D3DScreenDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
 	// Metallicafan212:	Make sure Z buffering is ALWAYS on
@@ -3074,7 +3076,7 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 // Metallicafan212:	Shamfully copied from the DX9 renderer
 void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRangeHack, UBOOL bForceUpdate)
 {
-	float left, right, bottom, top, zNear, zFar;
+	float left, right, bottom, top, zNear = 0.5f, zFar;
 	float invRightMinusLeft, invTopMinusBottom, invNearMinusFar;
 
 	if (m_nearZRangeHackProjectionActive != bRequestingNearRangeHack)
@@ -3086,8 +3088,6 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	//Save new Z range hack projection state
 	m_nearZRangeHackProjectionActive = bRequestingNearRangeHack;
 
-	//Set default zNearVal
-	FLOAT zNearVal = 0.5f;
 
 	FLOAT zScaleVal = 1.0f;
 	if (bRequestingNearRangeHack)
@@ -3095,14 +3095,13 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 		zScaleVal = 0.125f;
 
 		// Metallicafan212:	Attempt to fix some near-z clipping issues
-		zNearVal = 0.5f;
+		//zNear = 0.5f;
 	}
 
-	left	= -m_RProjZ * zNearVal;
-	right	= +m_RProjZ * zNearVal;
-	bottom	= -m_Aspect * m_RProjZ * zNearVal;
-	top		= +m_Aspect * m_RProjZ * zNearVal;
-	zNear	= 1.0f		* zNearVal;
+	left	= -m_RProjZ * zNear;
+	right	= +m_RProjZ * zNear;
+	bottom	= -m_Aspect * m_RProjZ * zNear;
+	top		= +m_Aspect * m_RProjZ * zNear;
 
 	//Set zFar
 #if DX11_HP2 || DX11_UNREAL_227 || DX11_UT_469
@@ -3117,9 +3116,9 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 		zFar *= zScaleVal;
 	}
 
-	invRightMinusLeft = 1.0f / (right - left);
-	invTopMinusBottom = 1.0f / (top - bottom);
-	invNearMinusFar = 1.0f / (zNear - zFar);
+	invRightMinusLeft	= 1.0f / (right - left);
+	invTopMinusBottom	= 1.0f / (top - bottom);
+	invNearMinusFar		= 1.0f / (zNear - zFar);
 
 #if 0
 
@@ -3180,17 +3179,22 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	// Metallicafan212:	Now back????
 	appMemcpy(&FrameShaderVars.Proj.m[0][0], &Temp[0][0], sizeof(FLOAT[4][4]));
 #else
-
-	appMemzero(FrameShaderVars.Proj.m, sizeof(FLOAT[4][4]));
+	//appMemzero(FrameShaderVars.Proj.m, sizeof(FLOAT[4][4]));
 
 	// Metallicafan212:	I've fixed this to the correct order it should be
 	FrameShaderVars.Proj.m[0][0] = 2.0f * zNear * invRightMinusLeft;
-	FrameShaderVars.Proj.m[0][2] = -1.0f / ScaledSceneNodeX;
+
+	// Metallicafan212:	These two lines caused issues with lines appearing on the screen
+	//					Turns out, it was offsetting the screen slightly
+	//FrameShaderVars.Proj.m[0][2] = 1.0f / ScaledSceneNodeX;
+	//FrameShaderVars.Proj.m[1][2] = 1.0f / ScaledSceneNodeY;
+
 	FrameShaderVars.Proj.m[1][1] = -2.0f * zNear * invTopMinusBottom;
-	FrameShaderVars.Proj.m[1][2] = 1.0f / ScaledSceneNodeY;
 	FrameShaderVars.Proj.m[2][2] = -zScaleVal * (zFar * invNearMinusFar);
 	FrameShaderVars.Proj.m[2][3] = zScaleVal * zScaleVal * (zNear * zFar * invNearMinusFar);
 	FrameShaderVars.Proj.m[3][2] = 1.0f;
+
+	//FrameShaderVars.Proj = DirectX::XMMatrixPerspectiveFovLH(90.0f, ((FLOAT)m_sceneNodeX) / ((FLOAT)m_sceneNodeY), zScaleVal * zNear, zScaleVal* zFar);
 #endif
 
 	// Metallicafan212:	Now update the bind

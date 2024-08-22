@@ -564,7 +564,7 @@ void UICBINDx11RenderDevice::ForceSetFogColor(FPlane FogColor)
 // Metallicafan212:	Simple BW shader for doing stupid "old-time" looking shit
 void UICBINDx11RenderDevice::SetBWPercent(FLOAT Percent)
 {
-	guard(UICBINDx11RenderDevice::SetBWPercent);
+	guardSlow(UICBINDx11RenderDevice::SetBWPercent);
 
 	Percent = Clamp(Percent, 0.0f, 1.0f);
 
@@ -580,7 +580,7 @@ void UICBINDx11RenderDevice::SetBWPercent(FLOAT Percent)
 		UpdatePolyflagsVars();
 	}
 
-	unguard;
+	unguardSlow;
 }
 
 // Metallicafan212:	New RT stuff
@@ -797,7 +797,7 @@ void UICBINDx11RenderDevice::ClearRenderTargetTexture(UTexture* Tex, FPlane Clea
 
 void UICBINDx11RenderDevice::RestoreRenderTarget()
 {
-	guard(UICBINDx11RenderDevice::RestoreRenderTarget);
+	guardSlow(UICBINDx11RenderDevice::RestoreRenderTarget);
 
 	EndBuffering();
 
@@ -873,5 +873,5 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 	}
 
 
-	unguard;
+	unguardSlow;
 }
