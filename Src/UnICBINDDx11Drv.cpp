@@ -181,7 +181,10 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	// Metallicafan212:	In 469, only do this if compiled for e
 #if DX11_UT_469
-	if (!c_strcmp(ENGINE_REVISION, TEXT("d")))
+	//if (!c_strcmp(ENGINE_REVISION, TEXT("d")))
+	// Metallicafan212:	Do this differently on 469
+	//					The lowest we support is engine revision D, so as long as it isn't D, it should know it's windows 10 (as the exe has a application manifest)
+	if(Viewport != nullptr && Viewport->Actor != nullptr && Viewport->Actor->Level != nullptr && Viewport->Actor->Level->EngineRevision.Caps() != TEXT("D"))
 #endif
 	{
 		if (!GWin10)
