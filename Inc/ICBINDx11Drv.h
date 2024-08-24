@@ -570,7 +570,7 @@ struct FDrawCall
 
 
 // Metallicafan212:	Generic function to handle all texture types
-typedef void (UICBINDx11RenderDevice::*UploadFunc)(FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+typedef void (UICBINDx11RenderDevice::*UploadFunc)(const FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
 
 // Metallicafan212:	Texture support table info
 struct FD3DTexType
@@ -1642,16 +1642,16 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	Texture conversion/uploading function
 	//typedef void (UICBINDx11RenderDevice::* UploadFunc)(void* Source, SIZE_T SourceLength, FD3DTexture* Tex, INT Mip, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH, FColor* Palette);
-	void DirectCP(FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
-	void P8ToRGBA(FTextureInfo& Info, FD3DTexture* tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
-	void RGBA7To8(FTextureInfo& Info, FD3DTexture* tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+	void DirectCP(const FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+	void P8ToRGBA(const FTextureInfo& Info, FD3DTexture* tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+	void RGBA7To8(const FTextureInfo& Info, FD3DTexture* tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
 
 	void RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, UBOOL bIsCompressed = 0, INT ByteOrBlockSize = 4, FD3DTexType::GetTypePitch PitchFunc = &FD3DTexType::RawPitch, UploadFunc UFunc = &DirectCP);//, FD3DTexType::ConversionFunc UConv = nullptr);
 
 	// Metallicafan212:	Texture setting code
-	void SetTexture(INT TexNum, FTextureInfo* Info, PFLAG PolyFlags, UBOOL bNoAF = 0);
+	void SetTexture(INT TexNum, const FTextureInfo* Info, PFLAG PolyFlags, UBOOL bNoAF = 0);
 
-	FD3DTexture* CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlags, UBOOL bJustSampler = 0);
+	FD3DTexture* CacheTextureInfo(const FTextureInfo& Info, PFLAG PolyFlags, UBOOL bJustSampler = 0);
 
 	//void MakeTextureSampler(FD3DTexture* Bind, PFLAG PolyFlags);
 
@@ -1897,6 +1897,8 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	Support partial uploads
 	virtual void UpdateTextureRect(FTextureInfo& Info, INT U, INT V, INT UL, INT VL);
+
+	virtual void DrawTileList(const FSceneNode* Frame, const FTextureInfo& Info, const FTileRect* Tiles, INT NumTiles, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, DWORD PolyFlags);
 
 #endif
 

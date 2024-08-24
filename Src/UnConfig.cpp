@@ -40,17 +40,20 @@ void UICBINDx11RenderDevice::StaticConstructor()
 #endif
 
 	//Driver flags
-	SpanBased			= 0;
-	SupportsFogMaps		= 1;
-	SupportsDistanceFog = 0;
-	VolumetricLighting	= 1;
-	FullscreenOnly		= 0;
-	SupportsLazyTextures= 0;
-	PrefersDeferredLoad = 0;
-	SupportsTC			= 1;
+	SpanBased				= 0;
+	SupportsFogMaps			= 1;
+	SupportsDistanceFog		= 0;
+	VolumetricLighting		= 1;
+	FullscreenOnly			= 0;
+	SupportsLazyTextures	= 0;
+	PrefersDeferredLoad		= 0;
+	SupportsTC				= 1;
 
 	// Metallicafan212:	Mark it as certified
 	DescFlags |= RDDESCF_Certified;
+
+	// Metallicafan212:	New TileList 469e support
+	SupportsDrawTileList	= 1;
 
 #if DX11_HP2
 	// Metallicafan212:	HP2 Rendertarget textures

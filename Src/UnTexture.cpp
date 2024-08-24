@@ -1,6 +1,6 @@
 #include "ICBINDx11Drv.h"
 
-FORCEINLINE FMipmap* GetBaseMip(FTextureInfo& Info)
+FORCEINLINE FMipmap* GetBaseMip(const FTextureInfo& Info)
 {
 	// Metallicafan212:	Get the 0th mip of this texture
 	if (Info.NumMips == 0)
@@ -15,7 +15,7 @@ FORCEINLINE FMipmap* GetBaseMip(FTextureInfo& Info)
 }
 
 // Metallicafan212:	Texturing related functions (since there's going to be quite a bit)
-void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG PolyFlags, UBOOL bNoAF)
+void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PFLAG PolyFlags, UBOOL bNoAF)
 {
 	guardSlow(UICBINDx11RenderDevice::SetTexture);
 
@@ -192,7 +192,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, FTextureInfo* Info, PFLAG Po
 	unguardSlow;
 }
 
-FORCEINLINE UBOOL GetMipInfo(FTextureInfo& Info, FD3DTexture* Tex, BYTE* ConversionMem, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch, INT& MipW, INT& MipH)
+FORCEINLINE UBOOL GetMipInfo(const FTextureInfo& Info, FD3DTexture* Tex, BYTE* ConversionMem, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch, INT& MipW, INT& MipH)
 {
 	// Metallicafan212:	Add on the texture LOD setting
 	if (Info.Texture != nullptr)
@@ -368,7 +368,7 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 }
 #endif
 
-FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(FTextureInfo& Info, PFLAG PolyFlags, UBOOL bJustSampler)
+FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, PFLAG PolyFlags, UBOOL bJustSampler)
 {
 	guardSlow(UICBINDx11RenderDevice::CacheTextureInfo)
 
@@ -671,7 +671,7 @@ void UICBINDx11RenderDevice::RegisterTextureFormat(ETextureFormat Format, DXGI_F
 	unguard;
 }
 
-void UICBINDx11RenderDevice::DirectCP(FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
+void UICBINDx11RenderDevice::DirectCP(const FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
 {
 	guardSlow(MemcpyTexUpload);
 
@@ -709,7 +709,7 @@ void UICBINDx11RenderDevice::DirectCP(FTextureInfo& Info, FD3DTexture* Tex, INT 
 	unguardSlow;
 }
 
-void UICBINDx11RenderDevice::RGBA7To8(FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
+void UICBINDx11RenderDevice::RGBA7To8(const FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
 {
 	guardSlow(UICBINDx11RenderDevice::RGBA7To8);
 
@@ -813,7 +813,7 @@ void UICBINDx11RenderDevice::RGBA7To8(FTextureInfo& Info, FD3DTexture* Tex, INT 
 	unguardSlow;
 }
 
-void UICBINDx11RenderDevice::P8ToRGBA(FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
+void UICBINDx11RenderDevice::P8ToRGBA(const FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
 {
 	guardSlow(P8ToRGBA);
 
