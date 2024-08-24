@@ -52,9 +52,6 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	Mark it as certified
 	DescFlags |= RDDESCF_Certified;
 
-	// Metallicafan212:	New TileList 469e support
-	SupportsDrawTileList	= 1;
-
 #if DX11_HP2
 	// Metallicafan212:	HP2 Rendertarget textures
 	bSupportsRTTextures = 1;
@@ -73,6 +70,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	// Metallicafan212:	Default to off for now, since it's hella unfinished and broken
 	AddBoolProp(CPP_PROP(SupportsUpdateTextureRect), 0);//1);
+
+	// Metallicafan212:	New TileList 469e support
+	SupportsDrawTileList	= 1;
 #endif
 
 	if (!GConfig->GetBool(ClsName, TEXT("DetailTextures"), (UBOOL&)DetailTextures))
