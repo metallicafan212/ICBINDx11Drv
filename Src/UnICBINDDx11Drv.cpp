@@ -1492,7 +1492,7 @@ void UICBINDx11RenderDevice::SetupResources()
 
 			goto RETRY_SWAP;
 		}
-		else if(SUCCEEDED(hr) && !bForceRGBA && UseHDR)
+		else if(SUCCEEDED(hr) && !bForceRGBA && UseHDR && !GIsEditor)
 		{
 			GLog->Logf(TEXT("DX11: HDR mode active"));
 
@@ -1896,7 +1896,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		GetSamplerState(PF_NoSmooth | PF_ClampUVs, i, 0);
 	}
 
-	if (UseHDR)
+	if (UseHDR && !GIsEditor)
 	{
 		// Metallicafan212:	Autodetect it
 		AutodetectWhiteBalance();
