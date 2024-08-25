@@ -546,6 +546,9 @@ MAKE_DEVICE:
 	ThrowIfFailed(hr);
 #endif
 
+#define USE_STENCIL 0
+
+#if USE_STENCIL
 	// Metallicafan212:	Query for a supported depth stencil format
 	UINT bSupportsFormat = 0;
 	hr = m_D3DDevice->CheckFormatSupport(DXGI_FORMAT_D32_FLOAT_S8X24_UINT, &bSupportsFormat);
@@ -559,12 +562,33 @@ MAKE_DEVICE:
 	}
 	else
 	{
-		GLog->Logf(TEXT("DX11: Using 32bit depth buffer"));
+		GLog->Logf(TEXT("DX11: Using 32bit depth buffer with stencil"));
 		DSTFormat		= DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 		DSTTexFormat	= DXGI_FORMAT_R32G8X24_TYPELESS;
 		DSTSRVFormat	= DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
 
 	}
+#else
+	// Metallicafan212:	Query for a supported depth stencil format
+	UINT bSupportsFormat = 0;
+	hr = m_D3DDevice->CheckFormatSupport(DXGI_FORMAT_D32_FLOAT, &bSupportsFormat);
+
+	if (FAILED(hr) || !bSupportsFormat)
+	{
+		GLog->Logf(TEXT("DX11: Using 24 bit depth buffer with stencil"));
+		DSTFormat		= DXGI_FORMAT_D24_UNORM_S8_UINT;
+		DSTTexFormat	= DXGI_FORMAT_R24G8_TYPELESS;
+		DSTSRVFormat	= DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	}
+	else
+	{
+		GLog->Logf(TEXT("DX11: Using 32bit depth buffer"));
+		DSTFormat		= DXGI_FORMAT_D32_FLOAT;
+		DSTTexFormat	= DXGI_FORMAT_R32_TYPELESS;
+		DSTSRVFormat	= DXGI_FORMAT_R32_FLOAT;
+
+	}
+#endif
 
 	SetRasterState(DXRS_Normal);
 
