@@ -3026,6 +3026,8 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 		// Metallicafan212:	Scaled FX2 and FY2
 		ScaledFX2		= NewX * 0.5f;
 		ScaledFY2		= NewY * 0.5f;
+
+		MaxZ			= 65536.0f;
 	}
 	else
 	{
@@ -3086,6 +3088,16 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 		// Metallicafan212:	Remember the scaled values!
 		ScaledSceneNodeX = NewX;
 		ScaledSceneNodeY = NewY;
+
+#if DX11_HP2
+		MaxZ			= Frame->MaxZ;
+
+		// Metallicafan212:	Invalid Z value? Reset
+		if (MaxZ <= 1.0f)
+		{
+			MaxZ = 65536.0f;
+		}
+#endif
 	}
 
 	FrameShaderVars.ViewX = ScaledSceneNodeX;
@@ -3128,7 +3140,10 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	top		= +m_Aspect * m_RProjZ * zNear;
 
 	//Set zFar
-#if DX11_HP2 || DX11_UNREAL_227 || DX11_UT_469
+#if DX11_HP2
+	// Metallicafan212:	We calculate the scene depth and use that
+	zFar = MaxZ;
+#elif DX11_UNREAL_227 || DX11_UT_469
 	// Metallicafan212:	Increased to the next power of two
 	zFar = 65535.0f;
 #else

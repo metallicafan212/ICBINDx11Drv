@@ -1094,6 +1094,8 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	FLOAT ScaledSceneNodeX, ScaledSceneNodeY;
 	FLOAT ScaledFX2, ScaledFY2;
 
+	FLOAT MaxZ;
+
 	// Metallicafan212:	TODO! Global complex surface info
 	FCoords								SurfCoords;
 
