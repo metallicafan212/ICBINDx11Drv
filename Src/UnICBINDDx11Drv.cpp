@@ -1896,7 +1896,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		GetSamplerState(PF_NoSmooth | PF_ClampUVs, i, 0);
 	}
 
-	if (UseHDR)
+	if (UseHDR && !GIsEditor)
 	{
 		// Metallicafan212:	Autodetect it
 		AutodetectWhiteBalance();
