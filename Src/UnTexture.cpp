@@ -7,7 +7,7 @@ FORCEINLINE FMipmap* GetBaseMip(const FTextureInfo& Info)
 		return nullptr;
 
 #if DX11_HP2
-	return Info.Mips[Info.LOD];
+	return Info.Mips[0];//Info.LOD];
 #elif DX11_UT_469
 	UBOOL Compressed = FIsCompressedFormat(Info.Format);
 	return Info.Texture != nullptr ? (Compressed ? &Info.Texture->CompMips(Info.LOD) : &Info.Texture->Mips(Info.LOD)) : nullptr;
@@ -194,10 +194,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 
 FORCEINLINE UBOOL GetMipInfo(const FTextureInfo& Info, FD3DTexture* Tex, BYTE* ConversionMem, INT MipNum, BYTE*& DataPtr, INT& Size, INT& SourcePitch, INT& MipW, INT& MipH)
 {
-	// Metallicafan212:	Add on the texture LOD setting
-	if (Info.Texture != nullptr)
-		MipNum += Info.LOD;
-
+	// Metallicafan212:	In HP2, compression is fixed and LOD works as expected
 #if DX11_HP2
 	FMipmap* Mip = Info.Mips[MipNum];
 
@@ -226,6 +223,10 @@ FORCEINLINE UBOOL GetMipInfo(const FTextureInfo& Info, FD3DTexture* Tex, BYTE* C
 	}
 
 #elif DX11_UT_469
+	// Metallicafan212:	Add on the texture LOD setting
+	if (Info.Texture != nullptr)
+		MipNum += Info.LOD;
+
 	UBOOL Compressed	= FIsCompressedFormat(Info.Format);
 	FMipmap* Mip		= Info.Texture ? (Compressed ? &Info.Texture->CompMips(MipNum) : &Info.Texture->Mips(MipNum)) : nullptr;
 	if (Mip != nullptr)

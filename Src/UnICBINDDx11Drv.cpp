@@ -727,7 +727,7 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 	if(m_D3DDevice1 == nullptr || !bUseForcedSampleCount || NumAASamples <= 1)
 		State &= ~(DXRS_NoAA);
 
-	if (State != CurrentRasterState)
+	if (State != CurrentRasterState || ( (State & DXRS_NoAA) && CurrentPolyFlags & PF_Occlude))
 	{
 		// Metallicafan212:	End whatever rendering we're doing right now!
 		EndBuffering();
@@ -851,6 +851,12 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 
 			// Metallicafan212:	We have to set the render target here, so we can clear the depth target (I wish it was a separate function...)
 			m_RenderContext->OMSetRenderTargets(1, &RTV, DSV);
+
+			// Metallicafan212:	Clear the occlude flag!!!
+			if ((CurrentPolyFlags & PF_Occlude) && bNoDepth)
+			{
+				SetBlend(CurrentPolyFlags & (~PF_Occlude));
+			}
 
 			// Metallicafan212:	Now disable Z writing, as we can't have it on at all....
 			if (!bNoDepth && (CurrentPolyFlags & PF_Occlude))
@@ -1831,13 +1837,13 @@ void UICBINDx11RenderDevice::SetupResources()
 	dsDesc.FrontFace.StencilFailOp		= D3D11_STENCIL_OP_KEEP;
 	dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
 	dsDesc.FrontFace.StencilPassOp		= D3D11_STENCIL_OP_KEEP;
-	dsDesc.FrontFace.StencilFunc		= D3D11_COMPARISON_ALWAYS;
+	dsDesc.FrontFace.StencilFunc		= D3D11_COMPARISON_NEVER;
 
 	// Stencil operations if pixel is back-facing
 	dsDesc.BackFace.StencilFailOp		= D3D11_STENCIL_OP_KEEP;
 	dsDesc.BackFace.StencilDepthFailOp	= D3D11_STENCIL_OP_DECR;
 	dsDesc.BackFace.StencilPassOp		= D3D11_STENCIL_OP_KEEP;
-	dsDesc.BackFace.StencilFunc			= D3D11_COMPARISON_ALWAYS;
+	dsDesc.BackFace.StencilFunc			= D3D11_COMPARISON_NEVER;
 
 	// Create depth stencil state
 	hr = m_D3DDevice->CreateDepthStencilState(&dsDesc, &m_DefaultZState);
@@ -3089,7 +3095,7 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 		ScaledSceneNodeX = NewX;
 		ScaledSceneNodeY = NewY;
 
-#if DX11_HP2
+#if 0//DX11_HP2
 		MaxZ			= Frame->MaxZ;
 
 		// Metallicafan212:	Invalid Z value? Reset
@@ -3140,10 +3146,10 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	top		= +m_Aspect * m_RProjZ * zNear;
 
 	//Set zFar
-#if DX11_HP2
+#if 0//DX11_HP2
 	// Metallicafan212:	We calculate the scene depth and use that
 	zFar = MaxZ;
-#elif DX11_UNREAL_227 || DX11_UT_469
+#elif DX11_HP2 || DX11_UNREAL_227 || DX11_UT_469
 	// Metallicafan212:	Increased to the next power of two
 	zFar = 65535.0f;
 #else
