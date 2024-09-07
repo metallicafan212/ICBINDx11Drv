@@ -92,7 +92,7 @@ struct FPolyflagVars
 	FPolyflagVars()
 		:
 		bSelected(0),
-		AlphaReject(1e-6f),
+		AlphaReject(0.0f),//1e-6f),
 		BWPercent(0.0f),
 		bAlphaEnabled(0),
 		bModulated(0),
