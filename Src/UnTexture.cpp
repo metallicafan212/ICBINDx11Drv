@@ -1152,7 +1152,9 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			}
 			else
 			{
-				GlobalPolyflagVars.AlphaReject		= 1e-6f;
+				// Metallicafan212:	This was a mistake that made PF_Highlighted not work right
+				//					Since it needs to write with 0 alpha, we need alpha testing off
+				GlobalPolyflagVars.AlphaReject		= 0.0f;//1e-6f;
 				//GlobalPolyflagVars.bColorMasked		= 0;
 			}
 		}
