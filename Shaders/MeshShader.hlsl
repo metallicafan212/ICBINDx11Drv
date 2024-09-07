@@ -86,9 +86,17 @@ float4 PxShader(PSInput input) : SV_TARGET
 		input.color.xyz    *= Scale; 
 	}
 	
-	//return input.color + input.fog;
-	float4 FinalColor = (Diffuse.SampleBias(DiffState, input.uv, 0.0f) * input.color);
-	FinalColor.xyz += input.fog.xyz;
+	// Metallicafan212:	If we're selected, go black and white....
+	//					This prevents issues with missing colors in a masked/alpha/translucent texture
+	float4 FinalColor 		= Diffuse.SampleBias(DiffState, input.uv, 0.0f);
+	
+	if(bSelected)
+	{
+		FinalColor.xyz 	= (FinalColor.x + FinalColor.y + FinalColor.z) / 3.0f;
+	}
+	
+	FinalColor *= input.color;
+	//FinalColor.xyz += input.fog.xyz;
 	
 	CLIP_PIXEL(FinalColor);
 	

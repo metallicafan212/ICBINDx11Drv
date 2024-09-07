@@ -2986,7 +2986,7 @@ void UICBINDx11RenderDevice::DrawStats(FSceneNode* Frame)
 
 void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 {
-	guard(UICBINDx11RenderDevice::SetSceneNode);
+	guardSlow(UICBINDx11RenderDevice::SetSceneNode);
 
 	// Metallicafan212:	End any buffering that was requested???
 	EndBuffering();
@@ -3111,7 +3111,7 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 
 	SetProjectionStateNoCheck(0, 1);
 
-	unguard;
+	unguardSlow;
 }
 
 // Metallicafan212:	TODO! Rewrite this to check if it needs an update (changed variables, etc.)

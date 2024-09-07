@@ -67,10 +67,17 @@ PSInput VertShader(VSInput input)
 }
 
 float4 PxShader(PSInput input) : SV_TARGET
-{
-	float2 UseUV = input.uv;
+{	
+	// Metallicafan212:	If we're selected, go black and white....
+	//					This prevents issues with missing colors in a masked/alpha/translucent texture
+	float4 DiffColor 		= Diffuse.SampleBias(DiffState, input.uv, 0.0f);
 	
-	float4 DiffColor = Diffuse.SampleBias(DiffState, UseUV, 0.0f) * input.color;
+	if(bSelected)
+	{
+		DiffColor.xyz 	= (DiffColor.x + DiffColor.y + DiffColor.z) / 3.0f;
+	}
+	
+	DiffColor *= input.color;
 	
 	// Metallicafan212:	Do alpha rejecting
 	//					TODO! This also sets the global selection color for the editor!

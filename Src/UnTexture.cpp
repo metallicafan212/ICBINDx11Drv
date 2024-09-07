@@ -1116,17 +1116,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 		if (Xor & (PF_Masked | PF_AlphaBlend | PF_Invisible))
 #endif
 		{
-#if DX11_HP2
-			/*
-			if (!(blendFlags & PF_ColorMask))
-			{
-				// Metallicafan212:	Disable masked
-				GlobalPolyflagVars.bColorMasked = 0;
-			}
-			*/
-
 			bUpdatePFlagBuff					= 1;
-#endif
 #if DX11_HP2
 			if (blendFlags & (PF_Invisible | PF_AlphaBlend | PF_LumosAffected))
 #elif DX11_UT_469
