@@ -96,7 +96,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	}
 	
 	FinalColor *= input.color;
-	//FinalColor.xyz += input.fog.xyz;
+	FinalColor.xyz += input.fog.xyz;
 	
 	CLIP_PIXEL(FinalColor);
 	
