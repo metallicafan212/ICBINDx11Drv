@@ -1544,7 +1544,8 @@ void UICBINDx11RenderDevice::SetupResources()
 			ThrowIfFailed(hr);
 		}
 
-		if (bFullscreen)
+		// Metallicafan212:	If we were fullscreen, we STILL have to call this after swapping to windowed otherwise ResizeBuffers still fails
+		if (bLastFullscreen || bFullscreen)
 		{
 			// Metallicafan212:	Resize the window!
 			DXGI_MODE_DESC ModeDesc{};
@@ -1559,7 +1560,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		}
 
 		// Metallicafan212:	Resize it
-		hr = m_D3DSwapChain->ResizeBuffers(2, SizeX, SizeY, ScreenFormat, (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0));
+		hr = m_D3DSwapChain->ResizeBuffers(2 + NumAdditionalBuffers, SizeX, SizeY, ScreenFormat, (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0));
 
 		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
 		{
