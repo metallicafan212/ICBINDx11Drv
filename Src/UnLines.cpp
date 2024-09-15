@@ -99,7 +99,7 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		}
 		else
 #elif DX11_UT_469
-		if (!(Viewport->Actor->ShowFlags & SHOW_OccludeLines))
+		if (!(LineFlags & LINE_DepthCued))//(!(Viewport->Actor->ShowFlags & SHOW_OccludeLines))
 		{
 			if (!m_nearZRangeHackProjectionActive)
 				SetProjectionStateNoCheck(true);
@@ -196,7 +196,7 @@ void UICBINDx11RenderDevice::Draw2DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	}
 	else
 #elif DX11_UT_469
-	if (!(Viewport->Actor->ShowFlags & SHOW_OccludeLines))
+	if (!(LineFlags & LINE_DepthCued))//(!(Viewport->Actor->ShowFlags & SHOW_OccludeLines))
 	{
 		if (!m_nearZRangeHackProjectionActive)
 			SetProjectionStateNoCheck(true);
@@ -313,7 +313,7 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 	}
 	else
 #elif DX11_UT_469
-	if (!(Viewport->Actor->ShowFlags & SHOW_OccludeLines))
+	if (!(LineFlags & LINE_DepthCued))//(!(Viewport->Actor->ShowFlags & SHOW_OccludeLines))
 	{
 		if (!m_nearZRangeHackProjectionActive)
 			SetProjectionStateNoCheck(true);
