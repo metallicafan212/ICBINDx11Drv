@@ -273,10 +273,10 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 	StartBuffering(BT_Points);
 
 	// Metallicafan212:	Add on size to the input vars, just so that the pivot cross shows up (why didn't they use Draw2DLine????)
-	X1 -= 1;
-	Y1 -= 1;
-	X2 += 1;
-	Y2 += 1;
+	X1 -= 1.f;
+	Y1 -= 1.f;
+	X2 += 1.f;
+	Y2 += 1.f;
 
 	X1 *= ExtraScale;
 	Y1 *= ExtraScale;
@@ -350,11 +350,7 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 
 	if (Frame->Viewport->IsOrtho())
 	{
-		Z = 0.5f;//1.0f;
-	}
-
-	if (Frame->Viewport->IsOrtho())
-	{
+		//Z = 0.5f;//1.0f;
 		Z = abs(Z);
 		X1Pos *= Z;
 		Y1Pos *= Z;
@@ -363,8 +359,8 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 	}
 
 	// Metallicafan212:	Only do the point hack if we're drawing straight from Editor.dll
-	bool bDoPointHack = (LineFlags == LINE_None && Frame->Viewport->IsOrtho());
-	bool bDo3DPointHack = LineFlags == LINE_None && !bDoPointHack;
+	bool bDoPointHack = ( (LineFlags == LINE_None || LineFlags == LINE_DepthCued) && Frame->Viewport->IsOrtho());
+	bool bDo3DPointHack = (LineFlags == LINE_None || LineFlags == LINE_DepthCued) && !bDoPointHack;
 
 	if (bDo3DPointHack)
 		Z = 1.0f;
