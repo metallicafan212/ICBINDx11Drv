@@ -860,9 +860,9 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 
 	// Metallicafan212:	Check if the input blend flags are relevant
 #if DX11_HP2
-	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage | PF_Opacity | PF_NoFog | PF_Selected);
+	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_ColorMask | PF_Highlighted | PF_RenderFog | PF_LumosAffected | PF_AlphaBlend | PF_AlphaToCoverage | PF_Opacity | PF_NoFog | PF_Selected | PF_Memorized);
 #else
-	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_AlphaBlend | PF_Selected);
+	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_AlphaBlend | PF_Selected | PF_Memorized);
 #endif
 
 	UBOOL bUpdatePFlagBuff	= 0;
@@ -1150,14 +1150,17 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 		}
 
 		// Metallicafan212:	Toggle between the z write and no z write states
-		if (Xor & PF_Occlude)
+		if (Xor & (PF_Occlude | PF_Memorized))
 		{
 #if DO_BUFFERED_DRAWS
 			CheckDrawCall();
 			CurrentDraw->bSetDState = 1;
 #endif
-
-			if ((blendFlags & PF_Occlude))
+			if ((blendFlags & PF_Memorized))
+			{
+				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZWriteState, 0);
+			}
+			else if ((blendFlags & PF_Occlude))
 			{
 #if !DO_BUFFERED_DRAWS
 				m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);

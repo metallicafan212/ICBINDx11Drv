@@ -394,10 +394,21 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		Fog = FPlane(0.0f, 0.0f, 0.0f, 0.f);
 
 #if	1//DX11_HP2
-		SetBlend(PF_AlphaBlend);
+		// Metallicafan212:	Use the memorized flag to know when to turn off z write
+		SetBlend(PF_AlphaBlend | PF_Memorized);
 #else
-		SetBlend(PF_Highlighted | PF_Translucent);
+		SetBlend(PF_Highlighted | PF_Memorized);//PF_AlphaBlend);
+
 #endif
+		/*
+		// Metallicafan212:	Disable z write for now
+		ID3D11DepthStencilState* CurrentState	= nullptr;
+
+		UINT Stencil							= 0;
+		m_RenderContext->OMGetDepthStencilState(&CurrentState, &Stencil);
+		m_RenderContext->OMSetDepthStencilState(m_DefaultNoZWriteState, Stencil);
+		*/
+
 		// Metallicafan212:	Get the color to layer on top
 		if (m_HitData == nullptr)
 		{
@@ -444,6 +455,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 #endif
 
 		AdvanceVertPos();
+
+		// Metallicafan212:	Draw and reset!!!!
+		//					This will suck....
 
 		// Metallicafan212:	Draw immediately
 #if !EXTRA_VERT_INFO
