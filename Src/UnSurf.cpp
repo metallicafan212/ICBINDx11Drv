@@ -394,7 +394,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		Fog = FPlane(0.0f, 0.0f, 0.0f, 0.f);
 
 #if	1//DX11_HP2
-		// Metallicafan212:	Use the memorized flag to know when to turn off z write
+		// Metallicafan212:	Use the memorized flag to know when to turn off z testing
 		SetBlend(PF_AlphaBlend | PF_Memorized);
 #else
 		SetBlend(PF_Highlighted | PF_Memorized);//PF_AlphaBlend);

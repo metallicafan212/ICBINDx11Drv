@@ -1156,9 +1156,10 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			CheckDrawCall();
 			CurrentDraw->bSetDState = 1;
 #endif
+			// Metallicafan212:	This is a hack to prevent selection from doing z writing, but it will still do z testing
 			if ((blendFlags & PF_Memorized))
 			{
-				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZWriteState, 0);
+				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
 			}
 			else if ((blendFlags & PF_Occlude))
 			{

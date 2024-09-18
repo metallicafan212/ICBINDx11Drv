@@ -1830,7 +1830,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	dsDesc.DepthFunc					= D3D11_COMPARISON_LESS_EQUAL;
 
 	// Stencil test parameters
-	dsDesc.StencilEnable				= TRUE;
+	dsDesc.StencilEnable				= FALSE;//TRUE;
 	dsDesc.StencilReadMask				= 0xFF;
 	dsDesc.StencilWriteMask				= 0xFF;
 
@@ -1861,6 +1861,8 @@ void UICBINDx11RenderDevice::SetupResources()
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Create a z state for when we need NO depth or stencil writing
+	dsDesc.DepthWriteMask				= D3D11_DEPTH_WRITE_MASK_ZERO;//D3D11_DEPTH_WRITE_MASK_ALL;
+	dsDesc.DepthFunc					= D3D11_COMPARISON_LESS_EQUAL;
 	dsDesc.DepthEnable						= FALSE;
 	dsDesc.StencilEnable					= FALSE;
 
