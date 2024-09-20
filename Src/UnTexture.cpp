@@ -1188,7 +1188,8 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			{
 				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
 			}
-			else if ((blendFlags & PF_Occlude))
+			else 
+			if ((blendFlags & PF_Occlude))
 			{
 #if !DO_BUFFERED_DRAWS
 				m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);

@@ -31,7 +31,8 @@
 // Unsupported PolyFlags
 
 // Metallicafan212:	HACK! So we render tiles right, we need to clamp UVs so it doesn't cause looping when using AF
-# define PF_ClampUVs PF_Memorized
+//					Reuse the big wavy flag, as it's unused and (unlikely) to be used....
+# define PF_ClampUVs PF_BigWavy//PF_Memorized
 
 # define PF_LumosAffected 0
 # define PF_ForceZWrite 0
