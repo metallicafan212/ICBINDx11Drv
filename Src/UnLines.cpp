@@ -19,7 +19,9 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 	//					Consequently, all other lines do not render without this
 
 	// So we check for pre transformed lines and don't transform them
+#if DX11_HP2
 	if (!(LineFlags & LINE_PreTransformed))
+#endif
 	{
 		// Transform the coords by the frame
 		P1 = P1.TransformPointBy(Frame->Coords);
@@ -40,11 +42,11 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 		// See if points form a line parallel to our line of sight (i.e. line appears as a dot).
 		if (Abs(P2.X - P1.X) + Abs(P2.Y - P1.Y) >= 0.2f)
 		{
-			Draw2DLine(Frame, Color, LineFlags | LINE_PreTransformed, P1, P2);
+			Draw2DLine(Frame, Color, LineFlags, P1, P2);
 		}
 		else if (Frame->Viewport->Actor->OrthoZoom < ORTHO_LOW_DETAIL)
 		{
-			Draw2DPoint(Frame, Color, LINE_PreTransformed, P1.X - 1.0f, P1.Y - 1.0f, P1.X + 1.0f, P1.Y + 1.0f, P1.Z);
+			Draw2DPoint(Frame, Color, 0, P1.X - 1.0f, P1.Y - 1.0f, P1.X + 1.0f, P1.Y + 1.0f, P1.Z);
 		}
 	}
 	else

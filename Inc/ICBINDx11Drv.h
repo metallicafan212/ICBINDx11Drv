@@ -28,25 +28,10 @@
 #if UNREAL_TOURNAMENT_OLDUNREAL
 # define DX11_UT_469 1
 # undef DX11_HP2
-// Unsupported PolyFlags
 
 // Metallicafan212:	HACK! So we render tiles right, we need to clamp UVs so it doesn't cause looping when using AF
 //					Reuse the big wavy flag, as it's unused and (unlikely) to be used....
 # define PF_ClampUVs PF_BigWavy//PF_Memorized
-
-# define PF_LumosAffected 0
-# define PF_ForceZWrite 0
-# define PF_ForceFog 0
-# define PF_ColorMask 0
-// Unsupported LineFlags
-# define LINE_PreTransformed 0
-# define LINE_DrawOver 0
-// Unsupported ShowFlags
-# define SHOW_Lines 0
-// Differently named HackFlags
-# define HF_Weapon HACKFLAGS_PostRender
-// Misc
-# define GExtraLineSize 1.0f
 
 // Metallicafan212:	32bit check
 #define UNREAL32 !BUILD_64
@@ -80,28 +65,8 @@ typedef unsigned short INDEX;
 #define PFLAG DWORD
 #endif
 
-// Metallicafan212:	Macro to adjust polyflags using presidence rules
-//					HP2, Privet drive has a translucent and masked surface....... So we can't reverse the check
-#if 0//DX11_UT_469
-#define ADJUST_PFLAGS(PolyFlags) \
-	/* Metallicafan212:	Cut it down to only specific flags */ \
-	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected))) \
-	{ \
-		PolyFlags |= PF_Occlude; \
-	} \
-	/* Metallicafan212: For UT, remove translucent if masked */ \
-	else if (PolyFlags & PF_Masked) \
-	{ \
-		PolyFlags &= ~(PF_Translucent); \
-	} \
-	/* Metallicafan212:	Pixel based selection requires that we have alpha blending and nothing else */ \
-	if (GIsEditor && m_HitData != nullptr) \
-	{ \
-		PolyFlags = (PolyFlags & ~(PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected)); \
-	}
 
-#else
-
+#if DX11_HP2
 #define ADJUST_PFLAGS(PolyFlags) \
 	/* Metallicafan212:	Cut it down to only specific flags */ \
 	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected))) \
@@ -112,19 +77,27 @@ typedef unsigned short INDEX;
 	{ \
 		PolyFlags &= ~(PF_Masked | PF_ColorMask); \
 	} \
-	/* Metallicafan212: If we're showing a selection overlay, disable translucent */\
-	/* \
-	if(GIsEditor && (PolyFlags & (PF_Translucent | PF_Selected)) == (PF_Translucent | PF_Selected)) \
-	{ \
-		PolyFlags &= ~(PF_Translucent); \
-	} \
-	*/ \
 	/* Metallicafan212:	Pixel based selection requires that we have alpha blending and nothing else */ \
 	if (GIsEditor && m_HitData != nullptr) \
 	{ \
 		PolyFlags = (PolyFlags & ~(PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected)); \
 	}
-
+#else
+#define ADJUST_PFLAGS(PolyFlags) \
+	/* Metallicafan212:	Cut it down to only specific flags */ \
+	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted ))) \
+	{ \
+		PolyFlags |= PF_Occlude; \
+	} \
+	else if (PolyFlags & PF_Translucent) \
+	{ \
+		PolyFlags &= ~(PF_Masked); \
+	} \
+	/* Metallicafan212:	Pixel based selection requires that we have alpha blending and nothing else */ \
+	if (GIsEditor && m_HitData != nullptr) \
+	{ \
+		PolyFlags = (PolyFlags & ~(PF_Translucent | PF_Modulated | PF_Highlighted )); \
+	}
 #endif
 
 
@@ -136,7 +109,7 @@ typedef unsigned short INDEX;
 
 #define DX11_USE_MSAA_SHADER 1
 
-#define D3D_DRIVER_VERSION TEXT("0.93 Alfalfa-Alpha")
+#define D3D_DRIVER_VERSION TEXT("0.94 Alfalfa-Alpha")
 
 // Metallicafan212:	Compile time
 #define COMPILED_AT			*FString::Printf(TEXT("%s @ %s"), appFromAnsi(__DATE__), appFromAnsi(__TIME__))
@@ -150,7 +123,6 @@ typedef unsigned short INDEX;
 #include <dwrite.h>
 #include <dwrite_1.h>
 #include <dwrite_2.h>
-//#include <dwrite_3.h>
 #endif
 #include <DirectXMath.h>
 #include <DirectXColors.h>
@@ -168,18 +140,6 @@ typedef unsigned short INDEX;
 #if !DX11_HP2
 #include "WindowsVersions.h"
 #endif
-
-// Metallicafan212:	Compiling with the windows 7 version number undef's this flag
-#ifndef WS_EX_NOREDIRECTIONBITMAP
-#define WS_EX_NOREDIRECTIONBITMAP 0x00200000L
-#endif
-
-/*
-// Metallicafan212:	For detecting wine.....
-#if !DX11_HP2
-extern UBOOL GWineAndDine;
-#endif
-*/
 
 // Metallicafan212:	Compile-time check for engine revision
 constexpr int c_strcmp(const TCHAR* lhs, const TCHAR* rhs)
@@ -276,18 +236,13 @@ struct FD3DVert
 
 	FLOAT	U;
 	FLOAT	V;
+
 	// Metallicafan212:	Extra vert info
 	FLOAT	UX;
 	FLOAT	VX;
 
 	FPlane	Color;
 	FPlane	Fog;
-	
-	// Metallicafan212:	Used to mark a vert as fake!!!!!
-	//					This is a HIGHLY experimental approach to allow shaders to provide additional information to a shader
-	//					TODO! Align this around the index buffer as well!!!!
-	//UBOOL	bFakeVert;
-	//INT		FakeVertMode;
 };
 
 // Metallicafan212:	Extra info that's only used for complex surfaces
@@ -403,60 +358,57 @@ static inline DWORD GetTypeHash(const D3DCacheId& A)
 // Metallicafan212:	Texture bind definition
 struct FD3DTexture
 {
-	ID3D11Texture2D*			m_Tex;
-	ID3D11ShaderResourceView*	m_View;
+	ID3D11Texture2D*					m_Tex;
+	ID3D11ShaderResourceView*			m_View;
 
 	// Metallicafan212:	Unreal texture pointer, only used for detecting RT textures...
-	UTexture*					Tex;
+	UTexture*							Tex;
 
 	// Metallicafan212:	The DX11 format
-	DXGI_FORMAT					TexFormat;
+	DXGI_FORMAT							TexFormat;
 
 	// Metallicafan212:	UE Format of this texture
-	ETextureFormat				Format;
+	ETextureFormat						Format;
 
 	// Metallicafan212:	Pointer to the texture type, so we can access the info
-	struct FD3DTexType*			D3DTexType;
+	struct FD3DTexType*					D3DTexType;
 
 	// Metallicafan212:	Flags this was uploaded as
 	//					This only matters if Masked is toggled on or off
-	PFLAG						PolyFlags;
+	PFLAG								PolyFlags;
 
 	// Metallicafan212:	If this texture should have UVs clamped (UClamp == USize && VClamp == VSize)
-	UBOOL						bShouldUVClamp;
+	UBOOL								bShouldUVClamp;
 
 	// Metallicafan212:	If this is really a RT texture
-	UBOOL						bIsRT;
+	UBOOL								bIsRT;
 
 	// Metallicafan212:	If this texture needs to be decompressed (BC1-7 in non-pow2 sizes)
-	UBOOL						bDecompress;
-
-	// Metallicafan212:	If mip 0 is "dead"
-	//UBOOL			bSkipMipZero;
+	UBOOL								bDecompress;
 
 	// Metallicafan212:	Number of mips to skip
-	INT							MipSkip;
+	INT									MipSkip;
 
 	// Metallicafan212:	The cache ID Unreal provided us when it was uploaded
-	D3DCacheId					CacheID;
+	D3DCacheId							CacheID;
 
 	// Metallicafan212:	Bind information
-	INT							USize;
-	INT							VSize;
+	INT									USize;
+	INT									VSize;
 
 	// Metallicafan212:	Scaling info
-	INT							UClamp;
-	INT							VClamp;
+	INT									UClamp;
+	INT									VClamp;
 
 	// Metallicafan212:	UT469 (and now HP2) tracked number of changes to this texture
-	INT							RealtimeChangeCount;
+	INT									RealtimeChangeCount;
 
 	// Metallicafan212:	Number of mips
-	INT							NumMips;
+	INT									NumMips;
 
 	// Metallicafan212:	Color for the "color masking" system I added
-	FPlane						MaskedColor;
-	FPlane						MaskedGranularity;
+	FPlane								MaskedColor;
+	FPlane								MaskedGranularity;
 
 	// Metallicafan212:	Array of UAVs for this texture
 	TArray<ID3D11UnorderedAccessView*>	UAVMips;
@@ -515,9 +467,6 @@ struct FDrawCall
 
 	// Metallicafan212:	Vertex range (start and size)
 	SIZE_T						VStart;
-
-	// Metallicafan212:	Not currently needed, as it's inferred by the indices
-	//SIZE_T						VSize;
 
 	// Metallicafan212:	Index range (start and size)
 	SIZE_T						IStart;
@@ -704,9 +653,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	FLOAT						ResolutionScale;
 
 	// Metallicafan212:	Gamma correction value for the final output
-//#if DX11_HP2
 	FLOAT						Gamma;
-//#endif
 
 	// Metallicafan212:	User selectable gamma mode
 	BYTE						GammaMode;
@@ -955,7 +902,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	FD3DMeshShader*						FMeshShader;
 	FD3DSurfShader*						FSurfShader;
 	FD3DLineShader*						FLineShader;
-	//FD3DMSAAShader*						FMSAAShader;
 	
 #if P8_COMPUTE_SHADER
 	FD3DP8ToRGBAShader*					FP8ToRGBAShader;
@@ -1881,7 +1827,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	//					Most may follow the UT specifications, and I might just ifdef SupportsTextureFormat
 #if DX11_HP2
 	// Metallicafan212:	TODO! More particle related code
-	virtual INT MaxVertices() { return 256; };
+	virtual INT MaxVertices() { return 1024; };
 
 	virtual void DrawTriangles(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, INT NumPts, _WORD* Indices, INT NumIndices, PFLAG PolyFlags, FSpanBuffer* Span);
 
