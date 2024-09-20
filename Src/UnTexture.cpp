@@ -942,26 +942,53 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #if DX11_HP2 || DX11_HP1
 					else if ((blendFlags & (PF_Translucent | PF_Highlighted)) == (PF_Translucent | PF_Highlighted))
 					{
-						bState = GetBlendState(PF_Translucent | PF_Highlighted);
-
-						if (bState == nullptr)
+						if (blendFlags & PF_AlphaToCoverage)
 						{
-							bState = CreateBlend(PF_Opacity, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+							bState = GetBlendState(PF_Translucent | PF_Highlighted | PF_AlphaToCoverage);
+
+							if (bState == nullptr)
+							{
+								bState = CreateBlend(PF_Opacity, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
+							}
+						}
+						else
+						{
+							bState = GetBlendState(PF_Translucent | PF_Highlighted);
+
+							if (bState == nullptr)
+							{
+								bState = CreateBlend(PF_Opacity, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+							}
 						}
 					}
 #endif
 					else if (blendFlags & PF_Translucent)
 					{
-						bState = GetBlendState(PF_Translucent);
-
-						if (bState == nullptr)
+#if DX11_HP2
+						if (blendFlags & PF_AlphaToCoverage)
 						{
-							bState = CreateBlend(PF_Translucent, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_COLOR);
+							bState = GetBlendState(PF_Translucent | PF_AlphaToCoverage);
+
+							if (bState == nullptr)
+							{
+								bState = CreateBlend(PF_Translucent | PF_AlphaToCoverage, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_COLOR, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
+							}
+						}
+						else
+#endif
+						{
+							bState = GetBlendState(PF_Translucent);
+
+							if (bState == nullptr)
+							{
+								bState = CreateBlend(PF_Translucent, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_COLOR);
+							}
 						}
 					}
 					else if (blendFlags & PF_Modulated)
 					{
 						GlobalPolyflagVars.bModulated		= 1;
+
 						bState = GetBlendState(PF_Modulated);
 
 						if (bState == nullptr)

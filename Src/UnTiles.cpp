@@ -26,6 +26,10 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 		FTileShader->bDoTileRotation = 0;
 
 	PolyFlags &= ~PF_RenderFog;
+
+#elif DX11_UT_469
+	if (m_nearZRangeHackProjectionActive)
+		SetProjectionStateNoCheck(false);
 #else
 	//SetRasterState(DXRS_Normal | DXRS_NoAA);
 
@@ -349,6 +353,10 @@ void UICBINDx11RenderDevice::DrawTileList(const FSceneNode* Frame, const FTextur
 		FTileShader->bDoTileRotation = 0;
 
 	PolyFlags &= ~PF_RenderFog;
+
+#elif DX11_UT_469
+	if (m_nearZRangeHackProjectionActive)
+		SetProjectionStateNoCheck(false);
 #else
 	//SetRasterState(DXRS_Normal | DXRS_NoAA);
 
