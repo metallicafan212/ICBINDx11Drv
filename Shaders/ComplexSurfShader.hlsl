@@ -160,6 +160,9 @@ PSOutput PxShader(PSInput input)
 		DiffColor.w	   *= Diff.w;
 	}
 	
+	// Metallicafan212:	TODO! This also sets the selection color for the editor! This should be re-evaluated
+	CLIP_PIXEL(DiffColor);
+	
 	// Metallicafan212:	Detail texture
 	//					We're applying this now so that when detail textures fade in, they don't reduce the lightmap as much
 	//					TODO! Using the vars from DX7. Allow the user to specify this!!!!
@@ -223,9 +226,6 @@ PSOutput PxShader(PSInput input)
 	
 	// Metallicafan212:	Set our alpha for lumos
 	//DiffColor.w *= SurfAlpha;
-	
-	// Metallicafan212:	TODO! This also sets the selection color for the editor! This should be re-evaluated
-	CLIP_PIXEL(DiffColor);
 	
 	// Metallicafan212:	Get the distance fog, using the pixel depth
 	if(bDoDistanceFog)

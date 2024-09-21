@@ -68,15 +68,6 @@ struct VSInput
 	#endif
 #endif
 
-// Metallicafan212: Texture vars were moved to another constant buffer (since it could change per draw call or not)
-//					Since per-shader information should be limited, it shouldn't be writing it all the time
-/*
-#ifndef COMMON_VARS	
-	#define COMMON_VARS \
-		int4	bTexturesBound[TEX_ARRAY_SIZE]			: packoffset(c0);
-#endif
-*/
-
 #ifndef COMMON_VARS
 	#define COMMON_VARS
 #endif
@@ -169,7 +160,7 @@ float DoDistanceFog(float InZ)
 	// Metallicafan212:	Calcuate the fog value for the pixel shader
 	if(InZ > DistanceFogSettings.y)
 	{
-		float dFog = ((InZ * -DistanceFogSettings.x) + DistanceFogSettings.y) * DistanceFogSettings.z;//mad(-InPos.z, DistanceFogSettings.x, DistanceFogSettings.y) * DistanceFogSettings.z;
+		float dFog = ((InZ * -DistanceFogSettings.x) + DistanceFogSettings.y) * DistanceFogSettings.z;
 
 		return saturate(DistanceFogSettings.w - dFog);
 	}
