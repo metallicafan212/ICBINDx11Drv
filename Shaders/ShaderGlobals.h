@@ -189,7 +189,8 @@ static bool		bRejectBW;
 #define CLIP_PIXEL(ColorIn) \
 	if(!bAlphaEnabled) \
 		ColorIn.w = 1.0f; \
-	clip(ColorIn.w - AlphaReject); \
+	else if(ColorIn.w <= AlphaReject) \
+		discard; \
 	if(bDepthDraw) \
 		ColorIn.xyz = input.origZ / DepthDrawLimit;
 

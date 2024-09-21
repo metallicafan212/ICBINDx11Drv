@@ -1152,7 +1152,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			if (blendFlags & (PF_Invisible))
 #endif
 			{
-				GlobalPolyflagVars.AlphaReject		= 1e-6f;
+				GlobalPolyflagVars.AlphaReject		= 0.01f;//1e-6f;
 				//GlobalPolyflagVars.bColorMasked		= 0;
 				GlobalPolyflagVars.bAlphaEnabled	= 1;
 
