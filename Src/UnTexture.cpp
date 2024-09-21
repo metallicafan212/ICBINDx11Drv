@@ -1056,11 +1056,30 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 					else if (blendFlags & (PF_Masked))
 #endif
 					{
-						bState = GetBlendState(PF_Masked);
-
-						if (bState == nullptr)
+// Metallicafan212:	TODO! This section SUCKS, recode it so it's not so ifdeffy
+#if DX11_HP2
+						if (!(blendFlags & (PF_AlphaBlend | PF_ColorMask)))
+#elif DX11_UT_469
+						if (!(blendFlags & (PF_AlphaBlend)))
+#else
+						if(0)
+#endif
 						{
-							bState = CreateBlend(PF_Masked, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+							bState = GetBlendState(PF_Masked);
+
+							if (bState == nullptr)
+							{
+								bState = CreateBlend(PF_Masked, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+							}
+						}
+						else
+						{
+							bState = GetBlendState(PF_Masked | PF_AlphaToCoverage);
+
+							if (bState == nullptr)
+							{
+								bState = CreateBlend(PF_Masked, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
+							}
 						}
 					}
 
