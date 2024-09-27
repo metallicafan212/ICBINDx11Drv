@@ -152,13 +152,46 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	TODO! Texturing
 	float4 DiffColor = input.color;
 	
+	// Metallicafan212:	Test for selection, do software style selection
+	if(bSelected)
+	{
+		#if 0
+		// Metallicafan212:	TODO! This does it based on the surface size, not the screen size
+		//					Need to figure out screen-to-pixel conversions to make this operate more as expected
+		// Metallicafan212:	10 pixel grid????
+		//float2 TestUV 	= input.uv * TexSize;
+		
+		float2 	TestUV 		= (input.uv * 100.0);
+		int2	IntUV		= TestUV;
+		
+		int		TestVal		= 10;
+		
+		//int2 	Tested		= int2(IntUV.x & 10, IntUV.y & 10);
+		
+		//if(IntUV.x & 10 != 0 || IntUV.y & 10 != 0)
+		//if(IntUV.x & IntUV.y != 0)
+		float2 Tested		= float2(fmod(TestUV.x, 10.0), fmod(TestUV.y, 10.0));
+		
+		//Tested				-= int2(Tested);
+		float2 TestInt		= int2(Tested);
+		
+		//float2(TestUV.x & 10.0f, TestUV.y & 10.0f);
+		//if(Tested.x != 0 || Tested.y != 0) //!= 0.0 || (TestUV.y & 10.0) != 0.0)
+		//if((Tested.x && Tested.y))
+		if(TestInt.x == Tested.x || TestInt.y == Tested.y)
+		{
+			discard;
+		}
+		#endif
+	}
 	// Metallicafan212:	Diffuse texture
-	if(bTexturesBound[0].x != 0)
+	else if(bTexturesBound[0].x != 0)
 	{
 		float4 Diff  	= Diffuse.SampleBias(DiffState, input.uv, 0.0f);
 		DiffColor.xyz  *= Diff.xyz;
 		DiffColor.w	   *= Diff.w;
 	}
+
 	
 	// Metallicafan212:	TODO! This also sets the selection color for the editor! This should be re-evaluated
 	CLIP_PIXEL(DiffColor);

@@ -207,7 +207,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 	//ADJUST_PFLAGS(PolyFlags);
 
-	SetBlend(PolyFlags);
+	SetBlend(PolyFlags & ~PF_Selected);
 
 	// Metallicafan212:	Raster state
 	SetRasterState(DXRS_Normal);
@@ -385,7 +385,8 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 #if EXTRA_VERT_INFO
 		LockSecondaryVertBuffer();
 #endif
-		SetTexture(0, nullptr, 0);
+		// Metallicafan212:	Keep the base texture???
+		//SetTexture(0, nullptr, 0);
 		SetTexture(1, nullptr, 0);
 		SetTexture(2, nullptr, 0);
 		SetTexture(3, nullptr, 0);
@@ -395,9 +396,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 #if	1//DX11_HP2
 		// Metallicafan212:	Use the memorized flag to know when to turn off z testing
-		SetBlend(PF_AlphaBlend | PF_Memorized);
+		SetBlend(PF_AlphaBlend | PF_Memorized | (PolyFlags & PF_Selected));
 #else
-		SetBlend(PF_Highlighted | PF_Memorized);//PF_AlphaBlend);
+		SetBlend(PF_Highlighted | PF_Memorized | (PolyFlags & PF_Selected));//PF_AlphaBlend);
 
 #endif
 		/*
