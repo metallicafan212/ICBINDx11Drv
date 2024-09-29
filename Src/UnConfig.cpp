@@ -31,6 +31,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	Tell Render.dll to not clamp the final output values for actor mesh verts
 	bSupportsUnclampedMeshLighting = 1;
 
+	// Metallicafan212:	Tell Render.dll that we can process specific render modes ourselfs
+	bSupportsNativeRendModes = 1;
+
 #endif
 
 	// Metallicafan212:	Tell the engine that we support the lighting shader

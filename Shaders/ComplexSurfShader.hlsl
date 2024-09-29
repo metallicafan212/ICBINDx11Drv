@@ -74,6 +74,14 @@ PSInput VertShader(VSInput input)
 	// Metallicafan212:	Set the W to 1 so matrix math works
 	input.pos.w 		= 1.0f;
 	
+	// Metallicafan212:	If we're rendering normals, calculate them
+	if(RendMap == REN_Normals)
+	{
+		float4 U 		= input.pos.z - input.pos.x;
+		float4 V 		= input.pos.y - input.pos.x;
+		output.color 	= float4((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x), 1.0f);
+	}
+	
 	// Metallicafan212:	Transform it out
 	output.pos 			= mul(input.pos, Proj);
 	output.color		= input.color;
@@ -196,6 +204,7 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	TODO! This also sets the selection color for the editor! This should be re-evaluated
 	CLIP_PIXEL(DiffColor);
 	
+	
 	// Metallicafan212:	Detail texture
 	//					We're applying this now so that when detail textures fade in, they don't reduce the lightmap as much
 	//					TODO! Using the vars from DX7. Allow the user to specify this!!!!
@@ -248,6 +257,21 @@ PSOutput PxShader(PSInput input)
 		}
 		
 		//lAlpha = LColor.w;
+		
+		// Metallicafan212:	If we're doing lighting only, set it out now
+		if(RendMap == REN_LightingOnly)
+		{
+			Out.Color = float4(DoFinalColor(LColor).xyz, DiffColor.w);
+			
+			return Out;
+		}
+	}
+	// Metallicafan212:	If we don't have lighting, then return a midpoint color
+	else if(RendMap == REN_LightingOnly)
+	{
+		Out.Color = float4(0.5f, 0.5f, 0.5f, DiffColor.w);
+		
+		return Out;
 	}
 	
 	// Metallicafan212:	Fog map

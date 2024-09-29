@@ -2313,8 +2313,11 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	SetRasterState(DXRS_Normal);
 
 #if DX11_HP2
-	FrameShaderVars.bDepthDraw				= Viewport->Actor != nullptr ? Viewport->Actor->RendMap == REN_Depth : 0;
+	//FrameShaderVars.bDepthDraw				= Viewport->Actor != nullptr ? Viewport->Actor->RendMap == REN_Depth : 0;
+	FrameShaderVars.RendMap					= Viewport->Actor != nullptr ? Viewport->Actor->RendMap : REN_DynLight;
 	FrameShaderVars.DepthZRange				= DepthDrawZLimit;
+#else
+	FrameShaderVars.RendMap					= REN_DynLight;
 #endif
 
 	// Metallicafan212:	Set this ONCE!

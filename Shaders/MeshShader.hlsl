@@ -41,6 +41,14 @@ PSInput VertShader(VSInput input)
 	// Metallicafan212:	Set the W to 1 so matrix math works
 	input.pos.w 	= 1.0f;
 	
+	// Metallicafan212:	If we're rendering normals, calculate them
+	if(RendMap == REN_Normals)
+	{
+		float4 U 		= input.pos.z - input.pos.x;
+		float4 V 		= input.pos.y - input.pos.x;
+		output.color 	= float4((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x), 1.0f);
+	}
+	
 	// Metallicafan212:	Save the original z for distance fog
 	output.origZ	= input.pos.z;
 	
@@ -78,7 +86,7 @@ PSInput VertShader(VSInput input)
 }
 
 float4 PxShader(PSInput input) : SV_TARGET
-{	
+{
 	// Metallicafan212:	TODO! Add this as a bool property
 	if(bEnableCorrectFog)
 	{
@@ -95,17 +103,27 @@ float4 PxShader(PSInput input) : SV_TARGET
 		FinalColor.xyz 	= (FinalColor.x + FinalColor.y + FinalColor.z) / 3.0f;
 	}
 	
-	FinalColor *= input.color;
-	
-	CLIP_PIXEL(FinalColor);
-	
-	FinalColor.xyz += input.fog.xyz;
-	
-	// Metallicafan212:	Calculate the distance fog here
-	if(bDoDistanceFog)
+	// Metallicafan212:	If we're doing lighting only, do just that color
+	if(RendMap == REN_LightingOnly)
 	{
-		float Fog 	= DoDistanceFog(input.origZ);
-		FinalColor 	= DoPixelFog(Fog, FinalColor);
+		FinalColor.xyz = input.color.xyz;
+		
+		CLIP_PIXEL(FinalColor);
+	}
+	else
+	{
+		FinalColor *= input.color;
+		
+		CLIP_PIXEL(FinalColor);
+		
+		FinalColor.xyz += input.fog.xyz;
+		
+		// Metallicafan212:	Calculate the distance fog here
+		if(bDoDistanceFog)
+		{
+			float Fog 	= DoDistanceFog(input.origZ);
+			FinalColor 	= DoPixelFog(Fog, FinalColor);
+		}
 	}
 	
 	return DoFinalColor(FinalColor);

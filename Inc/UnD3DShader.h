@@ -45,7 +45,9 @@ struct FFrameShaderVars
 	FLOAT				WhiteLevel;
 
 	// Metallicafan212:	If to output depth as the color, instead of the normal color
-	UBOOL				bDepthDraw;
+	//UBOOL				bDepthDraw;
+	// Metallicafan212:	Current render map
+	INT					RendMap;
 
 	// Metallicafan212:	Configured Z range for the depth draw mode
 	FLOAT				DepthZRange;
@@ -219,6 +221,21 @@ public:
 #define DECLARE_ENUM
 #define DECLARE_GM(name, val)Macros.AddItem({#name, #val});
 #include "GammaModes.h"
+
+		// Metallicafan212:	HP2 render modes
+#if DX11_HP2
+		Macros.AddItem({ "RENMAPS", "1" });
+#undef BEGIN_REND_ENUM
+#undef END_REND_ENUM
+#undef DECLARE_RENDMODE
+#define BEGIN_REND_ENUM
+#define END_REND_ENUM
+#define DECLARE_RENDMODE(name, val)Macros.AddItem({#name, #val});
+#include "UnRenderTypes.h"
+#undef DECLARE_RENDMODE
+#undef BEGIN_REND_ENUM
+#undef END_REND_ENUM
+#endif
 
 		// Metallicafan212:	There must be a null terminated value here
 		Macros.AddZeroed();

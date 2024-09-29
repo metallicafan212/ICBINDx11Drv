@@ -77,6 +77,20 @@ float4 PxShader(PSInput input) : SV_TARGET
 		DiffColor.xyz 	= (DiffColor.x + DiffColor.y + DiffColor.z) / 3.0f;
 	}
 	
+	/*
+	// Metallicafan212:	If we're doing lighting only, do just that color
+	if(RendMap == REN_LightingOnly)
+	{
+		DiffColor.xyz = input.color.xyz;
+		
+		// Metallicafan212:	Do alpha rejecting
+		//					TODO! This also sets the global selection color for the editor!
+		//					Reevaluate how we do this!!!!
+		CLIP_PIXEL(DiffColor);
+	}
+	else
+	{
+	*/
 	DiffColor *= input.color;
 	
 	// Metallicafan212:	Do alpha rejecting
@@ -90,6 +104,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 		float Fog = DoDistanceFog(input.origZ);
 		DiffColor = DoPixelFog(Fog, DiffColor);
 	}
+	//}
 	
 	bRejectBW = input.bRejectBW;
 	
