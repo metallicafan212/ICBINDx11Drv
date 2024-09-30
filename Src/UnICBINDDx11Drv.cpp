@@ -3130,8 +3130,8 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 // Metallicafan212:	Shamfully copied from the DX9 renderer
 void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRangeHack, UBOOL bForceUpdate)
 {
-	float left, right, bottom, top, zNear = 0.5f, zFar;
-	float invRightMinusLeft, invTopMinusBottom, invNearMinusFar;
+	FLOAT left, right, bottom, top, zNear = 0.5f, zFar;
+	FLOAT invRightMinusLeft, invTopMinusBottom, invNearMinusFar;
 
 	if (m_nearZRangeHackProjectionActive != bRequestingNearRangeHack)
 		EndBuffering();
@@ -3238,18 +3238,31 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 #else
 	//appMemzero(FrameShaderVars.Proj.m, sizeof(FLOAT[4][4]));
 
-	// Metallicafan212:	I've fixed this to the correct order it should be
-	FrameShaderVars.Proj.m[0][0] = 2.0f * zNear * invRightMinusLeft;
+	// Metallicafan212:	Ortho projection
+	if (m_RProjZ == 0.0f)
+	{
+		FrameShaderVars.Proj.m[0][0] = (2.0f * zNear)/ ScaledSceneNodeY;
+		FrameShaderVars.Proj.m[1][1] = (-2.0f * zNear)/ ScaledSceneNodeY;
+		FrameShaderVars.Proj.m[2][2] = 1.0f / (zFar - zNear);//-zScaleVal * (zFar * invNearMinusFar);
+		FrameShaderVars.Proj.m[2][3] = -zNear / (zFar - zNear);//zScaleVal * zScaleVal * (zNear * zFar * invNearMinusFar);
+		FrameShaderVars.Proj.m[3][2] = 1.0f;
+	}
+	else
+	{
 
-	// Metallicafan212:	These two lines caused issues with lines appearing on the screen
-	//					Turns out, it was offsetting the screen slightly
-	//FrameShaderVars.Proj.m[0][2] = 1.0f / ScaledSceneNodeX;
-	//FrameShaderVars.Proj.m[1][2] = 1.0f / ScaledSceneNodeY;
+		// Metallicafan212:	I've fixed this to the correct order it should be
+		FrameShaderVars.Proj.m[0][0] = 2.0f * zNear * invRightMinusLeft;
 
-	FrameShaderVars.Proj.m[1][1] = -2.0f * zNear * invTopMinusBottom;
-	FrameShaderVars.Proj.m[2][2] = -zScaleVal * (zFar * invNearMinusFar);
-	FrameShaderVars.Proj.m[2][3] = zScaleVal * zScaleVal * (zNear * zFar * invNearMinusFar);
-	FrameShaderVars.Proj.m[3][2] = 1.0f;
+		// Metallicafan212:	These two lines caused issues with lines appearing on the screen
+		//					Turns out, it was offsetting the screen slightly
+		//FrameShaderVars.Proj.m[0][2] = 1.0f / ScaledSceneNodeX;
+		//FrameShaderVars.Proj.m[1][2] = 1.0f / ScaledSceneNodeY;
+		FrameShaderVars.Proj.m[1][1] = 0.0f;
+		FrameShaderVars.Proj.m[1][1] = -2.0f * zNear * invTopMinusBottom;
+		FrameShaderVars.Proj.m[2][2] = -zScaleVal * (zFar * invNearMinusFar);
+		FrameShaderVars.Proj.m[2][3] = zScaleVal * zScaleVal * (zNear * zFar * invNearMinusFar);
+		FrameShaderVars.Proj.m[3][2] = 1.0f;
+	}
 
 	//FrameShaderVars.Proj = DirectX::XMMatrixPerspectiveFovLH(90.0f, ((FLOAT)m_sceneNodeX) / ((FLOAT)m_sceneNodeY), zScaleVal * zNear, zScaleVal* zFar);
 #endif
