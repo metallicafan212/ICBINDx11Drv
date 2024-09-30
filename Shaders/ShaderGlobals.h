@@ -40,6 +40,7 @@ struct VSInput
 #define RENMAPS 1
 
 // Metallicafan212:	Don't use any of the code needed for the custom render methods or rmodes (can reevaluate later for other games that might need similar features)
+#undef NO_CUSTOM_RMODES
 #define NO_CUSTOM_RMODES 1
 
 #define REN_None			0		// Hide completely.
@@ -68,11 +69,12 @@ struct VSInput
 #define REN_Depth			29		// Metallicafan212:	Depth RMode (exclusive to DX11)
 #define REN_Normals			30		// Metallicafan212:	Render vertex normals
 #define REN_MAX				31
+	
+#endif
 
-#else
-
+// Metallicafan212:	If it didn't get defined up there, assume it's HP2
+#ifndef NO_CUSTOM_RMODES
 #define NO_CUSTOM_RMODES 0
-
 #endif
 
 #ifndef FIRST_USER_CONSTBUFF

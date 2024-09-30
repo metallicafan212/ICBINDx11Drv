@@ -90,10 +90,11 @@ PSInput VertShader(VSInput input)
 float4 PxShader(PSInput input) : SV_TARGET
 {
 	// Metallicafan212:	TODO! Add this as a bool property
+	float4 LightColor = input.color;
 	if(bEnableCorrectFog)
 	{
 		FLOAT Scale 		= 1.0f - input.fog.w;
-		input.color.xyz    *= Scale; 
+		LightColor.xyz    *= Scale; 
 	}
 	
 	// Metallicafan212:	If we're selected, go black and white....
@@ -109,14 +110,15 @@ float4 PxShader(PSInput input) : SV_TARGET
 	// Metallicafan212:	If we're doing lighting only, do just that color
 	if(RendMap == REN_LightingOnly)
 	{
-		FinalColor.xyz = input.color.xyz;
+		// Metallicafan212:	Lighting needs to be halfed to look more like it does in-game
+		FinalColor.xyz = input.color.xyz / 2.0f;
 		
 		CLIP_PIXEL(FinalColor);
 	}
 	else
 #endif
 	{
-		FinalColor *= input.color;
+		FinalColor *= LightColor;
 		
 		CLIP_PIXEL(FinalColor);
 		
