@@ -148,7 +148,9 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_D3DCommandList);
 
 	SAFE_RELEASE(FrameConstantsBuffer);
+#if DX11_HP2
 	SAFE_RELEASE(GlobalDistFogBuffer);
+#endif
 	SAFE_RELEASE(GlobalPolyflagsBuffer);
 
 	SAFE_RELEASE(BoundTexturesBuffer);
@@ -962,7 +964,9 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	m_BufferedVerts		= 0;
 
 	FrameConstantsBuffer	= nullptr;
+#if DX11_HP2
 	GlobalDistFogBuffer		= nullptr;
+#endif
 	GlobalPolyflagsBuffer	= nullptr;
 	BoundTexturesBuffer		= nullptr;
 
@@ -2023,7 +2027,9 @@ void UICBINDx11RenderDevice::Exit()
 
 	// Metallicafan212:	2024, also free the buffers holy shit
 	SAFE_RELEASE(FrameConstantsBuffer);
+#if DX11_HP2
 	SAFE_RELEASE(GlobalDistFogBuffer);
+#endif
 	SAFE_RELEASE(GlobalPolyflagsBuffer);
 	SAFE_RELEASE(BoundTexturesBuffer);
 

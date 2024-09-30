@@ -145,6 +145,7 @@ cbuffer FrameVariables : register (b0)
 	//float3	Paddddddd		: packoffset(c7.y);
 };
 
+#if !NO_CUSTOM_RMODES
 cbuffer DFogVariables : register (b1)
 {
 	float4 	DistanceFogColor 	: packoffset(c0);
@@ -152,6 +153,7 @@ cbuffer DFogVariables : register (b1)
 	int 	bDoDistanceFog		: packoffset(c2.x);
 	float3	Paddy3				: packoffset(c2.y);
 };
+#endif
 
 cbuffer PolyflagVars : register (b2)
 {
@@ -186,6 +188,7 @@ float3 SRGBToRec2020(float3 In)
     return mul(ConvMat, In);
 }
 
+#if !NO_CUSTOM_RMODES
 // Metallicafan212:	Distance fog shit
 //					TODO! A better algorithm????
 //					I have just straight ported the assembly code I wrote a while ago (since I'm a lazy fucking bastard)
@@ -205,10 +208,6 @@ float DoDistanceFog(float InZ)
 	return 0.0f;
 }
 
-// Metallicafan212:	Global selection color
-//static float4 SelectionColor;
-
-#if !NO_CUSTOM_RMODES
 // Metallicafan212:	HACK!!! To reject black and white on UI tiles, I don't want to have to update all the shaders...
 static bool		bRejectBW;
 #endif

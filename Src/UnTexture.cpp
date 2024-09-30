@@ -1232,10 +1232,12 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			UpdatePolyflagsVars();
 		}
 
+#if DX11_HP2
 		if (bUpdateFogBuff)
 		{
 			UpdateFogSettings();
 		}
+#endif
 	}
 
 	unguardSlow;

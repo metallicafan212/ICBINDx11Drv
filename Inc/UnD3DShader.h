@@ -66,6 +66,7 @@ struct FFrameShaderVars
 	}
 };
 
+#if DX11_HP2
 // Metallicafan212:	Just a buffer for fog settings
 //					Only used in HP2
 struct FDistFogVars
@@ -75,6 +76,7 @@ struct FDistFogVars
 	UBOOL	bDistanceFogEnabled;
 	FLOAT	Pad[3];
 };
+#endif
 
 struct FPolyflagVars
 {

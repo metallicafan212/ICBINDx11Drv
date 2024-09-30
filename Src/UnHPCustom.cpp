@@ -443,7 +443,6 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 
 	unguard;
 }
-#endif
 
 // Metallicafan212:	Viewer-based zone fog
 void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FPlane Color, FLOAT FadeRate)
@@ -582,6 +581,7 @@ void UICBINDx11RenderDevice::SetBWPercent(FLOAT Percent)
 
 	unguardSlow;
 }
+#endif
 
 // Metallicafan212:	New RT stuff
 //					Create an RT texture, this is so the texture can be used in normal stuff

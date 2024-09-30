@@ -921,9 +921,11 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	Constant buffer for global info
 	ID3D11Buffer*						FrameConstantsBuffer;
 
+#if DX11_HP2
 	// Metallicafan212:	Distance fog settings
 	FDistFogVars						GlobalDistFogSettings;
 	ID3D11Buffer*						GlobalDistFogBuffer;
+#endif
 
 	// Metallicafan212:	The global vars JUST for flags
 	FPolyflagVars						GlobalPolyflagVars;
@@ -1877,6 +1879,8 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	virtual void PrecacheTexture(FTextureInfo& Info, PFLAG PolyFlags);
 
+#if DX11_HP2
+
 	// Metallicafan212:	Viewer-based zone fog
 	virtual void SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FPlane Color, FLOAT FadeRate);
 
@@ -1916,6 +1920,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	Simple BW shader for doing stupid "old-time" looking shit
 	virtual void SetBWPercent(FLOAT Percent);
+
+#endif
+
 
 	// Metallicafan212:	New RT stuff
 	//					Create an RT texture, this is so the texture can be used in normal stuff
