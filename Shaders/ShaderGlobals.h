@@ -36,7 +36,11 @@ struct VSInput
 
 // Metallicafan212:	TODO! Get these imported when compiling for other targets with pre-compiled headers!
 #ifndef RENMAPS
+
 #define RENMAPS 1
+
+// Metallicafan212:	Don't use any of the code needed for the custom render methods or rmodes (can reevaluate later for other games that might need similar features)
+#define NO_CUSTOM_RMODES 1
 
 #define REN_None			0		// Hide completely.
 #define REN_Wire			1		// Wireframe of EdPolys.
@@ -45,33 +49,31 @@ struct VSInput
 #define REN_PolyCuts		4		// Flat-shaded Bsp with normals displayed.
 #define REN_DynLight		5		// Illuminated texture mapping.
 #define REN_PlainTex		6		// Plain texture mapping.
-#define REN_OrthXY			13	// Orthogonal overhead (XY) view.
-#define REN_OrthXZ			14	// Orthogonal XZ view.
-#define REN_OrthYZ			15	// Orthogonal YZ view.
-#define REN_TexView			16	// Viewing a texture (no actor).
-#define REN_TexBrowser		17	// Viewing a texture browser (no actor).
-#define REN_MeshView		18	// Viewing a mesh.
-#define REN_MatineeIP		19	// Matinee - interpolation point editing.
-#define REN_LightingOnly	20	// Forces the BSP surfaces to use the same solid color to show lighting
-#define REN_Prefab			21	// Metallicafan212:	Normal, no BSP prefabs
-#define REN_PrefabCompiled  22	// Metallicafan212:	Compiled prefab with BSP enabled
-#define REN_AnimView		23	// Metallicafan212:	New mesh browser that is a level
-#define REN_AnimViewWire	24	// Metallicafan212:	Wireframe for the mesh browser
-#define REN_Leafs			25	// Metallicafan212: Visibility (lighting) leafs
-#define REN_SpecialPoly		26	// Metallicafan212:	Display special poly (climbable) surfaces
-#define REN_RenderPasses	27	// Metallicafan212:	Color pass 1 objects blue, pass 2 objects green
-#define REN_ParticleView	28	// Metallicafan212:	New particleFX browser
-#define REN_Depth			29	// Metallicafan212:	Depth RMode (exclusive to DX11)
-#define REN_Normals			30	// Metallicafan212:	Render vertex normals
+#define REN_OrthXY			13		// Orthogonal overhead (XY) view.
+#define REN_OrthXZ			14		// Orthogonal XZ view.
+#define REN_OrthYZ			15		// Orthogonal YZ view.
+#define REN_TexView			16		// Viewing a texture (no actor).
+#define REN_TexBrowser		17		// Viewing a texture browser (no actor).
+#define REN_MeshView		18		// Viewing a mesh.
+#define REN_MatineeIP		19		// Matinee - interpolation point editing.
+#define REN_LightingOnly	20		// Forces the BSP surfaces to use the same solid color to show lighting
+#define REN_Prefab			21		// Metallicafan212:	Normal, no BSP prefabs
+#define REN_PrefabCompiled  22		// Metallicafan212:	Compiled prefab with BSP enabled
+#define REN_AnimView		23		// Metallicafan212:	New mesh browser that is a level
+#define REN_AnimViewWire	24		// Metallicafan212:	Wireframe for the mesh browser
+#define REN_Leafs			25		// Metallicafan212: Visibility (lighting) leafs
+#define REN_SpecialPoly		26		// Metallicafan212:	Display special poly (climbable) surfaces
+#define REN_RenderPasses	27		// Metallicafan212:	Color pass 1 objects blue, pass 2 objects green
+#define REN_ParticleView	28		// Metallicafan212:	New particleFX browser
+#define REN_Depth			29		// Metallicafan212:	Depth RMode (exclusive to DX11)
+#define REN_Normals			30		// Metallicafan212:	Render vertex normals
 #define REN_MAX				31
 
-#endif
+#else
 
-/*
-#ifndef START_CONST_NUM
-#define START_CONST_NUM		b3
+#define NO_CUSTOM_RMODES 0
+
 #endif
-*/
 
 #ifndef FIRST_USER_CONSTBUFF
 #define FIRST_USER_CONSTBUFF b4
@@ -206,22 +208,33 @@ float DoDistanceFog(float InZ)
 // Metallicafan212:	Global selection color
 //static float4 SelectionColor;
 
+#if !NO_CUSTOM_RMODES
 // Metallicafan212:	HACK!!! To reject black and white on UI tiles, I don't want to have to update all the shaders...
 static bool		bRejectBW;
+#endif
 
 // Metallicafan212:	Color masking is currently unimplemented and may not be reimplemented
 
 // Metallicafan212:	Do masked rejection
+#if NO_CUSTOM_RMODES
+#define CLIP_PIXEL(ColorIn) \
+	if(!bAlphaEnabled) \
+		ColorIn.w = 1.0f; \
+	else if(ColorIn.w < AlphaReject) \
+		discard;
+#else
 #define CLIP_PIXEL(ColorIn) \
 	if (RendMap == REN_Normals) \
 		ColorIn.xyzw = input.color; \
 	else if(!bAlphaEnabled) \
 		ColorIn.w = 1.0f; \
-	else if(ColorIn.w <= AlphaReject) \
+	else if(ColorIn.w < AlphaReject) \
 		discard; \
 	if(RendMap == REN_Depth) \
 		ColorIn.xyz = input.origZ / DepthDrawLimit;
+#endif
 
+#if !NO_CUSTOM_RMODES
 float4 DoPixelFog(float DistFog, float4 Color)
 {
 	// Metallicafan212:	Early bail
@@ -237,6 +250,7 @@ float4 DoPixelFog(float DistFog, float4 Color)
 	
 	return float4(Temp, Color.w);
 }
+#endif
 
 // Metallicafan212:	Not needed now, the per object gamma was removed
 /*
@@ -267,12 +281,14 @@ float4 DoFinalColor(float4 ColorIn)
 		}
 	}
 	
+#if !NO_CUSTOM_RMODES
 	// Metallicafan212:	In the depth mode, just return back the color (it's handled in the macro above)
 	//					Same for normals mode
 	if(RendMap == REN_Depth || RendMap == REN_Normals)
 	{
 		return ColorIn;
 	}
+#endif
 	
 	// Metallicafan212:	Clamp the color
 	if(!bHDR)
@@ -280,6 +296,7 @@ float4 DoFinalColor(float4 ColorIn)
 		ColorIn.xyz = clamp(ColorIn.xyz, 0.0f, 1.0f);
 	}
 	
+#if !NO_CUSTOM_RMODES
 	// Metallicafan212:	Early return
 	if(BWPercent <= 0.0f || bRejectBW)
 	{
@@ -291,5 +308,8 @@ float4 DoFinalColor(float4 ColorIn)
 		ColorIn.xyz = lerp(ColorIn.xyz, (ColorIn.x + ColorIn.y + ColorIn.z) / 3.0f, BWPercent);
 		return ColorIn;
 	}
+#else
+	return ColorIn;
+#endif
 }
 #endif

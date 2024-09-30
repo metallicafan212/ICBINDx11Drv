@@ -74,6 +74,7 @@ PSInput VertShader(VSInput input)
 	// Metallicafan212:	Set the W to 1 so matrix math works
 	input.pos.w 		= 1.0f;
 	
+#if !NO_CUSTOM_RMODES
 	// Metallicafan212:	If we're rendering normals, calculate them
 	if(RendMap == REN_Normals)
 	{
@@ -81,6 +82,7 @@ PSInput VertShader(VSInput input)
 		float4 V 		= input.pos.y - input.pos.x;
 		output.color 	= float4((U.y * V.z) - (U.z * V.y), (U.z * V.x) - (U.x * V.z), (U.x * V.y) - (U.y * V.x), 1.0f);
 	}
+#endif
 	
 	// Metallicafan212:	Transform it out
 	output.pos 			= mul(input.pos, Proj);
@@ -258,6 +260,7 @@ PSOutput PxShader(PSInput input)
 		
 		//lAlpha = LColor.w;
 		
+#if !NO_CUSTOM_RMODES
 		// Metallicafan212:	If we're doing lighting only, set it out now
 		if(RendMap == REN_LightingOnly)
 		{
@@ -265,7 +268,9 @@ PSOutput PxShader(PSInput input)
 			
 			return Out;
 		}
+#endif
 	}
+#if !NO_CUSTOM_RMODES
 	// Metallicafan212:	If we don't have lighting, then return a midpoint color
 	else if(RendMap == REN_LightingOnly)
 	{
@@ -273,6 +278,7 @@ PSOutput PxShader(PSInput input)
 		
 		return Out;
 	}
+#endif
 	
 	// Metallicafan212:	Fog map
 	if(bTexturesBound[0].w != 0)
@@ -284,6 +290,7 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	Set our alpha for lumos
 	//DiffColor.w *= SurfAlpha;
 	
+#if !NO_CUSTOM_RMODES
 	// Metallicafan212:	Get the distance fog, using the pixel depth
 	if(bDoDistanceFog)
 	{
@@ -291,6 +298,7 @@ PSOutput PxShader(PSInput input)
 		
 		DiffColor = DoPixelFog(/*input.distFog*/NewFog, DiffColor);
 	}
+#endif
 	
 	//return DoFinalColor(DiffColor);
 	Out.Color = DoFinalColor(DiffColor);

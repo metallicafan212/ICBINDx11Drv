@@ -39,6 +39,7 @@ PSInput VertShader(VSInput input)
 {	
 	PSInput output = (PSInput)0;
 	
+#if !NO_CUSTOM_RMODES
 	// Metallicafan212:	Rotate this vert if we're doing rotated drawing
 	if(bDoRot)
 	{
@@ -48,6 +49,7 @@ PSInput VertShader(VSInput input)
 	// Metallicafan212:	TODO! If this is a UI tile, don't do the HP2 specific black and white effect
 	//					Should make this configurable....
 	output.bRejectBW	= input.pos.z <= 1.0f;
+#endif
 	
 	// Metallicafan212:	Save the original Z for distance fog calculations
 	output.origZ		= input.pos.z;
@@ -98,6 +100,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	//					Reevaluate how we do this!!!!
 	CLIP_PIXEL(DiffColor);
 	
+#if !NO_CUSTOM_RMODES
 	// Metallicafan212:	Calculate distance fog
 	if(bDoDistanceFog)
 	{
@@ -107,6 +110,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	//}
 	
 	bRejectBW = input.bRejectBW;
+#endif
 	
 	DiffColor = DoFinalColor(DiffColor);
 
