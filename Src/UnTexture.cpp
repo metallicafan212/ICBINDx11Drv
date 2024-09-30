@@ -1157,18 +1157,18 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 
 		// Metallicafan212:	TODO! Allow the user to specify the alpha reject values
 #if DX11_HP2
-		if (Xor & (PF_Masked | PF_AlphaBlend | PF_LumosAffected | PF_ColorMask | PF_Invisible))
+		if (Xor & (PF_Masked | PF_AlphaBlend | PF_LumosAffected | PF_ColorMask | PF_Invisible | PF_Modulated))
 #else
-		if (Xor & (PF_Masked | PF_AlphaBlend | PF_Invisible))
+		if (Xor & (PF_Masked | PF_AlphaBlend | PF_Invisible | PF_Modulated))
 #endif
 		{
 			bUpdatePFlagBuff					= 1;
 #if DX11_HP2
-			if (blendFlags & (PF_Invisible | PF_AlphaBlend | PF_LumosAffected))
+			if (blendFlags & (PF_Invisible | PF_AlphaBlend | PF_LumosAffected | PF_Modulated))
 #elif DX11_UT_469
-			if (blendFlags & (PF_Invisible | PF_AlphaBlend))
+			if (blendFlags & (PF_Invisible | PF_AlphaBlend | PF_Modulated))
 #else
-			if (blendFlags & (PF_Invisible))
+			if (blendFlags & (PF_Invisible | PF_Modulated))
 #endif
 			{
 				GlobalPolyflagVars.AlphaReject		= 0.01f;//1e-6f;

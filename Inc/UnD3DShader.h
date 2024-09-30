@@ -227,6 +227,7 @@ public:
 		// Metallicafan212:	HP2 render modes
 #if DX11_HP2
 		Macros.AddItem({ "RENMAPS", "1" });
+		Macros.AddItem({ "NO_CUSTOM_RMODES", "0" });
 #undef BEGIN_REND_ENUM
 #undef END_REND_ENUM
 #undef DECLARE_RENDMODE
