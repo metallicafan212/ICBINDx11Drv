@@ -196,6 +196,10 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	Enable this by default, but disable it if it's not supported
 	AddBoolProp(CPP_PROP(bUseForcedSampleCount), 1);
 
+	AddBoolProp(CPP_PROP(bSmoothHudTiles), 1);
+
+	AddFloatProp(CPP_PROP(SmoothMaskedAlphaReject), 0.2f);
+
 	unguard;
 }
 

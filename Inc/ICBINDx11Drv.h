@@ -636,6 +636,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	UBOOL						UseVSync;
 	UBOOL						bUseDeferredRendering;
 
+	// Metallicafan212:	Alternative alpha reject for masked hud tiles
+	UBOOL						bSmoothHudTiles;
+
 	// Metallicafan212:	If to use the DX9 style flat colors instead (a lot brighter and hides the original textures)
 	UBOOL						UseDX9FlatColor;
 
@@ -698,6 +701,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	Alpha rejection value, for masking
 	FLOAT						MaskedAlphaReject;
+
+	// Metallicafan212:	Alternative masking reject for hud tiles, if bSmoothHudTiles
+	FLOAT						SmoothMaskedAlphaReject;
 
 	// Metallicafan212:	Configured Z range for the depth RMode
 	//					Max depth is 65535.0f

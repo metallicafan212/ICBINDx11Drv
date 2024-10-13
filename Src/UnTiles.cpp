@@ -150,6 +150,17 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 		SetRasterState(DXRS_Normal | DXRS_NoAA);
 
 		bNoAF = 1;
+
+		// Metallicafan212:	Force update masking alpha if we're currently in masked mode
+		if (bSmoothHudTiles && (PolyFlags & PF_Masked) && GlobalPolyflagVars.AlphaReject == MaskedAlphaReject)
+		{
+			// Metallicafan212:	Draw what was there already
+			EndBuffering();
+
+			// Metallicafan212:	Now update the value
+			GlobalPolyflagVars.AlphaReject = SmoothMaskedAlphaReject;
+			UpdatePolyflagsVars();
+		}
 	}
 	else
 	{
