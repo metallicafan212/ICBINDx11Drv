@@ -39,7 +39,7 @@ PSInput VertShader(VSInput input)
 	PSInput output = (PSInput)0;
 	
 	// Metallicafan212:	Set the W to 1 so matrix math works
-	input.pos.w 	= 1.0f;
+	input.pos.w 		= 1.0f;
 
 #if !NO_CUSTOM_RMODES
 	// Metallicafan212:	If we're rendering normals, calculate them
@@ -70,7 +70,7 @@ PSInput VertShader(VSInput input)
 		output.fog		= float4(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 	// Metallicafan212:	If we're modulated, deal with the color now!
-	else if(bModulated)
+	else if(ShaderFlags & SF_Modulated)
 	{
 		output.color	= float4(1.0f, 1.0f, 1.0f, 1.0f);
 		output.fog		= float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -87,8 +87,12 @@ PSInput VertShader(VSInput input)
 	return output;
 }
 
+#if PIXEL_SHADER
 float4 PxShader(PSInput input) : SV_TARGET
 {
+	// Metallicafan212:	Set the alpha reject
+	CurrentAlphaReject	= AlphaReject;
+	
 	// Metallicafan212:	TODO! Add this as a bool property
 	float4 LightColor = input.color;
 	if(bEnableCorrectFog)
@@ -136,3 +140,4 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	return DoFinalColor(FinalColor);
 }
+#endif

@@ -32,11 +32,13 @@ struct PSInput
 	float4 	color					: COLOR0; 
 	float4 	fog						: COLOR1;
 	float 	origZ					: COLOR2;
+#if !NO_CUSTOM_RMODES
 	int   	bRejectBW				: COLOR3;
+#endif
 };
 
 PSInput VertShader(VSInput input)
-{	
+{
 	PSInput output = (PSInput)0;
 	
 #if !NO_CUSTOM_RMODES
@@ -68,8 +70,21 @@ PSInput VertShader(VSInput input)
 	return output;
 }
 
+#if PIXEL_SHADER
 float4 PxShader(PSInput input) : SV_TARGET
-{	
+{
+	// Metallicafan212:	See if we should use the normal alpha reject or not...
+	if(input.origZ <= 1.0f && (ShaderFlags & SF_AlphaEnabled) && AlphaReject != AltAlphaReject)
+	{
+		// Metallicafan212:	The only way they differ is if masked is enabled, so use the alternative reject in this case...
+		CurrentAlphaReject = AltAlphaReject;
+	}
+	else
+	{
+		// Metallicafan212:	Set the alpha reject
+		CurrentAlphaReject	= AlphaReject;
+	}
+	
 	// Metallicafan212:	If we're selected, go black and white....
 	//					This prevents issues with missing colors in a masked/alpha/translucent texture
 	float4 DiffColor 		= Diffuse.SampleBias(DiffState, input.uv, 0.0f);
@@ -116,3 +131,4 @@ float4 PxShader(PSInput input) : SV_TARGET
 
 	return DiffColor;
 }
+#endif

@@ -59,10 +59,18 @@ void FD3DShader::Init()
 	// Metallicafan212:	Now the pixel shader
 	if (PixelFunc.Len())
 	{
-		TArray<BYTE>* ShaderBytes = ParentDevice->ShaderManager->GetShaderBytes(PixelFile, PixelFunc, ParentDevice->MaxPSLevel, GET_MACRO_PTR(Macros), Flags);
+		// Metallicafan212:	HACK! Predefine this here...
+		//					This is so the shader knows it's the pixel shader
+		INT PixelShaderMac			= Macros.Num() - 1;
+		Macros.Insert(Macros.Num() - 1);//Macros.AddItem({"PIXEL_SHADER", "1"});
+		Macros(PixelShaderMac)		= { "PIXEL_SHADER", "1" };
+		TArray<BYTE>* ShaderBytes	= ParentDevice->ShaderManager->GetShaderBytes(PixelFile, PixelFunc, ParentDevice->MaxPSLevel, GET_MACRO_PTR(Macros), Flags);
 
 		// Metallicafan212:	Get it as a pixel shader
 		hr = ParentDevice->m_D3DDevice->CreatePixelShader(ShaderBytes->GetData(), ShaderBytes->Num(), nullptr, &PixelShader);
+
+		// Metallicafan212:	Now remove it
+		Macros.Remove(PixelShaderMac);
 
 		// Metallicafan212:	IDK, do something here?
 		ParentDevice->ThrowIfFailed(hr);

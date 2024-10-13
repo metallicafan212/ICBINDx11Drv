@@ -163,10 +163,17 @@ cbuffer PolyflagVars : register (b2)
 	//int		bColorMasked		: packoffset(c0.x);
 	int		bSelected			: packoffset(c0.x);
 	float	AlphaReject			: packoffset(c0.y);
-	float	BWPercent			: packoffset(c0.z);
-	int		bAlphaEnabled		: packoffset(c0.w);
+	
+	// Metallicafan212:	Alternative alpha reject for hud tiles
+	float	AltAlphaReject		: packoffset(c0.z);
+	
+	float	BWPercent			: packoffset(c0.w);
+	// Metallicafan212:	Generalized shader flags, so we're more optimially using memory
+	dword	ShaderFlags			: packoffset(c1.x);
+	
+	//int		bAlphaEnabled		: packoffset(c0.w);
 	// Metallicafan212: Temp hack until I recode gamma to be screen-based again, using a different algo
-	int		bModulated			: packoffset(c1.x);
+	//int		bModulated			: packoffset(c1.x);
 	// Metallicafan212:	Pack in the selection color for the editor
 	float3	SelectedColor		: packoffset(c1.y);
 	//float3	Pad					: packoffset(c1.y);
@@ -210,8 +217,15 @@ float DoDistanceFog(float InZ)
 	return 0.0f;
 }
 
+#if PIXEL_SHADER
 // Metallicafan212:	HACK!!! To reject black and white on UI tiles, I don't want to have to update all the shaders...
 static bool		bRejectBW;
+#endif
+#endif
+
+#if PIXEL_SHADER
+// Metallicafan212:	Hacked global!!!
+static float	CurrentAlphaReject;
 #endif
 
 // Metallicafan212:	Color masking is currently unimplemented and may not be reimplemented
@@ -219,22 +233,23 @@ static bool		bRejectBW;
 // Metallicafan212:	Do masked rejection
 #if NO_CUSTOM_RMODES
 #define CLIP_PIXEL(ColorIn) \
-	if(!bAlphaEnabled) \
+	if(!(ShaderFlags & SF_AlphaEnabled)) \
 		ColorIn.w = 1.0f; \
-	else if(ColorIn.w < AlphaReject) \
+	else if(ColorIn.w < CurrentAlphaReject) \
 		discard;
 #else
 #define CLIP_PIXEL(ColorIn) \
 	if (RendMap == REN_Normals) \
 		ColorIn.xyzw = input.color; \
-	else if(!bAlphaEnabled) \
+	else if(!(ShaderFlags & SF_AlphaEnabled)) \
 		ColorIn.w = 1.0f; \
-	else if(ColorIn.w < AlphaReject) \
+	else if(ColorIn.w < CurrentAlphaReject) \
 		discard; \
 	if(RendMap == REN_Depth) \
 		ColorIn.xyz = input.origZ / DepthDrawLimit;
 #endif
 
+#if PIXEL_SHADER
 #if !NO_CUSTOM_RMODES
 float4 DoPixelFog(float DistFog, float4 Color)
 {
@@ -252,6 +267,7 @@ float4 DoPixelFog(float DistFog, float4 Color)
 	return float4(Temp, Color.w);
 }
 #endif
+#endif
 
 // Metallicafan212:	Not needed now, the per object gamma was removed
 /*
@@ -267,6 +283,7 @@ float4 DoGammaCorrection(float4 ColorIn)
 }
 */
 
+#if PIXEL_SHADER
 float4 DoFinalColor(float4 ColorIn)
 {
 	// Metallicafan212:	If doing selection, move out the selection color
@@ -313,4 +330,5 @@ float4 DoFinalColor(float4 ColorIn)
 	return ColorIn;
 #endif
 }
+#endif
 #endif

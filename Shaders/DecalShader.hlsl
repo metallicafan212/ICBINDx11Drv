@@ -9,6 +9,11 @@ struct PSInput
 	float  origZ	: COLOR2;
 };
 
+// Metallicafan212:	Multiple outputs, as we need to output to a screen texture to later apply a decal on-screen
+struct PSOutput
+{
+	
+};
 
 PSInput VertShader(VSInput input)
 {	
@@ -29,12 +34,8 @@ PSInput VertShader(VSInput input)
 	return output;
 }
 
-#if PIXEL_SHADER
 float4 PxShader(PSInput input) : SV_TARGET
-{
-	// Metallicafan212:	Set the alpha reject
-	CurrentAlphaReject	= AlphaReject;
-	
+{	
 	// Metallicafan212:	See if this needs alpha rejection		
 	CLIP_PIXEL(input.color);
 	
@@ -49,4 +50,3 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	return DoFinalColor(input.color);
 }
-#endif

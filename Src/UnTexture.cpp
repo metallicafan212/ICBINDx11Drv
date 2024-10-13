@@ -896,7 +896,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 		if (Xor & (RELEVANT_BLEND_FLAGS))
 		{
 			// Metallicafan212:	Only set when it's actually using it to render (in case of bad flags)
-			GlobalPolyflagVars.bModulated = 0;
+			GlobalPolyflagVars.ShaderFlags		&= ~SF_Modulated;
 
 			bUpdatePFlagBuff			= 1;
 
@@ -911,11 +911,11 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 					bState = CreateBlend(0, D3D11_BLEND_ONE, D3D11_BLEND_ZERO, D3D11_COLOR_WRITE_ENABLE_ALL, 0);
 				}
 
-				GlobalPolyflagVars.bAlphaEnabled = 0;
+				GlobalPolyflagVars.ShaderFlags		&= ~SF_AlphaEnabled;
 			}
 			else
 			{
-				GlobalPolyflagVars.bAlphaEnabled = 1;
+				GlobalPolyflagVars.ShaderFlags		|= SF_AlphaEnabled;
 
 				// Metallicafan212:	See if it's encountered this blend state before!
 				//bState = GetBlendState(blendFlags);
@@ -987,7 +987,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 					}
 					else if (blendFlags & PF_Modulated)
 					{
-						GlobalPolyflagVars.bModulated		= 1;
+						GlobalPolyflagVars.ShaderFlags		|= SF_Modulated;
 
 						bState = GetBlendState(PF_Modulated);
 
@@ -1097,7 +1097,8 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 				// Metallicafan212:	Modulated hack
 				if (GetBlendState(PF_Modulated) == bState)
 				{
-					GlobalPolyflagVars.bModulated = 1;
+					//GlobalPolyflagVars.bModulated = 1;
+					GlobalPolyflagVars.ShaderFlags		|= SF_Modulated;
 				}
 			}
 
@@ -1172,8 +1173,9 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #endif
 			{
 				GlobalPolyflagVars.AlphaReject		= 0.01f;//1e-6f;
+				GlobalPolyflagVars.AltAlphaReject	= 0.01f;
 				//GlobalPolyflagVars.bColorMasked		= 0;
-				GlobalPolyflagVars.bAlphaEnabled	= 1;
+				GlobalPolyflagVars.ShaderFlags		|= SF_AlphaEnabled;//bAlphaEnabled	= 1;
 
 			}
 #if DX11_HP2
@@ -1183,14 +1185,16 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #endif
 			{
 				GlobalPolyflagVars.AlphaReject		= MaskedAlphaReject;//0.8f;
+				GlobalPolyflagVars.AltAlphaReject	= (bSmoothHudTiles ? SmoothMaskedAlphaReject : MaskedAlphaReject);
 				//GlobalPolyflagVars.bColorMasked		= 1;
-				GlobalPolyflagVars.bAlphaEnabled	= 1;
+				GlobalPolyflagVars.ShaderFlags		|= SF_AlphaEnabled;//bAlphaEnabled	= 1;
 			}
 			else
 			{
 				// Metallicafan212:	This was a mistake that made PF_Highlighted not work right
 				//					Since it needs to write with 0 alpha, we need alpha testing off
 				GlobalPolyflagVars.AlphaReject		= 0.0f;//1e-6f;
+				GlobalPolyflagVars.AltAlphaReject	= 0.00f;
 				//GlobalPolyflagVars.bColorMasked		= 0;
 			}
 		}

@@ -163,6 +163,9 @@ enum ERasterFlags
 //					This is heavy todo!
 #include "GammaModes.h"
 
+// Metallicafan212:	Shader set flags
+#include "ShaderFlags.h"
+
 class UICBINDx11RenderDevice;
 
 #include "UnShaderManager.h"

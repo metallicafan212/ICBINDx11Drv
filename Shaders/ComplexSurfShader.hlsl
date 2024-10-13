@@ -68,7 +68,7 @@ struct PSOutput
 
 
 PSInput VertShader(VSInput input)
-{	
+{
 	PSInput output = (PSInput)0;
 	
 	// Metallicafan212:	Set the W to 1 so matrix math works
@@ -155,9 +155,13 @@ PSInput VertShader(VSInput input)
 	return output;
 }
 
+#if PIXEL_SHADER
 PSOutput PxShader(PSInput input)
-{	
+{
 	PSOutput Out;
+	
+	// Metallicafan212:	Set the alpha reject
+	CurrentAlphaReject	= AlphaReject;
 	
 	// Metallicafan212:	TODO! Texturing
 	float4 DiffColor = input.color;
@@ -305,3 +309,4 @@ PSOutput PxShader(PSInput input)
 	
 	return Out;
 }
+#endif

@@ -18,6 +18,9 @@ global_macros = [
       Macro("GM_XOpenGL", "0"),
       Macro("GM_DX9", "1"),
       Macro("FIRST_USER_CONSTBUFF", "b4"),
+      Macro("SF_AlphaEnabled", "1"),
+      Macro("SF_Modulated", "2"),
+      Macro("SF_HudSmoothMasked", "4"),
 ]
 
 # Metallicafan212:  Defined language version
@@ -37,11 +40,11 @@ global_langages = {
     "vs_4_1"            : LanguageTarget('vs_4_1',              [Macro("USE_GEO_SHADER", "1")]),
     "vs_4_0"            : LanguageTarget('vs_4_0',              [Macro("USE_GEO_SHADER", "1")]),
     #"vs_4_0_level_9_3"  : LanguageTarget('vs_4_0_level_9_3',    [Macro("USE_GEO_SHADER", "0")]),
-
-    "ps_5_0"            : LanguageTarget('ps_5_0',              [Macro("USE_GEO_SHADER", "1")]),
-    "ps_4_1"            : LanguageTarget('ps_4_1',              [Macro("USE_GEO_SHADER", "1")]),
-    "ps_4_0"            : LanguageTarget('ps_4_0',              [Macro("USE_GEO_SHADER", "1")]),
-    #"ps_4_0_level_9_3"  : LanguageTarget('ps_4_0_level_9_3',   [Macro("USE_GEO_SHADER", "0")]),
+    
+    "ps_5_0"            : LanguageTarget('ps_5_0',              [Macro("USE_GEO_SHADER", "1"), Macro("PIXEL_SHADER", "1")]),
+    "ps_4_1"            : LanguageTarget('ps_4_1',              [Macro("USE_GEO_SHADER", "1"), Macro("PIXEL_SHADER", "1")]),
+    "ps_4_0"            : LanguageTarget('ps_4_0',              [Macro("USE_GEO_SHADER", "1"), Macro("PIXEL_SHADER", "1")]),
+    #"ps_4_0_level_9_3"  : LanguageTarget('ps_4_0_level_9_3',   [Macro("USE_GEO_SHADER", "0"), Macro("PIXEL_SHADER", "1")]),
 
     "gs_5_0"            : LanguageTarget('gs_5_0',              [Macro("USE_GEO_SHADER", "1")]),
     "gs_4_1"            : LanguageTarget('gs_4_1',              [Macro("USE_GEO_SHADER", "1")]),

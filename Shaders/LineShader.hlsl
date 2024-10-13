@@ -2,7 +2,7 @@
 #include "Line_Common.h"
 
 VS_OUT VertShader(VSInput input)
-{	
+{
 	VS_OUT output = (VS_OUT)0;
 	
 	// Metallicafan212:	Set the W to 1 so matrix math works
@@ -24,8 +24,12 @@ VS_OUT VertShader(VSInput input)
 	return output;
 }
 
+#if PIXEL_SHADER
 float4 PxShader(PSInput input) : SV_TARGET
-{			
+{
+	// Metallicafan212:	Set the alpha reject
+	CurrentAlphaReject	= AlphaReject;
+	
 	CLIP_PIXEL(input.color);
 	
 #if !NO_CUSTOM_RMODES
@@ -39,3 +43,4 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	return DoFinalColor(input.color);
 }
+#endif

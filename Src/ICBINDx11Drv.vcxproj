@@ -243,6 +243,7 @@
     <ClInclude Include="..\Inc\CompiledShaders\TileShader_VertShader_vs_5_0.h" />
     <ClInclude Include="..\Inc\GammaModes.h" />
     <ClInclude Include="..\Inc\ICBINDx11Drv.h" />
+    <ClInclude Include="..\Inc\ShaderFlags.h" />
     <ClInclude Include="..\Inc\UnD3DShader.h" />
     <ClInclude Include="..\Inc\UnShaderManager.h" />
     <ClInclude Include="..\Inc\UnTexCache.h" />

@@ -82,13 +82,20 @@ struct FPolyflagVars
 {
 	UBOOL	bSelected;
 	FLOAT	AlphaReject;
+
+	// Metallicafan212:	Alternative alpha reject
+	FLOAT	AltAlphaReject;
+
 	FLOAT	BWPercent;
 
+	// Metallicafan212:	Current set flags
+	DWORD	ShaderFlags;
+
 	// Metallicafan212:	If alpha is currently enabled
-	UBOOL	bAlphaEnabled;
+	//UBOOL	bAlphaEnabled;
 
 	// Metallicafan212:	Temp hack for modulation until I recode gamma again....
-	UBOOL	bModulated;
+	//UBOOL	bModulated;
 
 	// Metallicafan212:	Selection color (no alpha)
 	FVector	SelectionColor;
@@ -97,9 +104,11 @@ struct FPolyflagVars
 		:
 		bSelected(0),
 		AlphaReject(0.0f),//1e-6f),
+		AltAlphaReject(0.0f),
 		BWPercent(0.0f),
-		bAlphaEnabled(0),
-		bModulated(0),
+		//bAlphaEnabled(0),
+		//bModulated(0),
+		ShaderFlags(0),
 		SelectionColor(0.f, 0.f, 0.f)
 	{
 
@@ -223,6 +232,11 @@ public:
 #define DECLARE_ENUM
 #define DECLARE_GM(name, val)Macros.AddItem({#name, #val});
 #include "GammaModes.h"
+
+		// Metallicafan212:	Shader flags
+#define DECLARE_SF_ENUM
+#define DECLARE_SF(name, val)Macros.AddItem({#name, #val});
+#include "ShaderFlags.h"
 
 		// Metallicafan212:	HP2 render modes
 #if DX11_HP2
