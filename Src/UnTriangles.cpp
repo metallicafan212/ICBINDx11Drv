@@ -65,7 +65,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 
 	// Metallicafan212:	In HP2, I got tired of seeing the random numbers everywhere, so I made a definition for the flags, and then updated them engine-wide
 #if DX11_HP2
-	if ((GUglyHackFlags & HF_Weapon))
+	if ((GUglyHackFlags & HF_PostRender))
 #elif DX11_UT_469
 	if((GUglyHackFlags & HACKFLAGS_PostRender))
 #else
@@ -169,7 +169,7 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	// Metallicafan212:	Set the texture
 	SetTexture(0, const_cast<FTextureInfo*>(&Info), PolyFlags);
 
-	// Metallicafan212:	HP2 is HF_Weapon, UT 469 is HACKFLAGS_PostRender
+	// Metallicafan212:	HP2 is HF_PostRender, UT 469 is HACKFLAGS_PostRender
 	if ((GUglyHackFlags & HACKFLAGS_PostRender))
 	{
 		if(!m_nearZRangeHackProjectionActive)
@@ -270,7 +270,7 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	// Metallicafan212:	Set the texture
 	SetTexture(0, const_cast<FTextureInfo*>(&Info), PolyFlags);
 
-	// Metallicafan212:	HP2 is HF_Weapon, UT 469 is HACKFLAGS_PostRender
+	// Metallicafan212:	HP2 is HF_PostRender, UT 469 is HACKFLAGS_PostRender
 	if ((GUglyHackFlags & HACKFLAGS_PostRender))
 	{
 		if(!m_nearZRangeHackProjectionActive)

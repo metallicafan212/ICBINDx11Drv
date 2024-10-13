@@ -129,11 +129,19 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 
 	UBOOL bNoAF = 0;
 
-	//Adjust Z coordinate if Z range hack is active
-	//if (1)//(m_useZRangeHack)
+	// Metallicafan212:	See if this is rendering the hud, if so ask for no AA for tiles
+#if DX11_HP2
+	UBOOL bHudTile = GUglyHackFlags & HF_PostRender;
+#elif DX11_UT_469
+	UBOOL bHudTile = GUglyHackFlags & HACKFLAGS_PostRender;
+#else
+	// Metallicafan212:	Other games don't render the hud with the hack flag on....
+	//					Just define it as a constant here so that the compiler (should) optimize it away
+#define bHudTile 1
+#endif
 #if 1
 	// Metallicafan212:	Likely the hud, hack it!
-	if ((Z >= 0.0f) && (Z < 8.0f))
+	if ((Z >= 0.0f) && (Z < 8.0f) && bHudTile)
 	{
 		// Metallicafan212:	TODO! There's been some glitchyness due to actor triangles drawing through hud elements, so forcing 0.5 might be needed, or maybe requesting near z range instead
 		Z = 0.5f;
