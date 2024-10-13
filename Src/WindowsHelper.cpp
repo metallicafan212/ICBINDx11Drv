@@ -42,6 +42,29 @@ void SetupWindowsVersionCheck()
 		}
 	}
 
+	// Metallicafan212:	HACK! If the OS is saying that it isn't 81 OR 10, just make sure
+	//					This utilizes a hard-coded pointer that every app (apparenly) has on Windows
+	if (!GWin10 && !GWin81)
+	{
+		BYTE* SharedAppData	= (BYTE*)0x7FFE0000;
+
+		ULONG MajorVersion	= *(ULONG*)(SharedAppData + 0x26c);
+		ULONG MinorVersion	= *(ULONG*)(SharedAppData + 0x270);
+		ULONG BuildNumber	= *(ULONG*)(SharedAppData + 0x260);
+
+		// Metallicafan212:	8.1 or higher?
+		if (MajorVersion > 6 || (MajorVersion == 6 && MinorVersion >= 3))
+		{
+			GWin81 = 1;
+		}
+
+		// Metallicafan212:	10.0 or higher
+		if (MajorVersion > 10 || (MajorVersion == 10 && MinorVersion >= 0))
+		{
+			GWin10 = 1;
+		}
+	}
+
 	unguard;
 }
 

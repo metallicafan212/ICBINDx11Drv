@@ -177,10 +177,11 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	D3D_FEATURE_LEVEL* FLPtr = &FLList[0];
 
-	// Metallicafan212:	TODO! Find a work around that allows for actually checking for the direct windows version....
-	//					I might have to query cmd.....
-#if DX11_HP2 || DX11_UT_469
+	// Metallicafan212:	Found a workaround, but it's a hack. It reads the shared data for the app that windows always puts at a specific address
+	//					Using this, it checks the major and minor versions to see if it's windows 8.1 or 10
+#if 1//DX11_HP2 || DX11_UT_469
 
+	/*
 	// Metallicafan212:	In 469, only do this if compiled for e
 #if DX11_UT_469
 	//if (!c_strcmp(ENGINE_REVISION, TEXT("d")))
@@ -188,6 +189,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 	//					The lowest we support is engine revision D, so as long as it isn't D, it should know it's windows 10 (as the exe has a application manifest)
 	if(Viewport != nullptr && Viewport->Actor != nullptr && Viewport->Actor->Level != nullptr && Viewport->Actor->Level->EngineRevision.Caps() != TEXT("D"))
 #endif
+	*/
 	{
 		if (!GWin10)
 		{
@@ -203,7 +205,6 @@ void UICBINDx11RenderDevice::SetupDevice()
 			FLCount--;
 		}
 	}
-
 #endif
 
 	// Metallicafan212:	On my system, the multithreaded supported device runs ever so slightly faster, for no reason
@@ -1389,7 +1390,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		// 
 		// Metallicafan212:	2024, I added simple windows version checking to the driver for non-HP2 targets
 		//					TODO! Enable for UT469e!
-#if DX11_HP2
+#if DX11_HP2 || DX11_UT_469
 			&& GWin10
 #endif
 			);

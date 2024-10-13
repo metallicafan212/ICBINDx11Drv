@@ -138,10 +138,13 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	//					Default is green with a alpha of 1.0f
 	AddColorProp(CPP_PROP(ActorSelectionColor), FColor(FPlane(0.0f, 1.0f, 0.0f, 1.0f)));
 
+	// Metallicafan212:	Removed the option as it wasn't providing any value in my testing....
+	//					Seems that the GPU is either ignoring it or making additional (unused) resources
 	// Metallicafan212:	Number of additional buffers for the swapchain to make
 	//					Default is 0, for double buffering
 	//					1 = triple buffering
-	AddIntProp(CPP_PROP(NumAdditionalBuffers), 1);
+	//AddIntProp(CPP_PROP(NumAdditionalBuffers), 1);
+	NumAdditionalBuffers = 0;
 
 	AddBoolProp(CPP_PROP(SceneNodeHack), 0);
 
@@ -342,7 +345,10 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 	OrthoLineThickness		= Clamp(OrthoLineThickness, 1.0f, FLT_MAX);
 
 	// Metallicafan212:	TODO! Find the max value allowed!
-	NumAdditionalBuffers	= Max(0, NumAdditionalBuffers);
+	//NumAdditionalBuffers	= Max(0, NumAdditionalBuffers);
+
+	// Metallicafan212:	Don't let the user set a invalid buffer count
+	NumAdditionalBuffers = Clamp(NumAdditionalBuffers, 0, 14);
 
 	// Metallicafan212:	Find the real MSAA levels supported
 	UINT SampleCount = 1;
