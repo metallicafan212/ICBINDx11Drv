@@ -2872,6 +2872,9 @@ void UICBINDx11RenderDevice::EndFlash()
 	{
 		EndBuffering();
 
+		// Metallicafan212:	Request no AA?
+		//SetRasterState(DXRS_Normal | DXRS_NoAA);
+
 		// Metallicafan212:	Start buffering now
 		StartBuffering(BT_ScreenFlash);
 

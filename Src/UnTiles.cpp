@@ -141,7 +141,8 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 #endif
 #if 1
 	// Metallicafan212:	Likely the hud, hack it!
-	if ((Z >= 0.0f) && (Z < 8.0f) && bHudTile)
+	// Metallicafan212:	NEVERMIND!!!! Somehow this breaks the UT fade!
+	if ((Z >= 0.0f) && (Z <= 1.0f)  )//bHudTile)
 	{
 		// Metallicafan212:	TODO! There's been some glitchyness due to actor triangles drawing through hud elements, so forcing 0.5 might be needed, or maybe requesting near z range instead
 		Z = 0.5f;
@@ -151,6 +152,8 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 
 		bNoAF = 1;
 
+		// Metallicafan212:	TODO! Look into doing this a bit less hacky... Maybe as a shader set mode?
+		/*
 		// Metallicafan212:	Force update masking alpha if we're currently in masked mode
 		if (bSmoothHudTiles && (PolyFlags & PF_Masked) && GlobalPolyflagVars.AlphaReject == MaskedAlphaReject)
 		{
@@ -161,6 +164,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 			GlobalPolyflagVars.AlphaReject = SmoothMaskedAlphaReject;
 			UpdatePolyflagsVars();
 		}
+		*/
 	}
 	else
 	{
