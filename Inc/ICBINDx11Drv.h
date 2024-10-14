@@ -35,6 +35,7 @@
 
 // Metallicafan212:	32bit check
 #define UNREAL32 !BUILD_64
+#define UNREAL64 BUILD_64
 
 // Metallicafan212:	DISABLE THE WARNING IF WE'RE IN 32BIT!!!!
 #if UNREAL32

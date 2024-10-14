@@ -121,7 +121,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\..\Core\Lib;..\..\Engine\Lib\;..\..\Render\Lib\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Core.lib;Engine.lib;winmm.lib;advapi32.lib;Dwmapi.lib;D3D11.lib;D3DCompiler.lib;Dwrite.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Core.lib;Engine.lib;winmm.lib;advapi32.lib;Dwmapi.lib;D3D11.lib;D3DCompiler.lib;Dwrite.lib;D2d1.lib;ntdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <LargeAddressAware>true</LargeAddressAware>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
