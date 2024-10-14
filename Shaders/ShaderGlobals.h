@@ -147,6 +147,29 @@ cbuffer FrameVariables : register (b0)
 	//float3	Paddddddd		: packoffset(c7.y);
 };
 
+cbuffer PolyflagVars : register (b2)
+{
+	// Metallicafan212:	New vars for different effects			
+	int		bSelected			: packoffset(c0.x);
+	float	AlphaReject			: packoffset(c0.y);
+	
+	// Metallicafan212:	Alternative alpha reject for hud tiles
+	float	AltAlphaReject		: packoffset(c0.z);
+	
+	float	BWPercent			: packoffset(c0.w);
+	
+	// Metallicafan212:	Generalized shader flags, so we're more optimially using memory
+	dword	ShaderFlags			: packoffset(c1.x);
+	
+	// Metallicafan212:	Pack in the selection color for the editor
+	float3	SelectedColor		: packoffset(c1.y);
+};
+
+cbuffer TextureVariables : register (b3)
+{
+	int4	bTexturesBound[TEX_ARRAY_SIZE]			: packoffset(c0);
+};
+
 #if !NO_CUSTOM_RMODES
 cbuffer DFogVariables : register (b1)
 {
@@ -155,49 +178,7 @@ cbuffer DFogVariables : register (b1)
 	int 	bDoDistanceFog		: packoffset(c2.x);
 	float3	Paddy3				: packoffset(c2.y);
 };
-#endif
 
-cbuffer PolyflagVars : register (b2)
-{
-	// Metallicafan212:	New vars for different effects			
-	//int		bColorMasked		: packoffset(c0.x);
-	int		bSelected			: packoffset(c0.x);
-	float	AlphaReject			: packoffset(c0.y);
-	
-	// Metallicafan212:	Alternative alpha reject for hud tiles
-	float	AltAlphaReject		: packoffset(c0.z);
-	
-	float	BWPercent			: packoffset(c0.w);
-	// Metallicafan212:	Generalized shader flags, so we're more optimially using memory
-	dword	ShaderFlags			: packoffset(c1.x);
-	
-	//int		bAlphaEnabled		: packoffset(c0.w);
-	// Metallicafan212: Temp hack until I recode gamma to be screen-based again, using a different algo
-	//int		bModulated			: packoffset(c1.x);
-	// Metallicafan212:	Pack in the selection color for the editor
-	float3	SelectedColor		: packoffset(c1.y);
-	//float3	Pad					: packoffset(c1.y);
-};
-
-cbuffer TextureVariables : register (b3)
-{
-	int4	bTexturesBound[TEX_ARRAY_SIZE]			: packoffset(c0);
-};
-
-// Metallicafan212:	Moved from the ResScaling.hlsl shader
-// 					From https://github.com/Microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/ColorSpaceUtility.hlsli
-float3 SRGBToRec2020(float3 In)
-{
-	static const float3x3 ConvMat =
-    {
-        0.627402, 0.329292, 0.043306,
-        0.069095, 0.919544, 0.011360,
-        0.016394, 0.088028, 0.895578
-    };
-    return mul(ConvMat, In);
-}
-
-#if !NO_CUSTOM_RMODES
 // Metallicafan212:	Distance fog shit
 //					TODO! A better algorithm????
 //					I have just straight ported the assembly code I wrote a while ago (since I'm a lazy fucking bastard)
@@ -220,24 +201,10 @@ float DoDistanceFog(float InZ)
 #if PIXEL_SHADER
 // Metallicafan212:	HACK!!! To reject black and white on UI tiles, I don't want to have to update all the shaders...
 static bool		bRejectBW;
-#endif
-#endif
 
-#if PIXEL_SHADER
 // Metallicafan212:	Hacked global!!!
 static float	CurrentAlphaReject;
-#endif
 
-// Metallicafan212:	Color masking is currently unimplemented and may not be reimplemented
-
-// Metallicafan212:	Do masked rejection
-#if NO_CUSTOM_RMODES
-#define CLIP_PIXEL(ColorIn) \
-	if(!(ShaderFlags & SF_AlphaEnabled)) \
-		ColorIn.w = 1.0f; \
-	else if(ColorIn.w < CurrentAlphaReject) \
-		discard;
-#else
 #define CLIP_PIXEL(ColorIn) \
 	if (RendMap == REN_Normals) \
 		ColorIn.xyzw = input.color; \
@@ -247,10 +214,7 @@ static float	CurrentAlphaReject;
 		discard; \
 	if(RendMap == REN_Depth) \
 		ColorIn.xyz = input.origZ / DepthDrawLimit;
-#endif
 
-#if PIXEL_SHADER
-#if !NO_CUSTOM_RMODES
 float4 DoPixelFog(float DistFog, float4 Color)
 {
 	// Metallicafan212:	Early bail
@@ -266,22 +230,34 @@ float4 DoPixelFog(float DistFog, float4 Color)
 	
 	return float4(Temp, Color.w);
 }
+
+#endif
+#else
+#if PIXEL_SHADER
+
+// Metallicafan212:	Hacked global!!!
+static float	CurrentAlphaReject;
+
+#define CLIP_PIXEL(ColorIn) \
+	if(!(ShaderFlags & SF_AlphaEnabled)) \
+		ColorIn.w = 1.0f; \
+	else if(ColorIn.w < CurrentAlphaReject) \
+		discard;
 #endif
 #endif
 
-// Metallicafan212:	Not needed now, the per object gamma was removed
-/*
-float4 DoGammaCorrection(float4 ColorIn)
+// Metallicafan212:	Moved from the ResScaling.hlsl shader
+// 					From https://github.com/Microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/ColorSpaceUtility.hlsli
+float3 SRGBToRec2020(float3 In)
 {
-	if(GammaMode != GM_PerObject || Gamma == 1.0f || bModulated)
-		return ColorIn;
-	
-	float OverGamma = 1.0f / Gamma;
-	ColorIn.xyz = pow(abs(ColorIn.xyz), float3(OverGamma, OverGamma, OverGamma));
-	
-	return ColorIn;
+	static const float3x3 ConvMat =
+    {
+        0.627402, 0.329292, 0.043306,
+        0.069095, 0.919544, 0.011360,
+        0.016394, 0.088028, 0.895578
+    };
+    return mul(ConvMat, In);
 }
-*/
 
 #if PIXEL_SHADER
 float4 DoFinalColor(float4 ColorIn)

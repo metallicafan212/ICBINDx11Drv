@@ -34,6 +34,12 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	Tell Render.dll that we can process specific render modes ourselfs
 	bSupportsNativeRendModes = 1;
 
+	// Metallicafan212:	HP2 Rendertarget textures
+	bSupportsRTTextures = 1;
+
+	// Metallicafan212:	HP2 native wireframe
+	bSupportsNativeWireframe = 1;
+
 #endif
 
 	// Metallicafan212:	Tell the engine that we support the lighting shader
@@ -54,14 +60,6 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	// Metallicafan212:	Mark it as certified
 	DescFlags |= RDDESCF_Certified;
-
-#if DX11_HP2
-	// Metallicafan212:	HP2 Rendertarget textures
-	bSupportsRTTextures = 1;
-
-	// Metallicafan212:	HP2 native wireframe
-	bSupportsNativeWireframe = 1;
-#endif
 
 #if DX11_UT_469
 	NeedsMaskedFonts = 0;
@@ -185,7 +183,10 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	AddFloatProp(CPP_PROP(DepthDrawZLimit), 5000.0f);
 
 	// Metallicafan212:	For some reason on my system, this runs slightly faster
-	AddBoolProp(CPP_PROP(bUseMultiThreadedDevice), 1);
+	//AddBoolProp(CPP_PROP(bUseMultiThreadedDevice), 1);
+
+	// Metallicafan212:	Simplify this for now
+	bUseMultiThreadedDevice = 0;
 
 	// Metallicafan212:	If we have the multi-threaded device, allow for deferred rendering to work
 	//					TODO! This doesn't work AT ALL!
@@ -344,11 +345,8 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 	ThreeDeeLineThickness	= Clamp(ThreeDeeLineThickness, 1.0f, FLT_MAX);
 	OrthoLineThickness		= Clamp(OrthoLineThickness, 1.0f, FLT_MAX);
 
-	// Metallicafan212:	TODO! Find the max value allowed!
-	//NumAdditionalBuffers	= Max(0, NumAdditionalBuffers);
-
 	// Metallicafan212:	Don't let the user set a invalid buffer count
-	NumAdditionalBuffers = Clamp(NumAdditionalBuffers, 0, 14);
+	NumAdditionalBuffers	= Clamp(NumAdditionalBuffers, 0, 14);
 
 	// Metallicafan212:	Find the real MSAA levels supported
 	UINT SampleCount = 1;
@@ -356,7 +354,7 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 
 	UINT NumQualityLevels = 0;
 
-	while (SUCCEEDED(hr = m_D3DDevice->CheckMultisampleQualityLevels(DXGI_FORMAT_B8G8R8A8_UNORM, SampleCount, &NumQualityLevels)))
+	while (SUCCEEDED(hr = m_D3DDevice->CheckMultisampleQualityLevels(ScreenFormat, SampleCount, &NumQualityLevels)))
 	{
 		// Metallicafan212:	See if it's actually supported (the device can choose to send a sucess code but set quality levels to 0, like AMD)
 		if (NumQualityLevels <= 0)

@@ -1231,9 +1231,6 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	GLog->Logf(TEXT("DX11: Setting up resources"));
 
-	// Metallicafan212:	Clamp the user options!
-	ClampUserOptions();
-
 	// Metallicafan212:	Reset our bound textures
 	for (INT i = 0; i < MAX_TEXTURES; i++)
 	{
@@ -1460,7 +1457,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		swapChainDesc.SampleDesc.Count		= 1;
 		swapChainDesc.SampleDesc.Quality	= 0;
 		swapChainDesc.BufferUsage			= DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_UNORDERED_ACCESS;
-		swapChainDesc.BufferCount			= 2 + NumAdditionalBuffers;
+		swapChainDesc.BufferCount			= 2; //+ NumAdditionalBuffers;
 		//swapChainDesc.Scaling				= DXGI_SCALING_NONE;
 		// Metallicafan212:	If we're on windows 10 or above, use the better DXGI mode
 		swapChainDesc.SwapEffect			= (bAllowTearing ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD);
@@ -1522,6 +1519,9 @@ void UICBINDx11RenderDevice::SetupResources()
 		dxgiAdapter->Release();
 		dxgiDevice->Release();
 
+		// Metallicafan212:	Clamp the user options!
+		ClampUserOptions();
+
 		LastAdditionalBuffers = NumAdditionalBuffers;
 
 		// Metallicafan212:	Log the change
@@ -1532,6 +1532,9 @@ void UICBINDx11RenderDevice::SetupResources()
 	}
 	else
 	{
+		// Metallicafan212:	Clamp the user options!
+		ClampUserOptions();
+
 		// Metallicafan212:	If the buffer count doesn't match, resetup the device
 		if (LastAdditionalBuffers != NumAdditionalBuffers)
 		{
