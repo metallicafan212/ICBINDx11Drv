@@ -1052,6 +1052,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	FLOAT m_RProjZ, m_Aspect;
 	FLOAT m_RFX2, m_RFY2;
 	INT m_sceneNodeX, m_sceneNodeY;
+	UBOOL m_OrthoProjection;
 	FLOAT ScaledSceneNodeX, ScaledSceneNodeY;
 	FLOAT ScaledFX2, ScaledFY2;
 

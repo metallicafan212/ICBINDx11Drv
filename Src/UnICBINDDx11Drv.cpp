@@ -3053,6 +3053,10 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 		ScaledFY2		= NewY * 0.5f;
 
 		MaxZ			= 65536.0f;
+
+#if DX11_HP2
+		m_OrthoProjection = 0;
+#endif
 	}
 	else
 	{
@@ -3099,7 +3103,16 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 
 		// Metallicafan212:	This is HP2 specific! Since I have a viewport FOV that is calcuated to be a hor+ FOV, so 90 @ 16x9 is 109
 #if DX11_HP2
-		m_RProjZ = appTan(Viewport->FOVAngle * PI / 360.0);
+		if (!Frame->bOrthoProjection)
+		{
+			m_RProjZ = appTan(Viewport->FOVAngle * PI / 360.0);
+		}
+		else
+		{
+			m_RProjZ = 0.0f;
+		}
+
+		m_OrthoProjection = Frame->bOrthoProjection;
 #else
 		m_RProjZ = appTan(Viewport->Actor->FovAngle * PI / 360.0);
 #endif
@@ -3246,17 +3259,21 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	//appMemzero(FrameShaderVars.Proj.m, sizeof(FLOAT[4][4]));
 
 	// Metallicafan212:	Ortho projection
-	if (m_RProjZ == 0.0f)
+	if (m_OrthoProjection)//m_RProjZ == 0.0f)
 	{
+		/*
 		FrameShaderVars.Proj.m[0][0] = (2.0f * zNear)/ ScaledSceneNodeY;
 		FrameShaderVars.Proj.m[1][1] = (-2.0f * zNear)/ ScaledSceneNodeY;
 		FrameShaderVars.Proj.m[2][2] = 1.0f / (zFar - zNear);//-zScaleVal * (zFar * invNearMinusFar);
 		FrameShaderVars.Proj.m[2][3] = -zNear / (zFar - zNear);//zScaleVal * zScaleVal * (zNear * zFar * invNearMinusFar);
 		FrameShaderVars.Proj.m[3][2] = 1.0f;
+		*/
+
+		FrameShaderVars.Proj = DirectX::XMMatrixOrthographicLH(ScaledSceneNodeX * Viewport->Actor->OrthoZoom, -ScaledSceneNodeY * Viewport->Actor->OrthoZoom, zNear, zFar);
 	}
 	else
 	{
-
+		//appMemzero(&FrameShaderVars.Proj.m[0][0], sizeof(FLOAT[4][4]));
 		// Metallicafan212:	I've fixed this to the correct order it should be
 		FrameShaderVars.Proj.m[0][0] = 2.0f * zNear * invRightMinusLeft;
 
@@ -3269,6 +3286,7 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 		FrameShaderVars.Proj.m[2][2] = -zScaleVal * (zFar * invNearMinusFar);
 		FrameShaderVars.Proj.m[2][3] = zScaleVal * zScaleVal * (zNear * zFar * invNearMinusFar);
 		FrameShaderVars.Proj.m[3][2] = 1.0f;
+		FrameShaderVars.Proj.m[3][3] = 0.0f;
 	}
 
 	//FrameShaderVars.Proj = DirectX::XMMatrixPerspectiveFovLH(90.0f, ((FLOAT)m_sceneNodeX) / ((FLOAT)m_sceneNodeY), zScaleVal * zNear, zScaleVal* zFar);
