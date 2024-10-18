@@ -339,6 +339,7 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	// Metallicafan212:	Temp render target to stretch over!
 	StageDesc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;
 	StageDesc.Usage					= D3D11_USAGE_DEFAULT;
+	StageDesc.CPUAccessFlags		= 0;
 	StageDesc.BindFlags				= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;;
 
 	ID3D11Texture2D* RTStage = nullptr;
