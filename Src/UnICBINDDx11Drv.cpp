@@ -81,6 +81,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_BackBuffTex);
 	SAFE_RELEASE(m_BackBuffRT);
 	SAFE_RELEASE(m_BackBuffUAV);
+	SAFE_RELEASE(m_BackBuffSRV);
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
@@ -1258,6 +1259,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	SAFE_RELEASE(m_BackBuffTex);
 	SAFE_RELEASE(m_BackBuffRT);
 	SAFE_RELEASE(m_BackBuffUAV);
+	SAFE_RELEASE(m_BackBuffSRV);
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
@@ -1664,6 +1666,17 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	ThrowIfFailed(hr);
 
+	// Metallicafan212:	Back buffer shader view
+	CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = CD3D11_SHADER_RESOURCE_VIEW_DESC();
+	srvDesc.Format						= ScreenFormat;
+	srvDesc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MostDetailedMip	= 0;
+	srvDesc.Texture2D.MipLevels			= 1;
+
+	hr = m_D3DDevice->CreateShaderResourceView(m_BackBuffTex, &srvDesc, &m_BackBuffSRV);
+
+	ThrowIfFailed(hr);
+
 	// Metallicafan212:	Now create the MSAA target
 	//					ClampUserOptions already checks what levels of MSAA are supported, and clamps to that
 	CD3D11_TEXTURE2D_DESC RTMSAA = CD3D11_TEXTURE2D_DESC();
@@ -1686,7 +1699,6 @@ void UICBINDx11RenderDevice::SetupResources()
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Create a shader resource view for MSAA resolving
-	CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = CD3D11_SHADER_RESOURCE_VIEW_DESC();
 	srvDesc.Format						= ScreenFormat;
 	srvDesc.ViewDimension				= NumAASamples > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;//D3D11_SRV_DIMENSION_TEXTURE2DMS;
 	srvDesc.Texture2D.MostDetailedMip	= 0;
@@ -2106,6 +2118,7 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_RELEASE(m_BackBuffTex);
 	SAFE_RELEASE(m_BackBuffRT);
 	SAFE_RELEASE(m_BackBuffUAV);
+	SAFE_RELEASE(m_BackBuffSRV);
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
@@ -3055,7 +3068,8 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 		MaxZ			= 65536.0f;
 
 #if DX11_HP2
-		m_OrthoProjection = 0;
+		m_OrthoProjection	= 0;
+		OrthoZoom			= 1.0f;
 #endif
 	}
 	else
@@ -3112,7 +3126,9 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 			m_RProjZ = 0.0f;
 		}
 
-		m_OrthoProjection = Frame->bOrthoProjection;
+		m_OrthoProjection	= Frame->bOrthoProjection;
+
+		OrthoZoom			= Frame->Zoom;
 #else
 		m_RProjZ = appTan(Viewport->Actor->FovAngle * PI / 360.0);
 #endif
@@ -3269,7 +3285,7 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 		FrameShaderVars.Proj.m[3][2] = 1.0f;
 		*/
 
-		FrameShaderVars.Proj = DirectX::XMMatrixOrthographicLH(ScaledSceneNodeX * Viewport->Actor->OrthoZoom, -ScaledSceneNodeY * Viewport->Actor->OrthoZoom, zNear, zFar);
+		FrameShaderVars.Proj = DirectX::XMMatrixOrthographicLH(ScaledSceneNodeX * OrthoZoom, -ScaledSceneNodeY * OrthoZoom, zNear, zFar);
 	}
 	else
 	{

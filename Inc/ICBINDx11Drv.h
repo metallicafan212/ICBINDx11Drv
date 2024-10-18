@@ -795,7 +795,10 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	ID3D11RenderTargetView*		m_BackBuffRT;
 
 	// Metallicafan212:	The unordered view for the backbuffer, so we can use a compute shader on it
-	ID3D11UnorderedAccessView*	m_BackBuffUAV;
+	ID3D11ShaderResourceView*	m_BackBuffSRV;
+
+	// Metallicafan212:	The shader view for the back buffer, so we can draw it on things
+	ID3D11UnorderedAccessView* m_BackBuffUAV;
 
 	// Metallicafan212:	The number of threads to use for the MSAA compute shader
 	//					TODO! Work on this more so that the shader can be recompiled with the right base level of threads!!!!
@@ -887,6 +890,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	std::unordered_map<FString, IDWriteTextFormat*>	FontMap;
 #endif
 #endif
+
+	// Metallicafan212:	Orthoganal zoom value from the frame
+	FLOAT						OrthoZoom;
 
 	// Metallicafan212:	Array of RT textures
 	TArray<UDX11RenderTargetTexture*>	RTTextures;
