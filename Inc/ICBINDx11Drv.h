@@ -649,6 +649,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	If to use HDR (note that it'll look wrong on non-HDR screens)
 	UBOOL						UseHDR;
 
+	// Metallicafan212:	If to use HDR in the editor (NOTE! This isn't finished, and windows isn't auto detecting the app for HDR, so it just makes the image extremely bright...)
+	UBOOL						UseHDRInEditor;
+
 	// Metallicafan212:	If HDR is active (and the screenformat is set)
 	UBOOL						ActiveHDR;
 

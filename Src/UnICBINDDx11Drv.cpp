@@ -1322,6 +1322,8 @@ void UICBINDx11RenderDevice::SetupResources()
 	// Metallicafan212:	Create or resize the swap chain
 	HRESULT hr = S_OK;
 
+	UBOOL bLocalHDR = (!GIsEditor ? UseHDR : UseHDRInEditor);
+
 	if (m_D3DSwapChain == nullptr)
 	{
 	SetupSwap:
@@ -1457,7 +1459,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	See if we should use the HDR compatible mode
 	TESTHDR:
 		// Metallicafan212:	Allow HDR in the editor
-		ScreenFormat = (UseHDR ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_B8G8R8A8_UNORM);
+		ScreenFormat = (bLocalHDR ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_B8G8R8A8_UNORM);
 
 		// Metallicafan212:	Base this on the feature level
 		if (m_FeatureLevel < D3D_FEATURE_LEVEL_11_1)
@@ -1466,6 +1468,7 @@ void UICBINDx11RenderDevice::SetupResources()
 			ScreenFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 		}
 		
+
 
 		// Metallicafan212:	Describe the non-aa swap chain (MSAA is resolved in Unlock)
 		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
@@ -1498,11 +1501,19 @@ void UICBINDx11RenderDevice::SetupResources()
 			&m_D3DSwapChain
 		);
 
-		if (FAILED(hr) && UseHDR)
+		if (FAILED(hr) && bLocalHDR)
 		{
 			// Metallicafan212:	Swap
 			GLog->Logf(TEXT("DX11: Failed to use HDR screen format, swapping back to SDR"));
-			UseHDR = 0;
+			//UseHDR = 0;
+			if (!GIsEditor)
+			{
+				UseHDR = 0;
+			}
+			else
+			{
+				UseHDRInEditor = 0;
+			}
 			goto TESTHDR;
 		}
 
@@ -1518,7 +1529,7 @@ void UICBINDx11RenderDevice::SetupResources()
 
 			goto RETRY_SWAP;
 		}
-		else if(SUCCEEDED(hr) && !bForceRGBA && UseHDR && !GIsEditor)
+		else if(SUCCEEDED(hr) && !bForceRGBA && bLocalHDR)
 		{
 			GLog->Logf(TEXT("DX11: HDR mode active"));
 
@@ -1973,7 +1984,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	}
 
 	// Metallicafan212:	Allow HDR in the editor
-	if (UseHDR)//&& !GIsEditor)
+	if (bLocalHDR)//&& !GIsEditor)
 	{
 		// Metallicafan212:	Autodetect it
 		AutodetectWhiteBalance();

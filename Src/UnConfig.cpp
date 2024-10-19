@@ -157,6 +157,7 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	// Metallicafan212:	Add an option to use a HDR compatible screen type (in-game only)
 	AddBoolProp(CPP_PROP(UseHDR), 0);
+	AddBoolProp(CPP_PROP(UseHDRInEditor), 0);
 
 	// Metallicafan212:	Add on user selectable gamma modes, so they can pick what fits best for them
 	UEnum* GEnum = new (GetClass(), TEXT("GammaModes"))UEnum(nullptr);

@@ -320,7 +320,7 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 				CONVERT_PX(HR);
 				HR++;
 			}
-			else if (UseHDR)
+			else if (ActiveHDR)
 			{
 				/*
 				FLOAT R = Clamp(FLOAT(HDR->R), 0.0f, 1.0f);
