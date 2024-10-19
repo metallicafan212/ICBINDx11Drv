@@ -63,8 +63,14 @@ PSInput VertShader(VSInput input)
 	// Metallicafan212:	Transform it out
 	output.pos 		= mul(input.pos, Proj);
 	
+	// Metallicafan212:	If selection is active, just output the input color
+	if(bDoSelection)
+	{
+		output.color 	= input.color;
+		output.fog		= float4(0.0f, 0.0f, 0.0f, 0.0f);
+	}
 	// Metallicafan212:	If we're selected, set the light color to the selection color
-	if(bSelected)
+	else if(bSelected)
 	{
 		output.color	= float4(SelectedColor, 1.0f);
 		output.fog		= float4(0.0f, 0.0f, 0.0f, 0.0f);
