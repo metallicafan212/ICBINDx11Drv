@@ -1406,10 +1406,15 @@ void UICBINDx11RenderDevice::SetupResources()
 		// 
 		// Metallicafan212:	2024, I added simple windows version checking to the driver for non-HP2 targets
 		//					TODO! Enable for UT469e!
-#if DX11_HP2 || DX11_UT_469
+#if 1//DX11_HP2 || DX11_UT_469
 			&& GWin10
 #endif
+			// Metallicafan212:	Not allowed in fullscreen
+			&& !bFullscreen
 			);
+
+		// Metallicafan212:	Flip discard is only limited by windows 10
+		bFlipDiscard = GWin10;
 
 		// Metallicafan212:	Don't even test it if it's not able to be grabbed
 		IDXGIFactory2* dxgiFactory = nullptr;
@@ -1481,9 +1486,10 @@ void UICBINDx11RenderDevice::SetupResources()
 		swapChainDesc.BufferCount			= 2; //+ NumAdditionalBuffers;
 		//swapChainDesc.Scaling				= DXGI_SCALING_NONE;
 		// Metallicafan212:	If we're on windows 10 or above, use the better DXGI mode
-		swapChainDesc.SwapEffect			= (bAllowTearing ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD);
-		swapChainDesc.Flags					|= (bAllowTearing  && !GIsEditor ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0);
-		swapChainDesc.Scaling				= (bFullscreen ? DXGI_SCALING_NONE : DXGI_SCALING_STRETCH);
+		swapChainDesc.SwapEffect			= (bFlipDiscard		? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD);
+		swapChainDesc.Flags					|= (bAllowTearing	? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0);
+		swapChainDesc.Scaling				= (bFullscreen		? DXGI_SCALING_NONE : DXGI_SCALING_STRETCH);
+
 
 		DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsSwapChainDesc = {};
 		fsSwapChainDesc.Windowed			= !bFullscreen;//TRUE;
@@ -1539,6 +1545,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		{
 			ThrowIfFailed(hr);
 		}
+
+		PresentFlags = (bAllowTearing ? DXGI_PRESENT_ALLOW_TEARING : 0);
 
 		// Metallicafan212:	Make it stop messing with the window itself
 		dxgiFactory->MakeWindowAssociation((HWND)Viewport->GetWindow(), /*DXGI_MWA_NO_WINDOW_CHANGES |*/ DXGI_MWA_NO_ALT_ENTER);
@@ -1610,6 +1618,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		{
 			appErrorf(TEXT("Failed to resize buffers with %lu"), hr);
 		}
+
+		PresentFlags = (bAllowTearing ? DXGI_PRESENT_ALLOW_TEARING : 0);
 	}
 
 	// Metallicafan212:	Initalize shaders, if needed
@@ -2830,8 +2840,18 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 		}
 
 	JUST_PRESENT:
+		// Metallicafan212:	TODO! Speed this up as there's a dumb amount of checks here....
 		static constexpr DXGI_PRESENT_PARAMETERS Parm{ 0, nullptr, nullptr, nullptr };
-		HRESULT hr = m_D3DSwapChain->Present1(UseVSync ? 1 : 0, (bAllowTearing && !bFullscreen && !UseVSync ? DXGI_PRESENT_ALLOW_TEARING : 0), &Parm);
+
+		HRESULT hr = S_OK;
+		if (UseVSync)
+		{
+			hr = m_D3DSwapChain->Present1(1, 0, &Parm);
+		}
+		else
+		{
+			hr = m_D3DSwapChain->Present1(0, PresentFlags, &Parm);//(bAllowTearing ? DXGI_PRESENT_ALLOW_TEARING : 0), &Parm);
+		}
 
 		// Metallicafan212:	Check the return code
 		switch (hr)

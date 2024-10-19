@@ -994,6 +994,11 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	If we're using a Freesync/GSync mode
 	UBOOL								bAllowTearing;
 
+	UINT								PresentFlags;
+
+	// Metallicafan212:	If we're requesting the flip discard flag
+	UBOOL								bFlipDiscard;
+
 	// Metallicafan212:	Unreal related variables
 	UBOOL								bFullscreen;
 	UBOOL								bLastFullscreen;
