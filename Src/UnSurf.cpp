@@ -367,7 +367,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	// Metallicafan212:	TODO! Make selection a part of the shader???
 	//					I tried it before, but it just looked wrong since it had to compete with the underlying texture color
 	//					For now, just layer on top to preserve the same look as the other renderers
-	if ((GIsEditor && (PolyFlags & PF_Selected)) || (PolyFlags & PF_FlatShaded))
+	if ((GIsEditor && m_HitData == nullptr && (PolyFlags & PF_Selected)) || (PolyFlags & PF_FlatShaded))
 	{
 		// Metallicafan212:	We have to draw the previous indexed surface first!!!!
 		EndBuffering();

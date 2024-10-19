@@ -260,7 +260,7 @@ float3 SRGBToRec2020(float3 In)
 }
 
 #if PIXEL_SHADER
-float4 DoFinalColor(float4 ColorIn)
+float4 DoFinalColor(float4 ColorIn, float4 SelectionColor)
 {
 	// Metallicafan212:	If doing selection, move out the selection color
 	if(bDoSelection)
@@ -271,7 +271,7 @@ float4 DoFinalColor(float4 ColorIn)
 		}
 		else
 		{
-			return float4(SelectedColor.xyz, 1.0f);//SelectionColor.xyz, 1.0f);
+			return float4(SelectionColor.xyz, 1.0f);//SelectedColor.xyz, 1.0f);//SelectionColor.xyz, 1.0f);
 		}
 	}
 	

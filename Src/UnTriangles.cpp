@@ -3,7 +3,7 @@
 // Metallicafan212:	TODO! Move these into the shader?
 static FPlane NoFog				= FPlane(0.f, 0.f, 0.f, 0.f);
 
-FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, PFLAG& PolyFlags, UBOOL& bDoFog, FLOAT& UMult, FLOAT& VMult)//UBOOL bDoSelection, FPlane& SelectionColor)
+FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, PFLAG& PolyFlags, UBOOL& bDoFog, FLOAT& UMult, FLOAT& VMult, UBOOL& bDoSelection, FPlane& SelectionColor)
 {
 	// Metallicafan212:	Speed this up by just copying it
 	appMemcpy(&m_Vert->X, &P->Point.X, sizeof(FLOAT) * 3);
@@ -12,7 +12,11 @@ FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, PFLAG& PolyFlags, UB
 	m_Vert->U	= P->U * UMult;
 	m_Vert->V	= P->V * VMult;
 
-	if (bDoFog)
+	if (bDoSelection)
+	{
+		appMemcpy(&m_Vert->Color, &SelectionColor, sizeof(FLOAT) * 4);
+	}
+	else if (bDoFog)
 	{
 		appMemcpy(&m_Vert->Color, &P->Light, sizeof(FLOAT) * 8);
 	}
@@ -113,9 +117,11 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	}
 #endif
 
+	UBOOL bDoSelection = (m_HitData != nullptr);
+
 	for (INT i = 0; i < NumPts; i++)
 	{
-		DoVert(Pts[i],  &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult);
+		DoVert(Pts[i],  &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
 	}
 
 #if !INT_INDEX_BUFF
@@ -201,13 +207,15 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 
 	INDEX baseVIndex = m_BufferedVerts;
 
-	DoVert(Pts[0], &Mshy[0], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult);
-	DoVert(Pts[1], &Mshy[1], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult);
+	UBOOL bDoSelection = (m_HitData != nullptr);
+
+	DoVert(Pts[0], &Mshy[0], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
+	DoVert(Pts[1], &Mshy[1], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
 
 	// Metallicafan212:	First two verts, then we fan out
 	for (INT i = 2; i < NumPts; i++)
 	{
-		DoVert(Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult);
+		DoVert(Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
 
 		// Metallicafan212:	Now the indices
 		m_IndexBuff[vIndex++] = baseVIndex;
@@ -295,6 +303,8 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 
 	FD3DVert* Mshy		= (FD3DVert*)m_VertexBuff;
 
+	UBOOL bDoSelection = (m_HitData != nullptr);
+
 	// Metallicafan212:	Process a whole triangle at a time
 	INT M = 0;
 	for (INT i = 0; i < NumPts; i += 3)
@@ -335,9 +345,9 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 			Exchange(Pts[i + 2], Pts[i]);
 		}
 
-		DoVert(&Pts[i],		&Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult);
-		DoVert(&Pts[i + 1], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult);
-		DoVert(&Pts[i + 2], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult);
+		DoVert(&Pts[i],		&Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
+		DoVert(&Pts[i + 1], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
+		DoVert(&Pts[i + 2], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
 	}
 
 	AdvanceVertPos();

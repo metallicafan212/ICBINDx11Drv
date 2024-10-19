@@ -1,124 +1,5 @@
 ﻿#include "ICBINDx11Drv.h"
 
-// Metallicafan212:	Custom half float support, for HDR screenshots
-//					Really only exists to convert to float (for now)
-struct ToFloat
-{
-	union
-	{
-		FLOAT Val;
-		struct
-		{
-			DWORD	Mantisa		: 23;
-			DWORD	Exponent	: 8;
-			DWORD	SignBit		: 1;
-		};
-	};
-};
-
-#pragma pack(push, 1)
-struct HalfFloat
-{
-	union
-	{
-		SHORT Val;
-		struct
-		{
-			SHORT Man		: 10;
-			SHORT Exp		: 5;
-			SHORT SignBit	: 1;
-		};
-	};
-
-	HalfFloat() 
-		: Val(0) 
-	{
-
-	}
-	
-	HalfFloat(SHORT In) 
-		: Val(In)
-	{
-
-	}
-
-	operator FLOAT()
-	{
-		ToFloat Value = { 0.0f };
-
-		/*
-		// Metallicafan212:	Since we can always assume that DX will provide "valid" values, just do it in place
-		Value.SignBit	= SignBit;
-		Value.Exponent	= ((INT)Exp) + 112;
-		Value.Mantisa	= ((INT)Man) << 13;
-
-		return Value.Val;
-		*/
-		// Metallicafan212:	Values in our union aren't signed, we need them signed here
-		//					Specifically, the exponent needs to be signed
-		INT TempM = Man;
-		INT TempE = Exp;
-
-		if (TempE == 0 && TempM == 0)
-		{
-			// Metallicafan212:	0, return the signed component
-			if (SignBit)
-			{
-				Value.Val = -0.0f;
-			}
-
-			return Value.Val;
-		}
-		// Metallicafan212:	Mantisa is valid, we need to check it
-		else if (TempE == 0)
-		{
-			// Metallicafan212:	Exponent is 0, we need to get to the first normalized exponent
-			//					Bring it right up past the bit limit
-			while (!(TempM & 0x400))
-			{
-				// Metallicafan212:	Reduce the exponent
-				TempE -= 1;
-
-				// Metallicafan212:	Shift
-				TempM <<= 1;
-			}
-
-			// Metallicafan212:	Now remove all "invalid" bits
-			TempM &= ~0x400;
-
-			// Metallicafan212:	Back up one level
-			TempE += 1;
-		}
-		else if (TempE == 31)
-		{
-			// Metallicafan212:	Check if we're valid
-			if (TempM != 0)
-			{
-				// Metallicafan212: nan....
-				Value.Val = SignBit ? -NAN : NAN;
-			}
-			else
-			{
-				// Metallicafan212:	Infinitiy
-				Value.Val = SignBit ? -INFINITY : INFINITY;
-			}
-
-			return Value.Val;
-		}
-
-		// Metallicafan212:	Convert to the wider float representation
-		Value.Exponent	= TempE + 112;
-
-		// Metallicafan212:	Half float has 10 bits, float has 23
-		Value.Mantisa	= TempM << 13;
-		Value.SignBit	= SignBit;
-
-		return Value.Val;
-	}
-
-};
-#pragma pack(pop)
-
 // Metallicafan212:	Functions relating to testing mouse clicks on the render target
 //					I've coped and modified all the hit testing stuff from my version of the DX9 driver
 void UICBINDx11RenderDevice::PushHit(const BYTE* Data, INT Count)
@@ -264,6 +145,7 @@ struct ColorHackRGBA
 	};
 };
 
+/*
 // Metallicafan212:	HDR version of the screenshot code
 struct ColorHackHDR
 {
@@ -286,6 +168,7 @@ struct ColorHackHDR
 		};
 	};
 };
+*/
 
 #define USE_RT_SCREENSHOT 1
 
@@ -311,11 +194,7 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 
 	D3D11_TEXTURE2D_DESC StageDesc;
 
-#if USE_RT_SCREENSHOT
-	StageDesc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;//ScreenFormat;
-#else
-	StageDesc.Format				= ScreenFormat;
-#endif
+	StageDesc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;
 	StageDesc.Width					= SizeX;
 	StageDesc.Height				= SizeY;
 	StageDesc.CPUAccessFlags		= D3D11_CPU_ACCESS_READ;
@@ -325,16 +204,10 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	StageDesc.SampleDesc.Quality	= 0;
 	StageDesc.Usage					= D3D11_USAGE_STAGING;
 	StageDesc.BindFlags				= 0;
-	//StageDesc.BindFlags				= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;;
 	StageDesc.MiscFlags				= 0;
 	
 	HRESULT hr = m_D3DDevice->CreateTexture2D(&StageDesc, nullptr, &Stage);
 	ThrowIfFailed(hr);
-
-#if !USE_RT_SCREENSHOT
-	// Metallicafan212:	Copy to a staging texture...
-	m_RenderContext->CopySubresourceRegion(Stage, 0, 0, 0, 0, m_BackBuffTex, 0, nullptr);
-#else
 
 	// Metallicafan212:	Temp render target to stretch over!
 	StageDesc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -346,7 +219,6 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 
 	hr = m_D3DDevice->CreateTexture2D(&StageDesc, nullptr, &RTStage);
 	ThrowIfFailed(hr);
-
 
 	// Metallicafan212:	Create a render target
 	CD3D11_RENDER_TARGET_VIEW_DESC rtVDesc = CD3D11_RENDER_TARGET_VIEW_DESC();
@@ -391,7 +263,6 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	// Metallicafan212:	Draw
 	EndBuffering();
 
-	//SetTexture(0, nullptr, 0);
 	// Metallicafan212:	Fix the shader holding onto the RT texture
 	m_RenderContext->PSSetShaderResources(0, 1, &BlankResourceView);
 
@@ -407,7 +278,6 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 
 	RTStage->Release();
 	RTStage = nullptr;
-#endif
 
 	D3D11_MAPPED_SUBRESOURCE Map;
 	hr = m_RenderContext->Map(Stage, 0, D3D11_MAP_READ, 0, &Map);
@@ -425,40 +295,6 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 
 	FLOAT AvgImgLevel = 0.0f;
 	DOUBLE TempPixelStorage = 0.0;
-
-	/*
-	// Metallicafan212:	Loop twice, as we have to normalize the image...
-	if (UseHDR)
-	{
-		// Metallicafan212:	Copy over the whole image
-		for (INT y = 0; y < SizeY; y++)
-		{
-			// Metallicafan212:	Define the current row of pixels
-			INT				Row	= SizeX * y;
-
-			// Metallicafan212:	Calculate this a bit differently
-			ColorHackHDR* HDR	= (ColorHackHDR*)(MappedSrc	+ (y * Map.RowPitch));
-
-			for (INT x = 0; x < SizeX; x++)
-			{
-				FLOAT R = FLOAT(HDR->R);
-				FLOAT G = FLOAT(HDR->G);
-				FLOAT B = FLOAT(HDR->B);
-
-				TempPixelStorage = (R + G + B) / 3.0;
-
-				if (TempPixelStorage > AvgImgLevel)
-				{
-					AvgImgLevel = TempPixelStorage;
-				}
-
-			}
-		}
-
-		//TempPixelStorage /= (DOUBLE)SizeX * SizeY;
-		//AvgImgLevel		= TempPixelStorage;
-	}
-	*/
 	
 	// Metallicafan212:	Copy over the whole image
 	for (INT y = 0; y < SizeY; y++)
@@ -467,9 +303,9 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 		INT				Row	= SizeX * y;
 
 		// Metallicafan212:	Calculate this a bit differently
-		ColorHack*		H	= (ColorHack*)(MappedSrc		+ (y * Map.RowPitch));
+		//ColorHack*		H	= (ColorHack*)(MappedSrc		+ (y * Map.RowPitch));
 		ColorHackRGBA*	HR	= (ColorHackRGBA*)(MappedSrc	+ (y * Map.RowPitch));
-		ColorHackHDR*	HDR	= (ColorHackHDR*)(MappedSrc	+ (y * Map.RowPitch));
+		//ColorHackHDR*	HDR	= (ColorHackHDR*)(MappedSrc	+ (y * Map.RowPitch));
 		FColor* P			= Pixels + Row;
 
 		for (INT x = 0; x < SizeX; x++)
@@ -579,32 +415,11 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 	HRESULT hr = S_OK;
 
 	guard(CopyFromRT);
-	/*
-	// Metallicafan212:	Get a copy of the render target!
-	//					We have to copy the whole damn thing when MSAA is enabled!!!!!!!
-	//					Because of that, we need to resolve to a temp texture....
-	D3D11_TEXTURE2D_DESC ResolveDesc;
-
-	ResolveDesc.Format				= ScreenFormat;
-	ResolveDesc.Width				= ScaledSizeX;
-	ResolveDesc.Height				= ScaledSizeY;
-	ResolveDesc.CPUAccessFlags		= 0;
-	ResolveDesc.MipLevels			= 1;
-	ResolveDesc.ArraySize			= 1;
-	ResolveDesc.SampleDesc.Count	= 1;
-	ResolveDesc.SampleDesc.Quality	= 0;
-	ResolveDesc.Usage				= D3D11_USAGE_DEFAULT;
-	ResolveDesc.BindFlags			= 0;
-	ResolveDesc.MiscFlags			= 0;
-
-	hr = m_D3DDevice->CreateTexture2D(&ResolveDesc, nullptr, &Resolved);
-
-	ThrowIfFailed(hr);
-	*/
 
 	D3D11_TEXTURE2D_DESC Desc;
 
-	Desc.Format				= ScreenFormat;
+	// Metallicafan212:	Simplify the selection code, only offer selection in one format
+	Desc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;//ScreenFormat;
 	Desc.Width				= Viewport->HitXL * ResolutionScale;
 	Desc.Height				= Viewport->HitYL * ResolutionScale;
 	Desc.CPUAccessFlags		= D3D11_CPU_ACCESS_READ;
@@ -620,32 +435,6 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 
 	ThrowIfFailed(hr);
 
-	// Metallicafan212:	Now get the screen resource
-	//ID3D11Resource* RTResource = nullptr;
-
-	/*
-	// Metallicafan212:	Make sure it's bound!!!!
-	ID3D11RenderTargetView* test = nullptr;
-	m_RenderContext->OMGetRenderTargets(1, &test, nullptr);
-
-	// Metallicafan212:	If it's not the current RT, we need to return
-	if (test != m_D3DScreenRTV)
-	{
-		if (test != nullptr)
-			test->Release();
-
-		ScreenCopy->Release();
-		//Resolved->Release();
-
-		return;
-	}
-
-	// Metallicafan212:	This needs to be reset!!!
-	SAFE_RELEASE(test);
-	*/
-
-	//m_D3DScreenRTV->GetResource(&RTResource);
-
 	D3D11_BOX Box;
 
 	appMemzero(&Box, sizeof(Box));
@@ -659,7 +448,7 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 	//m_RenderContext->ResolveSubresource(Resolved, 0, RTResource, 0, ScreenFormat);
 
 	// Metallicafan212:	Now copy
-	m_RenderContext->CopySubresourceRegion(ScreenCopy, 0, 0, 0, 0, m_BackBuffTex, 0, &Box);//Resolved, 0, &Box);
+	m_RenderContext->CopySubresourceRegion(ScreenCopy, 0, 0, 0, 0, m_SelectionTex, 0, &Box);//m_BackBuffTex, 0, &Box);//Resolved, 0, &Box);
 
 	//SAFE_RELEASE(Resolved);
 
@@ -688,8 +477,8 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 	INT HitXL		= Viewport->HitXL * ResolutionScale;
 
 	// Metallicafan212:	Declare here
-	FPixelIndex		BGRAIndex;
-	FPixelIndexRGBA	RGBAIndex;
+	//FPixelIndex		BGRAIndex;
+	FPixelIndexRGBA		RGBAIndex;
 
 #if 0
 #define TEST_PIXEL(InStruct) \
@@ -743,17 +532,19 @@ void UICBINDx11RenderDevice::DetectPixelHit()
 		for (INT x = 0; x < HitXL; x++)
 		{
 			// Metallicafan212:	Check what mode the screen is in!
-			if (bForceRGBA)
+			//if (bForceRGBA)
 			{
 				RGBAIndex = *(FPixelIndexRGBA*)&RealP[x];
 
 				TEST_PIXEL(RGBAIndex);
 			}
+			/*
 			else
 			{
 				BGRAIndex = *(FPixelIndex*)&RealP[x];
 				TEST_PIXEL(BGRAIndex);
 			}
+			*/
 		}
 	}
 
@@ -846,7 +637,8 @@ void UICBINDx11RenderDevice::SetupPixelHitTest()
 	FPixelIndex			Temp;
 	FPixelIndexRGBA		RGBTemp;
 
-	if (bForceRGBA)
+	// Metallicafan212:	Simplify the selection code by only using a RGBA render target
+	//if (bForceRGBA)
 	{
 		// Metallicafan212:	To prevent any kind of banding/averaging, all of them will have to be % 100 == 0 in order to be a real click
 		RGBTemp.Int4 = Index * 100;
@@ -854,6 +646,7 @@ void UICBINDx11RenderDevice::SetupPixelHitTest()
 		// Metallicafan212:	Set the global color
 		CurrentHitColor = FPlane(RGBTemp.R / 255.0f, RGBTemp.G / 255.0f, RGBTemp.B / 255.0f, 1.0f);
 	}
+	/*
 	else
 	{
 		// Metallicafan212:	To prevent any kind of banding/averaging, all of them will have to be % 100 == 0 in order to be a real click
@@ -862,7 +655,10 @@ void UICBINDx11RenderDevice::SetupPixelHitTest()
 		// Metallicafan212:	Set the global color
 		CurrentHitColor = FPlane(Temp.R / 255.0f, Temp.G / 255.0f, Temp.B / 255.0f, 1.0f);
 	}
+	*/
 
+	// Metallicafan212:	Embed this into the vertex color of the item
+	/*
 #if DX11_HP2
 	GlobalPolyflagVars.SelectionColor	= CurrentHitColor.Vect();
 #else
@@ -871,6 +667,7 @@ void UICBINDx11RenderDevice::SetupPixelHitTest()
 #endif
 
 	UpdatePolyflagsVars();
+	*/
 
 	unguard;
 }

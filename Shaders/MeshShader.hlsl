@@ -138,6 +138,6 @@ float4 PxShader(PSInput input) : SV_TARGET
 #endif
 	}
 	
-	return DoFinalColor(FinalColor);
+	return DoFinalColor(FinalColor, input.color);
 }
 #endif

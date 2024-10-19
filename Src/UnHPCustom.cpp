@@ -812,7 +812,7 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 	{
 		if (FrameShaderVars.bDoSelection)//m_HitData != nullptr)
 		{
-			m_RenderContext->OMSetRenderTargets(1, &m_BackBuffRT, m_SelectionDSV);
+			m_RenderContext->OMSetRenderTargets(1, &m_SelectionRTV, m_SelectionDSV);
 		}
 		else
 		{

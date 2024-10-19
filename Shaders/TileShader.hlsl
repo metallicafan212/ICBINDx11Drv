@@ -127,7 +127,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	bRejectBW = input.bRejectBW;
 #endif
 	
-	DiffColor = DoFinalColor(DiffColor);
+	DiffColor = DoFinalColor(DiffColor, input.color);
 
 	return DiffColor;
 }

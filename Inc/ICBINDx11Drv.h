@@ -798,7 +798,17 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	ID3D11ShaderResourceView*	m_BackBuffSRV;
 
 	// Metallicafan212:	The shader view for the back buffer, so we can draw it on things
-	ID3D11UnorderedAccessView* m_BackBuffUAV;
+	ID3D11UnorderedAccessView*	m_BackBuffUAV;
+
+	// Metallicafan212:	Selection texture, in one format so that the actual screen draw can be in any format
+	ID3D11Texture2D*			m_SelectionTex;
+
+	// Metallicafan212:	Selection render target
+	ID3D11RenderTargetView*		m_SelectionRTV;
+
+	// Metallicafan212:	Selection shader view, so it can be rendered to the screen when the debug selection bool is on
+	ID3D11ShaderResourceView*	m_SelectionSRV;
+
 
 	// Metallicafan212:	The number of threads to use for the MSAA compute shader
 	//					TODO! Work on this more so that the shader can be recompiled with the right base level of threads!!!!

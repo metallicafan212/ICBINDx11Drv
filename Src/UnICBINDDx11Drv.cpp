@@ -86,6 +86,11 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
 
+	// Metallicafan212:	Selection stuff
+	SAFE_RELEASE(m_SelectionSRV);
+	SAFE_RELEASE(m_SelectionRTV);
+	SAFE_RELEASE(m_SelectionTex);
+
 	SAFE_RELEASE(m_MSAAResolveSRV);
 	SAFE_RELEASE(m_MSAAResolveTex);
 
@@ -839,7 +844,7 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 			}
 			else if (FrameShaderVars.bDoSelection)
 			{
-				RTV = m_BackBuffRT;
+				RTV = m_SelectionRTV;//m_BackBuffRT;
 				DSV = m_SelectionDSV;
 			}
 			else
@@ -910,6 +915,11 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	m_ScreenDSTex		= nullptr;
 	m_ScreenDTSRV		= nullptr;
 	m_D3DScreenDSV		= nullptr;
+
+	// Metallicafan212:	Selection render target stuff
+	m_SelectionTex		= nullptr;
+	m_SelectionSRV		= nullptr;
+	m_SelectionRTV		= nullptr;
 	m_SelectionDSTex	= nullptr;
 	m_SelectionDSV		= nullptr;
 
@@ -1281,6 +1291,11 @@ void UICBINDx11RenderDevice::SetupResources()
 	SAFE_RELEASE(m_SelectionDSTex);
 	SAFE_RELEASE(m_SelectionDSV);
 
+	// Metallicafan212:	Selection stuff
+	SAFE_RELEASE(m_SelectionSRV);
+	SAFE_RELEASE(m_SelectionRTV);
+	SAFE_RELEASE(m_SelectionTex);
+
 #if DX11_HP2
 	// Metallicafan212:	TODO! HP2 specific
 	SAFE_RELEASE(m_D2DRT);
@@ -1441,7 +1456,8 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		// Metallicafan212:	See if we should use the HDR compatible mode
 	TESTHDR:
-		ScreenFormat = (!GIsEditor && UseHDR ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_B8G8R8A8_UNORM);
+		// Metallicafan212:	Allow HDR in the editor
+		ScreenFormat = (UseHDR ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_B8G8R8A8_UNORM);
 
 		// Metallicafan212:	Base this on the feature level
 		if (m_FeatureLevel < D3D_FEATURE_LEVEL_11_1)
@@ -1463,7 +1479,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		//swapChainDesc.Scaling				= DXGI_SCALING_NONE;
 		// Metallicafan212:	If we're on windows 10 or above, use the better DXGI mode
 		swapChainDesc.SwapEffect			= (bAllowTearing ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD);
-		swapChainDesc.Flags					|= (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0);
+		swapChainDesc.Flags					|= (bAllowTearing  && !GIsEditor ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0);
 		swapChainDesc.Scaling				= (bFullscreen ? DXGI_SCALING_NONE : DXGI_SCALING_STRETCH);
 
 		DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsSwapChainDesc = {};
@@ -1767,6 +1783,37 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	ThrowIfFailed(hr);
 
+	// Metallicafan212:	Selection related textures and views
+	CD3D11_TEXTURE2D_DESC SelectionDesc = CD3D11_TEXTURE2D_DESC();
+	SelectionDesc.Width					= ScaledSizeX;
+	SelectionDesc.Height				= ScaledSizeY;
+	SelectionDesc.BindFlags				= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+	SelectionDesc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;//ScreenFormat;
+	SelectionDesc.MipLevels				= 1;
+	SelectionDesc.SampleDesc.Count		= 1;
+	SelectionDesc.SampleDesc.Quality	= 0;//D3D11_STANDARD_MULTISAMPLE_PATTERN;//0;
+	SelectionDesc.ArraySize				= 1;
+
+	hr = m_D3DDevice->CreateTexture2D(&SelectionDesc, nullptr, &m_SelectionTex);
+
+	ThrowIfFailed(hr);
+
+	// Metallicafan212:	Now the view for it
+	hr = m_D3DDevice->CreateRenderTargetView(m_SelectionTex, nullptr, &m_SelectionRTV);
+
+	ThrowIfFailed(hr);
+
+	// Metallicafan212:	Shader view
+	CD3D11_SHADER_RESOURCE_VIEW_DESC SelectionRSV = CD3D11_SHADER_RESOURCE_VIEW_DESC();
+	SelectionRSV.Format						= DXGI_FORMAT_R8G8B8A8_UNORM;
+	SelectionRSV.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
+	SelectionRSV.Texture2D.MostDetailedMip	= 0;
+	SelectionRSV.Texture2D.MipLevels		= 1;
+
+	hr = m_D3DDevice->CreateShaderResourceView(m_SelectionTex, &SelectionRSV, &m_SelectionSRV);
+
+	ThrowIfFailed(hr);
+
 #if DX11_HP2
 	// Metallicafan212:	Get the D2D render target
 	hr = m_ScreenBuffTex->QueryInterface(IID_PPV_ARGS(&m_DXGISurf));//m_D3DSwapChain->GetBuffer(0, IID_PPV_ARGS(&m_DXGISurf));
@@ -1925,7 +1972,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		GetSamplerState(PF_NoSmooth | PF_ClampUVs, i, 0);
 	}
 
-	if (UseHDR && !GIsEditor)
+	// Metallicafan212:	Allow HDR in the editor
+	if (UseHDR)//&& !GIsEditor)
 	{
 		// Metallicafan212:	Autodetect it
 		AutodetectWhiteBalance();
@@ -2122,6 +2170,11 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
+
+	// Metallicafan212:	Selection stuff
+	SAFE_RELEASE(m_SelectionSRV);
+	SAFE_RELEASE(m_SelectionRTV);
+	SAFE_RELEASE(m_SelectionTex);
 
 	// Metallicafan212:	Depth stencil target
 	SAFE_RELEASE(m_ScreenDSTex);
@@ -2364,7 +2417,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 		if (GIsEditor && HitData != nullptr)
 		{
 			constexpr FLOAT FirstIndex[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-			m_RenderContext->ClearRenderTargetView(m_BackBuffRT, FirstIndex);
+			m_RenderContext->ClearRenderTargetView(m_SelectionRTV, FirstIndex);//m_BackBuffRT, FirstIndex);
 
 			m_RenderContext->ClearDepthStencilView(m_SelectionDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 		}
@@ -2568,8 +2621,56 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 		// Metallicafan212:	Selection is drawn directly to the back buffer now (to save on resources)
 		//					So running the shader on top isn't needed
-		if(bDebugSelection)
+		if (bDebugSelection)
+		{
+			// Metallicafan212:	Draw the selection view onto the back buffer
+			FLOAT OldGamma	= FrameShaderVars.Gamma;
+			FLOAT OldWB		= FrameShaderVars.WhiteLevel;
+			UBOOL bOldHDR	= FrameShaderVars.bHDR;
+
+			FrameShaderVars.Gamma		= 1.0f;
+			FrameShaderVars.WhiteLevel	= 1.0f;
+			FrameShaderVars.bHDR		= 0;
+
+			// Metallicafan212:	Start buffering now
+			StartBuffering(BT_ScreenFlash);
+
+			// Metallicafan212:	Order of operations, make sure the alpha rejection is set
+			SetBlend(PF_Occlude);
+
+			SetTexture(0, nullptr, 0);
+			m_RenderContext->PSSetSamplers(0, 1, &ScreenSamp);
+
+			// Metallicafan212:	Manually setup the vars...
+			m_RenderContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
+			m_RenderContext->PSSetShaderResources(0, 1, &m_SelectionSRV);
+
+			SetSceneNode(nullptr);
+
+			FResScaleShader->Bind(m_RenderContext);
+
+			LockVertAndIndexBuffer(6);
+
+			appMemcpy(m_VertexBuff, ScreenVerts, sizeof(FD3DVert) * 6);
+
+			AdvanceVertPos();
+
+			// Metallicafan212:	Draw
+			EndBuffering();
+
+			//SetTexture(0, nullptr, 0);
+			// Metallicafan212:	Fix the shader holding onto the RT texture
+			m_RenderContext->PSSetShaderResources(0, 1, &BlankResourceView);
+
+			RestoreRenderTarget();
+
+			// Metallicafan212:	Now restore the variables
+			FrameShaderVars.Gamma		= OldGamma;
+			FrameShaderVars.WhiteLevel	= OldWB;
+			FrameShaderVars.bHDR		= bOldHDR;
+
 			goto JUST_PRESENT;
+		}
 	}
 
 	if (Blit)

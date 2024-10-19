@@ -268,7 +268,7 @@ PSOutput PxShader(PSInput input)
 		// Metallicafan212:	If we're doing lighting only, set it out now
 		if(RendMap == REN_LightingOnly)
 		{
-			Out.Color = float4(DoFinalColor(LColor).xyz, DiffColor.w);
+			Out.Color = float4(DoFinalColor(LColor, input.color).xyz, DiffColor.w);
 			
 			return Out;
 		}
@@ -305,7 +305,7 @@ PSOutput PxShader(PSInput input)
 #endif
 	
 	//return DoFinalColor(DiffColor);
-	Out.Color = DoFinalColor(DiffColor);
+	Out.Color = DoFinalColor(DiffColor, input.color);
 	
 	return Out;
 }
