@@ -1399,8 +1399,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	If to use the new Windows 10 modes. I only test if we're actually running on 10
 		//					!GIsEditor is here because using the tearing mode does something fucky in DWM, changing the window in such a way that normal non-DX11 renderers can't draw to it
 		//					I need to analyse and see what exactly it's modifying about the window and reverse that change
-#if DX11_UT_469
-		// Metallicafan212:	For UT, every time the renderer is changed, it recreates the window handle, so it's safe to provide this in the editor
+#if DX11_UT_469 || DX11_HP2
+		// Metallicafan212:	For UT (and now HP2), every time the renderer is changed, it recreates the window handle, so it's safe to provide this in the editor.
 		bAllowTearing = (1
 #else
 		bAllowTearing = (!GIsEditor
