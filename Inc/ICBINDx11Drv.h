@@ -322,26 +322,10 @@ struct FFogShaderVars
 	FLOAT				FogSetTime;
 
 	// Metallicafan212:	Constructor
-	FFogShaderVars() :
-		DistanceFogColor(0.0f, 0.0f, 0.0f, 0.0f),
-		DistanceFogSettings(1.0f / 32767.0f, 1.0f, 0.0f, 0.0f),
-		DistanceFogFinal(0.0f, 0.0f, 0.0f, 0.0f),
-		ModFogColor(0.5f, 0.5f, 0.5f, 1.0f),
-		TransFogColor(0.0f, 0.0f, 0.0f, 1.0f),
-		CurrentFogStart(0.0f),
-		CurrentFogEnd(0.0f),
-		TargetFogColor(0.0f, 0.0f, 0.0f, 0.0f),
-		LastFogColor(0.0f, 0.0f, 0.0f, 0.0f),
-		TargetFogSettings(0.0f, 0.0f, 0.0f, 0.0f),
-		LastFogSettings(0.0f, 0.0f, 0.0f, 0.0f),
-		FogFadeRate(0.0f),
-		bFadeFogValues(0),
-		FogSetTime(0.0f),
-		bDoDistanceFog(0),
-		bForceFogOff(0)
-
+	FFogShaderVars() 
 	{
-
+		// Metallicafan212:	Everything should be zero, so just make it quicker
+		appMemzero(this, sizeof(FFogShaderVars));
 	}
 };
 
@@ -954,6 +938,10 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	Distance fog settings
 	FDistFogVars						GlobalDistFogSettings;
 	ID3D11Buffer*						GlobalDistFogBuffer;
+
+	// Metallicafan212:	2024, stacks of distance fog, so we can do subframe rendering with different fog values
+	//					Basically: it'll push the current values here to update the fog, and then we can pop out the fog
+	TArray<FFogShaderVars>				DistanceFogStack;
 #endif
 
 	// Metallicafan212:	The global vars JUST for flags
@@ -1948,6 +1936,47 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		appMemcpy(&CurrentDraw->DFogShaderConstants(0), &GlobalDistFogSettings, sizeof(FDistFogVars));
 
 #endif
+	}
+
+	// Metallicafan212:	Push on a distance fog struct
+	virtual void PushDistanceFogState()
+	{
+		guard(UICBINDx11RenderDevice::PushDistanceFogState);
+
+		DistanceFogStack.AddItem(FogShaderVars);
+
+		//FogShaderVars = FFogShaderVars();
+		appMemzero(&FogShaderVars, sizeof(FFogShaderVars));
+
+		// Metallicafan212:	Now update
+		UpdateFogSettings();
+
+		unguard;
+	}
+
+	virtual void PopDistanceFogState()
+	{
+		guard(UICBINDx11RenderDevice::PopDistanceFogState);
+
+		if (DistanceFogStack.Num())
+		{
+			// Metallicafan212:	Grab the end and set it as the current value
+			FFogShaderVars* Temp = &DistanceFogStack(DistanceFogStack.Num() - 1);
+			appMemcpy(&FogShaderVars, Temp, sizeof(FFogShaderVars));
+
+			// Metallicafan212:	Now remove
+			DistanceFogStack.Remove(DistanceFogStack.Num() - 1);
+
+			// Metallicafan212:	Update
+			UpdateFogSettings();
+		}
+
+		unguard;
+	}
+
+	virtual INT GetDistanceFogStackCount()
+	{
+		return DistanceFogStack.Num();
 	}
 
 	// Metallicafan212:	Force the current fog color to a specific value

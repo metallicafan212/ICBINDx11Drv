@@ -467,12 +467,12 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 		FogShaderVars.LastFogSettings	= FogShaderVars.DistanceFogSettings;
 
 		// Metallicafan212:	Set the fog values
-		FogShaderVars.TargetFogColor		= Color;
+		FogShaderVars.TargetFogColor	= Color;
 
 		// Metallicafan212:	Start and end
 		FogShaderVars.TargetFogSettings	= FPlane(1.0f / (FogEnd - FogStart), (FogEnd / (FogEnd - FogStart)) - 1.0f, Color.W, 0.0f);
 
-		FogShaderVars.bFadeFogValues		= 1;
+		FogShaderVars.bFadeFogValues	= 1;
 
 		FogShaderVars.CurrentFogStart	= FogStart;
 		FogShaderVars.CurrentFogEnd		= FogEnd;
@@ -484,20 +484,20 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 		FogShaderVars.LastFogSettings	= FogShaderVars.DistanceFogSettings;
 
 		// Metallicafan212:	Fade out
-		FogShaderVars.TargetFogColor		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
+		FogShaderVars.TargetFogColor	= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
 		FogShaderVars.TargetFogSettings	= FPlane(1.0f / 32768.0f, 0.0f, 0.0f, 0.0f);
 
-		FogShaderVars.bFadeFogValues		= 1;
+		FogShaderVars.bFadeFogValues	= 1;
 
 		FogShaderVars.CurrentFogStart	= FogShaderVars.CurrentFogEnd = 0.0f;
 	}
 
 
 	// Metallicafan212:	Grab the current time
-	FogShaderVars.FogSetTime = Viewport->CurrentTime.GetFloat();
+	FogShaderVars.FogSetTime			= Viewport->CurrentTime.GetFloat();
 
 	// Metallicafan212:	Keep the val around, so we can selectively set blending
-	FogShaderVars.bDoDistanceFog = Enable;
+	FogShaderVars.bDoDistanceFog		= Enable;
 
 	UpdateFogSettings();
 

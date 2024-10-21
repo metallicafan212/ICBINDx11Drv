@@ -3266,6 +3266,16 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 		m_OrthoProjection	= Frame->bOrthoProjection;
 
 		OrthoZoom			= Frame->Zoom;
+
+		// Metallicafan212:	Automatically correct the zoom value
+		if (m_OrthoProjection)
+		{
+			constexpr FLOAT FourByThree = (3.0f / 4.0f);
+
+			// Metallicafan212:	OrthoZoom / ((4.0 / 3.0) / (FrameX / FrameY))
+			//					This has been flipped and optimized to be mostly multiplication. Probably didn't matter but eh
+			OrthoZoom		*= (NewX / NewY) * FourByThree;
+		}
 #else
 		m_RProjZ = appTan(Viewport->Actor->FovAngle * PI / 360.0);
 #endif
