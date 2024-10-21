@@ -59,7 +59,7 @@ void FD3DMSAAShader::SetupConstantBuffer()
 	unguard;
 }
 
-void FD3DMSAAShader::WriteConstantBuffer(void* InMem)
+UBOOL FD3DMSAAShader::WriteConstantBuffer(void* InMem)
 {
 	guardSlow(FD3DMSAAShader::WriteConstantBuffer);
 
@@ -72,6 +72,8 @@ void FD3DMSAAShader::WriteConstantBuffer(void* InMem)
 
 	// Metallicafan212:	Now the rest of the data
 	FMSAAVars* SDef = (FMSAAVars*)InMem;
+
+	return 0;
 
 	/*
 	// Metallicafan212:	Set each var

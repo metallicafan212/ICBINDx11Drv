@@ -1,16 +1,9 @@
 #include "ICBINDx11Drv.h"
 
-struct FMeshMatrixDef : FShaderVarCommon
-{
-	UBOOL bNoOpacity;
-
-	// Metallicafan212:	TODO! More stuff like the env mapping options
-	INT Pad[3];
-};
-
 // Metallicafan212:	This file defines the mesh (one texture???) rendering shader
 FD3DMeshShader::FD3DMeshShader(UICBINDx11RenderDevice* InParent)
-	: FD3DShader(InParent)
+	: FD3DShader(InParent),
+	Constants(FMeshMatrixDef())
 {
 	guard(FD3DMeshShader::FD3DMeshShader);
 
@@ -23,6 +16,9 @@ FD3DMeshShader::FD3DMeshShader(UICBINDx11RenderDevice* InParent)
 	VertexFunc			= TEXT("VertShader");
 	PixelFunc			= TEXT("PxShader");
 
+	// Metallicafan212:	Setup the pointer
+	ShaderConstantsMem	= &Constants;
+
 	Init();
 
 	unguard;
@@ -33,8 +29,13 @@ void FD3DMeshShader::SetupConstantBuffer()
 {
 	guard(FD3DMeshShader::SetupConstantBuffer);
 
+#if UPDATESUBRESOURCE_CONSTANTS
+	// Metallicafan212:	Declare the constant buffer with a few more entries
+	D3D11_BUFFER_DESC MatrixDesc = { sizeof(FMeshMatrixDef), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
+#else
 	// Metallicafan212:	Declare the constant buffer with a few more entries
 	D3D11_BUFFER_DESC MatrixDesc = { sizeof(FMeshMatrixDef), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+#endif
 
 	HRESULT hr = ParentDevice->m_D3DDevice->CreateBuffer(&MatrixDesc, nullptr, &ShaderConstantsBuffer);
 
@@ -44,14 +45,18 @@ void FD3DMeshShader::SetupConstantBuffer()
 	unguard;
 }
 
-void FD3DMeshShader::WriteConstantBuffer(void* InMem)
+UBOOL FD3DMeshShader::WriteConstantBuffer(void* InMem)
 {
 	guardSlow(FD3DMeshShader::WriteConstantBuffer);
+
+	UBOOL bShouldUpdate = 0;
 
 	if (bPrevMeshOpacity != bNoMeshOpacity)
 	{
 		// Metallicafan212:	Flush the device
 		ParentDevice->EndBuffering();
+
+		bShouldUpdate = 1;
 	}
 
 	bPrevMeshOpacity = bNoMeshOpacity;
@@ -59,10 +64,16 @@ void FD3DMeshShader::WriteConstantBuffer(void* InMem)
 	// Metallicafan212:	Get the parent info first
 	FD3DShader::WriteConstantBuffer(InMem);
 
+#if UPDATESUBRESOURCE_CONSTANTS
+	Constants.bNoOpacity = bNoMeshOpacity;
+#else
 	// Metallicafan212:	Now write the rotation stuff
 	FMeshMatrixDef* Def = (FMeshMatrixDef*)InMem;
 
 	Def->bNoOpacity = bNoMeshOpacity;
+#endif
+
+	return bShouldUpdate;
 
 	unguardSlow;
 }

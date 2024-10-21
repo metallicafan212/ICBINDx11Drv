@@ -605,10 +605,26 @@ MAKE_DEVICE:
 	FogShaderVars		= FFogShaderVars();
 	FrameShaderVars		= FFrameShaderVars();
 
-	// Metallicafan212:	Recreate the constant buffer as well
-	//D3D11_BUFFER_DESC ConstDesc = { sizeof(FFrameShaderVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
-	D3D11_BUFFER_DESC ConstDesc = { sizeof(FFrameShaderVars), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+	// Metallicafan212:	Constant buffer declarations
+#if UPDATESUBRESOURCE_CONSTANTS
+	D3D11_BUFFER_DESC ConstDesc = { sizeof(FFrameShaderVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
 
+#if DX11_HP2
+	D3D11_BUFFER_DESC DistConst = { sizeof(FDistFogVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
+	D3D11_BUFFER_DESC PolyConst = { sizeof(FPolyflagVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
+	D3D11_BUFFER_DESC TexConst	= { sizeof(FBoundTextures), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
+#endif
+#else
+	D3D11_BUFFER_DESC ConstDesc = { sizeof(FFrameShaderVars), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+	D3D11_BUFFER_DESC PolyConst = { sizeof(FPolyflagVars), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+	D3D11_BUFFER_DESC TexConst	= { sizeof(FBoundTextures), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+
+#if DX11_HP2
+	D3D11_BUFFER_DESC DistConst = { sizeof(FDistFogVars), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+#endif
+#endif
+
+	// Metallicafan212:	Recreate the constant buffer as well
 	hr = m_D3DDevice->CreateBuffer(&ConstDesc, nullptr, &FrameConstantsBuffer);
 
 	// Metallicafan212:	IDK, do something here?
@@ -622,8 +638,6 @@ MAKE_DEVICE:
 	// Metallicafan212:	Don't even create it if we're not in HP2
 #if DX11_HP2
 	// Metallicafan212:	Now create one for the distance fog settings
-	//D3D11_BUFFER_DESC DistConst = { sizeof(FDistFogVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
-	D3D11_BUFFER_DESC DistConst = { sizeof(FDistFogVars), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
 	hr = m_D3DDevice->CreateBuffer(&DistConst, nullptr, &GlobalDistFogBuffer);
 
 	ThrowIfFailed(hr);
@@ -635,7 +649,6 @@ MAKE_DEVICE:
 #endif
 
 	// Metallicafan212:	And now the dynamic polyflags buffer
-	D3D11_BUFFER_DESC PolyConst = { sizeof(FPolyflagVars), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
 	hr = m_D3DDevice->CreateBuffer(&PolyConst, nullptr, &GlobalPolyflagsBuffer);
 
 	ThrowIfFailed(hr);
@@ -646,7 +659,6 @@ MAKE_DEVICE:
 	m_RenderContext->CSSetConstantBuffers(2, 1, &GlobalPolyflagsBuffer);
 
 	// Metallicafan212:	Setup the buffer for the bound textures
-	D3D11_BUFFER_DESC TexConst = { sizeof(FBoundTextures), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
 	hr = m_D3DDevice->CreateBuffer(&TexConst, nullptr, &BoundTexturesBuffer);
 
 	ThrowIfFailed(hr);

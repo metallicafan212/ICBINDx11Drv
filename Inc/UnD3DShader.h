@@ -176,13 +176,17 @@ public:
 	// Metallicafan212:	Macro array
 	TArray<D3D_SHADER_MACRO>	Macros;
 
+	// Metallicafan212:	Memory containing the shader constants (if needed)
+	void*						ShaderConstantsMem;
+
 	FD3DShader() :
 		ParentDevice(nullptr),
 		PixelShader(nullptr),
 		VertexShader(nullptr),
 		InputLayout(nullptr),
 		ShaderConstantsBuffer(nullptr),
-		GeoShader(nullptr)
+		GeoShader(nullptr),
+		ShaderConstantsMem(nullptr)
 	{
 		InputDesc	= FBasicInLayout;
 		InputCount	= ARRAY_COUNT(FBasicInLayout);
@@ -198,7 +202,8 @@ public:
 		VertexShader(nullptr),
 		InputLayout(nullptr),
 		ShaderConstantsBuffer(nullptr),
-		GeoShader(nullptr)
+		GeoShader(nullptr),
+		ShaderConstantsMem(nullptr)
 	{
 		InputDesc	= FBasicInLayout;
 		InputCount	= ARRAY_COUNT(FBasicInLayout);
@@ -240,6 +245,7 @@ public:
 
 		// Metallicafan212:	HP2 render modes
 #if DX11_HP2
+
 		Macros.AddItem({ "RENMAPS", "1" });
 		Macros.AddItem({ "NO_CUSTOM_RMODES", "0" });
 #undef BEGIN_REND_ENUM
@@ -252,6 +258,7 @@ public:
 #undef DECLARE_RENDMODE
 #undef BEGIN_REND_ENUM
 #undef END_REND_ENUM
+
 #endif
 
 		// Metallicafan212:	There must be a null terminated value here
@@ -265,6 +272,8 @@ public:
 		SAFE_RELEASE(InputLayout);
 		SAFE_RELEASE(ShaderConstantsBuffer);
 		SAFE_RELEASE(GeoShader);
+		
+		// Metallicafan212:	ShaderConstantsMem will be handled by children classes
 	}
 
 	// Metallicafan212:	TEST! For speed reasons, override this to just check the address!!!
@@ -299,7 +308,7 @@ public:
 	// Metallicafan212:	Made this generic so we can copy vars into shaders
 	virtual void SetupConstantBuffer();
 
-	virtual void WriteConstantBuffer(void* InMem);
+	virtual UBOOL WriteConstantBuffer(void* InMem);
 
 	//virtual void UpdateConstantBuffer();
 };
@@ -376,27 +385,48 @@ public:
 };
 #endif
 
+// Metallicafan212:	Tile per-shader constants
+struct FTileMatrixDef : FShaderVarCommon
+{
+	FPlane	XAxis;
+	FPlane	YAxis;
+	FPlane	ZAxis;
+	// Metallicafan212:	Sigh.... This is a pain in the ass, so I have to pad it here
+	//					HLSL wants to pad a float3x4 to 4 CONSTANTS for some reason
+	UBOOL	bDoRot;
+
+	// Metallicafan212:	If it's a MSAA font character tile
+	UBOOL	bIsMSAAFontTile;
+
+	// Metallicafan212:	Keep it aligned along register bounds
+	FLOAT	Pad3[2];
+};
+
 // Metallicafan212:	Tile shader (for rendering normal and rotated tiles)
 class FD3DTileShader : public FD3DShader
 {
 public:
 
-	UBOOL	bDoTileRotation;
-	UBOOL	bDoMSAAFontHack;
-	FCoords TileCoords;
+	UBOOL			bDoTileRotation;
+	//UBOOL			bDoMSAAFontHack;
+	FCoords			TileCoords;
+
+	FTileMatrixDef	Constants;
 
 	FD3DTileShader() :
 		FD3DShader(),
 		bDoTileRotation(0),
 		TileCoords(),
-		bDoMSAAFontHack(0)
+		//bDoMSAAFontHack(0),
+		Constants(FTileMatrixDef())
 	{
-		//ShaderFile	= TEXT("..\\Shaders\\TileShader.hlsl");
-		VertexFile	= SHADER_FOLDER TEXT("TileShader.hlsl");
-		PixelFile	= SHADER_FOLDER TEXT("TileShader.hlsl");
-		//GeoFile		= TEXT("..\\Shaders\\TileShader.hlsl");
-		VertexFunc	= TEXT("VertShader");
-		PixelFunc	= TEXT("PxShader");
+		//ShaderFile			= TEXT("..\\Shaders\\TileShader.hlsl");
+		VertexFile				= SHADER_FOLDER TEXT("TileShader.hlsl");
+		PixelFile				= SHADER_FOLDER TEXT("TileShader.hlsl");
+		//GeoFile				= TEXT("..\\Shaders\\TileShader.hlsl");
+		VertexFunc				= TEXT("VertShader");
+		PixelFunc				= TEXT("PxShader");
+		ShaderConstantsMem		= &Constants;
 	}
 
 	// Metallicafan212:	Constructor that inits the device pointer
@@ -405,7 +435,7 @@ public:
 	// Metallicafan212:	Shader interface
 	virtual void SetupConstantBuffer();
 
-	virtual void WriteConstantBuffer(void* InMem);
+	virtual UBOOL WriteConstantBuffer(void* InMem);
 };
 
 // Metallicafan212:	Generic shader (for now)
@@ -453,6 +483,15 @@ public:
 	//virtual void WriteConstantBuffer(void* InMem);
 };
 
+struct FMeshMatrixDef : FShaderVarCommon
+{
+	UBOOL bNoOpacity;
+
+	// Metallicafan212:	TODO! More stuff like the env mapping options
+	INT Pad[3];
+};
+
+
 // Metallicafan212:	Mesh shader (with texturing!)
 class FD3DMeshShader : public FD3DShader
 {
@@ -461,8 +500,11 @@ public:
 	UBOOL bNoMeshOpacity;
 	UBOOL bPrevMeshOpacity;
 
+	FMeshMatrixDef Constants;
+
 	FD3DMeshShader() :
-		FD3DShader()
+		FD3DShader(),
+		Constants(FMeshMatrixDef())
 	{
 		VertexFile			= SHADER_FOLDER TEXT("MeshShader.hlsl");
 		PixelFile			= SHADER_FOLDER TEXT("MeshShader.hlsl");
@@ -470,6 +512,9 @@ public:
 		PixelFunc			= TEXT("PxShader");
 		bNoMeshOpacity		= 0;
 		bPrevMeshOpacity	= 0;
+
+		// Metallicafan212:	Setup the pointer
+		ShaderConstantsMem	= &Constants;
 	}
 
 	// Metallicafan212:	Constructor that inits the device pointer
@@ -478,7 +523,7 @@ public:
 	// Metallicafan212:	Shader interface
 	virtual void SetupConstantBuffer();
 
-	virtual void WriteConstantBuffer(void* InMem);
+	virtual UBOOL WriteConstantBuffer(void* InMem);
 };
 
 class FD3DSurfShader : public FD3DShader
@@ -548,6 +593,7 @@ public:
 	//virtual void WriteConstantBuffer(void* InMem);
 };
 
+// Metallicafan212:	This is unusued and might be removed in the future (as it wasn't as good as just drawing a damn rectangle)
 // Metallicafan212:	MSAA resolving shader
 class FD3DMSAAShader 
 #if USE_MSAA_COMPUTE
@@ -585,7 +631,7 @@ public:
 
 	virtual void SetupConstantBuffer();
 
-	virtual void WriteConstantBuffer(void* InMem);
+	virtual UBOOL WriteConstantBuffer(void* InMem);
 };
 
 // Metallicafan212:	P8 to RGBA8 compute shader
@@ -606,5 +652,5 @@ public:
 
 	virtual void SetupConstantBuffer();
 
-	virtual void WriteConstantBuffer(void* InMem);
+	virtual UBOOL WriteConstantBuffer(void* InMem);
 };

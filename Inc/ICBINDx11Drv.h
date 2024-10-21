@@ -3,6 +3,9 @@
 #include "UnBuild.h"
 #include "UnObjVer.h"
 
+// Metallicafan212:	If to use UpdateSubresource instead of Map for shader constants
+#define UPDATESUBRESOURCE_CONSTANTS 1
+
 // Metallicafan212:	Not finished, support for drawing only when the vertex/index buffers are full
 #define DO_BUFFERED_DRAWS 0
 
@@ -1539,6 +1542,10 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	Update the global constant buffer in the shaders
 	FORCEINLINE void UpdateGlobalShaderVars()
 	{
+#if UPDATESUBRESOURCE_CONSTANTS
+		// Metallicafan212:	Update this using update subresource
+		m_RenderContext->UpdateSubresource(FrameConstantsBuffer, 0, nullptr, &FrameShaderVars, 0, 0);
+#else
 #if !DO_BUFFERED_DRAWS
 		D3D11_MAPPED_SUBRESOURCE Map;
 
@@ -1556,10 +1563,15 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		CurrentDraw->FrameShaderConstants.Add(sizeof(FFrameShaderVars));
 		appMemcpy(&CurrentDraw->FrameShaderConstants(0), &FrameShaderVars, sizeof(FFrameShaderVars));
 #endif
+#endif
 	}
 
 	FORCEINLINE void UpdatePolyflagsVars()
 	{
+#if UPDATESUBRESOURCE_CONSTANTS
+		// Metallicafan212:	Update this using update subresource
+		m_RenderContext->UpdateSubresource(GlobalPolyflagsBuffer, 0, nullptr, &GlobalPolyflagVars, 0, 0);
+#else
 #if !DO_BUFFERED_DRAWS
 		D3D11_MAPPED_SUBRESOURCE Map;
 
@@ -1578,6 +1590,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 			appMemcpy(&CurrentDraw->FlagShaderConstants(0), &GlobalPolyflagVars, sizeof(FPolyflagVars));
 		}
 #endif
+#endif
 	}
 
 	FORCEINLINE void UpdateBoundTextures()
@@ -1587,6 +1600,10 @@ class UICBINDx11RenderDevice : public RD_CLASS
 			BoundTexturesInfo.BoundTextures[i] = (BoundTextures[i].TexInfoHash != 0 || BoundTextures[i].bIsRT);
 		}
 
+#if UPDATESUBRESOURCE_CONSTANTS
+		// Metallicafan212:	Update this using update subresource
+		m_RenderContext->UpdateSubresource(BoundTexturesBuffer, 0, nullptr, &BoundTexturesInfo, 0, 0);
+#else
 #if !DO_BUFFERED_DRAWS
 		D3D11_MAPPED_SUBRESOURCE Map;
 
@@ -1607,6 +1624,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		appMemcpy(&CurrentDraw->TexShaderConstants(0), &BoundTexturesInfo, sizeof(FBoundTextures));
 
 		bWriteTexturesBuffer = 0;
+#endif
 #endif
 	}
 
@@ -1918,6 +1936,10 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		GlobalDistFogSettings.DistanceFogSettings	= FogShaderVars.DistanceFogSettings;
 		GlobalDistFogSettings.bDistanceFogEnabled	= !FogShaderVars.bForceFogOff && (FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues);
 
+#if UPDATESUBRESOURCE_CONSTANTS
+		// Metallicafan212:	Update it using UpdateSubresource
+		m_RenderContext->UpdateSubresource(GlobalDistFogBuffer, 0, nullptr, &GlobalDistFogSettings, 0, 0);
+#else
 #if !DO_BUFFERED_DRAWS
 		D3D11_MAPPED_SUBRESOURCE Map;
 
@@ -1935,6 +1957,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		CurrentDraw->DFogShaderConstants.Add(sizeof(FDistFogVars));
 		appMemcpy(&CurrentDraw->DFogShaderConstants(0), &GlobalDistFogSettings, sizeof(FDistFogVars));
 
+#endif
 #endif
 	}
 

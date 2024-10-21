@@ -39,7 +39,7 @@ void FD3DP8ToRGBAShader::SetupConstantBuffer()
 	unguard;
 }
 
-void FD3DP8ToRGBAShader::WriteConstantBuffer(void* InMem)
+UBOOL FD3DP8ToRGBAShader::WriteConstantBuffer(void* InMem)
 {
 	guardSlow(FD3DP8ToRGBAShader::WriteConstantBuffer);
 
@@ -51,6 +51,8 @@ void FD3DP8ToRGBAShader::WriteConstantBuffer(void* InMem)
 
 	SDef->USize		= USize;
 	SDef->VSize		= VSize;
+
+	return 1;
 
 	unguardSlow;
 }

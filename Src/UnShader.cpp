@@ -142,6 +142,14 @@ void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 
 	if (ShaderConstantsBuffer != nullptr)
 	{
+#if UPDATESUBRESOURCE_CONSTANTS
+		// Metallicafan212:	Call the function with a nullptr (leftover old def)
+		if (WriteConstantBuffer(nullptr))
+		{
+			// Metallicafan212:	Now update it
+			UseContext->UpdateSubresource(ShaderConstantsBuffer, 0, nullptr, ShaderConstantsMem, 0, 0);
+		}
+#else
 #if !DO_BUFFERED_DRAWS
 		// Metallicafan212:	Map the matrix(s)
 		D3D11_MAPPED_SUBRESOURCE Map;
@@ -156,6 +164,10 @@ void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 
 		// Metallicafan212:	Now unmap it
 		UseContext->Unmap(ShaderConstantsBuffer, 0);
+#endif
+#endif
+
+#if !DO_BUFFERED_DRAWS
 
 		// Metallicafan212:	Now finally set it as a resource
 		if (VertexShader != nullptr)
@@ -210,7 +222,7 @@ void FD3DShader::SetupConstantBuffer()
 }
 
 // Metallicafan212:	TODO!!!!! Move this to a separate buffer, and ONLY set when the texture(s) change
-void FD3DShader::WriteConstantBuffer(void* InMem)
+UBOOL FD3DShader::WriteConstantBuffer(void* InMem)
 {
 	guardSlow(FD3DShader::WriteConstantBuffer);
 
@@ -224,6 +236,8 @@ void FD3DShader::WriteConstantBuffer(void* InMem)
 		MDef->BoundTextures[i] = (ParentDevice->BoundTextures[i].TexInfoHash != 0 || ParentDevice->BoundTextures[i].bIsRT);
 	}
 	*/
+
+	return 0;
 
 	unguardSlow;
 }
