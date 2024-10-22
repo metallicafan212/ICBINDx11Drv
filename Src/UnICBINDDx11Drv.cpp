@@ -1563,10 +1563,11 @@ void UICBINDx11RenderDevice::SetupResources()
 			ThrowIfFailed(hr);
 		}
 
-		PresentFlags = (bAllowTearing ? DXGI_PRESENT_ALLOW_TEARING : 0);
+		// Metallicafan212:	Disable DXGI_PRESENT_ALLOW_TEARING if we were just windowed and went fullscreen
+		PresentFlags = (bAllowTearing && !bFullscreen ? DXGI_PRESENT_ALLOW_TEARING : 0);
 
 		// Metallicafan212:	Make it stop messing with the window itself
-		dxgiFactory->MakeWindowAssociation((HWND)Viewport->GetWindow(), /*DXGI_MWA_NO_WINDOW_CHANGES |*/ DXGI_MWA_NO_ALT_ENTER);
+		dxgiFactory->MakeWindowAssociation((HWND)Viewport->GetWindow(), DXGI_MWA_NO_ALT_ENTER);
 
 		// Metallicafan212:	Release all the pointers
 		dxgiFactory->Release();
@@ -1577,12 +1578,6 @@ void UICBINDx11RenderDevice::SetupResources()
 		ClampUserOptions();
 
 		LastAdditionalBuffers = NumAdditionalBuffers;
-
-		// Metallicafan212:	Log the change
-		//LONG_PTR esChange	= es ^ GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_EXSTYLE);
-		//LONG_PTR sChange	= s ^ GetWindowLongPtr((HWND)Viewport->GetWindow(), GWL_STYLE);
-
-		//GLog->Logf(TEXT("Window style changes are %llu and %llu"), esChange, sChange);
 	}
 	else
 	{
@@ -1636,7 +1631,8 @@ void UICBINDx11RenderDevice::SetupResources()
 			appErrorf(TEXT("Failed to resize buffers with %lu"), hr);
 		}
 
-		PresentFlags = (bAllowTearing ? DXGI_PRESENT_ALLOW_TEARING : 0);
+		// Metallicafan212:	Disable DXGI_PRESENT_ALLOW_TEARING if we were just windowed and went fullscreen
+		PresentFlags = (bAllowTearing && !bFullscreen ? DXGI_PRESENT_ALLOW_TEARING : 0);
 	}
 
 	// Metallicafan212:	Initalize shaders, if needed
