@@ -1,3 +1,7 @@
+#if HP2_HARDCODE
+#include "HP2ShaderDefs.h"
+#endif
+
 // Metallicafan212:	TODO! More shader globals
 
 // Metallicafan212:	Global vertex definition

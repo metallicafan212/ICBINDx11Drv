@@ -166,7 +166,7 @@
       <PreprocessorDefinitions>USEMALLOC;NDEBUG;_WINDOWS;WIN32;UNICODE;WIN32_LEAN_AND_MEAN;_SECURE_SCL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>Default</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>..\..\Core\Inc;..\..\Engine\Inc;..\..\MWindow\Inc;..\Inc;..\..\Render\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Core\Inc;..\..\Engine\Inc;..\..\MWindow\Inc;..\Inc;..\..\Render\Inc;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -202,46 +202,48 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_PxShader_ps_4_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_PxShader_ps_4_1.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_PxShader_ps_5_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_VertShader_vs_4_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_VertShader_vs_4_1.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\ComplexSurfShader_VertShader_vs_5_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_PxShader_ps_4_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_PxShader_ps_4_1.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_PxShader_ps_5_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_VertShader_vs_4_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_VertShader_vs_4_1.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\GeneralShader_VertShader_vs_5_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\LineShader_PxShader_ps_4_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\LineShader_PxShader_ps_4_1.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\LineShader_PxShader_ps_5_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\LineShader_VertShader_vs_4_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\LineShader_VertShader_vs_4_1.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\LineShader_VertShader_vs_5_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\Line_GeoShader_GeoShader_gs_4_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\Line_GeoShader_GeoShader_gs_4_1.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\Line_GeoShader_GeoShader_gs_5_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_PxShader_ps_4_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_PxShader_ps_4_1.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_PxShader_ps_5_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_VertShader_vs_4_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_VertShader_vs_4_1.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\MeshShader_VertShader_vs_5_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_PxShader_ps_4_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_PxShader_ps_4_1.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_PxShader_ps_5_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_VertShader_vs_4_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_VertShader_vs_4_1.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\ResScaling_VertShader_vs_5_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\TileShader_PxShader_ps_4_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\TileShader_PxShader_ps_4_1.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\TileShader_PxShader_ps_5_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\TileShader_VertShader_vs_4_0.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\TileShader_VertShader_vs_4_1.h" />
-    <ClInclude Include="..\Inc\CompiledShaders\TileShader_VertShader_vs_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Complex\ComplexSurfShader_PX_PxShader_ps_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Complex\ComplexSurfShader_PX_PxShader_ps_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Complex\ComplexSurfShader_PX_PxShader_ps_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Complex\ComplexSurfShader_Vert_VertShader_vs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Complex\ComplexSurfShader_Vert_VertShader_vs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Complex\ComplexSurfShader_Vert_VertShader_vs_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\General\GeneralShader_PX_PxShader_ps_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\General\GeneralShader_PX_PxShader_ps_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\General\GeneralShader_PX_PxShader_ps_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\General\GeneralShader_Vert_VertShader_vs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\General\GeneralShader_Vert_VertShader_vs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\General\GeneralShader_Vert_VertShader_vs_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Line\LineShader_PX_PxShader_ps_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Line\LineShader_PX_PxShader_ps_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Line\LineShader_PX_PxShader_ps_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Line\LineShader_Vert_VertShader_vs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Line\LineShader_Vert_VertShader_vs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Line\LineShader_Vert_VertShader_vs_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Line\Line_GeoShader_GeoShader_gs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Line\Line_GeoShader_GeoShader_gs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Line\Line_GeoShader_GeoShader_gs_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Mesh\MeshShader_PX_PxShader_ps_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Mesh\MeshShader_PX_PxShader_ps_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Mesh\MeshShader_PX_PxShader_ps_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Mesh\MeshShader_Vert_VertShader_vs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Mesh\MeshShader_Vert_VertShader_vs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Mesh\MeshShader_Vert_VertShader_vs_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\PostFX\ResScaling_PX_PxShader_ps_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\PostFX\ResScaling_PX_PxShader_ps_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\PostFX\ResScaling_PX_PxShader_ps_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\PostFX\ResScaling_Vert_VertShader_vs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\PostFX\ResScaling_Vert_VertShader_vs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\PostFX\ResScaling_Vert_VertShader_vs_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Tile\TileShader_PX_PxShader_ps_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Tile\TileShader_PX_PxShader_ps_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Tile\TileShader_PX_PxShader_ps_5_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Tile\TileShader_Vert_VertShader_vs_4_0.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Tile\TileShader_Vert_VertShader_vs_4_1.h" />
+    <ClInclude Include="..\Inc\CompiledShaders\Tile\TileShader_Vert_VertShader_vs_5_0.h" />
     <ClInclude Include="..\Inc\GammaModes.h" />
+    <ClInclude Include="..\Inc\HP2ShaderDefs.h" />
+    <ClInclude Include="..\Inc\HP2Shaders.h" />
     <ClInclude Include="..\Inc\ICBINDx11Drv.h" />
     <ClInclude Include="..\Inc\ShaderFlags.h" />
     <ClInclude Include="..\Inc\UnD3DShader.h" />

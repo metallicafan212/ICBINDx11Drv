@@ -25,30 +25,31 @@ global_macros = [
 
 # Metallicafan212:  Defined language version
 class LanguageTarget:
-    def __init__(self, targetName, inMacros = []):
+    def __init__(self, targetName, inMacros = [], shaderMacro = ""):
             # Metallicafan212: Use a local list so the globals appear first
-            localList = [];
+            localList           = [];
             localList.extend(global_macros);
             localList.extend(inMacros);
-            self.target = targetName;
-            self.macros = localList;
+            self.target         = targetName;
+            self.macros         = localList;
+            self.shaderMacro    = shaderMacro;
             #print(self.macros);
 
 # Metallicafan212: TODO! Don't hard-code the indexes
 global_langages = {
-    "vs_5_0"            : LanguageTarget('vs_5_0',              [Macro("USE_GEO_SHADER", "1")]),
-    "vs_4_1"            : LanguageTarget('vs_4_1',              [Macro("USE_GEO_SHADER", "1")]),
-    "vs_4_0"            : LanguageTarget('vs_4_0',              [Macro("USE_GEO_SHADER", "1")]),
+    "vs_5_0"            : LanguageTarget('vs_5_0',              [Macro("USE_GEO_SHADER", "1")], "SM5_0"),
+    "vs_4_1"            : LanguageTarget('vs_4_1',              [Macro("USE_GEO_SHADER", "1")], "SM4_1"),
+    "vs_4_0"            : LanguageTarget('vs_4_0',              [Macro("USE_GEO_SHADER", "1")], "SM4_0"),
     #"vs_4_0_level_9_3"  : LanguageTarget('vs_4_0_level_9_3',    [Macro("USE_GEO_SHADER", "0")]),
     
-    "ps_5_0"            : LanguageTarget('ps_5_0',              [Macro("USE_GEO_SHADER", "1"), Macro("PIXEL_SHADER", "1")]),
-    "ps_4_1"            : LanguageTarget('ps_4_1',              [Macro("USE_GEO_SHADER", "1"), Macro("PIXEL_SHADER", "1")]),
-    "ps_4_0"            : LanguageTarget('ps_4_0',              [Macro("USE_GEO_SHADER", "1"), Macro("PIXEL_SHADER", "1")]),
+    "ps_5_0"            : LanguageTarget('ps_5_0',              [Macro("USE_GEO_SHADER", "1"), Macro("PIXEL_SHADER", "1")], "SM5_0"),
+    "ps_4_1"            : LanguageTarget('ps_4_1',              [Macro("USE_GEO_SHADER", "1"), Macro("PIXEL_SHADER", "1")], "SM4_1"),
+    "ps_4_0"            : LanguageTarget('ps_4_0',              [Macro("USE_GEO_SHADER", "1"), Macro("PIXEL_SHADER", "1")], "SM4_0"),
     #"ps_4_0_level_9_3"  : LanguageTarget('ps_4_0_level_9_3',   [Macro("USE_GEO_SHADER", "0"), Macro("PIXEL_SHADER", "1")]),
 
-    "gs_5_0"            : LanguageTarget('gs_5_0',              [Macro("USE_GEO_SHADER", "1")]),
-    "gs_4_1"            : LanguageTarget('gs_4_1',              [Macro("USE_GEO_SHADER", "1")]),
-    "gs_4_0"            : LanguageTarget('gs_4_0',              [Macro("USE_GEO_SHADER", "1")]),
+    "gs_5_0"            : LanguageTarget('gs_5_0',              [Macro("USE_GEO_SHADER", "1")], "SM5_0"),
+    "gs_4_1"            : LanguageTarget('gs_4_1',              [Macro("USE_GEO_SHADER", "1")], "SM4_1"),
+    "gs_4_0"            : LanguageTarget('gs_4_0',              [Macro("USE_GEO_SHADER", "1")], "SM4_0"),
 }
 
 class EntryPoint:
@@ -58,8 +59,9 @@ class EntryPoint:
 
 # Metallicafan212: Define a shader
 class Shader:
-      def __init__(self, key, file, entrypoints):
+      def __init__(self, key, headerPath, file, entrypoints):
             self.key            = key;
+            self.headerPath     = headerPath;
             self.file           = file;
             self.entrypoints    = entrypoints;
 
@@ -67,63 +69,118 @@ class Shader:
 #                  TODO! I need specific macros defined in each target
 ShaderArray = [
     Shader(
-          "ComplexSurfShader",
-          "ComplexSurfShader.hlsl",
+          "ComplexSurfShader_Vert",
+          "Complex\\",
+          "Complex\\\\ComplexSurfShader_Vert.hlsl",
           [
               EntryPoint("VertShader",  [global_langages["vs_5_0"], global_langages["vs_4_1"], global_langages["vs_4_0"]]),#global_langages["vs_4_0_level_9_3"]]),
+          ]
+    ),
+    
+    Shader(
+          "ComplexSurfShader_PX",
+          "Complex\\",
+          "Complex\\\\ComplexSurfShader_PX.hlsl",
+          [
               EntryPoint("PxShader",    [global_langages["ps_5_0"], global_langages["ps_4_1"], global_langages["ps_4_0"]]),#global_langages["ps_4_0_level_9_3"]]),  
           ]
     ),
 
     Shader(
-          "GeneralShader",
-          "GeneralShader.hlsl",
+          "GeneralShader_Vert",
+          "General\\",
+          "General\\\\GeneralShader_Vert.hlsl",
           [
               EntryPoint("VertShader",  [global_langages["vs_5_0"], global_langages["vs_4_1"], global_langages["vs_4_0"]]),#global_langages["vs_4_0_level_9_3"]]),
+          ]
+    ),
+    
+    Shader(
+          "GeneralShader_PX",
+          "General\\",
+          "General\\\\GeneralShader_PX.hlsl",
+          [
               EntryPoint("PxShader",    [global_langages["ps_5_0"], global_langages["ps_4_1"], global_langages["ps_4_0"]]),#global_langages["ps_4_0_level_9_3"]]),  
           ]
     ),
 
     Shader(
-          "LineShader",
-          "LineShader.hlsl",
+          "LineShader_Vert",
+          "Line\\",
+          "Line\\\\LineShader_Vert.hlsl",
           [
               EntryPoint("VertShader",  [global_langages["vs_5_0"], global_langages["vs_4_1"], global_langages["vs_4_0"]]), #global_langages["vs_4_0_level_9_3"]]),
+          ]
+    ),
+    
+    Shader(
+          "LineShader_PX",
+          "Line\\",
+          "Line\\\\LineShader_PX.hlsl",
+          [
               EntryPoint("PxShader",    [global_langages["ps_5_0"], global_langages["ps_4_1"], global_langages["ps_4_0"]]), #global_langages["ps_4_0_level_9_3"]]),  
           ]
     ),
 
     Shader(
           "Line_GeoShader",
-          "Line_GeoShader.hlsl",
+          "Line\\",
+          "Line\\\\Line_GeoShader.hlsl",
           [
               EntryPoint("GeoShader",  [global_langages["gs_5_0"], global_langages["gs_4_1"], global_langages["gs_4_0"]]),
           ]
     ),
 
     Shader(
-          "MeshShader",
-          "MeshShader.hlsl",
+          "MeshShader_Vert",
+          "Mesh\\",
+          "Mesh\\\\MeshShader_Vert.hlsl",
           [
               EntryPoint("VertShader",  [global_langages["vs_5_0"], global_langages["vs_4_1"], global_langages["vs_4_0"]]), #global_langages["vs_4_0_level_9_3"]]),
+          ]
+    ),
+    
+    Shader(
+          "MeshShader_PX",
+          "Mesh\\",
+          "Mesh\\\\MeshShader_PX.hlsl",
+          [
               EntryPoint("PxShader",    [global_langages["ps_5_0"], global_langages["ps_4_1"], global_langages["ps_4_0"]]), #global_langages["ps_4_0_level_9_3"]]),  
           ]
     ),
 
     Shader(
-          "ResScaling",
-          "ResScaling.hlsl",
+          "ResScaling_Vert",
+          "PostFX\\",
+          "PostFX\\\\ResScaling_Vert.hlsl",
           [
               EntryPoint("VertShader",  [global_langages["vs_5_0"], global_langages["vs_4_1"], global_langages["vs_4_0"]]), #global_langages["vs_4_0_level_9_3"]]),
+          ]
+    ),
+    
+    Shader(
+          "ResScaling_PX",
+          "PostFX\\",
+          "PostFX\\\\ResScaling_PX.hlsl",
+          [
               EntryPoint("PxShader",    [global_langages["ps_5_0"], global_langages["ps_4_1"], global_langages["ps_4_0"]]), #global_langages["ps_4_0_level_9_3"]]),
           ]
     ),
 
     Shader(
-          "TileShader",
-          "TileShader.hlsl",
+          "TileShader_Vert",
+          "Tile\\",
+          "Tile\\\\TileShader_Vert.hlsl",
           [
               EntryPoint("VertShader",  [global_langages["vs_5_0"], global_langages["vs_4_1"], global_langages["vs_4_0"]]), #global_langages["vs_4_0_level_9_3"]]),
+          ]
+    ),
+    
+    Shader(
+          "TileShader_PX",
+          "Tile\\",
+          "Tile\\\\TileShader_PX.hlsl",
+          [
               EntryPoint("PxShader",    [global_langages["ps_5_0"], global_langages["ps_4_1"], global_langages["ps_4_0"]]), #global_langages["ps_4_0_level_9_3"]]),
           ]
     ),
@@ -135,7 +192,17 @@ hardcoded_cpp   = "..\\Src\\UnHardcodedShaders.cpp"
 newline         = "\n";
 tabbedLine      = newline + "\t";
 
-includes        = "// Metallicafan212:\tThis file contains auto generated code to load hardcoded shaders (compiled from fxc.exe)" + newline + "#include \"ICBINDx11Drv.h\"" + newline + newline;
+includes        = "// Metallicafan212:\tThis file contains auto generated code to load hardcoded shaders (compiled from fxc.exe)" + newline + "#include \"ICBINDx11Drv.h\"" + newline + newline + "#ifdef DX11_HP2" + newline + "#include \"HP2Shaders.h\"" + newline + "#endif" + newline + newline;
+
+# Metallicafan212: This is a hack for HP2...
+includes        += "#ifndef SM4_0" + newline + "#define SM4_0 CompiledShaders\\\\" + newline + newline + "#endif" + newline + newline;
+includes        += "#ifndef SM4_1" + newline + "#define SM4_1 CompiledShaders\\\\" + newline + newline + "#endif" + newline + newline;
+includes        += "#ifndef SM5_0" + newline + "#define SM5_0 CompiledShaders\\\\" + newline + newline + "#endif" + newline + newline;
+
+includes        += "#define CAT(x, y) x##y" + newline + newline;
+includes        += "#define SHADER_STR_INT(x) #x" + newline + newline;
+includes        += "#define SHADER_STR(x) SHADER_STR_INT(x)" + newline + newline;
+includes        += "#define SHADER_EXPAND(x, y) SHADER_STR(CAT(x, y))" + newline + newline;
 
 # Metallicafan212: Function code
 functionCode    = "void FShaderManager::LoadHardcodedShaders()" + newline + "{" + tabbedLine + "guard(FShaderManager::LoadHardcodedShaders);" + tabbedLine + tabbedLine + "TArray<BYTE>* Shad = nullptr;" + tabbedLine + tabbedLine;
@@ -219,8 +286,8 @@ for Shad in ShaderArray :
             compileCommand = [
                 fxc, 
                 "/T" + Lang.target, 
-                "/E" + Entry.entrypoint, 
-                "/Fh..\\Inc\\CompiledShaders\\" + generatedShader
+                "/E" + Entry.entrypoint,
+                "/Fh..\\Inc\\CompiledShaders\\" + Shad.headerPath + generatedShader
             ];
 
             # Metallicafan212: Now add all the macros
@@ -234,7 +301,10 @@ for Shad in ShaderArray :
 
             if(process.returncode == 0):
                 # Metallicafan212: Now add onto the includes
-                includes += "namespace " + generatedNamespace + newline + "{" + tabbedLine + "#include \"CompiledShaders\\" + generatedShader + "\"" + newline + "}" + newline + newline;
+                includes += "namespace " + generatedNamespace + newline + "{";
+                includes += tabbedLine + "#undef SHADER_HEADER" + newline;
+                includes += tabbedLine + "#define SHADER_HEADER SHADER_EXPAND(" + Lang.shaderMacro + ", " + Shad.headerPath + generatedShader + ")" + tabbedLine;
+                includes += tabbedLine + "#include SHADER_HEADER" + newline +  "}" + newline + newline;
 
                 # Metallicafan212: Add the code to set the data
                 functionCode += "// Metallicafan212: Load " + generatedNamespace + tabbedLine;

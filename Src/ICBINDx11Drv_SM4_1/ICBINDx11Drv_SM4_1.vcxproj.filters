@@ -1,0 +1,159 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{0236a12c-fe06-499b-9a03-2cdfe9ef36c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Tile">
+      <UniqueIdentifier>{4ccb5ff3-5fbc-4f30-9518-4fb3fdaf5409}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Complex">
+      <UniqueIdentifier>{0c3cc35d-47f8-412b-b85c-d0f453118e1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\General">
+      <UniqueIdentifier>{ded5f2f1-f691-4757-9ebe-1ec60d148d16}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Line">
+      <UniqueIdentifier>{8db59c94-178e-4eb8-8c55-68eb45126501}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Mesh">
+      <UniqueIdentifier>{92f20d89-e9a6-4aa8-9aaf-ba3c91b8b62d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\PostFX">
+      <UniqueIdentifier>{bf555aac-bb4a-4655-a920-8ed2d4f8edb7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compiled">
+      <UniqueIdentifier>{39901541-317b-44c7-9463-82e46c4c9747}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compiled\Line">
+      <UniqueIdentifier>{b54fd67a-af85-4c4a-9ab2-6ad14a04fe2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compiled\Mesh">
+      <UniqueIdentifier>{c43671bf-4afa-46f6-8396-440664def419}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compiled\Complex">
+      <UniqueIdentifier>{eb8f1ffb-a560-47d3-a443-cb8e463325f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compiled\General">
+      <UniqueIdentifier>{20e50794-d06b-4059-b44c-3a7f76754ea2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compiled\PostFX">
+      <UniqueIdentifier>{f0818868-5653-4edc-8e20-f8e2aa63f598}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compiled\Tile">
+      <UniqueIdentifier>{90ea0ea0-5497-459f-b0c0-0d306382f610}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Shaders\Tile\TileShader_Common.h">
+      <Filter>Shaders\Tile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Shaders\Complex\ComplexSurfShader_Common.h">
+      <Filter>Shaders\Complex</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Shaders\General\GeneralShader_Common.h">
+      <Filter>Shaders\General</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Shaders\Line\Line_Common.h">
+      <Filter>Shaders\Line</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Shaders\Mesh\MeshShader_Common.h">
+      <Filter>Shaders\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Shaders\PostFX\ResScaling_Common.h">
+      <Filter>Shaders\PostFX</Filter>
+    </ClInclude>
+    <ClInclude Include="Line\LineShader_PX_PxShader_ps_4_1.h">
+      <Filter>Compiled\Line</Filter>
+    </ClInclude>
+    <ClInclude Include="Line\LineShader_Vert_VertShader_vs_4_1.h">
+      <Filter>Compiled\Line</Filter>
+    </ClInclude>
+    <ClInclude Include="Line\Line_GeoShader_GeoShader_gs_4_1.h">
+      <Filter>Compiled\Line</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh\MeshShader_PX_PxShader_ps_4_1.h">
+      <Filter>Compiled\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh\MeshShader_Vert_VertShader_vs_4_1.h">
+      <Filter>Compiled\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Complex\ComplexSurfShader_Vert_VertShader_vs_4_1.h">
+      <Filter>Compiled\Complex</Filter>
+    </ClInclude>
+    <ClInclude Include="Complex\ComplexSurfShader_PX_PxShader_ps_4_1.h">
+      <Filter>Compiled\Complex</Filter>
+    </ClInclude>
+    <ClInclude Include="General\GeneralShader_Vert_VertShader_vs_4_1.h">
+      <Filter>Compiled\General</Filter>
+    </ClInclude>
+    <ClInclude Include="General\GeneralShader_PX_PxShader_ps_4_1.h">
+      <Filter>Compiled\General</Filter>
+    </ClInclude>
+    <ClInclude Include="PostFX\ResScaling_Vert_VertShader_vs_4_1.h">
+      <Filter>Compiled\PostFX</Filter>
+    </ClInclude>
+    <ClInclude Include="PostFX\ResScaling_PX_PxShader_ps_4_1.h">
+      <Filter>Compiled\PostFX</Filter>
+    </ClInclude>
+    <ClInclude Include="Tile\TileShader_PX_PxShader_ps_4_1.h">
+      <Filter>Compiled\Tile</Filter>
+    </ClInclude>
+    <ClInclude Include="Tile\TileShader_Vert_VertShader_vs_4_1.h">
+      <Filter>Compiled\Tile</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\..\Shaders\Complex\ComplexSurfShader_PX.hlsl">
+      <Filter>Shaders\Complex</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Shaders\Complex\ComplexSurfShader_Vert.hlsl">
+      <Filter>Shaders\Complex</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Shaders\General\GeneralShader_PX.hlsl">
+      <Filter>Shaders\General</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Shaders\General\GeneralShader_Vert.hlsl">
+      <Filter>Shaders\General</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Shaders\Line\LineShader_PX.hlsl">
+      <Filter>Shaders\Line</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Shaders\Line\LineShader_Vert.hlsl">
+      <Filter>Shaders\Line</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Shaders\Line\Line_GeoShader.hlsl">
+      <Filter>Shaders\Line</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Shaders\Mesh\MeshShader_PX.hlsl">
+      <Filter>Shaders\Mesh</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Shaders\Mesh\MeshShader_Vert.hlsl">
+      <Filter>Shaders\Mesh</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Shaders\PostFX\ResScaling_PX.hlsl">
+      <Filter>Shaders\PostFX</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Shaders\PostFX\ResScaling_Vert.hlsl">
+      <Filter>Shaders\PostFX</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Shaders\Tile\TileShader_PX.hlsl">
+      <Filter>Shaders\Tile</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Shaders\Tile\TileShader_Vert.hlsl">
+      <Filter>Shaders\Tile</Filter>
+    </FxCompile>
+  </ItemGroup>
+</Project>

@@ -23,8 +23,8 @@ FD3DResScalingShader::FD3DResScalingShader(UICBINDx11RenderDevice* InParent)
 	ComputeFile = SHADER_FOLDER TEXT("ResScaling.hlsl");
 	ComputeFunc = TEXT("CSMain");
 #else
-	VertexFile	= SHADER_FOLDER TEXT("ResScaling.hlsl");
-	PixelFile	= SHADER_FOLDER TEXT("ResScaling.hlsl");
+	VertexFile	= SHADER_FOLDER TEXT("PostFX\\ResScaling_Vert.hlsl");
+	PixelFile	= SHADER_FOLDER TEXT("PostFX\\ResScaling_PX.hlsl");
 	VertexFunc	= TEXT("VertShader");
 	PixelFunc	= TEXT("PxShader");
 #endif

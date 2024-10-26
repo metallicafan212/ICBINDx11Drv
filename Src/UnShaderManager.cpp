@@ -114,10 +114,19 @@ void FShaderManager::Init()
 
 		SQWORD CacheFileTime	= GFileManager->GetGlobalTime(CACHE_FILE);
 
+		if (DXDevice->bUsePrecompiledShaders)
+		{
+			LoadHardcodedShaders();
+
+			// Metallicafan212:	Set it to the max time??
+			CacheTime		= ModTime;
+
+			bCacheInvalid	= 0;
+		}
 		// Metallicafan212:	Load it, testing the time isn't needed now
 		//					TODO! Loop all files (that aren't our cache file) in the shaders folder and see if any are newer than our cache
 		//					If so, just invalidate immediately
-		if (GFileManager->FileSize(CACHE_FILE) >= 0)//&& CacheFileTime > ModTime)
+		else if (GFileManager->FileSize(CACHE_FILE) > 0)//&& CacheFileTime > ModTime)
 		{
 			FArchive* Ar = GFileManager->CreateFileReader(CACHE_FILE);
 
@@ -131,7 +140,8 @@ void FShaderManager::Init()
 
 			if (!bCacheInvalid)
 			{
-				CacheTime = CacheFileTime;
+				CacheTime		= CacheFileTime;
+				bCacheInvalid	= 0;
 			}
 			else
 			{
@@ -140,14 +150,18 @@ void FShaderManager::Init()
 					LoadHardcodedShaders();
 
 					// Metallicafan212:	Set it to the max time??
-					CacheTime = ModTime;//1ll << 62;
+					CacheTime		= ModTime;//1ll << 62;
+
+					bCacheInvalid	= 0;
 				}
 				else
 				{
-					CacheTime = 0;
+					CacheTime		= 0;
+					bCacheInvalid	= 1;
 				}
 			}
 		}
+		// Metallicafan212:	No cache found?
 		else
 		{
 			if (DXDevice->bUsePrecompiledShaders)
@@ -155,16 +169,17 @@ void FShaderManager::Init()
 				LoadHardcodedShaders();
 
 				// Metallicafan212:	Set it to the max time??
-				CacheTime = ModTime;
+				CacheTime		= ModTime;
+				bCacheInvalid	= 0;
 			}
 			else
 			{
 				// Metallicafan212:	Do nothing
-				CacheTime = 0;
+				CacheTime		= 0;
+				bCacheInvalid	= 1;
 			}
 		}
 
-		bCacheInvalid = 0;
 #else
 		LoadHardcodedShaders();
 #endif

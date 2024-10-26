@@ -1,4 +1,4 @@
-#include "ShaderGlobals.h"
+#include "..\ShaderGlobals.h"
 
 // Metallicafan212:	If to turn on this geo shader or not 
 //					I might make it a user option in the future and dynamically compile this define statement

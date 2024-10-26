@@ -6,7 +6,7 @@
 #define FIRST_USER_CONSTBUFF 4
 #define MACRO_STR(mac) #mac
 #define MACRO_TO_STR(mac) MACRO_STR(mac)
-#define FIRST_USER_CONSTBUFF_STR MACRO_TO_STR(FIRST_USER_CONSTBUFF)
+#define FIRST_USER_CONSTBUFF_STR "b" MACRO_TO_STR(FIRST_USER_CONSTBUFF)
 
 // Metallicafan212:	Shader folder
 //					Some people may not want to have shaders next to Textures, Sounds, etc.
@@ -220,7 +220,7 @@ public:
 			Macros.AddItem({ "WINE", "0" });
 		}
 
-		Macros.AddItem({ "FIRST_USER_CONSTBUFF", "b" FIRST_USER_CONSTBUFF_STR});
+		Macros.AddItem({ "FIRST_USER_CONSTBUFF", FIRST_USER_CONSTBUFF_STR});
 
 #if EXTRA_VERT_INFO
 		Macros.AddItem({"EXTRA_VERT_INFO", "1"});
@@ -245,7 +245,6 @@ public:
 
 		// Metallicafan212:	HP2 render modes
 #if DX11_HP2
-
 		Macros.AddItem({ "RENMAPS", "1" });
 		Macros.AddItem({ "NO_CUSTOM_RMODES", "0" });
 #undef BEGIN_REND_ENUM
@@ -282,20 +281,10 @@ public:
 		return ((SIZE_T)Other) == ((SIZE_T)this);
 	}
 
-	//bool operator==(const FD3DShader& Other)
-	//{
-	//	return ((SIZE_T)&Other) == ((SIZE_T)this);
-	//}
-
 	bool operator!=(const FD3DShader* Other)
 	{
 		return ((SIZE_T)Other) != ((SIZE_T)this);
 	}
-
-	//bool operator!=(const FD3DShader& Other)
-	//{
-	//	return ((SIZE_T)&Other) != ((SIZE_T)this);
-	//}
 
 	// Metallicafan212:	TODO! Shader interface?
 	virtual void Init();
@@ -309,8 +298,6 @@ public:
 	virtual void SetupConstantBuffer();
 
 	virtual UBOOL WriteConstantBuffer(void* InMem);
-
-	//virtual void UpdateConstantBuffer();
 };
 
 // Metallicafan212:	Compute shader interface
@@ -421,8 +408,8 @@ public:
 		Constants(FTileMatrixDef())
 	{
 		//ShaderFile			= TEXT("..\\Shaders\\TileShader.hlsl");
-		VertexFile				= SHADER_FOLDER TEXT("TileShader.hlsl");
-		PixelFile				= SHADER_FOLDER TEXT("TileShader.hlsl");
+		VertexFile				= SHADER_FOLDER TEXT("Tile\\TileShader_Vert.hlsl");
+		PixelFile				= SHADER_FOLDER TEXT("Tile\\TileShader_PX.hlsl");
 		//GeoFile				= TEXT("..\\Shaders\\TileShader.hlsl");
 		VertexFunc				= TEXT("VertShader");
 		PixelFunc				= TEXT("PxShader");
@@ -446,8 +433,8 @@ public:
 		FD3DShader()
 	{
 		//ShaderFile	= TEXT("..\\Shaders\\TileShader.hlsl");
-		VertexFile	= SHADER_FOLDER TEXT("GeneralShader.hlsl");
-		PixelFile	= SHADER_FOLDER TEXT("GeneralShader.hlsl");
+		VertexFile	= SHADER_FOLDER TEXT("General\\GeneralShader_Vert.hlsl");
+		PixelFile	= SHADER_FOLDER TEXT("General\\GeneralShader_PX.hlsl");
 		VertexFunc	= TEXT("VertShader");
 		PixelFunc	= TEXT("PxShader");
 	}
@@ -467,11 +454,11 @@ public:
 	FD3DLineShader() :
 		FD3DShader()
 	{
-		VertexFile	= SHADER_FOLDER TEXT("LineShader.hlsl");
-		PixelFile	= SHADER_FOLDER TEXT("LineShader.hlsl");
+		VertexFile	= SHADER_FOLDER TEXT("Line\\LineShader_Vert.hlsl");
+		PixelFile	= SHADER_FOLDER TEXT("Line\\LineShader_PX.hlsl");
 		VertexFunc	= TEXT("VertShader");
 		PixelFunc	= TEXT("PxShader");
-		GeoFile		= SHADER_FOLDER TEXT("LineShader.hlsl");
+		GeoFile		= SHADER_FOLDER TEXT("Line\\LineGeoShader.hlsl");
 		GeoFunc		= TEXT("GeoShader");
 	}
 
@@ -506,8 +493,8 @@ public:
 		FD3DShader(),
 		Constants(FMeshMatrixDef())
 	{
-		VertexFile			= SHADER_FOLDER TEXT("MeshShader.hlsl");
-		PixelFile			= SHADER_FOLDER TEXT("MeshShader.hlsl");
+		VertexFile			= SHADER_FOLDER TEXT("Mesh\\MeshShader_Vert.hlsl");
+		PixelFile			= SHADER_FOLDER TEXT("Mesh\\MeshShader_PX.hlsl");
 		VertexFunc			= TEXT("VertShader");
 		PixelFunc			= TEXT("PxShader");
 		bNoMeshOpacity		= 0;
@@ -539,8 +526,8 @@ public:
 	FD3DSurfShader() :
 		FD3DShader()
 	{
-		VertexFile		= SHADER_FOLDER TEXT("ComplexSurfShader.hlsl");
-		PixelFile		= SHADER_FOLDER TEXT("ComplexSurfShader.hlsl");
+		VertexFile		= SHADER_FOLDER TEXT("Complex\\ComplexSurfShader_Vert.hlsl");
+		PixelFile		= SHADER_FOLDER TEXT("Complex\\ComplexSurfShader_PX.hlsl");
 		VertexFunc		= TEXT("VertShader");
 		PixelFunc		= TEXT("PxShader");
 	}
@@ -554,9 +541,6 @@ public:
 	virtual void WriteConstantBuffer(void* InMem);
 #endif
 };
-
-
-
 
 // Metallicafan212:	Shader to scale up/down the final output (so we can have super resolution)
 class FD3DResScalingShader 
@@ -578,8 +562,8 @@ public:
 		ComputeFile = SHADER_FOLDER TEXT("ResScaling.hlsl");
 		ComputeFunc = TEXT("CSMain");
 #else
-		VertexFile	= SHADER_FOLDER TEXT("ResScaling.hlsl");
-		PixelFile	= SHADER_FOLDER TEXT("ResScaling.hlsl");
+		VertexFile	= SHADER_FOLDER TEXT("PostFX\\ResScaling_Vert.hlsl");
+		PixelFile	= SHADER_FOLDER TEXT("PostFX\\ResScaling_PX.hlsl");
 		VertexFunc	= TEXT("VertShader");
 		PixelFunc	= TEXT("PxShader");
 #endif
@@ -587,10 +571,6 @@ public:
 
 	// Metallicafan212:	Constructor that inits the device pointer
 	FD3DResScalingShader(class UICBINDx11RenderDevice* InParent);
-
-	//virtual void SetupConstantBuffer();
-
-	//virtual void WriteConstantBuffer(void* InMem);
 };
 
 // Metallicafan212:	This is unusued and might be removed in the future (as it wasn't as good as just drawing a damn rectangle)
@@ -610,11 +590,6 @@ public:
 	FD3DShader()
 #endif
 	{
-		//ShaderFile	= TEXT("..\\Shaders\\TileShader.hlsl");
-		//VertexFile	= SHADER_FOLDER TEXT("MSAAResolve.hlsl");
-		//PixelFile	= SHADER_FOLDER TEXT("MSAAResolve.hlsl");
-		//VertexFunc	= TEXT("VertShader");
-		//PixelFunc	= TEXT("PxShader");
 #if USE_MSAA_COMPUTE
 		ComputeFile = SHADER_FOLDER TEXT("MSAAResolve.hlsl");
 		ComputeFunc = TEXT("CSMain");

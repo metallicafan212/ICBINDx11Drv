@@ -11,8 +11,8 @@ FD3DMeshShader::FD3DMeshShader(UICBINDx11RenderDevice* InParent)
 	bPrevMeshOpacity	= 0;
 
 	// Metallicafan212:	TODO! Read the code from file, or write it out automatically
-	VertexFile			= SHADER_FOLDER TEXT("MeshShader.hlsl");
-	PixelFile			= SHADER_FOLDER TEXT("MeshShader.hlsl");
+	VertexFile			= SHADER_FOLDER TEXT("Mesh\\MeshShader_Vert.hlsl");
+	PixelFile			= SHADER_FOLDER TEXT("Mesh\\MeshShader_PX.hlsl");
 	VertexFunc			= TEXT("VertShader");
 	PixelFunc			= TEXT("PxShader");
 

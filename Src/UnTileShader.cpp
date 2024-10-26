@@ -1,7 +1,5 @@
 #include "ICBINDx11Drv.h"
 
-
-
 // Metallicafan212:	This file defines the tile rendering shader
 FD3DTileShader::FD3DTileShader(UICBINDx11RenderDevice* InParent)
 	: FD3DShader(InParent),
@@ -13,8 +11,8 @@ FD3DTileShader::FD3DTileShader(UICBINDx11RenderDevice* InParent)
 	guard(FD3DTileShader::FD3DTileShader);
 	
 	// Metallicafan212:	TODO! Read the code from file, or write it out automatically
-	VertexFile				= SHADER_FOLDER TEXT("TileShader.hlsl");
-	PixelFile				= SHADER_FOLDER TEXT("TileShader.hlsl");
+	VertexFile				= SHADER_FOLDER TEXT("Tile\\TileShader_Vert.hlsl");
+	PixelFile				= SHADER_FOLDER TEXT("Tile\\TileShader_PX.hlsl");
 	VertexFunc				= TEXT("VertShader");
 	PixelFunc				= TEXT("PxShader");
 	ShaderConstantsMem		= &Constants;

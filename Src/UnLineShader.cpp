@@ -7,8 +7,8 @@ FD3DLineShader::FD3DLineShader(UICBINDx11RenderDevice* InParent)
 	guard(FD3DLineShader::FD3DLineShader);
 
 	// Metallicafan212:	TODO! Read the code from file, or write it out automatically
-	VertexFile	= SHADER_FOLDER TEXT("LineShader.hlsl");
-	PixelFile	= SHADER_FOLDER TEXT("LineShader.hlsl");
+	VertexFile	= SHADER_FOLDER TEXT("Line\\LineShader_Vert.hlsl");
+	PixelFile	= SHADER_FOLDER TEXT("Line\\LineShader_PX.hlsl");
 	VertexFunc	= TEXT("VertShader");
 	PixelFunc	= TEXT("PxShader");
 
@@ -19,7 +19,7 @@ FD3DLineShader::FD3DLineShader(UICBINDx11RenderDevice* InParent)
 	if (ParentDevice->bUseGeoShaders)//!GWineAndDine)
 #endif
 	{
-		GeoFile = SHADER_FOLDER TEXT("Line_GeoShader.hlsl");
+		GeoFile = SHADER_FOLDER TEXT("Line\\Line_GeoShader.hlsl");
 		GeoFunc = TEXT("GeoShader");
 
 		Macros.Insert(0);

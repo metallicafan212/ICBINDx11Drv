@@ -64,6 +64,7 @@ void FD3DShader::Init()
 		INT PixelShaderMac			= Macros.Num() - 1;
 		Macros.Insert(Macros.Num() - 1);//Macros.AddItem({"PIXEL_SHADER", "1"});
 		Macros(PixelShaderMac)		= { "PIXEL_SHADER", "1" };
+
 		TArray<BYTE>* ShaderBytes	= ParentDevice->ShaderManager->GetShaderBytes(PixelFile, PixelFunc, ParentDevice->MaxPSLevel, GET_MACRO_PTR(Macros), Flags);
 
 		// Metallicafan212:	Get it as a pixel shader
