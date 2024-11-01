@@ -82,6 +82,7 @@ FArchive& operator<<(FArchive& Ar, FShaderManager* Manager)
 	// Metallicafan212:	If it's invalid, clear it so it creates it again
 	if (Manager->bCacheInvalid)
 	{
+		GLog->Logf(TEXT("DX11: Shader cache emptied"));
 		Manager->Bytecode.Empty();
 	}
 
@@ -126,7 +127,7 @@ void FShaderManager::Init()
 		// Metallicafan212:	Load it, testing the time isn't needed now
 		//					TODO! Loop all files (that aren't our cache file) in the shaders folder and see if any are newer than our cache
 		//					If so, just invalidate immediately
-		else if (GFileManager->FileSize(CACHE_FILE) > 0)//&& CacheFileTime > ModTime)
+		else if (GFileManager->FileSize(CACHE_FILE) > 0 && CacheFileTime > ModTime)
 		{
 			FArchive* Ar = GFileManager->CreateFileReader(CACHE_FILE);
 

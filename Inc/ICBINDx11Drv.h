@@ -51,6 +51,29 @@
 
 #endif
 
+// Metallicafan212:	TODO! Generic game support
+#if !DX11_HP2 && !DX11_UT_469
+// Metallicafan212:	HACK! So we render tiles right, we need to clamp UVs so it doesn't cause looping when using AF
+//					Reuse the big wavy flag, as it's unused and (unlikely) to be used....
+# define PF_ClampUVs PF_BigWavy//PF_Memorized
+
+// Metallicafan212:	32bit check
+#define UNREAL32 1
+
+// Metallicafan212:	DISABLE THE WARNING IF WE'RE IN 32BIT!!!!
+#if UNREAL32
+#define WINDOWS_IGNORE_PACKING_MISMATCH 1
+#endif
+
+// Metallicafan212:	Hard-code shaders for comp play
+//					TODO! Should probably only be enabled for build built with the official patch and released on Github
+#define DX11_HARDCODE_SHADERS 1
+
+// Metallicafan212:	Other UE1's don't have alpha blend, define it now
+#define PF_AlphaBlend PF_CloudWavy
+
+#endif
+
 #define INT_INDEX_BUFF 1
 
 #if INT_INDEX_BUFF
@@ -1893,7 +1916,11 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	virtual void UpdateTextureRect(FTextureInfo& Info, INT U, INT V, INT UL, INT VL);
 
 	virtual void DrawTileList(const FSceneNode* Frame, const FTextureInfo& Info, const FTileRect* Tiles, INT NumTiles, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, DWORD PolyFlags);
+#else
+	// Metallicafan212:	Base defs for most UE1 games, may have to be overrided
+	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet);
 
+	virtual void DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, int NumPts, PFLAG PolyFlags, FSpanBuffer* Span);
 #endif
 
 	virtual void Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD LineFlags, FVector OrigP, FVector OrigQ);

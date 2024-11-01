@@ -6,11 +6,11 @@ FORCEINLINE FMipmap* GetBaseMip(const FTextureInfo& Info)
 	if (Info.NumMips == 0)
 		return nullptr;
 
-#if DX11_HP2
-	return Info.Mips[0];//Info.LOD];
-#elif DX11_UT_469
+#if DX11_UT_469
 	UBOOL Compressed = FIsCompressedFormat(Info.Format);
 	return Info.Texture != nullptr ? (Compressed ? &Info.Texture->CompMips(Info.LOD) : &Info.Texture->Mips(Info.LOD)) : nullptr;
+#else
+	return Info.Mips[0];
 #endif
 }
 
@@ -271,7 +271,33 @@ FORCEINLINE UBOOL GetMipInfo(const FTextureInfo& Info, FD3DTexture* Tex, BYTE* C
 		MipH	= MipBase->VSize;
 	}
 #else
-#error "Implement Me!"
+//#error "Implement Me!"
+	// Metallicafan212:	TODO! Very basic implementation
+	FMipmap* Mip = reinterpret_cast<FMipmap*>(Info.Mips[MipNum]);
+
+	if (Mip == nullptr)
+	{
+		return 0;
+	}
+
+	if (Mip->DataPtr == nullptr)
+	{
+		Mip->DataArray.Load();
+		Mip->DataPtr = static_cast<BYTE*>(Mip->DataArray.GetData());
+	}
+	DataPtr = Mip->DataPtr;
+	Size    = Mip->DataArray.Num();
+
+	// Metallicafan212:	Provide out the mip's size
+	MipW	= Mip->USize;
+	MipH	= Mip->VSize;
+
+	SourcePitch = Tex->D3DTexType->GetPitch(Mip->USize);
+
+	if (Size <= 0)
+	{
+		Size = SourcePitch * Mip->VSize;
+	}
 #endif
 
 	return TRUE;
