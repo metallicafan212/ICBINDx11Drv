@@ -162,11 +162,17 @@ cbuffer PolyflagVars : register (b2)
 	
 	float	BWPercent			: packoffset(c0.w);
 	
-	// Metallicafan212:	Generalized shader flags, so we're more optimially using memory
-	dword	ShaderFlags			: packoffset(c1.x);
-	
 	// Metallicafan212:	Pack in the selection color for the editor
-	float3	SelectedColor		: packoffset(c1.y);
+	float3	SelectedColor		: packoffset(c1.x);
+	
+	// Metallicafan212:	TODO! This is ONLY when FVector is aligned to 16 bytes!!!!
+	float	PadSelect			: packoffset(c1.w);
+	
+	// Metallicafan212:	Generalized shader flags, so we're more optimially using memory
+	dword	ShaderFlags			: packoffset(c2.x);
+	
+	// Metallicafan212:	Pad out the rest of the structure
+	float3 	PadFlags			: packoffset(c2.y);
 };
 
 cbuffer TextureVariables : register (b3)

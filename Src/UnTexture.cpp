@@ -1146,37 +1146,63 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 		//					Reset fog if the XOR was Translucent or Modulated
 		if ((FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues) && (Xor & (PF_Translucent | PF_Modulated | PF_AlphaBlend | PF_Highlighted | PF_NoFog)))
 		{
-			PFLAG Flags = (blendFlags & RELEVANT_BLEND_FLAGS);
+			// Metallicafan212:	Don't allow for this to work if we're in a stack...
+			//					TODO!!!!!
+			//if (!DistanceFogStack.Num())
+			{
+				PFLAG Flags = (blendFlags & RELEVANT_BLEND_FLAGS);
 
-			if (Flags & PF_NoFog)
-			{
-				// Metallicafan212:	Disable fogging entirely on this surface/actor
-				FogShaderVars.bForceFogOff	= 1;
-				//UpdateFogSettings();
-				bUpdateFogBuff				= 1;
-			}
-			else
-			{
-				FogShaderVars.bForceFogOff = 0;
-				// Metallicafan212:	Translucent gets combined with a few other flags to set a specific hack
-				//					Sigh.... If only they just added a alpha flag instead of reusing flags, it makes it extremely annoying
-				if (Flags & PF_Translucent && !(Flags & (PF_AlphaBlend | PF_Highlighted)))
+				if (Flags & PF_NoFog)
 				{
-					FogShaderVars.DistanceFogColor	= FogShaderVars.TransFogColor;
-					//UpdateFogSettings();
-					bUpdateFogBuff					= 1;
-				}
-				else if (Flags & PF_Modulated)
-				{
-					FogShaderVars.DistanceFogColor	= FogShaderVars.ModFogColor;
-					//UpdateFogSettings();
-					bUpdateFogBuff					= 1;
+					//PushDistanceFogState();
+
+					//FogHackPopCount++;
+
+					// Metallicafan212:	Disable fogging entirely on this surface/actor
+					FogShaderVars.bForceFogOff	= 1;
+					bUpdateFogBuff				= 1;
 				}
 				else
 				{
-					FogShaderVars.DistanceFogColor	= FogShaderVars.DistanceFogFinal;
-					//UpdateFogSettings();
-					bUpdateFogBuff					= 1;
+					FogShaderVars.bForceFogOff = 0;
+					// Metallicafan212:	Translucent gets combined with a few other flags to set a specific hack
+					//					Sigh.... If only they just added a alpha flag instead of reusing flags, it makes it extremely annoying
+					if (Flags & PF_Translucent && !(Flags & (PF_AlphaBlend | PF_Highlighted)))
+					{
+						//PushDistanceFogState();
+						//FogHackPopCount++;
+						FogShaderVars.DistanceFogColor	= FogShaderVars.TransFogColor;
+						//UpdateFogSettings();
+						bUpdateFogBuff					= 1;
+					}
+					else if (Flags & PF_Modulated)
+					{
+						//PushDistanceFogState();
+
+						//FogHackPopCount++;
+
+						FogShaderVars.DistanceFogColor	= FogShaderVars.ModFogColor;
+						//UpdateFogSettings();
+						bUpdateFogBuff					= 1;
+					}
+					else
+					{
+						/*
+						// Metallicafan212:	TODO! While not likely, another render might've come in and messed with us...
+						//					Rethink this approach
+						while (FogHackPopCount)
+						{
+							FogHackPopCount--;
+							PopDistanceFogState();
+						}
+
+						PopDistanceFogState();
+						*/
+						//PushDistanceFogState();
+						FogShaderVars.DistanceFogColor	= FogShaderVars.DistanceFogFinal;
+						//UpdateFogSettings();
+						bUpdateFogBuff					= 1;
+					}
 				}
 			}
 		}

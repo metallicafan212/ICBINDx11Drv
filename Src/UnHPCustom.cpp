@@ -494,7 +494,7 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 
 
 	// Metallicafan212:	Grab the current time
-	FogShaderVars.FogSetTime			= Viewport->CurrentTime.GetFloat();
+	FogShaderVars.FogSetTime			= Viewport->CurrentTime;
 
 	// Metallicafan212:	Keep the val around, so we can selectively set blending
 	FogShaderVars.bDoDistanceFog		= Enable;
@@ -513,7 +513,7 @@ void UICBINDx11RenderDevice::TickDistanceFog()
 	if (FogShaderVars.bFadeFogValues)
 	{
 		// Metallicafan212:	fade the current fog setting
-		FLOAT CurrPos = FogShaderVars.FogFadeRate <= 0.0f ? 1.0f : ((Viewport->CurrentTime.GetFloat() - FogShaderVars.FogSetTime) / FogShaderVars.FogFadeRate);
+		FLOAT CurrPos = FogShaderVars.FogFadeRate <= 0.0f ? 1.0f : ((Viewport->CurrentTime - FogShaderVars.FogSetTime) / FogShaderVars.FogFadeRate);
 
 		if (CurrPos >= 1.0f)
 		{

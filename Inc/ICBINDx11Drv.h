@@ -954,6 +954,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	//					This does not directly map to variables in the shader itself, as there's copies used to do fading
 	FFogShaderVars						FogShaderVars;
 
+	// Metallicafan212:	HACK!!!! This tracks how many times we've pushed onto the distance fog stack
+	INT									FogHackPopCount;
+
 	// Metallicafan212:	Holds onto global variables for the shaders, so we're not uploading so much info all the time
 	FFrameShaderVars					FrameShaderVars;
 
@@ -2016,10 +2019,10 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 			// Metallicafan212:	Now remove
 			DistanceFogStack.Remove(DistanceFogStack.Num() - 1);
-
-			// Metallicafan212:	Update
-			UpdateFogSettings();
 		}
+
+		// Metallicafan212:	Update
+		UpdateFogSettings();
 
 		unguard;
 	}

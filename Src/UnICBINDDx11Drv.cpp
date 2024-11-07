@@ -987,6 +987,8 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	m_BufferedIndices	= 0;
 	m_BufferedVerts		= 0;
 
+	FogHackPopCount		= 0;
+
 	FrameConstantsBuffer	= nullptr;
 #if DX11_HP2
 	GlobalDistFogBuffer		= nullptr;
@@ -2476,7 +2478,11 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 #if DX11_HP2
 	if (FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues)
+	{
+		// Metallicafan212:	Fix a random bug... Restore the fog color
+		FogShaderVars.DistanceFogColor = FogShaderVars.DistanceFogFinal;
 		TickDistanceFog();
+	}
 #endif
 
 	// Metallicafan212:	Update the shader variables

@@ -78,6 +78,8 @@ struct FDistFogVars
 };
 #endif
 
+// Metallicafan212:	Selection color and the shader flags were swapped due to 16 byte aligned vector support
+//					This makes sure that the vector will be aligned (manually) to the start of the next D3D register
 struct FPolyflagVars
 {
 	UBOOL	bSelected;
@@ -88,17 +90,26 @@ struct FPolyflagVars
 
 	FLOAT	BWPercent;
 
+	// Metallicafan212:	Selection color (no alpha)
+	FVector	SelectionColor;
+
+	// Metallicafan212: If this is not aligned to 16 bytes, we need to pad to match the aligned shaders
+#if FVECTOR_ALIGNMENT != 16 && VECTOR_ALIGNMENT != 16
+	DWORD PadSelect;
+#endif
+
 	// Metallicafan212:	Current set flags
 	DWORD	ShaderFlags;
+
+	// Metallicafan212:	If ShaderFlags starts on the next register, we need to pad here to match the shaders....
+	//					TODO! Maybe add some more shader logic to make this pad not needed?
+	DWORD Pad[3];
 
 	// Metallicafan212:	If alpha is currently enabled
 	//UBOOL	bAlphaEnabled;
 
 	// Metallicafan212:	Temp hack for modulation until I recode gamma again....
 	//UBOOL	bModulated;
-
-	// Metallicafan212:	Selection color (no alpha)
-	FVector	SelectionColor;
 
 	FPolyflagVars()
 		:
