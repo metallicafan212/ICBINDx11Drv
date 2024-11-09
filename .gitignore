@@ -47,3 +47,4 @@
 # Metallicafan212: Compiled shaders
 Inc\CompiledShaders\*
 Src\UnHardcodedShaders.cpp
+/Inc/CompiledShaders
