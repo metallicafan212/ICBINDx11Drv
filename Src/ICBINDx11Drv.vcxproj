@@ -131,7 +131,7 @@
     </ProjectReference>
     <PreBuildEvent>
       <Command>cd .. 
-python PreCompileShaders.py</Command>
+python PreCompileShader.py</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

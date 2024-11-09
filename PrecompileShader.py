@@ -266,6 +266,10 @@ except:
     # Metallicafan212: Wasn't found, so don't override it.
     print("FXC not found on the path variable, defaulting to " + fxc_path);
     fxc = fxc_path;
+    
+# Metallicafan212: Make sure that the directories exist
+if(not os.path.exists("..\\Inc\\CompiledShaders\\")):
+    os.mkdir("..\\Inc\\CompiledShaders\\");
 
 for Shad in ShaderArray :
     # Metallicafan212: Process this shader
@@ -289,6 +293,10 @@ for Shad in ShaderArray :
                 "/E" + Entry.entrypoint,
                 "/Fh..\\Inc\\CompiledShaders\\" + Shad.headerPath + generatedShader
             ];
+            
+            # Metallicafan212: Check that the path exists first!
+            if(not os.path.exists("..\\Inc\\CompiledShaders\\" + Shad.headerPath)):
+                os.mkdir("..\\Inc\\CompiledShaders\\" + Shad.headerPath);
 
             # Metallicafan212: Now add all the macros
             for Mac in Lang.macros:
