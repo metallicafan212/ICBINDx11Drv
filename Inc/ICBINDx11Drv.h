@@ -624,8 +624,14 @@ struct std::hash<FString>
 struct FD2DStringDraw
 {
 	IDWriteTextLayout*		Layout;
+	IDWriteTextFormat*		Font;
+	PFLAG					Flags;
+	FPlane					TrueColor;
+	FString					TrueText;
 	ID2D1SolidColorBrush*	Color;
 	D2D1_POINT_2F			Point;
+	FLOAT					ClipX;
+	FLOAT					ClipY;
 };
 
 

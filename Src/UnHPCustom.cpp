@@ -152,7 +152,7 @@ void ReplaceInText(FString& In, const TCHAR* Match, const TCHAR* With)
 
 #define DO_MANUAL_SCALE 0
 
-int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, UBOOL bHandleApersand, FLOAT Scale)
+INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, UBOOL bHandleApersand, FLOAT Scale)
 {
 	guard(UICBINDx11RenderDevice::DrawString);
 
@@ -175,17 +175,12 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 	UCanvas* Canvas = Viewport->Canvas;
 
 	// Metallicafan212:	Hold the scale here
-	INT fontScale = Font->FontHeight;
+	FLOAT fontScale = Font->FontHeight;
 
 	if (Scale > 1.0f)
 		fontScale = Font->FontHeight * Scale;
 
-#if DO_MANUAL_SCALE
-	if(BoundRT == nullptr)
-		fontScale *= ResolutionScale;
-#endif
-
-	FString FontKey = *FString::Printf(TEXT("%s %d"), *Font->FontName, fontScale);
+	FString FontKey = *FString::Printf(TEXT("%s %d %d %d %g"), *Font->FontName, Font->Bold, Font->Italic, Font->DropShadow, fontScale);
 
 	// Metallicafan212:	See if the font has been created before
 #if !USE_UNODERED_MAP_EVERYWHERE
@@ -202,6 +197,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 	{
 		FName lang = UObject::GetLanguage();
 
+#if DX11_HP2
 		DWRITE_FONT_WEIGHT fontWeight = DWRITE_FONT_WEIGHT_DEMI_BOLD;
 
 		// Metallicafan212:	Catch when the font is specified
@@ -243,6 +239,12 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 			// Metallicafan212:	Use the JP font
 			tempFontName = TEXT("Yu Mincho");
 		}
+#else
+		DWRITE_FONT_WEIGHT fontWeight = DWRITE_FONT_WEIGHT_NORMAL;
+
+		// Metallicafan212:	Catch when the font is specified
+		FName tempFontName = *Font->FontName;
+#endif
 
 		// Metallicafan212:	If the font name has BOLD in it, then mark it as bold
 		FString RealCopy	= *tempFontName;
@@ -254,6 +256,10 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 			fontWeight = DWRITE_FONT_WEIGHT_BOLD;
 
 			RealCopy = RealCopy.Left(Bold);
+		}
+		else if (Font->Bold)
+		{
+			fontWeight = DWRITE_FONT_WEIGHT_BOLD;
 		}
 
 		// Metallicafan212:	In order for DWrite to use custom fonts, we have to provide a collection here...
@@ -277,7 +283,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 			*RealCopy,
 			FC,
 			fontWeight,
-			DWRITE_FONT_STYLE_NORMAL,
+			Font->Italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL,
 			DWRITE_FONT_STRETCH_NORMAL,
 			fontScale,
 			TEXT(""),
@@ -353,7 +359,7 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 		// Metallicafan212:	Create a text format to render it
 		IDWriteTextLayout* layout = nullptr;
 		hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, Canvas->ClipX, Canvas->ClipY, &layout);
-		
+
 		ThrowIfFailed(hr);
 
 		// Metallicafan212:	Set the underlines
@@ -383,6 +389,9 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 		// Metallicafan212:	PF_Invisible says to just calc the rect
 		if (!(Flags & PF_Invisible))
 		{
+			UBOOL bCombinedLayout	= 0;
+			UBOOL bDoNotCombine		= 0;
+
 			// Metallicafan212:	TODO! Add the ability to bunch up string draws, to speedup wine rendering!
 			//EndBuffering();
 			StartBuffering(BT_Strings);
@@ -393,9 +402,6 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 
 			// Metallicafan212:	Actually draw it now
 			//m_CurrentD2DRT->BeginDraw();
-
-			ID2D1SolidColorBrush* ColBrush = nullptr;
-			m_CurrentD2DRT->CreateSolidColorBrush(D2D1::ColorF(LocalColor.X, LocalColor.Y, LocalColor.Z, 1.f - LocalColor.W), &ColBrush);
 
 			// Metallicafan212:	Now draw it at the right location
 			FLOAT X = OldDrawX + Canvas->OrgX;
@@ -409,27 +415,101 @@ int UICBINDx11RenderDevice::DrawString(QWORD Flags, UFont* Font, INT& DrawX, INT
 				// Center about DrawX.
 				X -= Met.widthIncludingTrailingWhitespace / 2.0f;
 				W = Canvas->ClipX - X;
+				bDoNotCombine = 1;
 			}
+
+			// Metallicafan212:	See if there's a layout we can combine with
+			if (!bDoNotCombine && BufferedStrings.Num())
+			{
+				FD2DStringDraw& PrevDraw = BufferedStrings(BufferedStrings.Num() - 1);
+
+				if (PrevDraw.TrueColor == LocalColor && PrevDraw.Font == DaFont && PrevDraw.Point.y == Y && PrevDraw.Flags == Flags && PrevDraw.ClipX == Canvas->ClipX && PrevDraw.ClipY == Canvas->ClipY)
+				{
+					// Metallicafan212:	This is a compatible layout, use it!!!
+					layout->Release();
+
+					// Metallicafan212:	Release the previous layout
+					PrevDraw.Layout->Release();
+
+					// Metallicafan212:	Now combine them
+					PrevDraw.TrueText += LocalText;
+					hr = m_D2DWriteFact->CreateTextLayout(*PrevDraw.TrueText, PrevDraw.TrueText.Len(), DaFont, Canvas->ClipX, Canvas->ClipY, &PrevDraw.Layout);
+
+					//PrevDraw.Layout = layout;
+					layout = PrevDraw.Layout;
+
+					bCombinedLayout = 1;
+				}
+			}
+
+			ID2D1SolidColorBrush* ColBrush = nullptr;
 
 			layout->SetMaxWidth(W);
 			layout->SetMaxHeight(H);
 
-			// Metallicafan212:	Now cache the draw
-			FD2DStringDraw& D = BufferedStrings[BufferedStrings.Add()];
 
-			D.Layout	= layout;
-			D.Color		= ColBrush;
-			D.Point		= D2D1::Point2F(X, Y);
+			if (!bCombinedLayout)
+				m_CurrentD2DRT->CreateSolidColorBrush(D2D1::ColorF(LocalColor.X, LocalColor.Y, LocalColor.Z, 1.f - LocalColor.W), &ColBrush);
 
-			/*
-			//m_D2DRT->FillRectangle(D2D1::RectF(0, 0, 1920, 1080), ColBrush);
-			m_CurrentD2DRT->DrawTextLayout(D2D1::Point2F(X, Y), layout, ColBrush, D2D1_DRAW_TEXT_OPTIONS_NONE); //D2D1_DRAW_TEXT_OPTIONS_CLIP);
-			
-			// Metallicafan212:	Now end and release
-			m_CurrentD2DRT->EndDraw();
+			// Metallicafan212:	If this is a drop shadow font, we also need to render that....
+			if (Font->DropShadow)
+			{
+				// Metallicafan212:	First, see if we have a text layout we can match
+				FPlane Black = FPlane(0.0f, 0.0f, 0.0f, LocalColor.W);
 
-			ColBrush->Release();
-			*/
+				if (BufferedStrings.Num() >= 2)
+				{
+					// Metallicafan212:	If we have a drop shadow now, we're garunteed to have one before, as I key the font that way
+					if (bCombinedLayout)
+					{
+						FD2DStringDraw& PrevDrop = BufferedStrings(BufferedStrings.Num() - 2);
+						PrevDrop.Layout->Release();
+						PrevDrop.Layout = layout;
+
+						// Metallicafan212:	ADD A REF!!!!
+						PrevDrop.Layout->AddRef();
+
+						PrevDrop.TrueText += LocalText;
+					}
+				}
+
+				if (!bCombinedLayout)
+				{
+					ID2D1SolidColorBrush* DropBrush = nullptr;
+
+					m_CurrentD2DRT->CreateSolidColorBrush(D2D1::ColorF(Black.X, Black.Y, Black.Z, 1.0f - Black.W), &DropBrush);
+
+					FD2DStringDraw& Drop	= BufferedStrings(BufferedStrings.AddZeroed());
+
+					// Metallicafan212:	ADD A REF!!!! This is so the drop shadow draw doesn't destroy it when it needs to draw the character on top
+					layout->AddRef();
+
+					Drop.Layout		= layout;
+					Drop.Color		= DropBrush;
+					Drop.Point		= D2D1::Point2F(X + Scale, Y +  Scale);
+					Drop.TrueColor	= Black;
+					Drop.TrueText	= LocalText;
+					Drop.Flags		= Flags;
+					Drop.ClipX		= Canvas->ClipX;
+					Drop.ClipY		= Canvas->ClipY;
+				}
+			}
+
+			if (!bCombinedLayout)
+			{
+				// Metallicafan212:	Now cache the draw
+				FD2DStringDraw& D = BufferedStrings(BufferedStrings.AddZeroed());
+
+				D.Layout	= layout;
+				D.Color		= ColBrush;
+				D.Point		= D2D1::Point2F(X, Y);
+				D.Font		= DaFont;
+				D.TrueColor	= LocalColor;
+				D.TrueText	= LocalText;
+				D.Flags		= Flags;
+				D.ClipX		= Canvas->ClipX;
+				D.ClipY		= Canvas->ClipY;
+			}
 		}
 		else
 		{
