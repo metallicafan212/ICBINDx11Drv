@@ -156,6 +156,23 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 {
 	guard(UICBINDx11RenderDevice::DrawString);
 
+	FLOAT LocalClipW = ClipW + Scale;
+	FLOAT LocalClipH = ClipH;
+
+#if 0//DX11_D2D_CLIP_LAYER
+	// Metallicafan212:	Check if we need to flush the drawn strings....
+	if (!(Flags & PF_Invisible) && BufferedStrings.Num() && (LocalClipW != StringClipW || LocalClipH != StringClipH || ClipX != StringClipX || ClipY != StringClipY))
+	{
+		EndBuffering();
+	}
+
+	// Metallicafan212:	Set the cache vars
+	StringClipX = ClipX;
+	StringClipY = ClipY;
+	StringClipW = LocalClipW;
+	StringClipH = LocalClipH;
+#endif
+
 	// Metallicafan212:	Update the color if we're doing selection testing
 	FPlane LocalColor = Color;
 
@@ -170,9 +187,6 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 
 	// Metallicafan212:	Use a local string to add a zero width character
 	FString LocalText = RealText;
-
-
-	//UCanvas* Canvas = Viewport->Canvas;
 
 	// Metallicafan212:	Hold the scale here
 	FLOAT fontScale = Font->FontHeight;
@@ -360,8 +374,8 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 		//					We're ASSUMING that the DrawX is the ABSOLUTE screen coord wanted, and that the clipping rect is the ABSOLUTE XYWH on screen
 		FLOAT X = DrawX;//Canvas->OrgX;
 		FLOAT Y = DrawY;//Canvas->OrgY;
-		FLOAT W = (ClipX + ClipW) - DrawX + Scale;
-		FLOAT H = (ClipY + ClipH) - DrawY;
+		FLOAT W = (ClipX + LocalClipW) - DrawX;
+		FLOAT H = (ClipY + LocalClipH) - DrawY;
 
 		// Metallicafan212:	Don't draw invalid ranges
 		if (W <= 0.0f || H <= 0.0f)
@@ -371,7 +385,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 
 		// Metallicafan212:	Create a text format to render it
 		IDWriteTextLayout* layout = nullptr;
-		hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, W, H, &layout);
+		hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, FLT_MAX, FLT_MAX, &layout);
 		
 		ThrowIfFailed(hr);
 
@@ -388,14 +402,6 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 		INT OldDrawX = DrawX;
 		INT OldDrawY = DrawY;
 
-#if DO_MANUAL_SCALE
-		if (BoundRT == nullptr)
-		{
-			Met.width /= ResolutionScale;
-			Met.height /= ResolutionScale;
-		}
-#endif
-
 		DrawX += Met.widthIncludingTrailingWhitespace;
 		DrawY += Met.height;
 
@@ -405,16 +411,12 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 			UBOOL bCombinedLayout	= 0;
 			UBOOL bDoNotCombine		= 0;
 
-			// Metallicafan212:	TODO! Add the ability to bunch up string draws, to speedup wine rendering!
-			//EndBuffering();
 			StartBuffering(BT_Strings);
 
-			SetRasterState(DXRS_Normal); //| DXRS_NoAA);
+			SetRasterState(DXRS_Normal);
+
 			// Metallicafan212:	IMPORTANT!!!! D2D seems to actually somewhat RESPECT the current shaders, so we need to use a generic shader for this
 			FGenShader->Bind(m_RenderContext);
-
-			// Metallicafan212:	Actually draw it now
-			//m_CurrentD2DRT->BeginDraw();
 
 			// Metallicafan212:	Center the text if PF_TwoSided
 			if (Flags & PF_TwoSided)
@@ -436,10 +438,10 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 					// Metallicafan212:	This is a compatible layout, use it!!!
 
 					// Metallicafan212:	Fix the clipping
-					X = PrevDraw.Point.x;
-					Y = PrevDraw.Point.y;
-					W = PrevDraw.Layout->GetMaxWidth();
-					H = PrevDraw.Layout->GetMaxHeight();
+					//X = PrevDraw.Point.x;
+					//Y = PrevDraw.Point.y;
+					//W = PrevDraw.Layout->GetMaxWidth();
+					//H = PrevDraw.Layout->GetMaxHeight();
 
 					// Metallicafan212:	Release the two layouts
 					layout->Release();
@@ -447,7 +449,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 
 					// Metallicafan212:	Now combine them
 					PrevDraw.TrueText += LocalText;
-					hr = m_D2DWriteFact->CreateTextLayout(*PrevDraw.TrueText, PrevDraw.TrueText.Len(), DaFont, W, H, &PrevDraw.Layout);
+					hr = m_D2DWriteFact->CreateTextLayout(*PrevDraw.TrueText, PrevDraw.TrueText.Len(), DaFont, FLT_MAX, FLT_MAX, &PrevDraw.Layout);
 
 					//PrevDraw.Layout = layout;
 					layout = PrevDraw.Layout;
@@ -465,58 +467,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 			if (!bCombinedLayout)
 			{
 				m_CurrentD2DRT->CreateSolidColorBrush(D2D1::ColorF(LocalColor.X, LocalColor.Y, LocalColor.Z, 1.f - LocalColor.W), &ColBrush);
-
-				//layout->SetMaxWidth(W);
-				//layout->SetMaxHeight(H);
 			}
-
-			/*
-			// Metallicafan212:	If this is a drop shadow font, we also need to render that....
-			if (Font->DropShadow)
-			{
-				// Metallicafan212:	First, see if we have a text layout we can match
-				FPlane Black = FPlane(0.0f, 0.0f, 0.0f, LocalColor.W);
-
-				if (BufferedStrings.Num() >= 2)
-				{
-					// Metallicafan212:	If we have a drop shadow now, we're garunteed to have one before, as I key the font that way
-					if (bCombinedLayout)
-					{
-						FD2DStringDraw& PrevDrop = BufferedStrings(BufferedStrings.Num() - 2);
-						PrevDrop.Layout->Release();
-						PrevDrop.Layout = layout;
-
-						// Metallicafan212:	ADD A REF!!!!
-						PrevDrop.Layout->AddRef();
-
-						PrevDrop.TrueText += LocalText;
-					}
-				}
-
-				if (!bCombinedLayout)
-				{
-					ID2D1SolidColorBrush* DropBrush = nullptr;
-
-					m_CurrentD2DRT->CreateSolidColorBrush(D2D1::ColorF(Black.X, Black.Y, Black.Z, 1.0f - Black.W), &DropBrush);
-
-					FD2DStringDraw& Drop	= BufferedStrings(BufferedStrings.AddZeroed());
-
-					// Metallicafan212:	ADD A REF!!!! This is so the drop shadow draw doesn't destroy it when it needs to draw the character on top
-					layout->AddRef();
-
-					Drop.Layout		= layout;
-					Drop.Color		= DropBrush;
-					Drop.Point		= D2D1::Point2F(X + Scale, Y +  Scale);
-					Drop.TrueColor	= Black;
-					Drop.TrueText	= LocalText;
-					Drop.Flags		= Flags;
-					Drop.ClipW		= ClipW;
-					Drop.ClipH		= ClipH;
-					Drop.ClipX		= ClipX;
-					Drop.ClipY		= ClipY;
-				}
-			}
-			*/
 
 			if (!bCombinedLayout)
 			{
@@ -530,8 +481,8 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 				D.TrueColor	= LocalColor;
 				D.TrueText	= LocalText;
 				D.Flags		= Flags;
-				D.ClipW		= ClipW;
-				D.ClipH		= ClipH;
+				D.ClipW		= LocalClipW;
+				D.ClipH		= LocalClipH;
 				D.ClipX		= ClipX;
 				D.ClipY		= ClipY;
 				D.bShadow	= Font->DropShadow;

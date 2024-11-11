@@ -27,6 +27,8 @@
 // Metallicafan212:	Separate define for Direct2D definitions
 #define DX11_D2D DX11_HP2
 
+#define DX11_D2D_CLIP_LAYER 1
+
 #define RES_SCALE_IN_PROJ 0
 
 #define P8_COMPUTE_SHADER 0 
@@ -1229,6 +1231,12 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	If it should be cleared on next draw
 	UBOOL						bClearSec;
 
+	// Metallicafan212:	Current clipping setup
+	FLOAT						StringClipX;
+	FLOAT						StringClipY;
+	FLOAT						StringClipW;
+	FLOAT						StringClipH;
+
 	// Metallicafan212:	Cached string draw call
 	TArray<FD2DStringDraw>		BufferedStrings;
 
@@ -1495,43 +1503,41 @@ class UICBINDx11RenderDevice : public RD_CLASS
 				m_CurrentD2DRT->SetTransform(D2D1::Matrix3x2F::Identity());
 			}
 #endif
-
-			/*
-			ID3D11RasterizerState* RSState = nullptr;
-
-			m_RenderContext->RSGetState(&RSState);
-
-			// Metallicafan212:	Now set it to the default scisor enabled state
-			m_RenderContext->RSSetState(m_D2DRasterState);
-			//m_RenderContext->RSSetState()
-			*/
+			// Metallicafan212:	Push global clipping
+#if 0//DX11_D2D_CLIP_LAYER
+			m_CurrentD2DRT->PushAxisAlignedClip(D2D1::Rect(StringClipX, StringClipY, StringClipX + StringClipW, StringClipY + StringClipH), D2D1_ANTIALIAS_MODE_ALIASED);//D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+#endif
 
 			for (INT i = 0; i < BufferedStrings.Num(); i++)
 			{
 				FD2DStringDraw& D = BufferedStrings(i);
 
-				/*
-				// Metallicafan212:	Setup the scisoring
-				D3D11_RECT Rect;
+#if DX11_D2D_CLIP_LAYER
+				D2D1_RECT_F Rect;
 				Rect.left	= D.ClipX;
 				Rect.right	= D.ClipX + D.ClipW;
 				Rect.top	= D.ClipY;
 				Rect.bottom	= D.ClipY + D.ClipH;
+				m_CurrentD2DRT->PushAxisAlignedClip(Rect, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+#endif
+				if (D.bShadow)
+				{
+					m_CurrentD2DRT->DrawTextLayout(D.ShadowPoint, D.Layout, D.ShadowColor, D2D1_DRAW_TEXT_OPTIONS_NO_SNAP);//|  D2D1_DRAW_TEXT_OPTIONS_CLIP);
+					D.ShadowColor->Release();
+				}
 
-				m_RenderContext->RSSetScissorRects(1, &Rect);
-				*/
-
-				//OutputDebugString(*FString::Printf(TEXT("%s at %f %f") LINE_TERMINATOR, *D.TrueText, D.Point.x, D.Point.y));
-
-				m_CurrentD2DRT->DrawTextLayout(D.Point, D.Layout, D.Color, /*D2D1_DRAW_TEXT_OPTIONS_NO_SNAP | */ D2D1_DRAW_TEXT_OPTIONS_CLIP);
+				m_CurrentD2DRT->DrawTextLayout(D.Point, D.Layout, D.Color, D2D1_DRAW_TEXT_OPTIONS_NO_SNAP);//|  D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
 				D.Layout->Release();
 				D.Color->Release();
-			}
 
-			// Metallicafan212:	Now reset the scisor
-			//m_RenderContext->RSSetScissorRects(0, nullptr);
-			//m_RenderContext->RSSetState(RSState);
+#if DX11_D2D_CLIP_LAYER
+				m_CurrentD2DRT->PopAxisAlignedClip();
+#endif
+			}
+#if 0//DX11_D2D_CLIP_LAYER
+			m_CurrentD2DRT->PopAxisAlignedClip();
+#endif
 
 			BufferedStrings.Empty();
 
