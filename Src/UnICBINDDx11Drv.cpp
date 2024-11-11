@@ -18,7 +18,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 #endif
 
 
-#if DX11_HP2
+#if DX11_D2D
 #if !USE_UNODERED_MAP_EVERYWHERE
 	// Metallicafan212:	Cleanup all the fonts
 	for (TMap<FString, IDWriteTextFormat*>::TIterator It(FontMap); It; ++It)
@@ -60,13 +60,14 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	ClearRTTextures();
 
-#if DX11_HP2
+#if DX11_D2D
 	// Metallicafan212:	HP2 specific
 	SAFE_RELEASE(m_D2DRT);
 	SAFE_RELEASE(m_D2DFact);
 	SAFE_RELEASE(m_D2DWriteFact);
 	SAFE_RELEASE(m_DXGISurf);
 	SAFE_RELEASE(m_TextParams);
+	SAFE_RELEASE(m_D2DRasterState);
 #endif
 
 	SAFE_RELEASE(m_D3DQuery);
@@ -539,7 +540,7 @@ MAKE_DEVICE:
 	m_SecVertexBuffPos		= 0;
 #endif
 
-#if DX11_HP2
+#if DX11_D2D
 	GLog->Logf(TEXT("DX11: Creating D2D1 factory1"));
 
 	// Metallicafan212:	D2D manager
@@ -935,12 +936,13 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	m_SelectionDSTex	= nullptr;
 	m_SelectionDSV		= nullptr;
 
-#if DX11_HP2
+#if DX11_D2D
 	// Metallicafan212:	HP2 specific on-screen string drawing
 	m_D2DRT				= nullptr;
 	m_D2DFact			= nullptr;
 	m_DXGISurf			= nullptr;
 	m_TextParams		= nullptr;
+	m_D2DRasterState	= nullptr;
 #endif
 
 	// Metallicafan212:	Shader pointers
@@ -1310,11 +1312,12 @@ void UICBINDx11RenderDevice::SetupResources()
 	SAFE_RELEASE(m_SelectionRTV);
 	SAFE_RELEASE(m_SelectionTex);
 
-#if DX11_HP2
+#if DX11_D2D
 	// Metallicafan212:	TODO! HP2 specific
 	SAFE_RELEASE(m_D2DRT);
 	SAFE_RELEASE(m_DXGISurf);
 	SAFE_RELEASE(m_TextParams);
+	SAFE_RELEASE(m_D2DRasterState);
 #endif
 
 	// Metallicafan212:	No bind texture/sampler
@@ -1850,7 +1853,7 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	ThrowIfFailed(hr);
 
-#if DX11_HP2
+#if DX11_D2D
 	// Metallicafan212:	Get the D2D render target
 	hr = m_ScreenBuffTex->QueryInterface(IID_PPV_ARGS(&m_DXGISurf));//m_D3DSwapChain->GetBuffer(0, IID_PPV_ARGS(&m_DXGISurf));
 
@@ -1864,6 +1867,19 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	// Metallicafan212:	Set the main surface
 	m_CurrentD2DRT = m_D2DRT;
+
+	/*
+	// Metallicafan212:	Create a raster state with scissoring
+	CD3D11_RASTERIZER_DESC D2DState(D3D11_DEFAULT);
+
+	// Metallicafan212: We want no backface culling
+	D2DState.CullMode					= D3D11_CULL_NONE;
+	D2DState.ScissorEnable				= TRUE;
+
+	hr = m_D3DDevice1->CreateRasterizerState(&D2DState, &m_D2DRasterState);
+
+	ThrowIfFailed(hr);
+	*/
 #endif
 
 	// Metallicafan212:	Make a totally blank texture
@@ -2155,7 +2171,7 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_DELETE(FMshLghtCompShader);
 #endif
 
-#if DX11_HP2
+#if DX11_D2D
 #if !USE_UNODERED_MAP_EVERYWHERE
 	// Metallicafan212:	Cleanup all the fonts
 	for (TMap<FString, IDWriteTextFormat*>::TIterator It(FontMap); It; ++It)
@@ -2241,13 +2257,14 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_RELEASE(m_SelectionDSV);
 	SAFE_RELEASE(m_SelectionDSTex);
 
-#if DX11_HP2
+#if DX11_D2D
 	// Metallicafan212:	HP2 specific
 	SAFE_RELEASE(m_D2DFact);
 	SAFE_RELEASE(m_D2DWriteFact);
 	SAFE_RELEASE(m_D2DRT);
 	SAFE_RELEASE(m_DXGISurf);
 	SAFE_RELEASE(m_TextParams);
+	SAFE_RELEASE(m_D2DRasterState);
 #endif
 
 	// Metallicafan212:	Now flush

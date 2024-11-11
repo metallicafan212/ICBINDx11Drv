@@ -148,11 +148,11 @@ void ReplaceInText(FString& In, const TCHAR* Match, const TCHAR* With)
 	unguard;
 }
 
-#if DX11_HP2
+#if DX11_D2D
 
 #define DO_MANUAL_SCALE 0
 
-INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, UBOOL bHandleApersand, FLOAT Scale)
+INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT& DrawY, FLOAT ClipX, FLOAT ClipY, FLOAT ClipW, FLOAT ClipH, const TCHAR* Text, const FPlane& Color, UBOOL bHandleApersand, FLOAT Scale)
 {
 	guard(UICBINDx11RenderDevice::DrawString);
 
@@ -172,7 +172,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 	FString LocalText = RealText;
 
 
-	UCanvas* Canvas = Viewport->Canvas;
+	//UCanvas* Canvas = Viewport->Canvas;
 
 	// Metallicafan212:	Hold the scale here
 	FLOAT fontScale = Font->FontHeight;
@@ -356,10 +356,23 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 			}
 		}
 
+		// Metallicafan212:	Now draw it at the right location
+		//					We're ASSUMING that the DrawX is the ABSOLUTE screen coord wanted, and that the clipping rect is the ABSOLUTE XYWH on screen
+		FLOAT X = DrawX;//Canvas->OrgX;
+		FLOAT Y = DrawY;//Canvas->OrgY;
+		FLOAT W = (ClipX + ClipW) - DrawX + Scale;
+		FLOAT H = (ClipY + ClipH) - DrawY;
+
+		// Metallicafan212:	Don't draw invalid ranges
+		if (W <= 0.0f || H <= 0.0f)
+		{
+			return 1;
+		}
+
 		// Metallicafan212:	Create a text format to render it
 		IDWriteTextLayout* layout = nullptr;
-		hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, Canvas->ClipX, Canvas->ClipY, &layout);
-
+		hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, W, H, &layout);
+		
 		ThrowIfFailed(hr);
 
 		// Metallicafan212:	Set the underlines
@@ -403,54 +416,61 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 			// Metallicafan212:	Actually draw it now
 			//m_CurrentD2DRT->BeginDraw();
 
-			// Metallicafan212:	Now draw it at the right location
-			FLOAT X = OldDrawX + Canvas->OrgX;
-			FLOAT Y = OldDrawY + Canvas->OrgY;
-			FLOAT W = Canvas->ClipX - X;
-			FLOAT H = Canvas->ClipY - Y;
-
 			// Metallicafan212:	Center the text if PF_TwoSided
 			if (Flags & PF_TwoSided)
 			{
 				// Center about DrawX.
 				X -= Met.widthIncludingTrailingWhitespace / 2.0f;
-				W = Canvas->ClipX - X;
+				W = ClipW - X;
 				bDoNotCombine = 1;
 			}
 
+#ifndef DX11_HP2
 			// Metallicafan212:	See if there's a layout we can combine with
 			if (!bDoNotCombine && BufferedStrings.Num())
 			{
 				FD2DStringDraw& PrevDraw = BufferedStrings(BufferedStrings.Num() - 1);
 
-				if (PrevDraw.TrueColor == LocalColor && PrevDraw.Font == DaFont && PrevDraw.Point.y == Y && PrevDraw.Flags == Flags && PrevDraw.ClipX == Canvas->ClipX && PrevDraw.ClipY == Canvas->ClipY)
+				if (!PrevDraw.bDoNotCombine && PrevDraw.TrueColor == LocalColor && PrevDraw.Font == DaFont && PrevDraw.Point.y == Y && PrevDraw.Flags == Flags && PrevDraw.ClipW == ClipW && PrevDraw.ClipH == ClipH)
 				{
 					// Metallicafan212:	This is a compatible layout, use it!!!
-					layout->Release();
 
-					// Metallicafan212:	Release the previous layout
+					// Metallicafan212:	Fix the clipping
+					X = PrevDraw.Point.x;
+					Y = PrevDraw.Point.y;
+					W = PrevDraw.Layout->GetMaxWidth();
+					H = PrevDraw.Layout->GetMaxHeight();
+
+					// Metallicafan212:	Release the two layouts
+					layout->Release();
 					PrevDraw.Layout->Release();
 
 					// Metallicafan212:	Now combine them
 					PrevDraw.TrueText += LocalText;
-					hr = m_D2DWriteFact->CreateTextLayout(*PrevDraw.TrueText, PrevDraw.TrueText.Len(), DaFont, Canvas->ClipX, Canvas->ClipY, &PrevDraw.Layout);
+					hr = m_D2DWriteFact->CreateTextLayout(*PrevDraw.TrueText, PrevDraw.TrueText.Len(), DaFont, W, H, &PrevDraw.Layout);
 
 					//PrevDraw.Layout = layout;
 					layout = PrevDraw.Layout;
 
+					//layout->SetMaxWidth(W);
+					//layout->SetMaxHeight(H);
+
 					bCombinedLayout = 1;
 				}
 			}
+#endif
 
 			ID2D1SolidColorBrush* ColBrush = nullptr;
 
-			layout->SetMaxWidth(W);
-			layout->SetMaxHeight(H);
-
-
 			if (!bCombinedLayout)
+			{
 				m_CurrentD2DRT->CreateSolidColorBrush(D2D1::ColorF(LocalColor.X, LocalColor.Y, LocalColor.Z, 1.f - LocalColor.W), &ColBrush);
 
+				//layout->SetMaxWidth(W);
+				//layout->SetMaxHeight(H);
+			}
+
+			/*
 			// Metallicafan212:	If this is a drop shadow font, we also need to render that....
 			if (Font->DropShadow)
 			{
@@ -490,10 +510,13 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 					Drop.TrueColor	= Black;
 					Drop.TrueText	= LocalText;
 					Drop.Flags		= Flags;
-					Drop.ClipX		= Canvas->ClipX;
-					Drop.ClipY		= Canvas->ClipY;
+					Drop.ClipW		= ClipW;
+					Drop.ClipH		= ClipH;
+					Drop.ClipX		= ClipX;
+					Drop.ClipY		= ClipY;
 				}
 			}
+			*/
 
 			if (!bCombinedLayout)
 			{
@@ -507,8 +530,21 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 				D.TrueColor	= LocalColor;
 				D.TrueText	= LocalText;
 				D.Flags		= Flags;
-				D.ClipX		= Canvas->ClipX;
-				D.ClipY		= Canvas->ClipY;
+				D.ClipW		= ClipW;
+				D.ClipH		= ClipH;
+				D.ClipX		= ClipX;
+				D.ClipY		= ClipY;
+				D.bShadow	= Font->DropShadow;
+
+				// Metallicafan212:	If we need to render a drop shadow, make the color and coords now
+				if (D.bShadow)
+				{
+					FPlane Black = FPlane(0.0f, 0.0f, 0.0f, LocalColor.W);
+
+					m_CurrentD2DRT->CreateSolidColorBrush(D2D1::ColorF(Black.X, Black.Y, Black.Z, 1.0f - Black.W), &D.ShadowColor);
+
+					D.ShadowPoint = D2D1::Point2F(X + Scale, Y +  Scale);
+				}
 			}
 		}
 		else
@@ -523,7 +559,9 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 
 	unguard;
 }
+#endif
 
+#if DX11_HP2
 // Metallicafan212:	Viewer-based zone fog
 void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FPlane Color, FLOAT FadeRate)
 {
@@ -791,7 +829,7 @@ UTexture* UICBINDx11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL 
 
 		ThrowIfFailed(hr);
 
-#if DX11_HP2
+#if DX11_D2D
 		// Metallicafan212:	Create a RT for the local render target!
 		hr = Tex->RTTex->QueryInterface(IID_PPV_ARGS(Tex->RTDXGI.GetAddressOf()));//m_D3DSwapChain->GetBuffer(0, IID_PPV_ARGS(&m_DXGISurf));
 
@@ -844,7 +882,7 @@ void UICBINDx11RenderDevice::SetRenderTargetTexture(UTexture* Tex)
 
 		BoundRT = RT;
 
-#if DX11_HP2
+#if DX11_D2D
 		// Metallicafan212:	Set the D2DRT as well
 		m_CurrentD2DRT = RT->RTD2D.Get();
 #endif
@@ -915,7 +953,7 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 
 		BoundRT = nullptr;
 
-#if DX11_HP2
+#if DX11_D2D
 		// Metallicafan212:	Restore the D2D render target
 		m_CurrentD2DRT = m_D2DRT;
 #endif
@@ -946,7 +984,7 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 
 		// Metallicafan212:	Also set the D2D target
 
-#if DX11_HP2
+#if DX11_D2D
 		// Metallicafan212:	Set the D2DRT as well
 		m_CurrentD2DRT = BoundRT->RTD2D.Get();
 #endif

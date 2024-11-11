@@ -24,6 +24,9 @@
 //					TODO!!!! Block more code behind this!!!!!!
 #define DX11_HP2 (!defined(DX11_UT_99) && !defined(DX11_UT_469) && !defined(DX11_UNREAL_227) && !defined(DX11_HP1) && !defined(DX11_RUNE) && !defined(DX11_DX))
 
+// Metallicafan212:	Separate define for Direct2D definitions
+#define DX11_D2D DX11_HP2
+
 #define RES_SCALE_IN_PROJ 0
 
 #define P8_COMPUTE_SHADER 0 
@@ -146,7 +149,7 @@ typedef unsigned short INDEX;
 #include <dxgi1_5.h>
 #include <d2d1.h>
 #include <d2d1_1.h>
-#if DX11_HP2
+#if DX11_D2D
 #include <dwrite.h>
 #include <dwrite_1.h>
 #include <dwrite_2.h>
@@ -598,7 +601,7 @@ extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
 #define SAFE_RELEASE(ptr) if(ptr != nullptr){ptr->Release(); ptr = nullptr;}
 #define SAFE_DELETE(ptr) if(ptr != nullptr){delete ptr; ptr = nullptr;}
 
-#if DX11_HP2 && USE_UNODERED_MAP_EVERYWHERE
+#if DX11_D2D && USE_UNODERED_MAP_EVERYWHERE
 template <>
 struct std::hash<FString>
 {
@@ -629,9 +632,15 @@ struct FD2DStringDraw
 	FPlane					TrueColor;
 	FString					TrueText;
 	ID2D1SolidColorBrush*	Color;
+	ID2D1SolidColorBrush*	ShadowColor;
 	D2D1_POINT_2F			Point;
+	D2D1_POINT_2F			ShadowPoint;
+	FLOAT					ClipW;
+	FLOAT					ClipH;
 	FLOAT					ClipX;
 	FLOAT					ClipY;
+	UBOOL					bDoNotCombine;
+	UBOOL					bShadow;
 };
 
 
@@ -894,7 +903,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	So we can easily request wireframe
 	DWORD						ExtraRasterFlags;
 
-#if DX11_HP2
+#if DX11_D2D
 	// Metallicafan212:	DXGI surface for D2D
 	IDXGISurface*				m_DXGISurf;
 
@@ -911,6 +920,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	Text rendering parameters, if we're using AA
 	IDWriteRenderingParams*		m_TextParams;
+
+	// Metallicafan212:	Raster state for rendering scissored text
+	ID3D11RasterizerState*		m_D2DRasterState;
 
 	// Metallicafan212:	Holder for the different font types
 #if !USE_UNODERED_MAP_EVERYWHERE
@@ -1460,7 +1472,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	FORCEINLINE void EndBuffering()
 	{
-#if DX11_HP2
+#if DX11_D2D
 		if (m_CurrentBuff == BT_Strings && BufferedStrings.Num())
 		{
 #if DO_BUFFERED_DRAWS
@@ -1484,15 +1496,42 @@ class UICBINDx11RenderDevice : public RD_CLASS
 			}
 #endif
 
+			/*
+			ID3D11RasterizerState* RSState = nullptr;
+
+			m_RenderContext->RSGetState(&RSState);
+
+			// Metallicafan212:	Now set it to the default scisor enabled state
+			m_RenderContext->RSSetState(m_D2DRasterState);
+			//m_RenderContext->RSSetState()
+			*/
+
 			for (INT i = 0; i < BufferedStrings.Num(); i++)
 			{
 				FD2DStringDraw& D = BufferedStrings(i);
 
-				m_CurrentD2DRT->DrawTextLayout(D.Point, D.Layout, D.Color, D2D1_DRAW_TEXT_OPTIONS_NONE);
+				/*
+				// Metallicafan212:	Setup the scisoring
+				D3D11_RECT Rect;
+				Rect.left	= D.ClipX;
+				Rect.right	= D.ClipX + D.ClipW;
+				Rect.top	= D.ClipY;
+				Rect.bottom	= D.ClipY + D.ClipH;
+
+				m_RenderContext->RSSetScissorRects(1, &Rect);
+				*/
+
+				//OutputDebugString(*FString::Printf(TEXT("%s at %f %f") LINE_TERMINATOR, *D.TrueText, D.Point.x, D.Point.y));
+
+				m_CurrentD2DRT->DrawTextLayout(D.Point, D.Layout, D.Color, /*D2D1_DRAW_TEXT_OPTIONS_NO_SNAP | */ D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
 				D.Layout->Release();
 				D.Color->Release();
 			}
+
+			// Metallicafan212:	Now reset the scisor
+			//m_RenderContext->RSSetScissorRects(0, nullptr);
+			//m_RenderContext->RSSetState(RSState);
 
 			BufferedStrings.Empty();
 
@@ -1910,7 +1949,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	virtual void DrawRotatedTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, PFLAG PolyFlags, FCoords InCoords = GMath.UnitCoords);
 
-	virtual int DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT& DrawY, const TCHAR* Text, const FPlane& Color, UBOOL bHandleApersand = 0, FLOAT Scale = 1.0f);
+	virtual int DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT& DrawY, FLOAT ClipX, FLOAT ClipY, FLOAT ClipW, FLOAT ClipH, const TCHAR* Text, const FPlane& Color, UBOOL bHandleApersand = 0, FLOAT Scale = 1.0f);
 #elif DX11_UT_469	
 	
 	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet);
