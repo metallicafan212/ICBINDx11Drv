@@ -625,6 +625,7 @@ struct std::hash<FString>
 #define RD_CLASS URenderDevice
 #endif
 
+#if DX11_D2D
 // Metallicafan212:	Stores a single line of text to draw, so we can try to do less thrashing on the render device
 struct FD2DStringDraw
 {
@@ -647,6 +648,7 @@ struct FD2DStringDraw
 	// Metallicafan212:	Underline ranges
 	TArray<DWRITE_TEXT_RANGE> Ranges;
 };
+#endif
 
 
 // Metallicafan212:	Different shader definitions
