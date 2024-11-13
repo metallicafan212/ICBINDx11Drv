@@ -643,6 +643,9 @@ struct FD2DStringDraw
 	FLOAT					ClipY;
 	UBOOL					bDoNotCombine;
 	UBOOL					bShadow;
+
+	// Metallicafan212:	Underline ranges
+	TArray<DWRITE_TEXT_RANGE> Ranges;
 };
 
 
@@ -925,6 +928,11 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	Raster state for rendering scissored text
 	ID3D11RasterizerState*		m_D2DRasterState;
+
+	// Metallicafan212:	Font to layout caching
+	//					This allows the renderer to cache commonly drawn strings again and again, so that it's not esessively constructing layouts between calls
+	//					For sanity reasons (for now...), the layout will be released when drawn
+	std::unordered_map<IDWriteTextFormat*, std::unordered_map<FString, IDWriteTextLayout*>> FontToLayoutMap;
 
 	// Metallicafan212:	Holder for the different font types
 #if !USE_UNODERED_MAP_EVERYWHERE
@@ -1507,7 +1515,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 #if 0//DX11_D2D_CLIP_LAYER
 			m_CurrentD2DRT->PushAxisAlignedClip(D2D1::Rect(StringClipX, StringClipY, StringClipX + StringClipW, StringClipY + StringClipH), D2D1_ANTIALIAS_MODE_ALIASED);//D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 #endif
-
 			for (INT i = 0; i < BufferedStrings.Num(); i++)
 			{
 				FD2DStringDraw& D = BufferedStrings(i);
@@ -1518,12 +1525,30 @@ class UICBINDx11RenderDevice : public RD_CLASS
 				Rect.right	= D.ClipX + D.ClipW;
 				Rect.top	= D.ClipY;
 				Rect.bottom	= D.ClipY + D.ClipH;
-				m_CurrentD2DRT->PushAxisAlignedClip(Rect, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+				m_CurrentD2DRT->PushAxisAlignedClip(Rect, D2D1_ANTIALIAS_MODE_ALIASED);//D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+				// Metallicafan212:	Set the width and height of this layout
+				D.Layout->SetMaxWidth(Rect.right - Rect.left);
+				D.Layout->SetMaxHeight(Rect.bottom - Rect.top);
+
+				// Metallicafan212:	Set the text ranges
+				DWRITE_TEXT_RANGE NoRange;
+				NoRange.startPosition	= 0;
+				NoRange.length			= D.TrueText.Len();
+
+				D.Layout->SetUnderline(FALSE, NoRange);
+
 #endif
 				if (D.bShadow)
 				{
 					m_CurrentD2DRT->DrawTextLayout(D.ShadowPoint, D.Layout, D.ShadowColor, D2D1_DRAW_TEXT_OPTIONS_NO_SNAP);//|  D2D1_DRAW_TEXT_OPTIONS_CLIP);
 					D.ShadowColor->Release();
+				}
+
+				// Metallicafan212:	Now set the underlines
+				for (INT i = 0; i < D.Ranges.Num(); i++)
+				{
+					D.Layout->SetUnderline(TRUE, D.Ranges(i));
 				}
 
 				m_CurrentD2DRT->DrawTextLayout(D.Point, D.Layout, D.Color, D2D1_DRAW_TEXT_OPTIONS_NO_SNAP);//|  D2D1_DRAW_TEXT_OPTIONS_CLIP);
@@ -1538,6 +1563,10 @@ class UICBINDx11RenderDevice : public RD_CLASS
 #if 0//DX11_D2D_CLIP_LAYER
 			m_CurrentD2DRT->PopAxisAlignedClip();
 #endif
+
+			// Metallicafan212:	Empty all buffered layouts
+			//					We're using reference counting, so all memory will be freed now
+			FontToLayoutMap.clear();
 
 			BufferedStrings.Empty();
 

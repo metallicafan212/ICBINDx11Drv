@@ -311,12 +311,13 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 #else
 			FontMap[FontKey] = DaFont;
 #endif
-			DaFont->SetWordWrapping(DWRITE_WORD_WRAPPING_WRAP);
+			DaFont->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);//DWRITE_WORD_WRAPPING_WRAP);
 		}
 	}
 
 	if (DaFont != nullptr)
 	{
+		/*
 		// Metallicafan212:	Optional word wrapping
 		if (Flags & PF_BrightCorners)
 		{
@@ -326,6 +327,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 		{
 			DaFont->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 		}
+		*/
 
 		TArray<DWRITE_TEXT_RANGE> Ranges;
 
@@ -383,17 +385,55 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 			return 1;
 		}
 
-		// Metallicafan212:	Create a text format to render it
+		// Metallicafan212:	Get the font map, and see if this layout has been created before
 		IDWriteTextLayout* layout = nullptr;
-		hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, FLT_MAX, FLT_MAX, &layout);
-		
-		ThrowIfFailed(hr);
 
+		auto FoundMap = FontToLayoutMap.find(DaFont);
+
+		if (FoundMap != FontToLayoutMap.end())
+		{
+			// Metallicafan212:	See if we can find the layout here
+			std::unordered_map<FString, IDWriteTextLayout*>& LayoutMap = FoundMap->second;
+
+			auto FoundLayout = LayoutMap.find(LocalText);
+
+			if (FoundLayout != LayoutMap.end())
+			{
+				// Metallicafan212:	Get it
+				layout = FoundLayout->second;
+
+				// Metallicafan212:	We need to up the reference count
+				layout->AddRef();
+			}
+		}
+		else
+		{
+			FontToLayoutMap[DaFont] = std::unordered_map<FString, IDWriteTextLayout*>();
+
+			FoundMap = FontToLayoutMap.find(DaFont);
+		}
+		
+
+		// Metallicafan212:	Create a text format to render it
+		if (layout == nullptr)
+		{
+			hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, W, H, &layout);
+
+			ThrowIfFailed(hr);
+
+			// Metallicafan212:	File it
+			std::unordered_map<FString, IDWriteTextLayout*>& LayoutMap = FoundMap->second;
+
+			LayoutMap[LocalText] = layout;
+		}
+
+		/*
 		// Metallicafan212:	Set the underlines
 		for (INT i = 0; i < Ranges.Num(); i++)
 		{
 			layout->SetUnderline(TRUE, Ranges(i));
 		}
+		*/
 
 		// Metallicafan212:	Now calculate the rect
 		DWRITE_TEXT_METRICS Met;
@@ -427,7 +467,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 				bDoNotCombine = 1;
 			}
 
-#ifndef DX11_HP2
+#if 0//ndef DX11_HP2
 			// Metallicafan212:	See if there's a layout we can combine with
 			if (!bDoNotCombine && BufferedStrings.Num())
 			{
@@ -440,8 +480,8 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 					// Metallicafan212:	Fix the clipping
 					//X = PrevDraw.Point.x;
 					//Y = PrevDraw.Point.y;
-					//W = PrevDraw.Layout->GetMaxWidth();
-					//H = PrevDraw.Layout->GetMaxHeight();
+					W = PrevDraw.Layout->GetMaxWidth();
+					H = PrevDraw.Layout->GetMaxHeight();
 
 					// Metallicafan212:	Release the two layouts
 					layout->Release();
@@ -454,8 +494,8 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 					//PrevDraw.Layout = layout;
 					layout = PrevDraw.Layout;
 
-					//layout->SetMaxWidth(W);
-					//layout->SetMaxHeight(H);
+					layout->SetMaxWidth(W);
+					layout->SetMaxHeight(H);
 
 					bCombinedLayout = 1;
 				}
@@ -486,6 +526,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 				D.ClipX		= ClipX;
 				D.ClipY		= ClipY;
 				D.bShadow	= Font->DropShadow;
+				D.Ranges	= Ranges;
 
 				// Metallicafan212:	If we need to render a drop shadow, make the color and coords now
 				if (D.bShadow)
@@ -500,9 +541,12 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 		}
 		else
 		{
+			// Metallicafan212:	This was cached
+			/*
 			// Metallicafan212:	Only release it if we're just measuring it
 			//					TODO! Maybe cache it????
 			layout->Release();
+			*/
 		}
 	}
 
@@ -793,7 +837,7 @@ UTexture* UICBINDx11RenderDevice::CreateRenderTargetTexture(INT W, INT H, UBOOL 
 		ThrowIfFailed(hr);
 
 		Tex->RTD2D->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-		Tex->RTD2D->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+		Tex->RTD2D->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);//D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
 #endif
 
 	}
