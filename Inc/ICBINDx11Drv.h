@@ -942,6 +942,15 @@ class UICBINDx11RenderDevice : public RD_CLASS
 #else
 	std::unordered_map<FString, IDWriteTextFormat*>	FontMap;
 #endif
+
+	// Metallicafan212:	Current clipping setup
+	FLOAT						StringClipX;
+	FLOAT						StringClipY;
+	FLOAT						StringClipW;
+	FLOAT						StringClipH;
+
+	// Metallicafan212:	Cached string draw call
+	TArray<FD2DStringDraw>		BufferedStrings;
 #endif
 
 	// Metallicafan212:	Orthoganal zoom value from the frame
@@ -1240,15 +1249,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	If it should be cleared on next draw
 	UBOOL						bClearSec;
-
-	// Metallicafan212:	Current clipping setup
-	FLOAT						StringClipX;
-	FLOAT						StringClipY;
-	FLOAT						StringClipW;
-	FLOAT						StringClipH;
-
-	// Metallicafan212:	Cached string draw call
-	TArray<FD2DStringDraw>		BufferedStrings;
 
 	// Metallicafan212:	Draws to execute at the end of the frame
 	TArray<FDrawCall*>			BufferedDraws;
