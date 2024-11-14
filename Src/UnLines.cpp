@@ -353,7 +353,16 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 	if (Frame->Viewport->IsOrtho())
 	{
 		//Z = 0.5f;//1.0f;
-		Z = abs(Z);
+		// Metallicafan212:	If we don't have any other flags, render it with hacked Z
+		//					The editor is bugged and provides world-space Z when drawing the pivot....
+		if (LineFlags == LINE_None || LineFlags == LINE_DepthCued)
+		{
+			Z = 0.5f;
+		}
+		else
+		{
+			Z = abs(Z);
+		}
 		X1Pos *= Z;
 		Y1Pos *= Z;
 		X2Pos *= Z;
