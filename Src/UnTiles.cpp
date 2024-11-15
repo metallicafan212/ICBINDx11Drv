@@ -50,7 +50,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	{
 		PolyFlags |= PF_AlphaBlend;
 	}
-#elif DX11_UT_469
+#elif DX11_UT_469 || DX11_UNREAL_227
 	if (Info.Texture != nullptr && Info.Texture->Alpha != 0.0f)
 	{
 		Color.W = Info.Texture->Alpha;
@@ -61,7 +61,7 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	// Metallicafan212:	Tile Alpha is reversed to account for the engine always fucking sending 0 for things that are 100% visible
 #if DX11_HP2
 	Color.W = 1.0f - Color.W;
-#elif DX11_UT_469
+#elif DX11_UT_469 || DX11_UNREAL_227
 	if(Color.W == 0.0f)
 		Color.W = 1.0f;
 #else

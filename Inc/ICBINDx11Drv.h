@@ -56,8 +56,31 @@
 
 #endif
 
+#if ENGINE_VERSION==227
+# define DX11_UNREAL_227 1
+# undef DX11_HP2
+
+// Metallicafan212:	HACK! So we render tiles right, we need to clamp UVs so it doesn't cause looping when using AF
+//					Reuse the big wavy flag, as it's unused and (unlikely) to be used....
+# define PF_ClampUVs PF_BigWavy//PF_Memorized
+
+// Metallicafan212:	32bit check
+#define UNREAL32 !BUILD_64
+#define UNREAL64 BUILD_64
+
+// Metallicafan212:	DISABLE THE WARNING IF WE'RE IN 32BIT!!!!
+#if UNREAL32
+#define WINDOWS_IGNORE_PACKING_MISMATCH 1
+#endif
+
+// Metallicafan212:	Hard-code shaders for comp play
+//					TODO! Should probably only be enabled for build built with the official patch and released on Github
+#define DX11_HARDCODE_SHADERS 1
+
+#endif
+
 // Metallicafan212:	TODO! Generic game support
-#if !DX11_HP2 && !DX11_UT_469
+#if !DX11_HP2 && !DX11_UT_469 && !DX11_UNREAL_227
 // Metallicafan212:	HACK! So we render tiles right, we need to clamp UVs so it doesn't cause looping when using AF
 //					Reuse the big wavy flag, as it's unused and (unlikely) to be used....
 # define PF_ClampUVs PF_BigWavy//PF_Memorized
@@ -570,7 +593,7 @@ struct FD3DTexType
 
 	FORCEINLINE SIZE_T GetPitch(INT USize)
 	{
-#if DX11_UT_469
+#if DX11_UT_469 || DX11_UNREAL_227
 		return FTextureBlockBytes(Format)* FTextureBlockAlignedWidth(Format, USize) / FTextureBlockWidth(Format);
 #else
 		return (this->*GetTexturePitch)(USize);
@@ -2002,6 +2025,12 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	virtual void UpdateTextureRect(FTextureInfo& Info, INT U, INT V, INT UL, INT VL);
 
 	virtual void DrawTileList(const FSceneNode* Frame, const FTextureInfo& Info, const FTileRect* Tiles, INT NumTiles, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, DWORD PolyFlags);
+#elif DX11_UNREAL_227
+	virtual void DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo& Info, FTransTexture* Pts, INT NumPts, PFLAG PolyFlags, FSpanBuffer* Span);
+
+	virtual void DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, int NumPts, PFLAG PolyFlags, FSpanBuffer* Span);
+
+	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet);
 #else
 	// Metallicafan212:	Base defs for most UE1 games, may have to be overrided
 	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet);
@@ -2023,7 +2052,11 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	virtual void GetStats(TCHAR* Result);
 
+#if DX11_UNREAL_227
+	virtual void ReadPixels(FColor* Pixels, UBOOL bGammaCorrectOutput);
+#else
 	virtual void ReadPixels(FColor* Pixels);
+#endif
 
 	virtual void EndFlash();
 

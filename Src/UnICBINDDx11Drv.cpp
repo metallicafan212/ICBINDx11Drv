@@ -1049,7 +1049,7 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	// Metallicafan212:	I have standardized the TEXF enum between UT469 and HP2 (since BC6H is currently unused and RGBA8 was already called ARGB in the editor/implemented as BGRA8)
 
 	// Metallicafan212:	Raw BGRA texture
-#if DX11_UT_469 || DX11_HP2
+#if DX11_UT_469 || DX11_HP2 || DX11_UNREAL_227
 	RegisterTextureFormat(TEXF_BGRA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 0, 4, &FD3DTexType::RawPitch);
 #else
 	RegisterTextureFormat(TEXF_RGBA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 0, 4, &FD3DTexType::RawPitch);
@@ -1075,7 +1075,7 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	// Metallicafan212:	I'll take whatever need to be done for BC6, as it's currently unimplemented in HP2
 	//					So, if the format needs to be changed, just change it and I'll make it match when I finally finish implementing it
 	//					AMD compressonator wasn't producing this correctly (which is why I disabled it)
-#if DX11_UT_469 || DX11_HP2
+#if DX11_UT_469 || DX11_HP2 || DX11_UNREAL_227
 	RegisterTextureFormat(TEXF_BC6H, DXGI_FORMAT_BC6H_UF16, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
 //#else
 //	RegisterTextureFormat(TEXF_BC6H, DXGI_FORMAT_BC6H_UF16, 0, 16, &FD3DTexType::BlockCompressionPitch);
@@ -1416,7 +1416,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	If to use the new Windows 10 modes. I only test if we're actually running on 10
 		//					!GIsEditor is here because using the tearing mode does something fucky in DWM, changing the window in such a way that normal non-DX11 renderers can't draw to it
 		//					I need to analyse and see what exactly it's modifying about the window and reverse that change
-#if DX11_UT_469 || DX11_HP2
+#if DX11_UT_469 || DX11_HP2 || DX11_UNREAL_227
 		// Metallicafan212:	For UT (and now HP2), every time the renderer is changed, it recreates the window handle, so it's safe to provide this in the editor.
 		bAllowTearing = (1
 #else
@@ -2977,7 +2977,11 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 		if (n > 0)
 		{
 			// Metallicafan212:	Get the current timestamp
+#if DX11_UNREAL_227
+			const TCHAR* tStamp = *appTimestamp();
+#else
 			const TCHAR* tStamp = appTimestamp();
+#endif
 
 			GLog->Logf(TEXT("DX11: Warnings and errors during this frame:"));
 

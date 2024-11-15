@@ -42,7 +42,7 @@ void UDX11RenderTargetTexture::Lock(FTextureInfo& Info, FTime InTime, INT LOD, U
 	Info.NumMips			= 0;
 
 	// Metallicafan212:	Matches the GPU side
-#if DX11_UT_469 || DX11_HP2
+#if DX11_UT_469 || DX11_HP2 || DX11_UNREAL_227
 	Info.Format				= TEXF_BGRA8;
 #else
 	Info.Format				= TEXF_RGBA8;
@@ -66,6 +66,8 @@ void UDX11RenderTargetTexture::Lock(FTextureInfo& Info, FTime InTime, INT LOD, U
 	{
 #if DX11_HP2
 		Update(InTime, RenDev != nullptr ? RenDev->Viewport : nullptr);
+#elif DX11_UNREAL_227
+		Update();
 #else
 		Update(InTime);
 #endif

@@ -71,7 +71,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 #if DX11_HP2
 	if ((GUglyHackFlags & HF_PostRender))
 #elif DX11_UT_469
-	if((GUglyHackFlags & HACKFLAGS_PostRender))
+	if((GUglyHackFlags & HACKFLAGS_NoNearZ))
 #else
 	if((GUglyHackFlags & 0x1))
 #endif
@@ -175,8 +175,14 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	// Metallicafan212:	Set the texture
 	SetTexture(0, const_cast<FTextureInfo*>(&Info), PolyFlags);
 
-	// Metallicafan212:	HP2 is HF_PostRender, UT 469 is HACKFLAGS_PostRender
-	if ((GUglyHackFlags & HACKFLAGS_PostRender))
+	// Metallicafan212:	HP2 is HF_PostRender, UT 469 is HACKFLAGS_NoNearZ
+#if DX11_UNREAL_227 || DX11_UT_469
+	if ((GUglyHackFlags & HACKFLAGS_NoNearZ))
+#elif DX11_HP2
+	if ((GUglyHackFlags & HF_PostRender))
+#else
+	if (GUglyHackFlags & 0x01)
+#endif
 	{
 		if(!m_nearZRangeHackProjectionActive)
 			SetProjectionStateNoCheck(true);
@@ -346,6 +352,91 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 		}
 
 		DoVert(&Pts[i],		&Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
+		DoVert(&Pts[i + 1], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
+		DoVert(&Pts[i + 2], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
+	}
+
+	AdvanceVertPos();
+
+	unguard;
+}
+#endif
+
+#if DX11_UNREAL_227
+void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo& Info, FTransTexture* Pts, INT NumPts, DWORD PolyFlags, FSpanBuffer* Span)
+{
+	guard(UICBINDx11RenderDevice::DrawGouraudPolyList);
+
+	// Metallicafan212:	Start buffering now
+	StartBuffering(BT_Triangles);
+
+	// Metallicafan212:	If we're translucent, we need to render twice...
+
+	// Metallicafan212:	TODO! Check if we were rendering something else and then flush it?
+	if (GIsEditor && (PolyFlags & PF_Selected) && m_HitData == nullptr)
+	{
+		// Metallicafan212:	TODO! Slice warning
+		GlobalPolyflagVars.SelectionColor = ActorSelectionColor.Plane();
+
+		// Metallicafan212:	TODO! Maybe mark a var that sets if we should be flushing the polyflag vars?
+		if (CurrentShader != FMeshShader)
+		{
+			UpdatePolyflagsVars();
+		}
+	}
+
+	if (Info.Modifier)
+	{
+		FLOAT UM = Info.USize, VM = Info.VSize;
+		for (INT i = 0; i < NumPts; ++i)
+			Info.Modifier->TransformPointUV(Pts[i].U, Pts[i].V, UM, VM);
+	}
+
+	// Metallicafan212:	We have to implement specific effects ourselves when using this
+	//					Detect them here
+
+	FLOAT UScale = Info.UScale * Info.USize / 256.0f;
+	FLOAT VScale = Info.VScale * Info.VSize / 256.0f;
+
+	SetBlend(PolyFlags);
+
+	// Metallicafan212:	Request normal raster state
+	SetRasterState(DXRS_Normal);
+
+	// Metallicafan212:	Set the texture
+	SetTexture(0, const_cast<FTextureInfo*>(&Info), PolyFlags);
+
+	if ((GUglyHackFlags & HACKFLAGS_NoNearZ))
+	{
+		if (!m_nearZRangeHackProjectionActive)
+			SetProjectionStateNoCheck(true);
+	}
+	else
+	{
+		if (m_nearZRangeHackProjectionActive)
+			SetProjectionStateNoCheck(false);
+	}
+
+	// Metallicafan212:	TODO!
+	FMeshShader->bNoMeshOpacity = 1;
+
+	FMeshShader->Bind(m_RenderContext);
+
+	LockVertAndIndexBuffer(NumPts);
+
+	// Metallicafan212:	Added in distance fog
+	//					All calculations have to be done ourselfs, but at least it's doable
+	UBOOL drawFog = (((PolyFlags & (PF_RenderFog | PF_Translucent | PF_Modulated)) == PF_RenderFog));
+
+	FD3DVert* Mshy = (FD3DVert*)m_VertexBuff;
+
+	UBOOL bDoSelection = (m_HitData != nullptr);
+
+	// Metallicafan212:	Process a whole triangle at a time
+	INT M = 0;
+	for (INT i = 0; i < NumPts; i += 3)
+	{
+		DoVert(&Pts[i], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
 		DoVert(&Pts[i + 1], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
 		DoVert(&Pts[i + 2], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
 	}

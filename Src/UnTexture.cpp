@@ -9,6 +9,8 @@ FORCEINLINE FMipmap* GetBaseMip(const FTextureInfo& Info)
 #if DX11_UT_469
 	UBOOL Compressed = FIsCompressedFormat(Info.Format);
 	return Info.Texture != nullptr ? (Compressed ? &Info.Texture->CompMips(Info.LOD) : &Info.Texture->Mips(Info.LOD)) : nullptr;
+#elif DX11_UNREAL_227
+	return Info.Texture ? &Info.Texture->Mips(0) : nullptr;
 #else
 	return Info.Mips[0];
 #endif
@@ -82,8 +84,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 //#elif|| DX11_HP2
 #if DX11_UT_469 || DX11_HP2
 	UBOOL bTexChanged = (Info->Texture != nullptr && DaTex != nullptr ? Info->Texture->RealtimeChangeCount != DaTex->RealtimeChangeCount : Info->bRealtimeChanged);
-#else
-	UBOOL bTexChanged = Info->bRealtimeChanged;
+#elif DX11_UNREAL_227
+	UBOOL bTexChanged = (Info->Texture != nullptr && DaTex != nullptr ? Info->RenderTag != DaTex->RealtimeChangeCount : Info->bRealtimeChanged);
 #endif
 
 	// Metallicafan212:	Check if we need to upload it to the GPU
@@ -270,6 +272,36 @@ FORCEINLINE UBOOL GetMipInfo(const FTextureInfo& Info, FD3DTexture* Tex, BYTE* C
 		MipW	= MipBase->USize;
 		MipH	= MipBase->VSize;
 	}
+#elif DX11_UNREAL_227
+	const_cast<FTextureInfo&>(Info).Load();
+
+	// non-pow2 compressed textures
+	FMipmap* Mip = Info.Texture ? &Info.Texture->Mips(MipNum) : nullptr;
+	if (Tex->bDecompress)
+	{
+		TArray<BYTE> Decomp = UTexture::DecompressMip(static_cast<ETextureFormat>(Info.Format), Mip, TEXF_RGBA8_);//TEXF_BGRA8);
+
+		if (Decomp.Num())
+		{
+			appMemcpy(ConversionMem, &Decomp(0), Decomp.Num());
+
+			DataPtr = ConversionMem;
+			Size = Decomp.Num();
+			SourcePitch = FTextureBlockBytes(TEXF_BGRA8) * FTextureBlockAlignedWidth(TEXF_BGRA8, Mip->USize) / FTextureBlockWidth(TEXF_BGRA8);
+		}
+	}
+	else
+	{
+		FMipmapBase* MipBase = Info.Mips[MipNum];
+		DataPtr = MipBase->DataPtr;
+		Size = FTextureBytes(Info.Format, MipBase->USize, MipBase->VSize);
+
+		// Metallicafan212:	Provide out the mip's size
+		MipW = MipBase->USize;
+		MipH = MipBase->VSize;
+
+		SourcePitch = FTextureBlockBytes(Info.Format) * FTextureBlockAlignedWidth(Info.Format, MipBase->USize) / FTextureBlockWidth(Info.Format);
+	}
 #else
 //#error "Implement Me!"
 	// Metallicafan212:	TODO! Very basic implementation
@@ -422,7 +454,7 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, 
 #if !USE_UNODERED_MAP_EVERYWHERE
 		FD3DTexType* Type = SupportedTextures.Find(Info.Format);
 #else
-		auto f = SupportedTextures.find(Info.Format);
+		auto f = SupportedTextures.find(static_cast<ETextureFormat>(Info.Format));
 
 		Type = f != SupportedTextures.end() ? &f->second : nullptr;
 #endif
@@ -440,7 +472,7 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, 
 			if (bNeedsConversion)
 			{
 				// Metallicafan212:	New destination will be RGBA8
-#if DX11_HP2 || DX11_UT_469
+#if DX11_HP2 || DX11_UT_469 || DX11_UNREAL_227
 				Type = &SupportedTextures.find(TEXF_BGRA8)->second;
 #else
 				Type = &SupportedTextures.find(TEXF_RGBA8)->second;
@@ -483,6 +515,8 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, 
 	//					Using the function in Info causes a 50fps loss for some reason... It makes no sense....
 #if DX11_UT_469 || DX11_HP2
 	DaTex->RealtimeChangeCount = Info.Texture != nullptr ? Info.Texture->RealtimeChangeCount : 0;
+#elif DX11_UNREAL_227
+	DaTex->RealtimeChangeCount = Info.Texture != nullptr ? Info.RenderTag : 0;
 #else
 	DaTex->RealtimeChangeCount = 0;
 #endif
@@ -1038,7 +1072,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 #endif
 					else if (blendFlags & PF_Highlighted)
 					{
-#if DX11_HP2 || DX11_UT_469
+#if DX11_HP2 || DX11_UT_469 || DX11_UNREAL_227
 						if (blendFlags & PF_AlphaBlend)
 						{
 							bState = GetBlendState(PF_Highlighted | PF_AlphaBlend);
@@ -1076,7 +1110,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 					// Metallicafan212:	Rewrote this to combine them (as they're all the same end result)
 #if DX11_HP2
 					else if (blendFlags & (PF_AlphaBlend | PF_ColorMask | PF_Masked))
-#elif DX11_UT_469
+#elif DX11_UT_469 || DX11_UNREAL_227
 					else if (blendFlags & (PF_AlphaBlend | PF_Masked))
 #else
 					else if (blendFlags & (PF_Masked))
@@ -1085,7 +1119,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 // Metallicafan212:	TODO! This section SUCKS, recode it so it's not so ifdeffy
 #if DX11_HP2
 						if ((blendFlags & (PF_AlphaBlend | PF_ColorMask)))
-#elif DX11_UT_469
+#elif DX11_UT_469 || DX11_UNREAL_227
 						if ((blendFlags & (PF_AlphaBlend)))
 #else
 						if(0)
@@ -1218,7 +1252,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			bUpdatePFlagBuff					= 1;
 #if DX11_HP2
 			if (blendFlags & (PF_Invisible | PF_AlphaBlend | PF_LumosAffected | PF_Modulated))
-#elif DX11_UT_469
+#elif DX11_UT_469 || DX11_UNREAL_227
 			if (blendFlags & (PF_Invisible | PF_AlphaBlend | PF_Modulated))
 #else
 			if (blendFlags & (PF_Invisible | PF_Modulated))

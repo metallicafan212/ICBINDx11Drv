@@ -172,7 +172,11 @@ struct ColorHackHDR
 
 #define USE_RT_SCREENSHOT 1
 
+#if DX11_UNREAL_227
+void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels, UBOOL bGammaCorrectOutput)
+#else
 void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
+#endif
 {
 	// Metallicafan212:	Read the back buffer
 	guard(UICBINDx11RenderDevice::ReadPixels);
