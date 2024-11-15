@@ -642,8 +642,9 @@ struct FD2DStringDraw
 	FLOAT					ClipH;
 	FLOAT					ClipX;
 	FLOAT					ClipY;
-	UBOOL					bDoNotCombine;
-	UBOOL					bShadow;
+	UBOOL					bDoNotCombine:1;
+	UBOOL					bShadow:1;
+	//UBOOL					bWordWrap:1;
 
 	// Metallicafan212:	Underline ranges
 	TArray<DWRITE_TEXT_RANGE> Ranges;

@@ -317,8 +317,8 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 
 	if (DaFont != nullptr)
 	{
-		/*
 		// Metallicafan212:	Optional word wrapping
+		//					This isn't an issue to set here as the layout will internally copy these values, the font object can be modified afterwards
 		if (Flags & PF_BrightCorners)
 		{
 			DaFont->SetWordWrapping(DWRITE_WORD_WRAPPING_WRAP);
@@ -327,7 +327,6 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 		{
 			DaFont->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 		}
-		*/
 
 		TArray<DWRITE_TEXT_RANGE> Ranges;
 
@@ -465,6 +464,8 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 				X -= Met.widthIncludingTrailingWhitespace / 2.0f;
 				W = ClipW - X;
 				bDoNotCombine = 1;
+
+				layout->SetMaxWidth(W);
 			}
 
 #if 0//ndef DX11_HP2
