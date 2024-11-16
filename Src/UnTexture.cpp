@@ -45,16 +45,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 
 		// Metallicafan212:	Unbind the texture
 		BoundTexturesInfo.CurrentBoundTextures &= ~(1 << TexNum);
-
-#if !DO_BUFFERED_DRAWS
 		m_RenderContext->PSSetShaderResources(TexNum, 1, &BlankResourceView);
 		m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
-#else
-		// Metallicafan212:	Set it on the maps
-		CheckDrawCall();
-		CurrentDraw->TBinds[TexNum] = BlankResourceView;
-		CurrentDraw->SBinds[TexNum]	= BlankSampler;
-#endif
 
 		bWriteTexturesBuffer = 1;
 
@@ -152,19 +144,11 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 	{
 		UDX11RenderTargetTexture* TexTemp = (UDX11RenderTargetTexture*)Info->Texture;
 
-#if !DO_BUFFERED_DRAWS
 		m_RenderContext->PSSetShaderResources(TexNum, 1, TexTemp->RTSRView.GetAddressOf());
-#else
-		CurrentDraw->TBinds[TexNum] = TexTemp->RTSRView.Get();
-#endif
 
 		ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->MipSkip, 0, bNoAF);//DaTex->bSkipMipZero ? 1 : 0, 0);
 
-#if !DO_BUFFERED_DRAWS
 		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
-#else
-		CurrentDraw->SBinds[TexNum] = Temp;
-#endif
 		//m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
 
 		// Metallicafan212:	So we can find whatever is still bound as the RT when we call OMSetRenderTargets
@@ -181,19 +165,11 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 	{
 		TX.m_SRV = DaTex->m_View;
 
-#if !DO_BUFFERED_DRAWS
 		m_RenderContext->PSSetShaderResources(TexNum, 1, &DaTex->m_View);
-#else
-		CurrentDraw->TBinds[TexNum] = DaTex->m_View;
-#endif
 
 		ID3D11SamplerState* Temp = GetSamplerState(PolyFlags, DaTex->MipSkip, 0, bNoAF);
 
-#if !DO_BUFFERED_DRAWS
 		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
-#else
-		CurrentDraw->SBinds[TexNum] = Temp;
-#endif
 
 		TX.Flags = PolyFlags;
 
@@ -1174,13 +1150,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			// Metallicafan212:	If we got a valid blend state, set it
 			if (bState != nullptr)
 			{
-#if !DO_BUFFERED_DRAWS
 				m_RenderContext->OMSetBlendState(bState, nullptr, 0xFFFFFFFF);
-#else
-				CheckDrawCall();
-				CurrentDraw->bSetBlend	= 1;
-				CurrentDraw->BlendState = bState;
-#endif
 			}
 		}
 
@@ -1297,10 +1267,6 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 		// Metallicafan212:	Toggle between the z write and no z write states
 		if (Xor & (PF_Occlude | PF_Memorized))
 		{
-#if DO_BUFFERED_DRAWS
-			CheckDrawCall();
-			CurrentDraw->bSetDState = 1;
-#endif
 			// Metallicafan212:	This is a hack to prevent selection from doing z writing, but it will still do z testing
 			if ((blendFlags & PF_Memorized))
 			{
@@ -1309,19 +1275,11 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			else 
 			if ((blendFlags & PF_Occlude))
 			{
-#if !DO_BUFFERED_DRAWS
 				m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);
-#else
-				CurrentDraw->DSState = m_DefaultZState;
-#endif
 			}
 			else
 			{
-#if !DO_BUFFERED_DRAWS
 				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
-#else
-				CurrentDraw->DSState	= m_DefaultNoZState;
-#endif
 			}
 		}
 

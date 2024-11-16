@@ -130,15 +130,7 @@ void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 	// Metallicafan212:	Only do this if the current shader isn't ours!!!!!
 	if (!bShaderIsUs)
 	{
-#if !DO_BUFFERED_DRAWS
 		SetShaders(UseContext);
-#else
-		// Metallicafan212:	Set the shader
-		//					TODO!!!!!! 
-		ParentDevice->CheckDrawCall();
-		ParentDevice->CurrentDraw->Shader		= this;
-		ParentDevice->CurrentDraw->bSetShader	= 1;
-#endif
 	}
 
 	if (ShaderConstantsBuffer != nullptr)
@@ -151,7 +143,6 @@ void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 			UseContext->UpdateSubresource(ShaderConstantsBuffer, 0, nullptr, ShaderConstantsMem, 0, 0);
 		}
 #else
-#if !DO_BUFFERED_DRAWS
 		// Metallicafan212:	Map the matrix(s)
 		D3D11_MAPPED_SUBRESOURCE Map;
 		HRESULT hr = UseContext->Map(ShaderConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
@@ -166,9 +157,6 @@ void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 		// Metallicafan212:	Now unmap it
 		UseContext->Unmap(ShaderConstantsBuffer, 0);
 #endif
-#endif
-
-#if !DO_BUFFERED_DRAWS
 
 		// Metallicafan212:	Now finally set it as a resource
 		if (VertexShader != nullptr)
@@ -179,22 +167,6 @@ void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 
 		if (PixelShader != nullptr)
 			UseContext->PSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
-#else
-		// Metallicafan212:	TODO!!!!!! Check for variable differences????
-		ParentDevice->CurrentDraw->UserConstants.Empty();
-		D3D11_BUFFER_DESC Desc;
-
-		ShaderConstantsBuffer->GetDesc(&Desc);
-
-		ParentDevice->CurrentDraw->UserConstants.Empty(Desc.ByteWidth);
-		ParentDevice->CurrentDraw->UserConstants.Add(Desc.ByteWidth);
-
-		// Metallicafan212:	Now write to it
-		WriteConstantBuffer(&ParentDevice->CurrentDraw->UserConstants(0));
-
-		ParentDevice->CurrentDraw->bSetUserConstants	= 1;
-		ParentDevice->CurrentDraw->UserBuffer			= ShaderConstantsBuffer;
-#endif
 	}
 
 	unguardSlow;

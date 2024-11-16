@@ -6,9 +6,6 @@
 // Metallicafan212:	If to use UpdateSubresource instead of Map for shader constants
 #define UPDATESUBRESOURCE_CONSTANTS 1
 
-// Metallicafan212:	Not finished, support for drawing only when the vertex/index buffers are full
-#define DO_BUFFERED_DRAWS 0
-
 // Metallicafan212:	TODO! Eventually, I should swap back to TMap, but it's really slow when we're doing a lot of lookups
 #define USE_UNODERED_MAP_EVERYWHERE 1
 
@@ -1404,20 +1401,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		if (!bNoOverwrite)
 		{
 			// Metallicafan212:	Ran out of room, check if there's stuff to render
-#if DO_BUFFERED_DRAWS
-			if(BufferedDraws.Num())
-#else
 			if (m_BufferedVerts != 0)
-#endif
 			{
 				EndBuffering();
-
-#if DO_BUFFERED_DRAWS
-				ExecuteBufferedDraws();
-
-				// Metallicafan212:	Add on a new draw, as now we're in a invalid state
-				CurrentDraw = AddDrawCall();
-#endif
 			}
 
 			m_VertexBuffPos = 0;
@@ -1520,10 +1506,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 #if DX11_D2D
 		if (m_CurrentBuff == BT_Strings && BufferedStrings.Num())
 		{
-#if DO_BUFFERED_DRAWS
-			// Metallicafan212:	Must draw first
-			ExecuteBufferedDraws();
-#endif
 			// Metallicafan212:	Draw all the strings
 			m_CurrentD2DRT->BeginDraw();
 
@@ -1611,17 +1593,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 				UpdateBoundTextures();
 			}
 
-#if !DO_BUFFERED_DRAWS
 			// Metallicafan212:	We only lock once to save on performance 
 			UnlockBuffers();
 			m_RenderContext->DrawIndexed(m_BufferedIndices, m_DrawnIndices, m_DrawnVerts);
-#else
-			// Metallicafan212:	Make a new draw call?
-			CurrentDraw->IStart	= m_DrawnIndices;
-			CurrentDraw->ISize	= m_BufferedIndices;
-			CurrentDraw->VStart = m_DrawnVerts;
-			CurrentDraw			= AddDrawCall();
-#endif
 
 			// Metallicafan212:	Increment the buffer counters
 			m_DrawnIndices	+= m_BufferedIndices;
@@ -1644,13 +1618,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 			{
 				case BT_Lines:
 				{
-#if !DO_BUFFERED_DRAWS
 					m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-#else
-					CheckDrawCall();
-					CurrentDraw->bSetTopology	= 1;
-					CurrentDraw->Topology		= D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
-#endif
 					break;
 				}
 
@@ -1659,13 +1627,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 					// Metallicafan212:	Only set if actually needed to
 					if (m_CurrentBuff == BT_Lines || m_CurrentBuff == BT_None)
 					{
-#if !DO_BUFFERED_DRAWS
 						m_RenderContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-#else
-						CheckDrawCall();
-						CurrentDraw->bSetTopology	= 1;
-						CurrentDraw->Topology		= D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-#endif
 					}
 				}
 			}
@@ -1681,7 +1643,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		// Metallicafan212:	Update this using update subresource
 		m_RenderContext->UpdateSubresource(FrameConstantsBuffer, 0, nullptr, &FrameShaderVars, 0, 0);
 #else
-#if !DO_BUFFERED_DRAWS
 		D3D11_MAPPED_SUBRESOURCE Map;
 
 		m_RenderContext->Map(FrameConstantsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
@@ -1689,15 +1650,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		appMemcpy(Map.pData, &FrameShaderVars, sizeof(FFrameShaderVars));
 
 		m_RenderContext->Unmap(FrameConstantsBuffer, 0);
-#else
-		// Metallicafan212:	Actually copying the constants will be taken care of when we actually render
-		CheckDrawCall();
-
-		CurrentDraw->bSetFrameConstants = 1;
-		CurrentDraw->FrameShaderConstants.Empty(sizeof(FFrameShaderVars));
-		CurrentDraw->FrameShaderConstants.Add(sizeof(FFrameShaderVars));
-		appMemcpy(&CurrentDraw->FrameShaderConstants(0), &FrameShaderVars, sizeof(FFrameShaderVars));
-#endif
 #endif
 	}
 
@@ -1707,7 +1659,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		// Metallicafan212:	Update this using update subresource
 		m_RenderContext->UpdateSubresource(GlobalPolyflagsBuffer, 0, nullptr, &GlobalPolyflagVars, 0, 0);
 #else
-#if !DO_BUFFERED_DRAWS
 		D3D11_MAPPED_SUBRESOURCE Map;
 
 		m_RenderContext->Map(GlobalPolyflagsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
@@ -1715,16 +1666,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		appMemcpy(Map.pData, &GlobalPolyflagVars, sizeof(FPolyflagVars));
 
 		m_RenderContext->Unmap(GlobalPolyflagsBuffer, 0);
-#else
-		if (CurrentDraw != nullptr)
-		{
-			// Metallicafan212:	Actually copying the constants will be taken care of when we actually render
-			CurrentDraw->bSetFlagConstants = 1;
-			CurrentDraw->FlagShaderConstants.Empty(sizeof(FPolyflagVars));
-			CurrentDraw->FlagShaderConstants.Add(sizeof(FPolyflagVars));
-			appMemcpy(&CurrentDraw->FlagShaderConstants(0), &GlobalPolyflagVars, sizeof(FPolyflagVars));
-		}
-#endif
 #endif
 	}
 
@@ -1744,7 +1685,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		// Metallicafan212:	Update this using update subresource
 		m_RenderContext->UpdateSubresource(BoundTexturesBuffer, 0, nullptr, &BoundTexturesInfo, 0, 0);
 #else
-#if !DO_BUFFERED_DRAWS
 		D3D11_MAPPED_SUBRESOURCE Map;
 
 		m_RenderContext->Map(BoundTexturesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
@@ -1754,17 +1694,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		m_RenderContext->Unmap(BoundTexturesBuffer, 0);
 
 		bWriteTexturesBuffer = 0;
-#else
-		// Metallicafan212:	Actually copying the constants will be taken care of when we actually render
-		CheckDrawCall();
-
-		CurrentDraw->bSetTexConstants = 1;
-		CurrentDraw->TexShaderConstants.Empty(sizeof(FBoundTextures));
-		CurrentDraw->TexShaderConstants.Add(sizeof(FBoundTextures));
-		appMemcpy(&CurrentDraw->TexShaderConstants(0), &BoundTexturesInfo, sizeof(FBoundTextures));
-
-		bWriteTexturesBuffer = 0;
-#endif
 #endif
 	}
 
@@ -2094,7 +2023,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		// Metallicafan212:	Update it using UpdateSubresource
 		m_RenderContext->UpdateSubresource(GlobalDistFogBuffer, 0, nullptr, &GlobalDistFogSettings, 0, 0);
 #else
-#if !DO_BUFFERED_DRAWS
 		D3D11_MAPPED_SUBRESOURCE Map;
 
 		m_RenderContext->Map(GlobalDistFogBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Map);
@@ -2103,15 +2031,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		appMemcpy(Map.pData, &GlobalDistFogSettings, sizeof(FDistFogVars));
 
 		m_RenderContext->Unmap(GlobalDistFogBuffer, 0);
-#else
-		CheckDrawCall();
-		// Metallicafan212:	The constant values will be set when we actually draw
-		CurrentDraw->bSetDFogConstants = 1;
-		CurrentDraw->DFogShaderConstants.Empty(sizeof(FDistFogVars));
-		CurrentDraw->DFogShaderConstants.Add(sizeof(FDistFogVars));
-		appMemcpy(&CurrentDraw->DFogShaderConstants(0), &GlobalDistFogSettings, sizeof(FDistFogVars));
-
-#endif
 #endif
 	}
 

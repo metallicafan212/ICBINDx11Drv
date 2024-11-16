@@ -2345,12 +2345,6 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	Gamma = Viewport->GetOuterUClient()->Brightness * 2.0f;
 #endif
 
-#if DO_BUFFERED_DRAWS
-	// Metallicafan212:	Add a new draw and set it up
-	//CurrentDraw = &BufferedDraws(BufferedDraws.AddZeroed());
-	CurrentDraw = AddDrawCall();
-#endif
-
 	// Metallicafan212:	Hold onto the hit related info
 	m_HitData		= HitData;
 	m_HitSize		= HitSize;
@@ -2654,12 +2648,6 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 	}
 #endif
 
-	// Metallicafan212:	Finish execution
-	//					TODO!
-#if DO_BUFFERED_DRAWS
-	ExecuteBufferedDraws();
-#endif
-
 	// Metallicafan212:	Get the selection
 	if (m_HitData != nullptr)
 	{
@@ -2832,19 +2820,10 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 			SetTexture(0, nullptr, 0);
 
-
-#if DO_BUFFERED_DRAWS
-			CheckDrawCall();
-			CurrentDraw->TBinds[0]	= NumAASamples > 1 ? m_MSAAResolveSRV : m_ScreenRTSRV;
-			CurrentDraw->SBinds[0]	= ScreenSamp;
-			CurrentDraw->RTV		= m_BackBuffRT;
-			CurrentDraw->bSetRT		= 1;
-#else
 			m_RenderContext->PSSetSamplers(0, 1, &ScreenSamp);
 			// Metallicafan212:	Manually setup the vars...
 			m_RenderContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
 			m_RenderContext->PSSetShaderResources(0, 1, NumAASamples > 1 ? &m_MSAAResolveSRV : &m_ScreenRTSRV);
-#endif
 
 			SetSceneNode(nullptr);
 
@@ -2858,10 +2837,6 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 
 			// Metallicafan212:	Draw
 			EndBuffering();
-
-#if DO_BUFFERED_DRAWS
-			ExecuteBufferedDraws();
-#endif
 
 			//SetTexture(0, nullptr, 0);
 			// Metallicafan212:	Fix the shader holding onto the RT texture
@@ -3018,10 +2993,6 @@ void UICBINDx11RenderDevice::ClearZ(FSceneNode* Frame)
 	// Metallicafan212:	Turn back on Z buffering
 	SetBlend(PF_Occlude);
 
-#if DO_BUFFERED_DRAWS
-	ExecuteBufferedDraws();
-#endif
-
 	// Metallicafan212:	Clear the current DSV instead of the local one
 	if (BoundRT != nullptr)
 	{
@@ -3111,18 +3082,8 @@ void UICBINDx11RenderDevice::EndFlash()
 		ID3D11DepthStencilState* CurState = nullptr;
 		UINT Sten = 0;
 
-#if DO_BUFFERED_DRAWS
-		ExecuteBufferedDraws();
-#endif
-
 		m_RenderContext->OMGetDepthStencilState(&CurState, &Sten);
-#if DO_BUFFERED_DRAWS
-		CheckDrawCall();
-		CurrentDraw->bSetDState = 1;
-		CurrentDraw->DSState	= m_DefaultNoZState;
-#else
 		m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
-#endif
 
 		//LockVertexBuffer(6 * sizeof(FD3DVert));
 		LockVertAndIndexBuffer(6);
@@ -3163,12 +3124,7 @@ void UICBINDx11RenderDevice::EndFlash()
 		EndBuffering();
 
 		// Metallicafan212:	Reset Z state
-#if DO_BUFFERED_DRAWS
-		CurrentDraw->bSetDState = 1;
-		CurrentDraw->DSState	= CurState;
-#else
 		m_RenderContext->OMSetDepthStencilState(CurState, Sten);
-#endif
 	}
 
 	unguard;
