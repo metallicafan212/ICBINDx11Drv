@@ -43,7 +43,7 @@ PSOutput PxShader(PSInput input)
 		#endif
 	}
 	// Metallicafan212:	Diffuse texture
-	else if(bTexturesBound[0].x != 0)
+	else if(bTexturesBound & 0x1)//bTexturesBound[0].x != 0)
 	{
 		float4 Diff  	= Diffuse.SampleBias(DiffState, input.uv, 0.0f);
 		DiffColor.xyz  *= Diff.xyz;
@@ -58,7 +58,7 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	Detail texture
 	//					We're applying this now so that when detail textures fade in, they don't reduce the lightmap as much
 	//					TODO! Using the vars from DX7. Allow the user to specify this!!!!
-	if(bTexturesBound[1].x != 0 && input.dUV.z < 380.0f)
+	if(bTexturesBound & 0x10 && input.dUV.z < 380.0f)//bTexturesBound[1].x != 0 && input.dUV.z < 380.0f)
 	{
 		// Metallicafan212:	Sample it
 		float3 Det = Detail.SampleBias(DetailState, input.dUV.xy, 0.0f).xyz;
@@ -83,7 +83,8 @@ PSOutput PxShader(PSInput input)
 	
 	// Metallicafan212:	Macro texture
 	//					This just modulates the color, like the lightmap
-	if(bTexturesBound[0].z != 0)
+	//if(bTexturesBound[0].z != 0)
+	if(bTexturesBound & 0x4)
 	{
 		DiffColor.xyz *= Macro.SampleBias(MacroState, input.mUV, 0.0f).xyz * 2.0f;
 	}
@@ -92,7 +93,7 @@ PSOutput PxShader(PSInput input)
 	
 	// Metallicafan212:	Lightmap
 	//					TODO! Allow the user to specify the lightmap multiplication (some people like one-x scaling)
-	if(bTexturesBound[0].y != 0)
+	if(bTexturesBound & 0x2)//bTexturesBound[0].y != 0)
 	{
 		float4 LColor 	= Light.SampleBias(LightState, input.lUV, 0.0f);
 		
@@ -129,7 +130,7 @@ PSOutput PxShader(PSInput input)
 #endif
 	
 	// Metallicafan212:	Fog map
-	if(bTexturesBound[0].w != 0)
+	if(bTexturesBound & 0x8)//bTexturesBound[0].w != 0)
 	{
 		float4 FogColor = Fogmap.SampleBias(FogState, input.fUV, 0.0f);
 		DiffColor.xyz 	= (DiffColor.xyz * (1.0f - FogColor.w)) + FogColor.xyz;//mad(DiffColor.xyz, (1.0f - FogColor.w), FogColor.xyz);

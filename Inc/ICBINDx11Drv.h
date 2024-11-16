@@ -485,6 +485,9 @@ struct FD3DBoundTex
 	FLOAT						UScale;
 	FLOAT						VScale;
 	PFLAG						Flags;
+
+	// Metallicafan212:	Slot mask for telling the shaders that this shader is bound
+	DWORD						Mask;
 };
 
 // Metallicafan212:	Draw call info
@@ -1725,12 +1728,17 @@ class UICBINDx11RenderDevice : public RD_CLASS
 #endif
 	}
 
+	// Metallicafan212:	TODO!!!!! Maybe find a better way to not have to loop?
+	//					We could just have the texture set code set this instead, and then 
 	FORCEINLINE void UpdateBoundTextures()
 	{
+		/*
+		BoundTexturesInfo.CurrentBoundTextures = 0;
 		for (INT i = 0; i < MAX_TEXTURES; i++)
 		{
-			BoundTexturesInfo.BoundTextures[i] = (BoundTextures[i].TexInfoHash != 0 || BoundTextures[i].bIsRT);
+			BoundTexturesInfo.CurrentBoundTextures |= BoundTextures[i].Mask;
 		}
+		*/
 
 #if UPDATESUBRESOURCE_CONSTANTS
 		// Metallicafan212:	Update this using update subresource
@@ -2010,7 +2018,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	virtual void DrawRotatedTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, PFLAG PolyFlags, FCoords InCoords = GMath.UnitCoords);
 
-	virtual int DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT& DrawY, FLOAT ClipX, FLOAT ClipY, FLOAT ClipW, FLOAT ClipH, const TCHAR* Text, const FPlane& Color, UBOOL bHandleApersand = 0, FLOAT Scale = 1.0f);
+	virtual INT DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT& DrawY, FLOAT ClipX, FLOAT ClipY, FLOAT ClipW, FLOAT ClipH, const TCHAR* Text, const FPlane& Color, UBOOL bHandleApersand = 0, FLOAT Scale = 1.0f);
 #elif DX11_UT_469	
 	
 	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet);

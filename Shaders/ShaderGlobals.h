@@ -177,7 +177,10 @@ cbuffer PolyflagVars : register (b2)
 
 cbuffer TextureVariables : register (b3)
 {
-	int4	bTexturesBound[TEX_ARRAY_SIZE]			: packoffset(c0);
+	//int4	bTexturesBound[TEX_ARRAY_SIZE]			: packoffset(c0);
+	// Metallicafan212:	Single flag for each slot
+	dword 	bTexturesBound 	: packoffset(c0);
+	float3 	TexturePad		: packoffset(c1);
 };
 
 #if !NO_CUSTOM_RMODES

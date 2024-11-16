@@ -2060,35 +2060,31 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 {
 	guard(UICBINDx11RenderDevice::SetRes);
 
-	INT TestX = Clamp(NewX, 2, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);//Max(NewX, 2);
-	INT TestY = Clamp(NewY, 2, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);//Max(NewY, 2);
+	INT TestX = Clamp(NewX, 2, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+	INT TestY = Clamp(NewY, 2, D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
 
 	// Metallicafan212:	If we're fullscreen, we need to make sure that we're using a valid fullscreen resolution
-	if (Fullscreen)//&& !bFullscreen)
+	if (Fullscreen)
 	{
 		// Metallicafan212:	Scan for the closest res
 		INT ClosestX = TestX, ClosestY = TestY, Error = INT_MAX;
 
 		for (INT i = 0; i < Modes.Num(); i++)
 		{
-			FPlane Mode = Modes(i);
+			FPlane Mode		= Modes(i);
+			INT CalcError	= ((Mode.X - TestX) * (Mode.X - TestX)) + ((Mode.Y - TestY) * (Mode.Y - TestY));
 
-			//if (Mode.Z == 32)
+			// Metallicafan212:	Change in res is smaller than the current error?
+			if (CalcError < Error)
 			{
-				INT CalcError = ((Mode.X - TestX) * (Mode.X - TestX)) + ((Mode.Y - TestY) * (Mode.Y - TestY));
+				Error		= CalcError;
+				ClosestX	= Mode.X;
+				ClosestY	= Mode.Y;
 
-				// Metallicafan212:	Change in res is smaller than the current error?
-				if (CalcError < Error)
+				// Metallicafan212:	Found the exact resolution
+				if (Error == 0)
 				{
-					Error		= CalcError;
-					ClosestX	= Mode.X;
-					ClosestY	= Mode.Y;
-
-					// Metallicafan212:	Found the exact resolution
-					if (Error == 0)
-					{
-						break;
-					}
+					break;
 				}
 			}
 		}
