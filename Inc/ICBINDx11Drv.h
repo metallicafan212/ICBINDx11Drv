@@ -1818,7 +1818,8 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		}
 
 		// Metallicafan212:	Now offset that by the AF and the MinMip
-		BaseIndex += (MinMip * (bForceNoAf & 0x1));
+		//					The MinMip is a "set" of noAF on and off samplers
+		BaseIndex += (MinMip * 2) + (bForceNoAf & 0x1);
 
 		ID3D11SamplerState* S = SampArray[BaseIndex];
 #else
