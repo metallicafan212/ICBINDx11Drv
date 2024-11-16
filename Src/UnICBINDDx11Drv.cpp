@@ -2018,10 +2018,13 @@ void UICBINDx11RenderDevice::SetupResources()
 	// Metallicafan212:	Make all the samplers that should be needed
 	for (INT i = 0; i < 2; i++)
 	{
-		GetSamplerState(PF_NoSmooth, i, 0);
-		GetSamplerState(PF_ClampUVs, i, 0);
+		GetSamplerState(PF_NoSmooth, i);
+		GetSamplerState(PF_NoSmooth, i, 1);
+		GetSamplerState(PF_ClampUVs, i);
+		GetSamplerState(PF_ClampUVs, i, 1);
 
-		GetSamplerState(PF_NoSmooth | PF_ClampUVs, i, 0);
+		GetSamplerState(PF_NoSmooth | PF_ClampUVs, i);
+		GetSamplerState(PF_NoSmooth | PF_ClampUVs, i, 1);
 	}
 
 	// Metallicafan212:	Allow HDR in the editor

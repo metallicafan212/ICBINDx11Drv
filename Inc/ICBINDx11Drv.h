@@ -9,6 +9,15 @@
 // Metallicafan212:	TODO! Eventually, I should swap back to TMap, but it's really slow when we're doing a lot of lookups
 #define USE_UNODERED_MAP_EVERYWHERE 1
 
+// Metallicafan212:	If instead, we should use a sampler array (for speed reasons!)
+#define USE_SAMPLER_ARRAY 1
+
+#define MAX_MIP_BIAS 2
+
+// Metallicafan212: 4 flag combos (off, clamp, no smooth, clamp + no smooth) * 3 mip bias (none, 1, 2) * 2 AF flag (off, on)
+//					TODO! Try and see if we can make this a bit more automatic....
+#define MAX_SAMPLERS (4 * (MAX_MIP_BIAS + 1) * 2)
+
 // Metallicafan212:	If complex surface stuff is added to each vert
 #define EXTRA_VERT_INFO 1
 
@@ -1060,10 +1069,18 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	Sampler map
 	//					This is required since you can't just on the fly update sampler objects....
 	//					Sucks, but it is what it is
+
+	// Metallicafan212:	Actually, instead use an array of sampliers!
+#if USE_SAMPLER_ARRAY
+	ID3D11SamplerState*					SampArray[MAX_SAMPLERS];
+#else
+
 #if !USE_UNODERED_MAP_EVERYWHERE
 	TMap<PFLAG, ID3D11SamplerState*>	SampMap;
 #else
 	std::unordered_map<PFLAG, ID3D11SamplerState*> SampMap;
+#endif
+
 #endif
 
 	// Metallicafan212:	Sampler for drawing the scaled screen (using ResolutionScale)
@@ -1720,6 +1737,13 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	FORCEINLINE void FlushTextureSamplers()
 	{
+#if USE_SAMPLER_ARRAY
+		for (INT i = 0; i < MAX_SAMPLERS; i++)
+		{
+			SAFE_RELEASE(SampArray[i]);
+		}
+#else
+
 #if !USE_UNODERED_MAP_EVERYWHERE
 		for (TMap<FPLAG, ID3D11SamplerState*>::TIterator It(SampMap); It; ++It)
 		{
@@ -1734,6 +1758,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	}
 
 		SampMap.clear();
+#endif
 #endif
 
 		SAFE_RELEASE(ScreenSamp);
@@ -1762,24 +1787,56 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	void SetRasterState(DWORD State);
 
-	FORCEINLINE ID3D11SamplerState* GetSamplerState(PFLAG PolyFlags, INT MinMip, INT MipBias, UBOOL bForceNoAf = 0)
+	FORCEINLINE ID3D11SamplerState* GetSamplerState(PFLAG PolyFlags, INT MinMip, UBOOL bForceNoAf = 0)
 	{
 		guardSlow(UICBINDx11RenderDevice::GetSamplerState);
 
-		// Metallicafan212:	TODO!!!! Tag this better.... This will bite me in the ass....
-		//					Realistically, the key should be a combo of the flags and the biases, since we only care about specific parts, it should be bitpacked
+		checkSlow(MinMip <= MAX_MIP_BIAS);
+
+#if USE_SAMPLER_ARRAY
+		// Metallicafan212:	Figure out where the area of the array should be
+		INT BaseIndex = 0;
+		switch (PolyFlags & (PF_NoSmooth | PF_ClampUVs))
+		{
+			case PF_NoSmooth:
+			{
+				BaseIndex = MAX_SAMPLERS / 4;
+				break;
+			}
+
+			case PF_ClampUVs:
+			{
+				BaseIndex = 2 * (MAX_SAMPLERS / 4);
+				break;
+			}
+
+			case (PF_NoSmooth | PF_ClampUVs):
+			{
+				BaseIndex = 3 * (MAX_SAMPLERS / 4);
+				break;
+			}
+		}
+
+		// Metallicafan212:	Now offset that by the AF and the MinMip
+		BaseIndex += (MinMip * (bForceNoAf & 0x1));
+
+		ID3D11SamplerState* S = SampArray[BaseIndex];
+#else
+		// Metallicafan212:	TODO! This has a performance bottleneck....
 		
 		// Metallicafan212:	We have to use global sampler, since per-texture won't ever work... It'll force all of the same texture to no smooth (for example)
 
 		// Metallicafan212:	Shift the mipbias by 4 to bitpack this. It'll max be like 2 anyways, so a bitshift of 4 is 32
 		//					MinMip is (usually) always 0, so I'm not worried. This leaves the rest for polyflags
-		QWORD Key = ((PolyFlags & (PF_NoSmooth | PF_ClampUVs)) << 4) + (MipBias << 4) + MinMip + (bForceNoAf << 8);
+		// Metallicafan212:	Trust that the polyflags coming in are valid....
+		QWORD Key = ((PolyFlags & (PF_NoSmooth | PF_ClampUVs)) << 4) + MinMip + (bForceNoAf << 8);
 
 #if !USE_UNODERED_MAP_EVERYWHERE
 		ID3D11SamplerState* S = SampMap.FindRef(Key);
 #else
 		auto f = SampMap.find(Key);
 		ID3D11SamplerState* S = f != SampMap.end() ? f->second : nullptr;
+#endif
 #endif
 
 		if (S == nullptr)
@@ -1794,22 +1851,26 @@ class UICBINDx11RenderDevice : public RD_CLASS
 			SDesc.Filter			= (PolyFlags & PF_NoSmooth ? D3D11_FILTER_MIN_MAG_MIP_POINT : D3D11_FILTER_ANISOTROPIC);
 			SDesc.AddressU			= (PolyFlags & PF_ClampUVs ? D3D11_TEXTURE_ADDRESS_CLAMP : D3D11_TEXTURE_ADDRESS_WRAP);
 			SDesc.AddressV			= SDesc.AddressU;
-			SDesc.AddressW			= SDesc.AddressU;//SDesc.AddressU;
-			SDesc.MinLOD			= MinMip;//-D3D11_FLOAT32_MAX;
+			SDesc.AddressW			= SDesc.AddressU;
+			SDesc.MinLOD			= MinMip;
 			SDesc.MaxLOD			= D3D11_FLOAT32_MAX;
-			SDesc.MipLODBias		= MipBias;//0.0f;
-			SDesc.MaxAnisotropy		= (PolyFlags & PF_NoSmooth) || bForceNoAf ? 1 : NumAFSamples;//16;//16;
+			SDesc.MipLODBias		= 0.0f;
+			SDesc.MaxAnisotropy		= (PolyFlags & PF_NoSmooth) || bForceNoAf ? 1 : NumAFSamples;
 			SDesc.ComparisonFunc	= D3D11_COMPARISON_NEVER;
 
 			HRESULT hr = m_D3DDevice->CreateSamplerState(&SDesc, &S);
 
 			ThrowIfFailed(hr);
 
+#if USE_SAMPLER_ARRAY
+			SampArray[BaseIndex] = S;
+#else
 			// Metallicafan212:	Now set
 #if !USE_UNODERED_MAP_EVERYWHERE
 			SampMap.Set(Key, S);
 #else
 			SampMap[Key] = S;
+#endif
 #endif
 		}
 
