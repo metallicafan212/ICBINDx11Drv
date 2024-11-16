@@ -12,7 +12,12 @@
 // Metallicafan212:	If instead, we should use a sampler array (for speed reasons!)
 #define USE_SAMPLER_ARRAY 1
 
+// Metallicafan212:	If for raster descriptions, we use an array
+#define USE_RASTER_ARRAY 1
+
 #define MAX_MIP_BIAS 2
+
+#define MAX_TEXTURES 16
 
 // Metallicafan212: 4 flag combos (off, clamp, no smooth, clamp + no smooth) * 3 mip bias (none, 1, 2) * 2 AF flag (off, on)
 //					TODO! Try and see if we can make this a bit more automatic....
@@ -210,8 +215,6 @@ constexpr int c_strcmp(const TCHAR* lhs, const TCHAR* rhs)
 		: c_strcmp(lhs+1, rhs+1);
 }
 
-#define MAX_TEXTURES 16
-
 enum ERasterFlags
 {
 	DXRS_Normal		= 0x00,
@@ -219,6 +222,10 @@ enum ERasterFlags
 	DXRS_NoAA		= 0x02,
 	DXRS_MAX		= 0xFF,
 };
+
+#if USE_RASTER_ARRAY
+#define RASTER_ARRAY_SIZE (DXRS_NoAA * DXRS_NoAA)
+#endif
 
 // Metallicafan212:	Include the gamma mode settings
 //					This is heavy todo!
@@ -932,10 +939,14 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	ID3D11DepthStencilState*	m_DefaultNoZWriteState;
 
 	// Metallicafan212:	Raster states
+#if USE_RASTER_ARRAY
+	ID3D11RasterizerState*		RasterArray[RASTER_ARRAY_SIZE];
+#else
 #if !USE_UNODERED_MAP_EVERYWHERE
 	TMap<DWORD, ID3D11RasterizerState*> RasterMap;
 #else
 	std::unordered_map<DWORD, ID3D11RasterizerState*> RasterMap;
+#endif
 #endif
 
 	DWORD						CurrentRasterState;
@@ -1766,6 +1777,12 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	FORCEINLINE void FlushRasterStates()
 	{
+#if USE_RASTER_ARRAY
+		for (INT i = 0; i < RASTER_ARRAY_SIZE; i++)
+		{
+			SAFE_RELEASE(RasterArray[i]);
+		}
+#else
 #if !USE_UNODERED_MAP_EVERYWHERE
 		for (TMap<DWORD, ID3D11RasterizerState*>::TIterator It(RasterMap); It; ++It)
 		{
@@ -1780,6 +1797,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		}
 
 		RasterMap.clear();
+#endif
 #endif
 
 		
@@ -1816,6 +1834,13 @@ class UICBINDx11RenderDevice : public RD_CLASS
 				break;
 			}
 		}
+
+		/*
+		// Metallicafan212:	TODO! See if this is quicker
+		//					This isn't quicker... I think the lookup table is probably quicker
+		INT BaseIndex = (((PolyFlags & PF_NoSmooth) == PF_NoSmooth) * 0x1) + (((PolyFlags & PF_ClampUVs) == PF_ClampUVs) * 0x2);
+		BaseIndex *= (MAX_SAMPLERS / 4);
+		*/
 
 		// Metallicafan212:	Now offset that by the AF and the MinMip
 		//					The MinMip is a "set" of noAF on and off samplers

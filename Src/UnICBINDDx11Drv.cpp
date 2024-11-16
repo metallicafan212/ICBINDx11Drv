@@ -754,6 +754,35 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 		// Metallicafan212:	End whatever rendering we're doing right now!
 		EndBuffering();
 
+#if USE_RASTER_ARRAY
+		// Metallicafan212:	Since I control all the flags, and I want to consider all the flags, I can just index by the state
+		INT RasterIndex = State;
+
+		/*
+		switch (State)
+		{
+			case DXRS_Wireframe:
+			{
+				RasterIndex = RASTER_ARRAY_SIZE / 4;
+				break;
+			}
+
+			case DXRS_NoAA:
+			{
+				RasterIndex = 2 * (RASTER_ARRAY_SIZE / 4);
+				break;
+			}
+
+			case (DXRS_Wireframe | DXRS_NoAA):
+			{
+				RasterIndex = 3 * (RASTER_ARRAY_SIZE / 4);
+				break;
+			}
+		}
+		*/
+
+		ID3D11RasterizerState* m_s = RasterArray[RasterIndex];
+#else
 		// Metallicafan212:	Find what needs to be added on to make it, if it doesn't exist yet
 #if !USE_UNODERED_MAP_EVERYWHERE
 		ID3D11RasterizerState1* m_s = RasterMap.FindRef(State);
@@ -761,6 +790,7 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 		auto f = RasterMap.find(State);
 
 		ID3D11RasterizerState* m_s = f != RasterMap.end() ? f->second : nullptr;
+#endif
 #endif
 
 		if (m_s == nullptr)
@@ -796,11 +826,15 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 
 				ThrowIfFailed(hr);
 
+#if USE_RASTER_ARRAY
+				RasterArray[RasterIndex] = m_s;
+#else
 				// Metallicafan212:	Now set it on the map
 #if !USE_UNODERED_MAP_EVERYWHERE
 				RasterMap.Set(State, m_s);
 #else
 				RasterMap[State] = m_s;
+#endif
 #endif
 			}
 			else
@@ -831,12 +865,15 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 				HRESULT hr = m_D3DDevice1->CreateRasterizerState(&Desc, &m_s);
 
 				ThrowIfFailed(hr);
-
+#if USE_RASTER_ARRAY
+				RasterArray[RasterIndex] = m_s;
+#else
 				// Metallicafan212:	Now set it on the map
 #if !USE_UNODERED_MAP_EVERYWHERE
 				RasterMap.Set(State, m_s);
 #else
 				RasterMap[State] = m_s;
+#endif
 #endif
 			}
 		}
