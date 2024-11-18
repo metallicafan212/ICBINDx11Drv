@@ -209,6 +209,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	AddBoolProp(CPP_PROP(ForceHDR), 0);
 
+	// Metallicafan212:	Allow the user to disable freesync support
+	AddBoolProp(CPP_PROP(DisableFreeGSync), 0);
+
 	unguard;
 }
 

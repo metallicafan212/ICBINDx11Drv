@@ -734,6 +734,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	If the user wants to automatically override the HDR active detection
 	UBOOL						ForceHDR;
 
+	// Metallicafan212:	If the user wants to turn off freesync/gsync. This constructs the swap chain WITHOUT tearing support
+	UBOOL						DisableFreeGSync;
+
 	// Metallicafan212:	HACK coord minus for the current MSAA level...
 	//					Certain levels need different coord movements
 	FLOAT						TileAAUVMove;

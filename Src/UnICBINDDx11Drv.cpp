@@ -1405,6 +1405,15 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	UBOOL bLocalHDR = (!GIsEditor ? UseHDR : UseHDRInEditor);
 
+	/*
+	// Metallicafan212:	TODO!!!! If this is the texture browser, disallow HDR!!!!
+	//					Need to actually do something if the window spans multiple monitors.... Maybe just disable HDR entirely in editor subwindows?
+	if (GIsEditor && Viewport->Actor->RendMap == REN_TexBrowser)
+	{
+		bLocalHDR = 0;
+	}
+	*/
+
 	if (m_D3DSwapChain == nullptr)
 	{
 	SetupSwap:
@@ -1487,14 +1496,12 @@ void UICBINDx11RenderDevice::SetupResources()
 		bAllowTearing = (!GIsEditor
 #endif
 		
-		// Metallicafan212:	This WONT work on UT469, since there's no app manifest
-		// 
-		// 
 		// Metallicafan212:	2024, I added simple windows version checking to the driver for non-HP2 targets
 		//					TODO! Enable for UT469e!
 #if 1//DX11_HP2 || DX11_UT_469
 			&& GWin10
 #endif
+			&& !DisableFreeGSync
 			// Metallicafan212:	Not allowed in fullscreen
 			&& !bFullscreen
 			);
