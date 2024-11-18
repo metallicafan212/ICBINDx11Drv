@@ -183,6 +183,10 @@ typedef unsigned short INDEX;
 #include <d3d11_1.h>
 #include <dxgi1_2.h>
 #include <dxgi1_5.h>
+
+// Metallicafan212:	Windows 10+ specific!!!!!
+#include <dxgi1_6.h>
+
 #include <d2d1.h>
 #include <d2d1_1.h>
 #if DX11_D2D
@@ -726,6 +730,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	If HDR is active (and the screenformat is set)
 	UBOOL						ActiveHDR;
+
+	// Metallicafan212:	If the user wants to automatically override the HDR active detection
+	UBOOL						ForceHDR;
 
 	// Metallicafan212:	HACK coord minus for the current MSAA level...
 	//					Certain levels need different coord movements
@@ -1981,7 +1988,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	void SetupResources();
 
 	// Metallicafan212:	Autodetect the nits white balance level for the screen
-	void AutodetectWhiteBalance();
+	UBOOL AutodetectWhiteBalance();
 
 	// Metallicafan212:	Setup the device
 	void SetupDevice();

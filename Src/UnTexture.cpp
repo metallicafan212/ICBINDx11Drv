@@ -159,7 +159,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 
 	// Metallicafan212:	Only actually set the slot if we need to
 	//					2024, check only the RELEVANT polyflags. We don't care (here) if blending changed
-	if (bSetTex || TX.m_SRV == nullptr || (TX.Flags & (PF_NoSmooth | PF_ClampUVs) != (PolyFlags & (PF_NoSmooth | PF_ClampUVs))))
+	if (bSetTex || TX.m_SRV == nullptr || ((TX.Flags & (PF_NoSmooth | PF_ClampUVs)) != (PolyFlags & (PF_NoSmooth | PF_ClampUVs))))
 	{
 		TX.m_SRV = DaTex->m_View;
 

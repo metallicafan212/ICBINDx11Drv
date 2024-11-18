@@ -1125,9 +1125,11 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	unguard;
 }
 
-void UICBINDx11RenderDevice::AutodetectWhiteBalance()
+UBOOL UICBINDx11RenderDevice::AutodetectWhiteBalance()
 {
 	guard(UICBINDx11RenderDevice::AutodetectWhiteBalance);
+
+	UBOOL bReturn = 0;
 
 	GLog->Logf(TEXT("DX11: Autodetecting the display's white balance (in nits)"));
 
@@ -1144,7 +1146,30 @@ void UICBINDx11RenderDevice::AutodetectWhiteBalance()
 
 	// Metallicafan212:	Get the description, so we can see where the output is going
 	DXGI_OUTPUT_DESC OutDesc;
+	DXGI_OUTPUT_DESC1 OutDesc1;
+
 	Out->GetDesc(&OutDesc);
+
+	// Metallicafan212:	Check if the display is actually HDR
+	IDXGIOutput6* DXGI6 = nullptr;
+	Out->QueryInterface(IID_PPV_ARGS(&DXGI6));
+
+	if (DXGI6 != nullptr)
+	{
+		DXGI6->GetDesc1(&OutDesc1);
+
+		if (OutDesc1.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020)
+		{
+			GLog->Logf(TEXT("DX11: Windows says the display is currently in a HDR mode. Display full frame nits is %f"), OutDesc1.MaxFullFrameLuminance);
+			bReturn = 1;
+		}
+		else
+		{
+			bReturn = 0;
+		}
+
+		DXGI6->Release();
+	}
 
 	// Metallicafan212:	We don't need the output now (we have the info we need)
 	//					So release it
@@ -1282,6 +1307,8 @@ void UICBINDx11RenderDevice::AutodetectWhiteBalance()
 	{
 		FrameShaderVars.WhiteLevel = 1.0f;
 	}
+	
+	return bReturn;
 
 	//GConfig->Flush(0);
 	//SaveConfig();
@@ -1531,8 +1558,6 @@ void UICBINDx11RenderDevice::SetupResources()
 			bForceRGBA = 1;
 			ScreenFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 		}
-		
-
 
 		// Metallicafan212:	Describe the non-aa swap chain (MSAA is resolved in Unlock)
 		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
@@ -1675,6 +1700,46 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		// Metallicafan212:	Disable DXGI_PRESENT_ALLOW_TEARING if we were just windowed and went fullscreen
 		PresentFlags = (bAllowTearing && !bFullscreen ? DXGI_PRESENT_ALLOW_TEARING : 0);
+	}
+
+	// Metallicafan212:	Allow HDR in the editor
+	if (bLocalHDR)//&& !GIsEditor)
+	{
+		// Metallicafan212:	Autodetect it
+		if (!AutodetectWhiteBalance() && !ForceHDR)
+		{
+			GLog->Logf(TEXT("DX11: Detected that the screen may not actually be in HDR mode, turning it off. To override this behavior, set ForceHDR in the options."));
+
+			ActiveHDR = 0;
+			bLocalHDR = 0;
+
+			// Metallicafan212:	We have to destroy and recreate the swap chain...
+			//					The reason is that the output is contained to the swap chain, so we have to create it to find the screen that it's actually connected to....
+			SAFE_RELEASE(m_D3DSwapChain);
+			goto SetupSwap;
+		}
+
+		// Metallicafan212:	Save the last detected value
+		INT LastWhiteBalance = 0;
+
+		GConfig->GetInt(GetClass()->GetPathName(), TEXT("AutodetectedWhiteBalance"), LastWhiteBalance);
+
+		// Metallicafan212:	If the config value is invalid, or the last autodetected value isn't found, or if the detected white balance doesn't match, reset
+		if (HDRWhiteBalanceNits <= 0 || LastWhiteBalance == 0 || DetectedWhiteBalance != LastWhiteBalance)
+		{
+			GLog->Logf(TEXT("DX11: Invalid HDR option, or last detected HDR value doesn't match the screen's current white balance level. Resetting back to the detected value of %d nits."), DetectedWhiteBalance);
+
+			HDRWhiteBalanceNits			= DetectedWhiteBalance;
+			LastHDRWhiteBalanceNits		= DetectedWhiteBalance;
+
+			FrameShaderVars.WhiteLevel	= HDRWhiteBalanceNits / 80.0f;
+
+			GConfig->SetInt(GetClass()->GetPathName(), TEXT("AutodetectedWhiteBalance"), DetectedWhiteBalance);
+
+			SaveConfig();
+		}
+
+		GConfig->SetInt(GetClass()->GetPathName(), TEXT("AutodetectedWhiteBalance"), DetectedWhiteBalance);
 	}
 
 	// Metallicafan212:	Initalize shaders, if needed
@@ -2062,35 +2127,6 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		GetSamplerState(PF_NoSmooth | PF_ClampUVs, i);
 		GetSamplerState(PF_NoSmooth | PF_ClampUVs, i, 1);
-	}
-
-	// Metallicafan212:	Allow HDR in the editor
-	if (bLocalHDR)//&& !GIsEditor)
-	{
-		// Metallicafan212:	Autodetect it
-		AutodetectWhiteBalance();
-
-		// Metallicafan212:	Save the last detected value
-		INT LastWhiteBalance = 0;
-
-		GConfig->GetInt(GetClass()->GetPathName(), TEXT("AutodetectedWhiteBalance"), LastWhiteBalance);
-
-		// Metallicafan212:	If the config value is invalid, or the last autodetected value isn't found, or if the detected white balance doesn't match, reset
-		if (HDRWhiteBalanceNits <= 0 || LastWhiteBalance == 0 || DetectedWhiteBalance != LastWhiteBalance)
-		{
-			GLog->Logf(TEXT("DX11: Invalid HDR option, or last detected HDR value doesn't match the screen's current white balance level. Resetting back to the detected value of %d nits."), DetectedWhiteBalance);
-
-			HDRWhiteBalanceNits			= DetectedWhiteBalance;
-			LastHDRWhiteBalanceNits		= DetectedWhiteBalance;
-
-			FrameShaderVars.WhiteLevel	= HDRWhiteBalanceNits / 80.0f;
-
-			GConfig->SetInt(GetClass()->GetPathName(), TEXT("AutodetectedWhiteBalance"), DetectedWhiteBalance);
-
-			SaveConfig();
-		}
-
-		GConfig->SetInt(GetClass()->GetPathName(), TEXT("AutodetectedWhiteBalance"), DetectedWhiteBalance);
 	}
 
 	unguard;

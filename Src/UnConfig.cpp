@@ -207,6 +207,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	AddFloatProp(CPP_PROP(SmoothMaskedAlphaReject), 0.2f);
 
+	AddBoolProp(CPP_PROP(ForceHDR), 0);
+
 	unguard;
 }
 
