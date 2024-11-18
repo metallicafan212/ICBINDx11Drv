@@ -23,6 +23,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 
 	FD3DBoundTex& TX = BoundTextures[TexNum];
 
+	DWORD SlotFlag = (1 << TexNum);
+
 	// Metallicafan212:	Support null textures
 	if (Info == nullptr)
 	{
@@ -40,11 +42,9 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 		TX.m_SRV		= BlankResourceView;
 		TX.Flags		= 0;
 
-		// Metallicafan212:	Reset the mask
-		//TX.Mask			= 0;
-
 		// Metallicafan212:	Unbind the texture
-		BoundTexturesInfo.CurrentBoundTextures &= ~(1 << TexNum);
+		BoundTexturesInfo.CurrentBoundTextures &= ~SlotFlag;
+
 		m_RenderContext->PSSetShaderResources(TexNum, 1, &BlankResourceView);
 		m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
 
@@ -52,9 +52,6 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 
 		return;
 	}
-
-	// Metallicafan212:	Tell the shader that the texture is bound
-	BoundTexturesInfo.CurrentBoundTextures |= (1 << TexNum);
 
 	// Metallicafan212:	TODO! HP2 specific (old hack!!!!)
 #if DX11_HP2
@@ -161,7 +158,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 #endif
 
 	// Metallicafan212:	Only actually set the slot if we need to
-	if (bSetTex || TX.m_SRV == nullptr || TX.Flags != PolyFlags)
+	//					2024, check only the RELEVANT polyflags. We don't care (here) if blending changed
+	if (bSetTex || TX.m_SRV == nullptr || (TX.Flags & (PF_NoSmooth | PF_ClampUVs) != (PolyFlags & (PF_NoSmooth | PF_ClampUVs))))
 	{
 		TX.m_SRV = DaTex->m_View;
 
@@ -170,6 +168,9 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 		ID3D11SamplerState* Temp = GetSamplerState(PolyFlags, DaTex->MipSkip, bNoAF);
 
 		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
+
+		// Metallicafan212:	Tell the shader that the texture is bound
+		BoundTexturesInfo.CurrentBoundTextures |= SlotFlag;
 
 		TX.Flags = PolyFlags;
 
