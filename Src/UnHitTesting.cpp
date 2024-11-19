@@ -638,7 +638,7 @@ void UICBINDx11RenderDevice::SetupPixelHitTest()
 	DWORD Index = (PixelTopIndex >= 0 ? PixelTopIndex : 0);
 
 	// Metallicafan212:	Convert implicitly to BGRA, as that's what will be written to the screen (D3DFMT_ARGB)
-	FPixelIndex			Temp;
+	//FPixelIndex			Temp;
 	FPixelIndexRGBA		RGBTemp;
 
 	// Metallicafan212:	Simplify the selection code by only using a RGBA render target
@@ -659,18 +659,6 @@ void UICBINDx11RenderDevice::SetupPixelHitTest()
 		// Metallicafan212:	Set the global color
 		CurrentHitColor = FPlane(Temp.R / 255.0f, Temp.G / 255.0f, Temp.B / 255.0f, 1.0f);
 	}
-	*/
-
-	// Metallicafan212:	Embed this into the vertex color of the item
-	/*
-#if DX11_HP2
-	GlobalPolyflagVars.SelectionColor	= CurrentHitColor.Vect();
-#else
-	// Metallicafan212:	TODO! Slice it
-	GlobalPolyflagVars.SelectionColor	= CurrentHitColor;
-#endif
-
-	UpdatePolyflagsVars();
 	*/
 
 	unguard;

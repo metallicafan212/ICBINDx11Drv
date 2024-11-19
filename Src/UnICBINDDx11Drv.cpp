@@ -1762,7 +1762,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		if (sp3 != nullptr)
 		{
 			GLog->Logf(TEXT("DX11: Setting HDR colorspace"));
-			sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);//DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
+			sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);//DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
 			sp3->Release();
 		}
 	}
