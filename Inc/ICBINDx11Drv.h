@@ -294,8 +294,10 @@ class UDX11RenderTargetTexture : public UTexture
 		RTD2D(nullptr),
 		RTDXGI(nullptr),
 		RTTexCopy(nullptr),
-		D3DDev(nullptr),
-		EngineRTTex(nullptr)
+		D3DDev(nullptr)
+#if DX11_UNREAL_227
+		,EngineRTTex(nullptr)
+#endif
 	{
 
 	}
