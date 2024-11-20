@@ -2051,7 +2051,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	// Metallicafan212:	Reset our bound textures
 	for (INT i = 0; i < MAX_TEXTURES; i++)
 	{
-		SetTexture(0, nullptr, 0);
+		SetTexture(i, nullptr, 0);
 	}
 
 	// Metallicafan212:	Setup the depth stencil state

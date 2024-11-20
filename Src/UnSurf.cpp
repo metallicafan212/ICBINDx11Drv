@@ -349,7 +349,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	if (BoundTextures[3].TexInfoHash != 0)
 	{
 		UVInfo.LFScale.Z = BoundTextures[3].UScale * 0.5f;
-		UVInfo.LFScale.W = BoundTextures[3].VScale + 0.5f;
+		UVInfo.LFScale.W = BoundTextures[3].VScale * 0.5f;
 	}
 
 #endif
