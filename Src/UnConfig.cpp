@@ -75,7 +75,10 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	New TileList 469e support
 	SupportsDrawTileList	= 1;
 #elif DX11_UNREAL_227
-	NeedsMaskedFonts = 0;
+	NeedsMaskedFonts	= 0;
+	SupportsAlphaBlend	= 1;
+	SupportsHDLightmaps = 1;
+	SupportsNewBTC		= 1;
 #endif
 
 	if (!GConfig->GetBool(ClsName, TEXT("DetailTextures"), (UBOOL&)DetailTextures))

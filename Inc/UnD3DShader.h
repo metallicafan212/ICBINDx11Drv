@@ -66,7 +66,7 @@ struct FFrameShaderVars
 	}
 };
 
-#if DX11_HP2
+#if DX11_DISTANCE_FOG
 // Metallicafan212:	Just a buffer for fog settings
 //					Only used in HP2
 struct FDistFogVars

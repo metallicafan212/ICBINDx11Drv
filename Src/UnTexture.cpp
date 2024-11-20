@@ -446,7 +446,7 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, 
 #endif
 		if (Type == nullptr)
 		{
-			appErrorf(TEXT("Metallicafan212 you idiot, you forgot to add a descriptor for %d"), DaTex->Format);
+			appErrorf(TEXT("Metallicafan212 you idiot, you forgot to add a descriptor for %u"), Info.Format);
 		}
 
 		// Metallicafan212:	Test here if we need to conver it to a different format
@@ -1155,10 +1155,14 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			}
 		}
 
-#if DX11_HP2
+#if DX11_DISTANCE_FOG
 		// Metallicafan212:	Set the correct fake fog values
 		//					Reset fog if the XOR was Translucent or Modulated
+#if DX11_HP2
 		if ((FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues) && (Xor & (PF_Translucent | PF_Modulated | PF_AlphaBlend | PF_Highlighted | PF_NoFog)))
+#elif DX11_UNREAL_227
+		if ((FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues) && (Xor & (PF_Translucent | PF_Modulated | PF_AlphaBlend | PF_Highlighted)))
+#endif
 		{
 			// Metallicafan212:	Don't allow for this to work if we're in a stack...
 			//					TODO!!!!!
@@ -1166,6 +1170,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			{
 				PFLAG Flags = (blendFlags & RELEVANT_BLEND_FLAGS);
 
+#if DX11_HP2
 				if (Flags & PF_NoFog)
 				{
 					//PushDistanceFogState();
@@ -1177,6 +1182,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 					bUpdateFogBuff				= 1;
 				}
 				else
+#endif
 				{
 					FogShaderVars.bForceFogOff = 0;
 					// Metallicafan212:	Translucent gets combined with a few other flags to set a specific hack
@@ -1290,7 +1296,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			UpdatePolyflagsVars();
 		}
 
-#if DX11_HP2
+#if DX11_DISTANCE_FOG
 		if (bUpdateFogBuff)
 		{
 			UpdateFogSettings();

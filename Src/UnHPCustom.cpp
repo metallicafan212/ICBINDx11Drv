@@ -559,7 +559,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 }
 #endif
 
-#if DX11_HP2
+#if DX11_DISTANCE_FOG
 // Metallicafan212:	Viewer-based zone fog
 void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FPlane Color, FLOAT FadeRate)
 {
@@ -610,7 +610,11 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 
 
 	// Metallicafan212:	Grab the current time
+#if DX11_HP2
 	FogShaderVars.FogSetTime			= Viewport->CurrentTime;
+#else
+	FogShaderVars.FogSetTime			= Viewport->CurrentTime.GetFloat();
+#endif
 
 	// Metallicafan212:	Keep the val around, so we can selectively set blending
 	FogShaderVars.bDoDistanceFog		= Enable;
@@ -629,7 +633,11 @@ void UICBINDx11RenderDevice::TickDistanceFog()
 	if (FogShaderVars.bFadeFogValues)
 	{
 		// Metallicafan212:	fade the current fog setting
+#if DX11_HP2
 		FLOAT CurrPos = FogShaderVars.FogFadeRate <= 0.0f ? 1.0f : ((Viewport->CurrentTime - FogShaderVars.FogSetTime) / FogShaderVars.FogFadeRate);
+#else
+		FLOAT CurrPos = FogShaderVars.FogFadeRate <= 0.0f ? 1.0f : ((Viewport->CurrentTime.GetFloat() - FogShaderVars.FogSetTime) / FogShaderVars.FogFadeRate);
+#endif
 
 		if (CurrPos >= 1.0f)
 		{
@@ -884,6 +892,10 @@ void UICBINDx11RenderDevice::SetRenderTargetTexture(UTexture* Tex)
 		// Metallicafan212:	Set the D2DRT as well
 		m_CurrentD2DRT = RT->RTD2D.Get();
 #endif
+
+#if DX11_UNREAL_227
+		SetSceneNode(RT->EngineRTTex->Frame);
+#endif
 	}
 	else
 	{
@@ -917,9 +929,13 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 
 	EndBuffering();
 
+	UDX11RenderTargetTexture* RT = nullptr;
+
 	// Metallicafan212:	Pop our RT off the stack
 	if (RTStack.Num())
 	{
+		RT = RTStack(RTStack.Num() - 1);
+
 		RTStack.Remove(RTStack.Num() - 1);
 	}
 
@@ -951,6 +967,11 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 
 		BoundRT = nullptr;
 
+#if DX11_UNREAL_227
+		// Metallicafan212:	Reset to the full size
+		SetSceneNode(nullptr);
+#endif
+
 #if DX11_D2D
 		// Metallicafan212:	Restore the D2D render target
 		m_CurrentD2DRT = m_D2DRT;
@@ -981,10 +1002,14 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 		BoundRT = NewRT;
 
 		// Metallicafan212:	Also set the D2D target
-
 #if DX11_D2D
 		// Metallicafan212:	Set the D2DRT as well
 		m_CurrentD2DRT = BoundRT->RTD2D.Get();
+#endif
+
+#if DX11_UNREAL_227
+		// Metallicafan212:	Set the frame size
+		SetSceneNode(BoundRT->EngineRTTex->Frame);
 #endif
 	}
 

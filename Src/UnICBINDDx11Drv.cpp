@@ -1120,6 +1120,12 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 
 	RegisterTextureFormat(TEXF_BC7, DXGI_FORMAT_BC7_UNORM, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
 
+	// Metallicafan212:	227 specific
+#if DX11_UNREAL_227
+	RegisterTextureFormat(TEXF_RGB10A2_LM, DXGI_FORMAT_R10G10B10A2_UNORM, 0);
+	RegisterTextureFormat(TEXF_RGB10A2, DXGI_FORMAT_R10G10B10A2_UNORM, 0);
+#endif
+
 	return 1;
 
 	unguard;

@@ -45,12 +45,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	// Metallicafan212:	TODO! Check if we were rendering something else and then flush it?
 	if (GIsEditor && (PolyFlags & PF_Selected) && m_HitData == nullptr)
 	{
-#if DX11_HP2
 		GlobalPolyflagVars.SelectionColor	= ActorSelectionColor.Plane().Vect();
-#else
-		// Metallicafan212:	TODO! Slice warning
-		GlobalPolyflagVars.SelectionColor	= ActorSelectionColor.Plane();
-#endif
 
 		// Metallicafan212:	TODO! Maybe mark a var that sets if we should be flushing the polyflag vars?
 		if (CurrentShader != FMeshShader)
@@ -68,13 +63,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	SetTexture(0, &Info, PolyFlags);
 
 	// Metallicafan212:	In HP2, I got tired of seeing the random numbers everywhere, so I made a definition for the flags, and then updated them engine-wide
-#if DX11_HP2
 	if ((GUglyHackFlags & HF_PostRender))
-#elif DX11_UT_469
-	if((GUglyHackFlags & HACKFLAGS_NoNearZ))
-#else
-	if((GUglyHackFlags & 0x1))
-#endif
 	{
 		if(!m_nearZRangeHackProjectionActive)
 			SetProjectionStateNoCheck(true);
@@ -367,6 +356,10 @@ void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo
 {
 	guard(UICBINDx11RenderDevice::DrawGouraudPolyList);
 
+	// Metallicafan212:	Reject invalid points (sanity check)
+	if(NumPts < 3)
+		return;
+
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Triangles);
 
@@ -394,7 +387,6 @@ void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo
 
 	// Metallicafan212:	We have to implement specific effects ourselves when using this
 	//					Detect them here
-
 	FLOAT UScale = Info.UScale * Info.USize / 256.0f;
 	FLOAT VScale = Info.VScale * Info.VSize / 256.0f;
 

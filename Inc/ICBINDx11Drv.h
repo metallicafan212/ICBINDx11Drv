@@ -113,6 +113,9 @@
 
 #endif
 
+// Metallicafan212:	Distance fog settings
+#define DX11_DISTANCE_FOG DX11_HP2 || DX11_UNREAL_227
+
 #define INT_INDEX_BUFF 1
 
 #if INT_INDEX_BUFF
@@ -274,6 +277,10 @@ class UDX11RenderTargetTexture : public UTexture
 
 	MS::ComPtr<ID3D11ShaderResourceView>	RTSRView;
 
+#if DX11_UNREAL_227
+	FRenderToTexture*						EngineRTTex;
+#endif
+
 	// Metallicafan212:	Variable to hold the texture object (for ->SetTexture)
 	UDX11RenderTargetTexture()
 		: UTexture(),
@@ -287,7 +294,8 @@ class UDX11RenderTargetTexture : public UTexture
 		RTD2D(nullptr),
 		RTDXGI(nullptr),
 		RTTexCopy(nullptr),
-		D3DDev(nullptr)
+		D3DDev(nullptr),
+		EngineRTTex(nullptr)
 	{
 
 	}
@@ -1056,7 +1064,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	Constant buffer for global info
 	ID3D11Buffer*						FrameConstantsBuffer;
 
-#if DX11_HP2
+#if DX11_DISTANCE_FOG
 	// Metallicafan212:	Distance fog settings
 	FDistFogVars						GlobalDistFogSettings;
 	ID3D11Buffer*						GlobalDistFogBuffer;
@@ -2065,6 +2073,15 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	virtual void DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, int NumPts, PFLAG PolyFlags, FSpanBuffer* Span);
 
 	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet);
+
+	virtual BYTE SetZTestMode(BYTE Mode);
+
+	UBOOL PushRenderToTexture(FRenderToTexture* Tex);
+
+	void PopRenderToTexture();
+
+	void PreDrawGouraud(FSceneNode* Frame, FFogSurf& FogSurf);
+	void PostDrawGouraud(FSceneNode* Frame, FFogSurf& FogSurf);
 #else
 	// Metallicafan212:	Base defs for most UE1 games, may have to be overrided
 	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet);
@@ -2100,7 +2117,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	virtual void PrecacheTexture(FTextureInfo& Info, PFLAG PolyFlags);
 
-#if DX11_HP2
+#if DX11_DISTANCE_FOG
 
 	// Metallicafan212:	Viewer-based zone fog
 	virtual void SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FPlane Color, FLOAT FadeRate);
