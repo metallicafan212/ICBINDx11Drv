@@ -86,8 +86,24 @@
 
 // Metallicafan212:	Hard-code shaders for comp play
 //					TODO! Should probably only be enabled for build built with the official patch and released on Github
-#define DX11_HARDCODE_SHADERS 1
 
+// Metallicafan212:	For now, leave the shaders un-hardcoded so that we can work with distance fog, etc.
+//#define DX11_HARDCODE_SHADERS 1
+
+#endif
+
+// Metallicafan212:	Needed for non-227 targets
+#if !DX11_UNREAL_227
+enum ERenderZTest
+{
+	ZTEST_Less,
+	ZTEST_Equal,
+	ZTEST_LessEqual,
+	ZTEST_Greater,
+	ZTEST_GreaterEqual,
+	ZTEST_NotEqual,
+	ZTEST_Always
+};
 #endif
 
 // Metallicafan212:	TODO! Generic game support

@@ -51,7 +51,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	//Driver flags
 	SpanBased				= 0;
 	SupportsFogMaps			= 1;
+#if !DX11_UNREA_227
 	SupportsDistanceFog		= 0;
+#endif
 	VolumetricLighting		= 1;
 	FullscreenOnly			= 0;
 	SupportsLazyTextures	= 0;
@@ -79,6 +81,7 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	SupportsAlphaBlend	= 1;
 	SupportsHDLightmaps = 1;
 	SupportsNewBTC		= 1;
+	SupportsDistanceFog	= 1;
 #endif
 
 	if (!GConfig->GetBool(ClsName, TEXT("DetailTextures"), (UBOOL&)DetailTextures))

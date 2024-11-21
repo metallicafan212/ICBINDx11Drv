@@ -155,7 +155,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_D3DCommandList);
 
 	SAFE_RELEASE(FrameConstantsBuffer);
-#if DX11_HP2
+#if DX11_DISTANCE_FOG
 	SAFE_RELEASE(GlobalDistFogBuffer);
 #endif
 	SAFE_RELEASE(GlobalPolyflagsBuffer);
@@ -612,7 +612,7 @@ MAKE_DEVICE:
 	D3D11_BUFFER_DESC PolyConst = { sizeof(FPolyflagVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
 	D3D11_BUFFER_DESC TexConst	= { sizeof(FBoundTextures), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
 
-#if DX11_HP2
+#if DX11_DISTANCE_FOG
 	D3D11_BUFFER_DESC DistConst = { sizeof(FDistFogVars), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
 #endif
 #else
@@ -620,7 +620,7 @@ MAKE_DEVICE:
 	D3D11_BUFFER_DESC PolyConst = { sizeof(FPolyflagVars), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
 	D3D11_BUFFER_DESC TexConst	= { sizeof(FBoundTextures), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
 
-#if DX11_HP2
+#if DX11_DISTANCE_FOG
 	D3D11_BUFFER_DESC DistConst = { sizeof(FDistFogVars), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
 #endif
 #endif
@@ -637,7 +637,7 @@ MAKE_DEVICE:
 	m_RenderContext->CSSetConstantBuffers(0, 1, &FrameConstantsBuffer);
 
 	// Metallicafan212:	Don't even create it if we're not in HP2
-#if DX11_HP2
+#if DX11_DISTANCE_FOG
 	// Metallicafan212:	Now create one for the distance fog settings
 	hr = m_D3DDevice->CreateBuffer(&DistConst, nullptr, &GlobalDistFogBuffer);
 
@@ -1029,7 +1029,7 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	FogHackPopCount		= 0;
 
 	FrameConstantsBuffer	= nullptr;
-#if DX11_HP2
+#if DX11_DISTANCE_FOG
 	GlobalDistFogBuffer		= nullptr;
 #endif
 	GlobalPolyflagsBuffer	= nullptr;
@@ -1101,6 +1101,7 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	RegisterTextureFormat(TEXF_DXT1, DXGI_FORMAT_BC1_UNORM, 0, 1, 8, &FD3DTexType::BlockCompressionPitch);
 #endif
 
+#if DX11_HP2 || DX11_UT_469 || DX11_UNREAL_227
 	RegisterTextureFormat(TEXF_DXT3, DXGI_FORMAT_BC2_UNORM, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
 
 	RegisterTextureFormat(TEXF_DXT5, DXGI_FORMAT_BC3_UNORM, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
@@ -1109,10 +1110,14 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 
 	RegisterTextureFormat(TEXF_BC5, DXGI_FORMAT_BC5_UNORM, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
 
+	// Metallicafan212:	TODO! Add a HP2 version
+#if DX11_UNREAL_227
+	RegisterTextureFormat(TEXF_BC5_S, DXGI_FORMAT_BC5_SNORM, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
+#endif
+
 	// Metallicafan212:	I'll take whatever need to be done for BC6, as it's currently unimplemented in HP2
 	//					So, if the format needs to be changed, just change it and I'll make it match when I finally finish implementing it
 	//					AMD compressonator wasn't producing this correctly (which is why I disabled it)
-#if DX11_UT_469 || DX11_HP2 || DX11_UNREAL_227
 	RegisterTextureFormat(TEXF_BC6H, DXGI_FORMAT_BC6H_UF16, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
 //#else
 //	RegisterTextureFormat(TEXF_BC6H, DXGI_FORMAT_BC6H_UF16, 0, 16, &FD3DTexType::BlockCompressionPitch);
@@ -1124,6 +1129,8 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 #if DX11_UNREAL_227
 	RegisterTextureFormat(TEXF_RGB10A2_LM, DXGI_FORMAT_R10G10B10A2_UNORM, 0);
 	RegisterTextureFormat(TEXF_RGB10A2, DXGI_FORMAT_R10G10B10A2_UNORM, 0);
+	RegisterTextureFormat(TEXF_RGBA16, DXGI_FORMAT_R16G16B16A16_UNORM, 0, 0, 8);
+	RegisterTextureFormat(TEXF_RGB16_, DXGI_FORMAT_R16G16B16A16_UNORM, 0, 0, 8);
 #endif
 
 	return 1;
@@ -2228,7 +2235,7 @@ void UICBINDx11RenderDevice::Exit()
 
 	// Metallicafan212:	2024, also free the buffers holy shit
 	SAFE_RELEASE(FrameConstantsBuffer);
-#if DX11_HP2
+#if DX11_DISTANCE_FOG
 	SAFE_RELEASE(GlobalDistFogBuffer);
 #endif
 	SAFE_RELEASE(GlobalPolyflagsBuffer);
@@ -2572,7 +2579,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	FlashScale		= InFlashScale;
 	FlashFog		= InFlashFog;
 
-#if DX11_HP2
+#if DX11_DISTANCE_FOG
 	if (FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues)
 	{
 		// Metallicafan212:	Fix a random bug... Restore the fog color

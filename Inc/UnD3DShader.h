@@ -236,6 +236,10 @@ public:
 			Macros.AddItem({ "WINE", "0" });
 		}
 
+#if DX11_UNREAL_227
+		Macros.AddItem({"DX11_UNREAL_227", "1"});
+#endif
+
 		Macros.AddItem({ "FIRST_USER_CONSTBUFF", FIRST_USER_CONSTBUFF_STR});
 
 #if EXTRA_VERT_INFO

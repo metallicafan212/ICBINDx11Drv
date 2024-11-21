@@ -25,6 +25,8 @@ BYTE UICBINDx11RenderDevice::SetZTestMode(BYTE Mode)
 	return Prev;
 	*/
 
+	return ZTEST_LessEqual;
+
 	unguard;
 }
 

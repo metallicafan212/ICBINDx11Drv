@@ -569,6 +569,11 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 	if (!Enable && !FogShaderVars.bDoDistanceFog)
 		return;
 
+#if DX11_UNREAL_227
+	// Metallicafan212:	TODO!
+	Color.W = 1.0f;
+#endif
+
 	// Metallicafan212:	Update the values if it's enabled
 	FogShaderVars.FogFadeRate = FadeRate;
 
@@ -577,6 +582,8 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 		// Metallicafan212:	Check if it's equal
 		if(FogShaderVars.bDoDistanceFog && FogShaderVars.TargetFogColor == Color && FogShaderVars.CurrentFogStart == FogStart && FogShaderVars.CurrentFogEnd == FogEnd)
 			return;
+
+		EndBuffering();
 
 		// Metallicafan212:	Save the fog settings
 		FogShaderVars.LastFogColor		= FogShaderVars.DistanceFogColor;
@@ -606,6 +613,8 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 		FogShaderVars.bFadeFogValues	= 1;
 
 		FogShaderVars.CurrentFogStart	= FogShaderVars.CurrentFogEnd = 0.0f;
+
+		EndBuffering();
 	}
 
 
@@ -619,6 +628,7 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 	// Metallicafan212:	Keep the val around, so we can selectively set blending
 	FogShaderVars.bDoDistanceFog		= Enable;
 
+	TickDistanceFog();
 	UpdateFogSettings();
 
 
