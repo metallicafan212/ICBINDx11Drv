@@ -113,6 +113,12 @@ struct VSInput
 	#define COMMON_VARS
 #endif
 
+#if !NO_CUSTOM_RMODES || DX11_UNREAL_227
+#ifndef DO_DISTANCE_FOG
+#define DO_DISTANCE_FOG 1
+#endif
+#endif
+
 #if DO_STANDARD_BUFFER
 cbuffer CommonBuffer : register (START_CONST_NUM)
 {
@@ -183,7 +189,7 @@ cbuffer TextureVariables : register (b3)
 	float3 	TexturePad		: packoffset(c1);
 };
 
-#if !NO_CUSTOM_RMODES
+#if DO_DISTANCE_FOG
 cbuffer DFogVariables : register (b1)
 {
 	float4 	DistanceFogColor 	: packoffset(c0);
@@ -192,6 +198,7 @@ cbuffer DFogVariables : register (b1)
 	float3	Paddy3				: packoffset(c2.y);
 };
 
+#if PIXEL_SHADER
 // Metallicafan212:	Distance fog shit
 //					TODO! A better algorithm????
 //					I have just straight ported the assembly code I wrote a while ago (since I'm a lazy fucking bastard)
@@ -210,8 +217,10 @@ float DoDistanceFog(float InZ)
 	
 	return 0.0f;
 }
+#endif
+#endif
 
-#if PIXEL_SHADER
+#if !NO_CUSTOM_RMODES && PIXEL_SHADER
 // Metallicafan212:	HACK!!! To reject black and white on UI tiles, I don't want to have to update all the shaders...
 static bool		bRejectBW;
 
@@ -228,6 +237,21 @@ static float	CurrentAlphaReject;
 	if(RendMap == REN_Depth) \
 		ColorIn.xyz = input.origZ / DepthDrawLimit;
 
+#else
+#if PIXEL_SHADER
+
+// Metallicafan212:	Hacked global!!!
+static float	CurrentAlphaReject;
+
+#define CLIP_PIXEL(ColorIn) \
+	if(!(ShaderFlags & SF_AlphaEnabled)) \
+		ColorIn.w = 1.0f; \
+	else if(ColorIn.w < CurrentAlphaReject) \
+		discard;
+#endif
+#endif
+
+#if PIXEL_SHADER && DO_DISTANCE_FOG
 float4 DoPixelFog(float DistFog, float4 Color)
 {
 	// Metallicafan212:	Early bail
@@ -243,20 +267,6 @@ float4 DoPixelFog(float DistFog, float4 Color)
 	
 	return float4(Temp, Color.w);
 }
-
-#endif
-#else
-#if PIXEL_SHADER
-
-// Metallicafan212:	Hacked global!!!
-static float	CurrentAlphaReject;
-
-#define CLIP_PIXEL(ColorIn) \
-	if(!(ShaderFlags & SF_AlphaEnabled)) \
-		ColorIn.w = 1.0f; \
-	else if(ColorIn.w < CurrentAlphaReject) \
-		discard;
-#endif
 #endif
 
 // Metallicafan212:	Moved from the ResScaling.hlsl shader

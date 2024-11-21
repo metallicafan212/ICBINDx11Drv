@@ -139,13 +139,13 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	Set our alpha for lumos
 	//DiffColor.w *= SurfAlpha;
 	
-#if !NO_CUSTOM_RMODES
+#if DO_DISTANCE_FOG
 	// Metallicafan212:	Get the distance fog, using the pixel depth
 	if(bDoDistanceFog)
 	{
 		float NewFog = DoDistanceFog(input.origZ);
 		
-		DiffColor = DoPixelFog(/*input.distFog*/NewFog, DiffColor);
+		DiffColor = DoPixelFog(NewFog, DiffColor);
 	}
 #endif
 	

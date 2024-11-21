@@ -8,7 +8,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	// Metallicafan212:	See if this needs alpha rejection		
 	CLIP_PIXEL(input.color);
 	
-#if !NO_CUSTOM_RMODES
+#if DO_DISTANCE_FOG
 	// Metallicafan212:	Calculate distance fog
 	if(bDoDistanceFog)
 	{

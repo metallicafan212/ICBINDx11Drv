@@ -44,7 +44,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	//					Reevaluate how we do this!!!!
 	CLIP_PIXEL(DiffColor);
 	
-#if !NO_CUSTOM_RMODES
+#if DO_DISTANCE_FOG
 	// Metallicafan212:	Calculate distance fog
 	if(bDoDistanceFog)
 	{
@@ -52,7 +52,9 @@ float4 PxShader(PSInput input) : SV_TARGET
 		DiffColor = DoPixelFog(Fog, DiffColor);
 	}
 	//}
-	
+#endif
+
+#if !NO_CUSTOM_RMODES
 	bRejectBW = input.bRejectBW;
 #endif
 	

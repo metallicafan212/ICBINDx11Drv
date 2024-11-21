@@ -7,7 +7,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	CLIP_PIXEL(input.color);
 	
-#if !NO_CUSTOM_RMODES
+#if DO_DISTANCE_FOG
 	// Metallicafan212:	Calculate distance fog
 	if(bDoDistanceFog)
 	{
