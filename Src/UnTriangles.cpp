@@ -183,7 +183,9 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	}
 
 	// Metallicafan212:	TODO!
+#if !DX11_UNREAL_227
 	FMeshShader->bNoMeshOpacity = 1;
+#endif
 
 	FMeshShader->Bind(m_RenderContext);
 
@@ -410,7 +412,9 @@ void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo
 	}
 
 	// Metallicafan212:	TODO!
+#if !DX11_UNREAL_227
 	FMeshShader->bNoMeshOpacity = 1;
+#endif
 
 	FMeshShader->Bind(m_RenderContext);
 
