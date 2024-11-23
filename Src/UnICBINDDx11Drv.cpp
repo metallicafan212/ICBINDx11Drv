@@ -1199,7 +1199,7 @@ UBOOL UICBINDx11RenderDevice::AutodetectWhiteBalance()
 	// Metallicafan212:	This FUCKING sucks, why THE FUCK do I have to do all this EXTERNAL fucking querying, why isn't there a fucking
 	//					D3DFuckAdapter->GetCurrentWhiteLevel() or a fucking IDXGIOutput->GetCurrentStupidWhiteLevelMyGod()
 	//					What fucking insane programmers are Muskysoft employing these days???????
-	//					You NEED the white level for this, BUT THEY MAKE IT VEYR HARD TO OBTAIN!!!!
+	//					You NEED the white level for this, BUT THEY MAKE IT VERY HARD TO OBTAIN!!!!
 
 	// Metallicafan212:	Code adopted from https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-querydisplayconfig#examples
 	UINT32 pathCount, modeCount;
