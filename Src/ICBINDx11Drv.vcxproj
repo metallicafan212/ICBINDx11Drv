@@ -170,7 +170,7 @@ python PreCompileShader.py</Command>
       <PreprocessorDefinitions>USEMALLOC;NDEBUG;_WINDOWS;WIN32;UNICODE;WIN32_LEAN_AND_MEAN;_SECURE_SCL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>Default</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>..\..\Core\Inc;..\..\Engine\Inc;..\..\MWindow\Inc;..\Inc;..\..\Render\Inc;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Core\Inc;..\..\Engine\Inc;..\..\MWindow\Inc;..\Inc;..\..\Render\Inc;.;..\..\MiMalloc\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -193,8 +193,8 @@ python PreCompileShader.py</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>..\..\System X64\ICBINDx11Drv.dll</OutputFile>
-      <AdditionalLibraryDirectories>..\..\Core\Lib $(Platform)\$(Configuration);..\..\Engine\Lib $(Platform)\$(Configuration);..\..\MWindow\Lib $(Platform)\$(Configuration);..\..\Render\Lib $(Platform)\$(Configuration)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>winmm.lib;Core.lib;Engine.lib;Render.lib;advapi32.lib;Dwmapi.lib;MWindow.lib;D3D11.lib;D3DCompiler.lib;Dwrite.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\Core\Lib $(Platform)\$(Configuration);..\..\Engine\Lib $(Platform)\$(Configuration);..\..\MWindow\Lib $(Platform)\$(Configuration);..\..\Render\Lib $(Platform)\$(Configuration);..\..\MiMalloc\Out\msvc-$(Platform)\$(configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>winmm.lib;Core.lib;Engine.lib;Render.lib;advapi32.lib;Dwmapi.lib;MWindow.lib;D3D11.lib;D3DCompiler.lib;Dwrite.lib;D2d1.lib;mimalloc-static.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>.\..\Lib X64\$(ProjectName).pdb</ProgramDatabaseFile>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>.\X64\Release\$(ProjectName).map</MapFileName>
