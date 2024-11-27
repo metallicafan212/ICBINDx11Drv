@@ -386,6 +386,14 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 			return 1;
 		}
 
+		// Metallicafan212:	If we're centered, move to the left????
+		FLOAT TestW = W;
+
+		if (Flags & PF_TwoSided)
+		{
+			TestW = LocalClipW;
+		}
+
 		// Metallicafan212:	Get the font map, and see if this layout has been created before
 		IDWriteTextLayout* layout = nullptr;
 
@@ -418,7 +426,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 		// Metallicafan212:	Create a text format to render it
 		if (layout == nullptr)
 		{
-			hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, W, H, &layout);
+			hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, TestW, H, &layout);
 
 			ThrowIfFailed(hr);
 
