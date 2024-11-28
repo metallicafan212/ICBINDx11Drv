@@ -40,6 +40,9 @@
 
 #define DX11_D2D_CLIP_LAYER 1
 
+// Metallicafan212:	TODO!!!! This is EXTREMELY bugged
+#define DX11_D2D_LAYOUT_CACHING 0
+
 #define RES_SCALE_IN_PROJ 0
 
 #define P8_COMPUTE_SHADER 0 
@@ -1564,8 +1567,8 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		m_VLockCount = 0;
 		m_ILockCount = 0;
 	}
-
-	FORCEINLINE void EndBuffering()
+#pragma DISABLE_OPTIMIZATION
+	/*FORCEINLINE */ void EndBuffering()
 	{
 #if DX11_D2D
 		if (m_CurrentBuff == BT_Strings && BufferedStrings.Num())
@@ -1639,9 +1642,28 @@ class UICBINDx11RenderDevice : public RD_CLASS
 			m_CurrentD2DRT->PopAxisAlignedClip();
 #endif
 
+#if DX11_D2D_LAYOUT_CACHING
 			// Metallicafan212:	Empty all buffered layouts
 			//					We're using reference counting, so all memory will be freed now
+			//FontToLayoutMap.clear();
+			
+			// Metallicafan212:	Loop and clear all _submaps_.....
+			for (auto i = FontToLayoutMap.begin(); i != FontToLayoutMap.end(); i++)
+			{
+				// Metallicafan212:	Fix if the user used random characters to size.....
+				//					TODO! Maybe remove layout caching???? This is too janky and prone to issues....
+				for (auto j = i->second.begin(); j != i->second.end(); j++)
+				{
+					while (j->second->Release() > 0)
+					{
+						j->second->Release();
+					}
+				}
+				i->second.clear();
+			}
+
 			FontToLayoutMap.clear();
+#endif
 
 			BufferedStrings.Empty();
 
@@ -1669,6 +1691,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 			m_BufferedVerts		= 0;
 		}
 	}
+#pragma ENABLE_OPTIMIZATION
 
 	// Metallicafan212:	Start and end buffering (for different types)
 	FORCEINLINE void StartBuffering(EBuffType inBuff)
