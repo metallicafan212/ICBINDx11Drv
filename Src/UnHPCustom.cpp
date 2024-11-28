@@ -130,7 +130,7 @@ void UDX11RenderTargetTexture::Destroy()
 	unguard;
 }
 
-void ReplaceInText(FString& In, const TCHAR* Match, const TCHAR* With)
+FORCEINLINE void ReplaceInText(FString& In, const TCHAR* Match, const TCHAR* With)
 {
 	guard(ReplaceInText);
 
@@ -196,7 +196,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 	if (Scale > 1.0f)
 		fontScale = Font->FontHeight * Scale;
 
-	FString FontKey = *FString::Printf(TEXT("%s %d %d %d %g"), *Font->FontName, Font->Bold, Font->Italic, Font->DropShadow, fontScale);
+	FString FontKey = FString::Printf(TEXT("%s %d %d %d %g"), *Font->FontName, Font->Bold, Font->Italic, Font->DropShadow, fontScale);
 
 	// Metallicafan212:	See if the font has been created before
 #if !USE_UNODERED_MAP_EVERYWHERE
@@ -397,6 +397,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 		// Metallicafan212:	Get the font map, and see if this layout has been created before
 		IDWriteTextLayout* layout = nullptr;
 
+#if DX11_D2D_LAYOUT_CACHING
 		auto FoundMap = FontToLayoutMap.find(DaFont);
 
 		if (FoundMap != FontToLayoutMap.end())
@@ -425,15 +426,18 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 
 		// Metallicafan212:	Create a text format to render it
 		if (layout == nullptr)
+#endif
 		{
 			hr = m_D2DWriteFact->CreateTextLayout(*LocalText, LocalText.Len(), DaFont, TestW, H, &layout);
 
 			ThrowIfFailed(hr);
 
+#if DX11_D2D_LAYOUT_CACHING
 			// Metallicafan212:	File it
 			std::unordered_map<FString, IDWriteTextLayout*>& LayoutMap = FoundMap->second;
 
 			LayoutMap[LocalText] = layout;
+#endif
 		}
 
 		/*
@@ -553,11 +557,11 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 		else
 		{
 			// Metallicafan212:	This was cached
-			/*
+#if !DX11_D2D_LAYOUT_CACHING
 			// Metallicafan212:	Only release it if we're just measuring it
 			//					TODO! Maybe cache it????
 			layout->Release();
-			*/
+#endif
 		}
 	}
 
