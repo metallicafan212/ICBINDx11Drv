@@ -1567,8 +1567,8 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		m_VLockCount = 0;
 		m_ILockCount = 0;
 	}
-
-	FORCEINLINE void EndBuffering()
+#pragma DISABLE_OPTIMIZATION
+	/*FORCEINLINE */ void EndBuffering()
 	{
 #if DX11_D2D
 		if (m_CurrentBuff == BT_Strings && BufferedStrings.Num())
@@ -1691,6 +1691,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 			m_BufferedVerts		= 0;
 		}
 	}
+#pragma ENABLE_OPTIMIZATION
 
 	// Metallicafan212:	Start and end buffering (for different types)
 	FORCEINLINE void StartBuffering(EBuffType inBuff)
