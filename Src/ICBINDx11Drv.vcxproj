@@ -249,6 +249,10 @@ python PreCompileShader.py</Command>
     <ClInclude Include="..\Inc\HP2ShaderDefs.h" />
     <ClInclude Include="..\Inc\HP2Shaders.h" />
     <ClInclude Include="..\Inc\ICBINDx11Drv.h" />
+    <ClInclude Include="..\Inc\Robin-Map\robin_growth_policy.h" />
+    <ClInclude Include="..\Inc\Robin-Map\robin_hash.h" />
+    <ClInclude Include="..\Inc\Robin-Map\robin_map.h" />
+    <ClInclude Include="..\Inc\Robin-Map\robin_set.h" />
     <ClInclude Include="..\Inc\ShaderFlags.h" />
     <ClInclude Include="..\Inc\UnD3DShader.h" />
     <ClInclude Include="..\Inc\UnShaderManager.h" />

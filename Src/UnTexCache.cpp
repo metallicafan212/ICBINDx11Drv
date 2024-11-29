@@ -1,4 +1,5 @@
-#define USE_ROBIN_MAP 1
+// Metallicafan212:	Robin-map requires C++ 17
+#define USE_ROBIN_MAP 1 && _MSVC_LANG >= 201703L
 
 // Metallicafan212:	Robin map has a LOT of conflictitory defines in it..... It has to be included first otherwise it throws a shit fit
 #if USE_ROBIN_MAP

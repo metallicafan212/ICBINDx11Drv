@@ -43,6 +43,9 @@
     <Filter Include="Header Files\HP2CompiledShaders">
       <UniqueIdentifier>{2cd6bfc3-69da-41b7-b5da-de451900d172}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Robin-Map">
+      <UniqueIdentifier>{8af3cc0f-ac9f-4cc6-962f-c43078767b1f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Inc\ICBINDx11Drv.h">
@@ -188,6 +191,18 @@
     </ClInclude>
     <ClInclude Include="..\Inc\HP2ShaderDefs.h">
       <Filter>Header Files\HP2CompiledShaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\Robin-Map\robin_growth_policy.h">
+      <Filter>Header Files\Robin-Map</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\Robin-Map\robin_hash.h">
+      <Filter>Header Files\Robin-Map</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\Robin-Map\robin_map.h">
+      <Filter>Header Files\Robin-Map</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc\Robin-Map\robin_set.h">
+      <Filter>Header Files\Robin-Map</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

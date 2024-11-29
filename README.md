@@ -20,11 +20,38 @@ Full UnrealEd support including all line drawing routines, selection, user-custo
 Full UnrealEd browser support, including the texture and mesh browser.
 
 ## What this renderer does not
-Raytracing, external texture loading, support other games (yet).
+Raytracing, external texture loading, your taxes.
 
 ## What's missing to support other games?
-The full (base) UE1 rendering interface is implemented and working. UT469 and HP2 specific extensions are also implemented.
+The full (base) UE1 rendering interface is implemented and working. UT469, HP2, and 227 specific extensions are also implemented.
 Specific game extensions (Rune, DX) are not implemented, but are planned.
+
+## Open source notices
+This repo also contains a copy of Robin-map (switchable on and off for standard std::unorderd_map) (https://github.com/Tessil/robin-map), licensed under MIT.
+```
+MIT License
+
+Copyright (c) 2017 Thibaut Goetghebuer-Planchon <tessil@gmx.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 
 ## Building
 ```
@@ -43,18 +70,16 @@ This will require the Windows 10 SDK for building, but should run under Windows 
 
 Tools I used: Visual Studio 2022 (for the C++ code), Notepad++ for HLSL. Any syntax errors in the HLSL code is an instant crash in this driver right now, be warned. In the future, I'll handle errors more gracefully.
 
-Currently, this is only able to be built for UT 469 only, other games are unimplemented and the HP2 new engine does not have public headers to allow for support. My recommendation, if you want to help improve it, is use the UT469 public SDK as a stable development platform.
+Currently, this is only able to be built for UT 469 only, other games have a basic UE1 stock implementation provided, but no current build chain support. My recommendation, if you want to help improve it, is to use the UT469 public SDK as a stable development platform.
 
 Shaders are currently configured to point to ..\Shaders, next to Sounds, Textures, etc. I did this because I want to eventually support user created HLSL code for HP2, but for ports, this might be annoying. So, in the shader header (UnD3DShader.h), the path can be quickly changed by modifying the macro SHADER_FOLDER.
-
-In the future, I might make this a config var.
 
 ## Contributing
 Contributing is welcomed! If you wish to port this to other UE1 games, fork it, make the modifications in your fork, and submit a merge request. I will review and edit as needed.
 
 My only requirement: if you make code comments, please attach your github username to them (like I have for mine). It makes it easier to identify where the code came from to identify a person to ask/”blame” for it (including myself 😃). If this is a problem for people, I can discuss it, I just want to keep it clean, readable, and able to be maintained, as this won’t be a fork, but the main code in the HP2 version. That means: anything that breaks HP2 will be removed, reviewed, or put behind a preprocessor macro by myself.
 
-If you're adding a new rendering function (such as DrawGouraudTriangle), add a new CPP file with the changes. This way, the whole file can be ignored if it's not relevant to the game. Rune, for example, has fog surface drawing.
+If you're adding a new rendering function (such as DrawGouraudTriangle), add a new CPP file with the changes. This way, the whole file can be ignored if it's not relevant to the game.
 
 For this purpose, I have placed this under the MIT license, so that people can come, fork, or even make new versions. I wouldn’t be here today without the excellent open source projects for Unreal, so I want to give back as much as possible.
 
@@ -64,8 +89,8 @@ Let me know here or on discord if these should be changed/added to.
 | Game | Define |
 | ---- | ------ |
 | UT99 | DX11_UT_99 |
-| Old Unreal UT99 | DX11_UT_469 |
-| Old Unreal 227 | DX11_UNREAL_227 |
+| OldUnreal UT99 | DX11_UT_469 |
+| OldUnreal 227 | DX11_UNREAL_227 |
 | HP1 | DX11_HP1 |
 | Rune | DX11_RUNE |
 | Deus Ex | DX11_DX |

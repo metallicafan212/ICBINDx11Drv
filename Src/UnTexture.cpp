@@ -28,27 +28,33 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 	// Metallicafan212:	Support null textures
 	if (Info == nullptr)
 	{
-		// Metallicafan212:	Unbind the texture
-		BoundTexturesInfo.CurrentBoundTextures &= ~SlotFlag;
-
 		// Metallicafan212:	Only end buffering if the slot wasn't null before!!!
 		if (TX.TexInfoHash != 0)
+		{
 			EndBuffering();
-		else if (TX.m_SRV == nullptr)//!= nullptr)
+		}
+		// Metallicafan212:	Check if the slot is still "sticky"
+		//					Somehow in my code, this is becoming a problem.....
+		else if (TX.m_SRV == nullptr && !(BoundTexturesInfo.CurrentBoundTextures & SlotFlag))//!= nullptr)
+		{
 			// Metallicafan212:	It's already been null-d out
 			return;
+		}
 
 		TX.bIsRT		= 0;
 		TX.UMult		= 1.0f;
 		TX.VMult		= 1.0f;
 		TX.TexInfoHash	= 0;
-		TX.m_SRV		= BlankResourceView;
+		TX.m_SRV		= nullptr;//BlankResourceView;
 		TX.Flags		= 0;
 
 		m_RenderContext->PSSetShaderResources(TexNum, 0, nullptr);//1, &BlankResourceView);
 		m_RenderContext->PSSetSamplers(TexNum, 0, nullptr);//1, &BlankSampler);
 
 		bWriteTexturesBuffer = 1;
+
+		// Metallicafan212:	Unbind the texture
+		BoundTexturesInfo.CurrentBoundTextures &= ~SlotFlag;
 
 		return;
 	}
