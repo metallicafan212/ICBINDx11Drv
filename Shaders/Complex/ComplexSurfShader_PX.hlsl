@@ -97,15 +97,22 @@ PSOutput PxShader(PSInput input)
 	{
 		float4 LColor 	= Light.SampleBias(LightState, input.lUV, 0.0f);
 		
+		float Mult		= 2.0f;
+		
 		// Metallicafan212:	Check for oneX blending
 		if(bOneXLightmaps)
 		{
-			DiffColor.xyz 	*= LColor.xyz;
+			Mult 		= 1.0f;
 		}
-		else
-		{
-			DiffColor.xyz 	*= LColor.xyz * 2.0f;
-		}
+		
+		/*
+#if DX11_UNREAL_227
+		// Metallicafan212:	Do a _further_ multiplication on it to get the right value
+		Mult *= 2.0f;
+#endif
+		*/
+
+		DiffColor.xyz 	*= LColor.xyz * Mult;
 		
 		//lAlpha = LColor.w;
 		

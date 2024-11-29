@@ -133,9 +133,14 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(BlankSampler);
 
 	// Metallicafan212:	Depth states for PF_Occlude
-	SAFE_RELEASE(m_DefaultZState);
-	SAFE_RELEASE(m_DefaultNoZState);
-	SAFE_RELEASE(m_DefaultNoZWriteState);
+	//SAFE_RELEASE(m_DefaultZState);
+	//SAFE_RELEASE(m_DefaultNoZState);
+	//SAFE_RELEASE(m_DefaultNoZWriteState);
+
+	for (INT i = 0; i < ARRAY_COUNT(DepthStencilStates); i++)
+	{
+		SAFE_RELEASE(DepthStencilStates[i]);
+	}
 
 	// Metallicafan212:	Clear the mode, if the device context is already existing!
 	if (m_D3DDeviceContext != nullptr)
@@ -886,6 +891,15 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 
 			UBOOL bNoDepth = (State & DXRS_NoAA) == DXRS_NoAA;
 
+			if (bNoDepth)
+			{
+				DepthStencilFlags |= DS_NoDepth;
+			}
+			else
+			{
+				DepthStencilFlags &= ~DS_NoDepth;
+			}
+
 			// Metallicafan212:	Set the right RTV and DTV based on what rendering we're currently doing
 			if (BoundRT != nullptr)
 			{
@@ -917,20 +931,27 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 				SetBlend(CurrentPolyFlags & (~PF_Occlude));
 			}
 
+			// Metallicafan212:	Set the Z test mode
+			SetZTestMode(CurrentZTestMode);
+
+			/*
 			// Metallicafan212:	Now disable Z writing, as we can't have it on at all....
 			if (!bNoDepth && (CurrentPolyFlags & PF_Occlude))
 			{
-				m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);
+				//m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);
+				bNoDepth = 1;
 			}
 			// Metallicafan212:	We have to keep around a state for JUST turning off z checking
 			else if (bNoDepth)
 			{
-				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZWriteState, 0);
+				//m_RenderContext->OMSetDepthStencilState(m_DefaultNoZWriteState, 0);
+				//SetZTestMode(ZTEST_MAX)
 			}
 			else
 			{
-				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+				//m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
 			}
+			*/
 
 			m_RenderContext->RSSetState(m_s);
 		}
@@ -1004,9 +1025,18 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	BlankSampler		= nullptr;
 
 	// Metallicafan212:	Raster states for turning on and off occlusion
-	m_DefaultZState			= nullptr;
-	m_DefaultNoZState		= nullptr;
-	m_DefaultNoZWriteState	= nullptr;
+	//m_DefaultZState			= nullptr;
+	//m_DefaultNoZState		= nullptr;
+	//m_DefaultNoZWriteState	= nullptr;
+
+	appMemzero(DepthStencilStates, sizeof(ID3D11DepthStencilState*) * ARRAY_COUNT(DepthStencilStates));
+
+	// Metallicafan212:	Make sure it's in a invalid state
+	CurrentZTestIndex	= -1;
+
+	//bNoDepth			= 0;
+	//bNoZWrite			= 0;
+	DepthStencilFlags	= 0;
 
 	ScreenSamp			= nullptr;
 
@@ -1403,9 +1433,14 @@ void UICBINDx11RenderDevice::SetupResources()
 	SAFE_RELEASE(BlankSampler);
 
 	// Metallicafan212:	Depth stencil states
-	SAFE_RELEASE(m_DefaultZState);
-	SAFE_RELEASE(m_DefaultNoZState);
-	SAFE_RELEASE(m_DefaultNoZWriteState);
+	//SAFE_RELEASE(m_DefaultZState);
+	//SAFE_RELEASE(m_DefaultNoZState);
+	//SAFE_RELEASE(m_DefaultNoZWriteState);
+
+	for (INT i = 0; i < ARRAY_COUNT(DepthStencilStates); i++)
+	{
+		SAFE_RELEASE(DepthStencilStates[i]);
+	}
 
 	// Metallicafan212:	Recreate the texture samplers
 	FlushTextureSamplers();
@@ -2061,6 +2096,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		SetTexture(i, nullptr, 0);
 	}
 
+	/*
 	// Metallicafan212:	Setup the depth stencil state
 	//					From a MSDN page https://learn.microsoft.com/en-us/windows/win32/direct3d11/d3d10-graphics-programming-guide-depth-stencil
 	D3D11_DEPTH_STENCIL_DESC dsDesc;
@@ -2109,6 +2145,19 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	hr = m_D3DDevice->CreateDepthStencilState(&dsDesc, &m_DefaultNoZWriteState);
 	ThrowIfFailed(hr);
+	*/
+
+	// Metallicafan212:	Cache depth stencil states
+	CurrentZTestIndex = -1;
+	for (INT i = 0; i < ARRAY_COUNT(DepthStencilStates); i++)
+	{
+		DepthStencilFlags = (i & 0x1 ? DS_NoZWrite : 0) | (i & 0x2 ? DS_NoDepth : 0);
+
+		SetZTestMode(i % ZTEST_MAX);
+	}
+
+	DepthStencilFlags = 0;
+	SetZTestMode(ZTEST_LessEqual);
 
 	// Metallicafan212:	Set the index and vertex buffers now (since we don't swap them in and out)
 	UINT Stride		= sizeof(FD3DVert);
@@ -2330,9 +2379,14 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_RELEASE(BlankResourceView);
 	SAFE_RELEASE(BlankSampler);
 
-	SAFE_RELEASE(m_DefaultZState);
-	SAFE_RELEASE(m_DefaultNoZState);
-	SAFE_RELEASE(m_DefaultNoZWriteState);
+	//SAFE_RELEASE(m_DefaultZState);
+	//SAFE_RELEASE(m_DefaultNoZState);
+	//SAFE_RELEASE(m_DefaultNoZWriteState);
+
+	for (INT i = 0; i < ARRAY_COUNT(DepthStencilStates); i++)
+	{
+		SAFE_RELEASE(DepthStencilStates[i]);
+	}
 
 	FlushRasterStates();
 
@@ -2573,7 +2627,9 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	}
 
 	// Metallicafan212:	Make sure Z buffering is ALWAYS on
-	m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);
+	//m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);
+	CurrentZTestIndex = -1;
+	SetZTestMode(ZTEST_LessEqual);
 
 	// Metallicafan212:	Hold onto the flash fog for future render
 	FlashScale		= InFlashScale;
@@ -3181,7 +3237,13 @@ void UICBINDx11RenderDevice::EndFlash()
 		UINT Sten = 0;
 
 		m_RenderContext->OMGetDepthStencilState(&CurState, &Sten);
-		m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+		//m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+		BYTE OldZTest		= CurrentZTestMode;
+		DWORD OldDSFlags	= DepthStencilFlags;
+
+		DepthStencilFlags	= DS_NoZWrite;
+
+		SetZTestMode(ZTEST_LessEqual);
 
 		//LockVertexBuffer(6 * sizeof(FD3DVert));
 		LockVertAndIndexBuffer(6);
@@ -3222,7 +3284,10 @@ void UICBINDx11RenderDevice::EndFlash()
 		EndBuffering();
 
 		// Metallicafan212:	Reset Z state
-		m_RenderContext->OMSetDepthStencilState(CurState, Sten);
+		//bNoZWrite = bOldZWrite;
+		DepthStencilFlags = OldDSFlags;
+		SetZTestMode(OldZTest);
+		//m_RenderContext->OMSetDepthStencilState(CurState, Sten);
 	}
 
 	unguard;

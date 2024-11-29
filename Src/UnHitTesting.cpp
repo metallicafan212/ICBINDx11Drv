@@ -145,31 +145,6 @@ struct ColorHackRGBA
 	};
 };
 
-/*
-// Metallicafan212:	HDR version of the screenshot code
-struct ColorHackHDR
-{
-	union
-	{
-		QWORD Int8;
-		struct
-		{
-#if 0
-			HalfFloat R;
-			HalfFloat G;
-			HalfFloat B;
-			HalfFloat A;
-#else
-			HalfFloat B;
-			HalfFloat G;
-			HalfFloat R;
-			HalfFloat A;
-#endif
-		};
-	};
-};
-*/
-
 #define USE_RT_SCREENSHOT 1
 
 #if DX11_UNREAL_227
@@ -185,10 +160,15 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	FLOAT OldGamma	= FrameShaderVars.Gamma;
 	FLOAT OldWB		= FrameShaderVars.WhiteLevel;
 
-	FrameShaderVars.Gamma		= 1.0f;
-	FrameShaderVars.WhiteLevel	= 1.0f;//1.0f / FrameShaderVars.WhiteLevel;//1.0f;
+#if DX11_UNREAL_227
+	if (bGammaCorrectOutput)
+#endif
+	{
+		FrameShaderVars.Gamma		= 1.0f;
+		FrameShaderVars.WhiteLevel	= 1.0f;//1.0f / FrameShaderVars.WhiteLevel;//1.0f;
 
-	UpdateGlobalShaderVars();
+		UpdateGlobalShaderVars();
+	}
 
 	// Metallicafan212:	We're going to do something funky, we're going to render the backbuffer back to a render target, and then output that
 	//					That way, it doesn't matter what mode the renderer is in, we're rendering to the lowest common denominator, DXGI_FORMAT_R8G8B8A8_UNORM
@@ -364,10 +344,15 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	SAFE_RELEASE(Stage);
 
 	// Metallicafan212:	Revert gamma and the white balance
-	FrameShaderVars.Gamma		= OldGamma;
-	FrameShaderVars.WhiteLevel	= OldWB;
+#if DX11_UNREAL_227
+	if (bGammaCorrectOutput)
+#endif
+	{
+		FrameShaderVars.Gamma		= OldGamma;
+		FrameShaderVars.WhiteLevel	= OldWB;
 
-	UpdateGlobalShaderVars();
+		UpdateGlobalShaderVars();
+	}
 
 
 	unguard;

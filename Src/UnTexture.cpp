@@ -1283,16 +1283,38 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 			// Metallicafan212:	This is a hack to prevent selection from doing z writing, but it will still do z testing
 			if ((blendFlags & PF_Memorized))
 			{
-				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+				//m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+				//SetZTestMode()
+				//bNoZWrite = 1;
+				DepthStencilFlags |= DS_NoZWrite;
+
+				// Metallicafan212:	Mark the current ZTest value as invalid
+				CurrentZTestIndex = -1;
+
+				SetZTestMode(CurrentZTestMode);
 			}
-			else 
-			if ((blendFlags & PF_Occlude))
+			else if ((blendFlags & PF_Occlude))
 			{
-				m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);
+				//m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 0);
+				//bNoZWrite = 0;
+				DepthStencilFlags &= ~DS_NoZWrite;
+
+				// Metallicafan212:	Mark the current ZTest value as invalid
+				CurrentZTestIndex = -1;
+
+				SetZTestMode(CurrentZTestMode);
 			}
 			else
 			{
-				m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+				//m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
+
+				//bNoZWrite = 1;
+				DepthStencilFlags |= DS_NoZWrite;
+
+				// Metallicafan212:	Mark the current ZTest value as invalid
+				CurrentZTestIndex = -1;
+
+				SetZTestMode(CurrentZTestMode);
 			}
 		}
 

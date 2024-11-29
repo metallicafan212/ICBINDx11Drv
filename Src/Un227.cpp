@@ -5,27 +5,85 @@
 
 // Metallicafan212:	Values from XGL
 //constexpr GLenum ModeList[] = { GL_LESS, GL_EQUAL, GL_LEQUAL, GL_GREATER, GL_GEQUAL, GL_NOTEQUAL, GL_ALWAYS };
+
+constexpr D3D11_COMPARISON_FUNC CompModes[] = { D3D11_COMPARISON_LESS, D3D11_COMPARISON_EQUAL, D3D11_COMPARISON_LESS_EQUAL, D3D11_COMPARISON_GREATER, D3D11_COMPARISON_GREATER_EQUAL, D3D11_COMPARISON_NOT_EQUAL, D3D11_COMPARISON_ALWAYS };
+
 BYTE UICBINDx11RenderDevice::SetZTestMode(BYTE Mode)
 {
 	guard(UICBINDx11RenderDevice::SetZTestMode);
 
-	// Metallicafan212:	TODO!!!! Do nothing for now, we need to create depth states
-	/*
-	if (LastZMode == Mode || Mode > 6)
+	// Metallicafan212:	Create the bitpacked key
+	INT Key		= ((INT)Mode) << 2;
+
+	// Metallicafan212:	Add on the depth stencil modifiers, it's probably not needed to and it with the known keys, but better safe than sorry
+	Key		   |= (DepthStencilFlags & (DS_NoDepth | DS_NoZWrite));
+
+	//if (Mode == CurrentZTestMode)
+	if(Key == CurrentZTestIndex || Mode >= ZTEST_MAX)
+	{
 		return Mode;
+	}
 
-	// Flush any pending render.
-	auto CurrentProgram = ActiveProgram;
-	SetProgram(No_Prog);
-	SetProgram(CurrentProgram);
+	// Metallicafan212:	Flush any rendering 
+	EndBuffering();
 
-	glDepthFunc(ModeList[Mode]);
-	BYTE Prev = LastZMode;
-	LastZMode = Mode;
-	return Prev;
-	*/
+	check(Key < ARRAY_COUNT(DepthStencilStates));
 
-	return ZTEST_LessEqual;
+	// Metallicafan212:	Keep the previous
+	BYTE OldState		= CurrentZTestMode;
+
+	// Metallicafan212:	Now update our current
+	CurrentZTestMode	= Mode;
+	CurrentZTestIndex	= Key;
+
+	// Metallicafan212:	Check if we have a valid depth stencil state
+	ID3D11DepthStencilState* State = DepthStencilStates[Key];
+
+	if (State == nullptr)
+	{
+		// Metallicafan212:	Setup the depth stencil state
+		//					From a MSDN page https://learn.microsoft.com/en-us/windows/win32/direct3d11/d3d10-graphics-programming-guide-depth-stencil
+		D3D11_DEPTH_STENCIL_DESC dsDesc;
+
+		// Depth test parameters
+		dsDesc.DepthEnable					= TRUE;
+		dsDesc.DepthWriteMask				= (Key & 0x1) ? D3D11_DEPTH_WRITE_MASK_ZERO : D3D11_DEPTH_WRITE_MASK_ALL;
+
+		dsDesc.DepthEnable					= (Key & 0x2) ? FALSE : TRUE;
+		dsDesc.StencilEnable				= (Key & 0x2) ? FALSE : TRUE;
+
+		dsDesc.DepthFunc					= CompModes[Mode];
+
+		// Stencil test parameters
+		dsDesc.StencilEnable				= FALSE;//TRUE;
+		dsDesc.StencilReadMask				= 0xFF;
+		dsDesc.StencilWriteMask				= 0xFF;
+
+		// Stencil operations if pixel is front-facing
+		dsDesc.FrontFace.StencilFailOp		= D3D11_STENCIL_OP_KEEP;
+		dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+		dsDesc.FrontFace.StencilPassOp		= D3D11_STENCIL_OP_KEEP;
+		dsDesc.FrontFace.StencilFunc		= D3D11_COMPARISON_NEVER;
+
+		// Stencil operations if pixel is back-facing
+		dsDesc.BackFace.StencilFailOp		= D3D11_STENCIL_OP_KEEP;
+		dsDesc.BackFace.StencilDepthFailOp	= D3D11_STENCIL_OP_DECR;
+		dsDesc.BackFace.StencilPassOp		= D3D11_STENCIL_OP_KEEP;
+		dsDesc.BackFace.StencilFunc			= D3D11_COMPARISON_NEVER;
+
+		// Metallicafan212:	Now create it
+		HRESULT hr = m_D3DDevice->CreateDepthStencilState(&dsDesc, &State);
+
+		ThrowIfFailed(hr);
+
+		// Metallicafan212:	File it away
+		DepthStencilStates[Key] = State;
+	}
+
+	// Metallicafan212:	Set it
+	m_RenderContext->OMSetDepthStencilState(State, 0);
+
+	return OldState;
 
 	unguard;
 }
@@ -99,7 +157,11 @@ void UICBINDx11RenderDevice::PostDrawGouraud(FSceneNode* Frame, FFogSurf& FogSur
 {
 	guard(UOpenGLRenderDevice::PostDrawGouraud);
 
-	SetDistanceFog(0, 0.0f, 0.0f, FPlane(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
+	// Metallicafan212:	Only disable if fogging is _actually_ set....
+	if (FogShaderVars.bDoDistanceFog)
+	{
+		SetDistanceFog(0, 0.0f, 0.0f, FPlane(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
+	}
 
 	unguard;
 }

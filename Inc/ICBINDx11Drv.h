@@ -106,9 +106,18 @@ enum ERenderZTest
 	ZTEST_Greater,
 	ZTEST_GreaterEqual,
 	ZTEST_NotEqual,
-	ZTEST_Always
+	ZTEST_Always,
+	ZTEST_MAX
 };
 #endif
+
+// Metallicafan212:	Flags for the depth stencil 
+enum EDepthStencilFlags
+{
+	DS_None		= 0x0,
+	DS_NoZWrite	= 0x1,
+	DS_NoDepth	= 0x2,
+};
 
 // Metallicafan212:	TODO! Generic game support
 #if !DX11_HP2 && !DX11_UT_469 && !DX11_UNREAL_227
@@ -971,6 +980,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	The depth shader resource view (for MSAA resolving)
 	ID3D11ShaderResourceView*	m_ScreenDTSRV;
 
+	/*
 	// Metallicafan212:	Default depth stencil state
 	ID3D11DepthStencilState*	m_DefaultZState;
 
@@ -979,6 +989,11 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	State for the special no AA mode when drawing tiles
 	ID3D11DepthStencilState*	m_DefaultNoZWriteState;
+	*/
+
+	// Metallicafan212:	Z test states
+	//					TODO! Maybe make this a bit better?
+	ID3D11DepthStencilState*	DepthStencilStates[ZTEST_MAX << 2];
 
 	// Metallicafan212:	Raster states
 #if USE_RASTER_ARRAY
@@ -1140,6 +1155,19 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	ID3D11SamplerState*					ScreenSamp;
 
 	PFLAG								CurrentPolyFlags;
+
+	// Metallicafan212:	Current 227 style Z test mode
+	BYTE								CurrentZTestMode;
+
+	// Metallicafan212:	Current INDEX into the depth stencil array
+	//					This is so we can (optionally) turn off features and have this still work
+	INT									CurrentZTestIndex;
+
+	// Metallicafan212:	Special modifiers to the depth stencil key
+	//					This corresponds to the bottom 2 bits
+	//					Bit 0 is no z write (~PF_Occlude)
+	//					Bit 1 is no depth/stencil (for the no-AA tiles)
+	DWORD								DepthStencilFlags;
 
 	// Metallicafan212:	If we're using a Freesync/GSync mode
 	UBOOL								bAllowTearing;
