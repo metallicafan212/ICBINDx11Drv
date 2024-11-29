@@ -1,7 +1,7 @@
 // Metallicafan212:	227 specific extensions
 #include "ICBINDx11Drv.h"
 
-#if DX11_UNREAL_227
+#if 1//DX11_UNREAL_227
 
 // Metallicafan212:	Values from XGL
 //constexpr GLenum ModeList[] = { GL_LESS, GL_EQUAL, GL_LEQUAL, GL_GREATER, GL_GEQUAL, GL_NOTEQUAL, GL_ALWAYS };
@@ -87,7 +87,9 @@ BYTE UICBINDx11RenderDevice::SetZTestMode(BYTE Mode)
 
 	unguard;
 }
+#endif
 
+#if DX11_UNREAL_227
 // Metallicafan212:	Link up 227 systems to HP2's systems
 //					TODO! This might be wasteful to make and destroy engine textures....
 //					I might want to reevaluate turning it into a substruct that I can just have a pointer if needed

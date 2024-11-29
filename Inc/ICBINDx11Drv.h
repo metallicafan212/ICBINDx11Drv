@@ -2111,6 +2111,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	virtual void DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, PFLAG PolyFlags);
 
+	// Metallicafan212:	Was a 227 specific extension, now just used in the driver code to control the Z buffer in general
+	virtual BYTE SetZTestMode(BYTE Mode);
+
 	// Metallicafan212:	Game specific rendering functions
 	//					Most may follow the UT specifications, and I might just ifdef SupportsTextureFormat
 #if DX11_HP2
@@ -2144,8 +2147,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	virtual void DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo& Info, FTransTexture** Pts, int NumPts, PFLAG PolyFlags, FSpanBuffer* Span);
 
 	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet);
-
-	virtual BYTE SetZTestMode(BYTE Mode);
 
 	UBOOL PushRenderToTexture(FRenderToTexture* Tex);
 

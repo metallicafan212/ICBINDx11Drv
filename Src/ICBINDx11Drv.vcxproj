@@ -261,6 +261,7 @@ python PreCompileShader.py</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ResScalingShader.cpp" />
+    <ClCompile Include="Un227.cpp" />
     <ClCompile Include="UnComplexSurfShader.cpp" />
     <ClCompile Include="UnComputeShader.cpp" />
     <ClCompile Include="UnConfig.cpp" />
