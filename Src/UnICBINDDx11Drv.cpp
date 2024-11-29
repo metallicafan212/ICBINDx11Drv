@@ -2594,6 +2594,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	unguard;
 }
 
+/*
 void UICBINDx11RenderDevice::ExecuteBufferedDraws()
 {
 	guard(UICBINDx11RenderDevice::ExecuteBufferedDraws);
@@ -2723,6 +2724,7 @@ void UICBINDx11RenderDevice::ExecuteBufferedDraws()
 
 	unguard;
 }
+*/
 
 void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 {

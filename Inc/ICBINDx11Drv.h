@@ -2,6 +2,7 @@
 // Metallicafan212:	TODO!
 #include "UnBuild.h"
 #include "UnObjVer.h"
+#include <unordered_map>
 
 // Metallicafan212:	If to use UpdateSubresource instead of Map for shader constants
 #define UPDATESUBRESOURCE_CONSTANTS 1
@@ -538,6 +539,7 @@ struct FD3DBoundTex
 
 // Metallicafan212:	Draw call info
 
+/*
 // Metallicafan212:	Cached render state
 //					This is so we can execute as many draw calls at once as we can
 //					This is a HEAVY TODO!!!!!
@@ -610,6 +612,7 @@ struct FDrawCall
 
 	}
 };
+*/
 
 
 // Metallicafan212:	Generic function to handle all texture types
@@ -1342,10 +1345,10 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	UBOOL						bClearSec;
 
 	// Metallicafan212:	Draws to execute at the end of the frame
-	TArray<FDrawCall*>			BufferedDraws;
+	//TArray<FDrawCall*>			BufferedDraws;
 
 	// Metallicafan212:	Pointer to the current draw
-	FDrawCall*					CurrentDraw;
+	//FDrawCall*					CurrentDraw;
 
 	inline const TCHAR* GetD3DDebugSeverity(D3D11_MESSAGE_SEVERITY s)
 	{
@@ -2279,6 +2282,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	New buffered drawing state
 	void ExecuteBufferedDraws();
 
+	/*
 	FORCEINLINE FDrawCall* AddDrawCall()
 	{
 #if DO_BUFFERED_DRAWS
@@ -2301,4 +2305,5 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		}
 #endif
 	}
+	*/
 };
