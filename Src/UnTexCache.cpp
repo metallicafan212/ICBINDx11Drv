@@ -113,8 +113,8 @@ void FTextureCache::Flush()
 	Map.clear();
 
 	// Metallicafan212:	Check what the hash size was
-	GLog->Logf(TEXT("DX11: Texture map bucket size %d"), ChildMap->QWORDMap.bucket_count());
-	GLog->Logf(TEXT("DX11: Texture masked map bucket size %d"), ChildMap->QWORDMaskedMap.bucket_count());
+	//GLog->Logf(TEXT("DX11: Texture map bucket size %d"), ChildMap->QWORDMap.bucket_count());
+	//GLog->Logf(TEXT("DX11: Texture masked map bucket size %d"), ChildMap->QWORDMaskedMap.bucket_count());
 
 	//CLEAR_MAP(DWORDMap);
 	//CLEAR_MAP(DWORDMaskedMap);
@@ -144,8 +144,8 @@ void FTextureCache::Flush()
 	Map.clear();
 
 	// Metallicafan212:	Check what the hash size was
-	GLog->Logf(TEXT("DX11: Texture map bucket size %d"), ChildMap->QWORDMap.bucket_count());
-	GLog->Logf(TEXT("DX11: Texture masked map bucket size %d"), ChildMap->QWORDMaskedMap.bucket_count());
+	//GLog->Logf(TEXT("DX11: Texture map bucket size %d"), ChildMap->QWORDMap.bucket_count());
+	//GLog->Logf(TEXT("DX11: Texture masked map bucket size %d"), ChildMap->QWORDMaskedMap.bucket_count());
 
 	//CLEAR_MAP(DWORDMap);
 	//CLEAR_MAP(DWORDMaskedMap);
