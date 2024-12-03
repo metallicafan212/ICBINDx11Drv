@@ -265,7 +265,11 @@ FORCEINLINE UBOOL GetMipInfo(const FTextureInfo& Info, FD3DTexture* Tex, BYTE* C
 		MipH	= MipBase->VSize;
 	}
 #elif DX11_UNREAL_227
-	const_cast<FTextureInfo&>(Info).Load();
+	// Metallicafan212:	Catch if this is an internal texture type
+	if (Info.Mips[MipNum]->DataPtr == nullptr)
+	{
+		const_cast<FTextureInfo&>(Info).Load();
+	}
 
 	// non-pow2 compressed textures
 	FMipmap* Mip = Info.Texture ? &Info.Texture->Mips(MipNum) : nullptr;
