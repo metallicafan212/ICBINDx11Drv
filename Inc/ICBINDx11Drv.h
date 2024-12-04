@@ -526,7 +526,8 @@ struct FD3DTexture
 
 struct FD3DBoundTex
 {
-	D3DCacheId					TexInfoHash;
+	//D3DCacheId					TexInfoHash;
+	FD3DTexture*				BoundTex;
 
 	UBOOL						bIsRT;
 
@@ -1831,7 +1832,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	Texture setting code
 	void SetTexture(INT TexNum, const FTextureInfo* Info, PFLAG PolyFlags, UBOOL bNoAF = 0);
 
-	FD3DTexture* CacheTextureInfo(const FTextureInfo& Info, PFLAG PolyFlags, UBOOL bJustSampler = 0);
+	FD3DTexture* CacheTextureInfo(const FTextureInfo& Info, PFLAG PolyFlags, FD3DTexture* ExistingBind = nullptr);
 
 	//void MakeTextureSampler(FD3DTexture* Bind, PFLAG PolyFlags);
 

@@ -327,7 +327,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	for (INT i = 0; i < 5; i++)
 	{
 		// Metallicafan212:	Copy the pan and scale info
-		if (BoundTextures[i].TexInfoHash != 0)
+		if (BoundTextures[i].BoundTex != nullptr)//TexInfoHash != 0)
 		{
 			UVInfo.bEnabledTex[i] = 1;
 			UVInfo.PanScale[i] = FPlane(BoundTextures[i].UPan, BoundTextures[i].VPan, BoundTextures[i].UMult, BoundTextures[i].VMult);
@@ -339,14 +339,14 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	}
 
 	// Metallicafan212:	And lastly the original lightmap scale
-	if (BoundTextures[1].TexInfoHash != 0)
+	if (BoundTextures[1].BoundTex != nullptr)//.TexInfoHash != 0)
 	{
 		UVInfo.LFScale.X = BoundTextures[1].UScale * 0.5f;
 		UVInfo.LFScale.Y = BoundTextures[1].VScale * 0.5f;
 	}
 
 	// Metallicafan212:	And the fog scale
-	if (BoundTextures[3].TexInfoHash != 0)
+	if (BoundTextures[3].BoundTex != nullptr)//.TexInfoHash != 0)
 	{
 		UVInfo.LFScale.Z = BoundTextures[3].UScale * 0.5f;
 		UVInfo.LFScale.W = BoundTextures[3].VScale * 0.5f;

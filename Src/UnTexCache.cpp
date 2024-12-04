@@ -26,6 +26,9 @@ public:
 	{
 		QWORDMap.reserve(TEX_BUCKET_SIZE);
 		QWORDMaskedMap.reserve(TEX_BUCKET_SIZE);
+
+		LastNorm	= nullptr;
+		LastMasked	= nullptr;
 	}
 
 	~FTextureCacheMap()
@@ -36,12 +39,16 @@ public:
 protected:
 
 #if USE_ROBIN_MAP
-	tsl::robin_map<QWORD, FD3DTexture>		QWORDMap;
-	tsl::robin_map<QWORD, FD3DTexture>		QWORDMaskedMap;
+	tsl::robin_map<QWORD, FD3DTexture*>		QWORDMap;//FD3DTexture>		QWORDMap;
+	tsl::robin_map<QWORD, FD3DTexture*>		QWORDMaskedMap;//FD3DTexture>		QWORDMaskedMap;
 #else
 	std::unordered_map<QWORD, FD3DTexture>	QWORDMap;
 	std::unordered_map<QWORD, FD3DTexture>	QWORDMaskedMap;
 #endif
+
+	// Metallicafan212:	Last request for each array
+	FD3DTexture*							LastNorm;
+	FD3DTexture*							LastMasked;
 };
 
 // Metallicafan212:	TODO! Setup the cache system
@@ -85,6 +92,8 @@ void FTextureCache::Flush()
 		} \
 		SAFE_RELEASE(Tex.P8ConvSRV); \
 		SAFE_RELEASE(Tex.P8ConvTex); \
+		/* Metallicafan212:	Now delete*/ \
+		delete Tex; \
 	} \
 	Map.Empty();
 
@@ -99,16 +108,18 @@ void FTextureCache::Flush()
 	for(auto i = Map.begin(); i != Map.end(); i++) \
 	{ \
 		/* Metallicafan212:	Release all this info */ \
-		FD3DTexture& Tex = i.value(); /*->second;*/ \
-		SAFE_RELEASE(Tex.m_View); \
-		SAFE_RELEASE(Tex.m_Tex); \
+		FD3DTexture*& Tex = i.value(); /*->second;*/ \
+		SAFE_RELEASE(Tex->m_View); \
+		SAFE_RELEASE(Tex->m_Tex); \
 		/* Metallicafan212: UAVs for each mip (unused) */ \
-		for (INT i = 0; i < Tex.UAVMips.Num(); i++) \
+		for (INT i = 0; i < Tex->UAVMips.Num(); i++) \
 		{ \
-			SAFE_RELEASE(Tex.UAVMips(i)); \
+			SAFE_RELEASE(Tex->UAVMips(i)); \
 		} \
-		SAFE_RELEASE(Tex.P8ConvSRV); \
-		SAFE_RELEASE(Tex.P8ConvTex); \
+		SAFE_RELEASE(Tex->P8ConvSRV); \
+		SAFE_RELEASE(Tex->P8ConvTex); \
+		/* Metallicafan212:	Now delete*/ \
+		delete Tex; \
 	} \
 	Map.clear();
 
@@ -130,16 +141,16 @@ void FTextureCache::Flush()
 	for(auto i = Map.begin(); i != Map.end(); i++) \
 	{ \
 		/* Metallicafan212:	Release all this info */ \
-		FD3DTexture& Tex = i->second; \
-		SAFE_RELEASE(Tex.m_View); \
-		SAFE_RELEASE(Tex.m_Tex); \
+		FD3DTexture*& Tex = i->second; \
+		SAFE_RELEASE(Tex->m_View); \
+		SAFE_RELEASE(Tex->m_Tex); \
 		/* Metallicafan212: UAVs for each mip (unused) */ \
-		for (INT i = 0; i < Tex.UAVMips.Num(); i++) \
+		for (INT i = 0; i < Tex->UAVMips.Num(); i++) \
 		{ \
-			SAFE_RELEASE(Tex.UAVMips(i)); \
+			SAFE_RELEASE(Tex->UAVMips(i)); \
 		} \
-		SAFE_RELEASE(Tex.P8ConvSRV); \
-		SAFE_RELEASE(Tex.P8ConvTex); \
+		SAFE_RELEASE(Tex->P8ConvSRV); \
+		SAFE_RELEASE(Tex->P8ConvTex); \
 	} \
 	Map.clear();
 
@@ -153,9 +164,12 @@ void FTextureCache::Flush()
 	CLEAR_MAP(ChildMap->QWORDMap);
 	CLEAR_MAP(ChildMap->QWORDMaskedMap);
 
-	ChildMap->QWORDMap.reserve(8192);
-	ChildMap->QWORDMaskedMap.reserve(8192);
+	ChildMap->QWORDMap.reserve(TEX_BUCKET_SIZE);
+	ChildMap->QWORDMaskedMap.reserve(TEX_BUCKET_SIZE);
 #endif
+
+	ChildMap->LastMasked	= nullptr;
+	ChildMap->LastNorm		= nullptr;
 
 	unguardSlow;
 }
@@ -204,26 +218,52 @@ FD3DTexture* FTextureCache::Find(D3DCacheId InID, PFLAG PolyFlags)
 		{
 			case PF_Masked:
 			{
+				if (ChildMap->LastMasked != nullptr && ChildMap->LastMasked->CacheID == InID)
+				{
+					return ChildMap->LastMasked;
+				}
 				// Metallicafan212:	See if it's in the map
 				auto	f  = ChildMap->QWORDMaskedMap.find(InID);
 #if USE_ROBIN_MAP
-				return	f != ChildMap->QWORDMaskedMap.end() ? &f.value() : nullptr;
+				FD3DTexture* Lookup = f != ChildMap->QWORDMaskedMap.end() ? f.value() : nullptr;
+
+				//return	f != ChildMap->QWORDMaskedMap.end() ? f.value() : nullptr;
 #else
-				return	f != ChildMap->QWORDMaskedMap.end() ? &f->second : nullptr;
+				FD3DTexture* Lookup = f != ChildMap->QWORDMaskedMap.end() ? f->second : nullptr;
+				//return	f != ChildMap->QWORDMaskedMap.end() ? f->second : nullptr;
 #endif
+				if (Lookup != nullptr)
+				{
+					ChildMap->LastMasked = Lookup;
+				}
+
+				return Lookup;
 
 				break;
 			}
 
 			default:
 			{
+				if (ChildMap->LastNorm != nullptr && ChildMap->LastNorm->CacheID == InID)
+				{
+					return ChildMap->LastNorm;
+				}
+
 				// Metallicafan212:	See if it's in the map
 				auto	f  = ChildMap->QWORDMap.find(InID);
 #if USE_ROBIN_MAP
-				return	f != ChildMap->QWORDMap.end() ? &f.value() : nullptr;
+				FD3DTexture* Lookup = f != ChildMap->QWORDMap.end() ? f.value() : nullptr;
+				//return	f != ChildMap->QWORDMap.end() ? f.value() : nullptr;
 #else
-				return	f != ChildMap->QWORDMap.end() ? &f->second : nullptr;
+				FD3DTexture* Lookup = f != ChildMap->QWORDMap.end() ? f->second : nullptr;
+				//return	f != ChildMap->QWORDMap.end() ? f->second : nullptr;
 #endif
+				if (Lookup != nullptr)
+				{
+					ChildMap->LastNorm = Lookup;
+				}
+
+				return Lookup;
 
 				break;
 			}
@@ -276,16 +316,24 @@ FD3DTexture* FTextureCache::Set(D3DCacheId InID, PFLAG PolyFlags)
 		{
 			case PF_Masked:
 			{
-				// Metallicafan212:	See if it's in the map
-				return &(ChildMap->QWORDMaskedMap[InID] = FD3DTexture());
+				// Metallicafan212:	Add a new texture to the map
+				FD3DTexture* NewTex				= new FD3DTexture();
+				ChildMap->LastMasked			= NewTex;
+				ChildMap->QWORDMaskedMap[InID]	= NewTex;
+				
+				return NewTex;
 
 				break;
 			}
 
 			default:
 			{
-				// Metallicafan212:	See if it's in the map
-				return &(ChildMap->QWORDMap[InID] = FD3DTexture());
+				// Metallicafan212:	Add a new texture to the map
+				FD3DTexture* NewTex				= new FD3DTexture();
+				ChildMap->LastNorm				= NewTex;
+				ChildMap->QWORDMap[InID]		= NewTex;
+
+				return NewTex;
 
 				break;
 			}

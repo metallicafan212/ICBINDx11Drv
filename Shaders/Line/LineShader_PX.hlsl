@@ -9,7 +9,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 #if DO_DISTANCE_FOG
 	// Metallicafan212:	Calculate distance fog
-	if(bDoDistanceFog)
+	if(bDoDistanceFog && !bDoSelection)
 	{
 		float Fog	= DoDistanceFog(input.origZ);
 		input.color = DoPixelFog(Fog, input.color);

@@ -29,7 +29,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 	if (Info == nullptr)
 	{
 		// Metallicafan212:	Only end buffering if the slot wasn't null before!!!
-		if (TX.TexInfoHash != 0)
+		if (TX.BoundTex != nullptr)//.TexInfoHash != 0)
 		{
 			EndBuffering();
 		}
@@ -44,7 +44,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 		TX.bIsRT		= 0;
 		TX.UMult		= 1.0f;
 		TX.VMult		= 1.0f;
-		TX.TexInfoHash	= 0;
+		//TX.TexInfoHash	= 0;
+		TX.BoundTex		= nullptr;
 		TX.m_SRV		= nullptr;//BlankResourceView;
 		TX.Flags		= 0;
 
@@ -73,14 +74,30 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 	UBOOL bSetTex = 0;
 
 	// Metallicafan212:	We have to be able to draw without a texture, so we do have to not ignore hash 0
-	if ((TX.TexInfoHash != Info->CacheID))
+	//if ((TX.TexInfoHash != Info->CacheID))
+	FD3DTexture* DaTex		= nullptr;
+	if (TX.BoundTex != nullptr)
 	{
-		bSetTex = 1;
-		EndBuffering();
+		// Metallicafan212:	See if this is the same texture _AND_ it was the same masked texture
+		if (TX.BoundTex->CacheID == Info->CacheID && (TX.BoundTex->PolyFlags & PF_Masked) == (PolyFlags & PF_Masked))
+		{
+			// Metallicafan212:	Use the saved pointer
+			DaTex = TX.BoundTex;
+		}
+		// Metallicafan212:	If the cache is the same but the flags are different, we do need to render...
+		else //if (TX.BoundTex->CacheID != Info->CacheID)
+		{
+			bSetTex = 1;
+			EndBuffering();
+		}
 	}
 
 	// Metallicafan212:	Search for the bind
-	FD3DTexture* DaTex		= TextureMap.Find(Info->CacheID, PolyFlags);//TextureMap.Find(Info->CacheID);//CacheHash);
+	if (DaTex == nullptr)
+	{
+		DaTex = TextureMap.Find(Info->CacheID, PolyFlags);
+	}
+	//FD3DTexture* DaTex		= TextureMap.Find(Info->CacheID, PolyFlags);//TextureMap.Find(Info->CacheID);//CacheHash);
 
 	// Metallicafan212:	Using Info->NeedsRealtimeUpdate steals 50fps for some reason.... It's incredibly weird
 //#if DX11_UT_469 
@@ -99,7 +116,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 
 	if(bUpload)
 	{
-		DaTex = CacheTextureInfo(*Info, PolyFlags);
+		// Metallicafan212:	Provide the existing bind to the upload code to save a map lookup
+		DaTex = CacheTextureInfo(*Info, PolyFlags, DaTex);
 	}
 
 	// Metallicafan212:	Save the UV clamp state here
@@ -116,7 +134,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 
 		EndBuffering();
 
-		TX.TexInfoHash	= Info->CacheID;
+		//TX.TexInfoHash	= Info->CacheID;
+		TX.BoundTex		= DaTex;
 		TX.UPan			= Info->Pan.X;
 		TX.VPan			= Info->Pan.Y;
 		TX.bIsRT		= DaTex->bIsRT;
@@ -126,7 +145,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 		TX.VMult		= NewVMult;
 
 		// Metallicafan212:	Get the size from the base mip!!!!
-		FMipmap* M = GetBaseMip(*Info);
+		FMipmap* M		= GetBaseMip(*Info);
 
 		// Metallicafan212:	Only try to UV clamp if the base mip is accessable
 		if (M != nullptr && (((DaTex->UClamp ^ M->USize) | (DaTex->VClamp ^ M->VSize)) != 0))
@@ -423,7 +442,7 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 }
 #endif
 
-FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, PFLAG PolyFlags, UBOOL bJustSampler)
+FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, PFLAG PolyFlags, FD3DTexture* DaTex)
 {
 	guardSlow(UICBINDx11RenderDevice::CacheTextureInfo)
 
@@ -432,7 +451,11 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, 
 	QWORD CacheID		= Info.CacheID;
 
 	// Metallicafan212:	Find the cached texture
-	FD3DTexture* DaTex	= TextureMap.Find(CacheID, PolyFlags);
+	//FD3DTexture* DaTex	= TextureMap.Find(CacheID, PolyFlags);
+	if (DaTex == nullptr)
+	{
+		DaTex = TextureMap.Find(CacheID, PolyFlags);
+	}
 
 	FD3DTexType* Type	= DaTex != nullptr ? DaTex->D3DTexType : nullptr;
 
