@@ -42,8 +42,8 @@ protected:
 	tsl::robin_map<QWORD, FD3DTexture*>		QWORDMap;//FD3DTexture>		QWORDMap;
 	tsl::robin_map<QWORD, FD3DTexture*>		QWORDMaskedMap;//FD3DTexture>		QWORDMaskedMap;
 #else
-	std::unordered_map<QWORD, FD3DTexture>	QWORDMap;
-	std::unordered_map<QWORD, FD3DTexture>	QWORDMaskedMap;
+	std::unordered_map<QWORD, FD3DTexture*>	QWORDMap;
+	std::unordered_map<QWORD, FD3DTexture*>	QWORDMaskedMap;
 #endif
 
 	// Metallicafan212:	Last request for each array
