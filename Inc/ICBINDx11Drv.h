@@ -436,6 +436,10 @@ struct FFogShaderVars
 	{
 		// Metallicafan212:	Everything should be zero, so just make it quicker
 		appMemzero(this, sizeof(FFogShaderVars));
+
+		// Metallicafan212:	Setup the hacked colors
+		TransFogColor	= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
+		ModFogColor		= FPlane(0.5f, 0.5f, 0.5f, 0.0f);
 	}
 };
 
