@@ -386,7 +386,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		LockSecondaryVertBuffer();
 #endif
 		// Metallicafan212:	Keep the base texture???
-		if (UseDX9FlatColor)
+		//if (UseDX9FlatColor)
 		{
 			SetTexture(0, nullptr, 0);
 		}
@@ -434,7 +434,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 					else
 					{
 						// Metallicafan212:	I like this look better, as it's easier to still see the underlying surfaces
-						TestColor.W = 0.75f;//0.5625f;//0.75f * 0.75f;
+						TestColor.W = 0.5625f;//0.75f * 0.75f;
 					}
 				}
 			}
