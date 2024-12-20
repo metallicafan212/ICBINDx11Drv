@@ -120,7 +120,7 @@ void FShaderManager::Init()
 			LoadHardcodedShaders();
 
 			// Metallicafan212:	Set it to the max time??
-			CacheTime		= ModTime;
+			CacheTime		= CacheFileTime;//ModTime;
 
 			bCacheInvalid	= 0;
 		}
@@ -260,7 +260,7 @@ TArray<BYTE>* FShaderManager::GetShaderBytes(FString File, FString Func, const A
 	FString RealFile;
 
 	// Metallicafan212:	On a fresh load, CacheTime should be 0
-	if (ShaderTime < CacheTime)
+	if (ShaderTime < CacheTime || DXDevice->bUsePrecompiledShaders)
 	{
 		// Metallicafan212:	See if we find the shader bytecode
 		ShaderBytes  = Bytecode.Find(Key);
