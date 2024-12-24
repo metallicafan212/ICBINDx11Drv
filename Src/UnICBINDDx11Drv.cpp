@@ -1715,13 +1715,22 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		GLog->Logf(TEXT("DX11: Resizing swap chain"));
 
-		if (bLastFullscreen != bFullscreen)
-		{
-			GLog->Logf(TEXT("DX11: Toggling fullscreen"));
-			hr = m_D3DSwapChain->SetFullscreenState(bFullscreen, nullptr);
+		// Metallicafan212:	Resize it
+		hr = m_D3DSwapChain->ResizeBuffers(2 + NumAdditionalBuffers, SizeX, SizeY, ScreenFormat, (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0));
 
-			ThrowIfFailed(hr);
+		if (FAILED(hr))//hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+		{
+			// Metallicafan212:	TODO! Recreate the device!!!
+			// RecreateDevice();
+			SetupDevice();
+			goto SetupSwap;
 		}
+		/*
+		else if(FAILED(hr))
+		{
+			appErrorf(TEXT("Failed to resize buffers with %lu"), hr);
+		}
+		*/
 
 		// Metallicafan212:	If we were fullscreen, we STILL have to call this after swapping to windowed otherwise ResizeBuffers still fails
 		if (bLastFullscreen || bFullscreen)
@@ -1732,25 +1741,19 @@ void UICBINDx11RenderDevice::SetupResources()
 			ModeDesc.Width						= SizeX;
 			ModeDesc.Height						= SizeY;
 			ModeDesc.Format						= ScreenFormat;//DXGI_FORMAT_UNKNOWN;
+			//ModeDesc.Scaling					= DXGI_MODE_SCALING_CENTERED;
 
 			hr									= m_D3DSwapChain->ResizeTarget(&ModeDesc);
 
 			ThrowIfFailed(hr);
 		}
 
-		// Metallicafan212:	Resize it
-		hr = m_D3DSwapChain->ResizeBuffers(2 + NumAdditionalBuffers, SizeX, SizeY, ScreenFormat, (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0));
+		if (bLastFullscreen != bFullscreen)
+		{
+			GLog->Logf(TEXT("DX11: Toggling fullscreen"));
+			hr = m_D3DSwapChain->SetFullscreenState(bFullscreen, nullptr);
 
-		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
-		{
-			// Metallicafan212:	TODO! Recreate the device!!!
-			// RecreateDevice();
-			SetupDevice();
-			goto SetupSwap;
-		}
-		else if(FAILED(hr))
-		{
-			appErrorf(TEXT("Failed to resize buffers with %lu"), hr);
+			ThrowIfFailed(hr);
 		}
 
 		// Metallicafan212:	Disable DXGI_PRESENT_ALLOW_TEARING if we were just windowed and went fullscreen

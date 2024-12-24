@@ -362,6 +362,8 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 	// Metallicafan212:	Don't let the user set a invalid buffer count
 	NumAdditionalBuffers	= Clamp(NumAdditionalBuffers, 0, 14);
 
+	ResolutionScale			= Max(ResolutionScale, 0.1f);
+
 	// Metallicafan212:	Find the real MSAA levels supported
 	UINT SampleCount = 1;
 	HRESULT hr = S_OK;
