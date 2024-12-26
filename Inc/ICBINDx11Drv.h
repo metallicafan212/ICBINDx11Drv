@@ -1297,8 +1297,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	We'll only call do drawing when we need to
 	EBuffType					m_CurrentBuff;
 
-	UBOOL						bIndexedBuffered;
-
 	ID3D11Buffer*				VertexBuffer;
 
 	// Metallicafan212:	Position (in bytes!!!!)

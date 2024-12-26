@@ -57,9 +57,6 @@ struct FFrameShaderVars
 	FLOAT				GammaOffsetGreen;
 	FLOAT				GammaOffsetBlue;
 
-	// Metallicafan212:	Additional padding
-	//FLOAT				Pad[3];
-
 	FFrameShaderVars()
 	{
 		appMemzero(this, sizeof(FFrameShaderVars));

@@ -11,6 +11,23 @@ void UICBINDx11RenderDevice::SetupDevice()
 {
 	guard(UICBINDx11RenderDevice::SetupDevice);
 
+	// Metallicafan212:	Init the vertex buffer vars
+	m_VertexBuff		= nullptr;
+	m_VertexBuffPos		= 0;
+	m_VertexBuffSize	= 0;
+	m_DrawnVerts		= 0;
+	m_BufferedVerts		= 0;
+
+	m_IndexBuffPos		= 0;
+	m_DrawnIndices		= 0;
+	m_IndexBuffSize		= 0;
+	m_IndexBuff			= 0;
+	m_BufferedIndices	= 0;
+
+	m_SecVertexBuff		= nullptr;
+	m_SecVertexBuffSize	= 0;
+	m_SecVertexBuffPos	= 0;
+
 	// Metallicafan212: Detect windows version and wine on non-HP2 engines
 #if !DX11_HP2
 	// Metallicafan212:	TODO!!!!! This will NOT work with games that don't have a manifest, since windows will always report a lower OS number to apps with a older manifest....

@@ -157,15 +157,21 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	guard(UICBINDx11RenderDevice::ReadPixels);
 
 	// Metallicafan212:	Save the gamma and white balance values
-	FLOAT OldGamma	= FrameShaderVars.Gamma;
-	FLOAT OldWB		= FrameShaderVars.WhiteLevel;
+	//FLOAT OldGamma	= FrameShaderVars.Gamma;
+	//FLOAT OldWB		= FrameShaderVars.WhiteLevel;
+
+	EGammaMode OldGamma = (EGammaMode)FrameShaderVars.GammaMode;
 
 #if DX11_UNREAL_227
-	if (bGammaCorrectOutput)
+	if (!bGammaCorrectOutput)
 #endif
 	{
+		/*
 		FrameShaderVars.Gamma		= 1.0f;
 		FrameShaderVars.WhiteLevel	= 1.0f;//1.0f / FrameShaderVars.WhiteLevel;//1.0f;
+		*/
+
+		FrameShaderVars.GammaMode = GM_None;
 
 		UpdateGlobalShaderVars();
 	}
@@ -345,11 +351,14 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 
 	// Metallicafan212:	Revert gamma and the white balance
 #if DX11_UNREAL_227
-	if (bGammaCorrectOutput)
+	if (!bGammaCorrectOutput)
 #endif
 	{
+		/*
 		FrameShaderVars.Gamma		= OldGamma;
 		FrameShaderVars.WhiteLevel	= OldWB;
+		*/
+		FrameShaderVars.GammaMode	= OldGamma;
 
 		UpdateGlobalShaderVars();
 	}
