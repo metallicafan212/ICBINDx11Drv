@@ -87,14 +87,6 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_D2DRasterState);
 #endif
 
-	SAFE_RELEASE(m_D3DQuery);
-	SAFE_RELEASE(m_D3DDebug);
-	SAFE_RELEASE(m_D3DQueue);
-	SAFE_RELEASE(m_D3DSwapChain);
-	SAFE_RELEASE(VertexBuffer);
-	SAFE_RELEASE(IndexBuffer);
-	SAFE_RELEASE(SecondaryVertexBuffer);
-
 	// Metallicafan212:	Render target and back buffer texture
 	SAFE_RELEASE(m_BackBuffTex);
 	SAFE_RELEASE(m_BackBuffRT);
@@ -103,6 +95,10 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_ScreenBuffTex);
 	SAFE_RELEASE(m_D3DScreenRTV);
 	SAFE_RELEASE(m_ScreenRTSRV);
+
+	SAFE_RELEASE(VertexBuffer);
+	SAFE_RELEASE(IndexBuffer);
+	SAFE_RELEASE(SecondaryVertexBuffer);
 
 	// Metallicafan212:	Selection stuff
 	SAFE_RELEASE(m_SelectionSRV);
@@ -135,6 +131,11 @@ void UICBINDx11RenderDevice::SetupDevice()
 #if P8_COMPUTE_SHADER
 	SAFE_DELETE(FP8ToRGBAShader);
 #endif
+
+	SAFE_RELEASE(m_D3DQuery);
+	SAFE_RELEASE(m_D3DDebug);
+	SAFE_RELEASE(m_D3DQueue);
+	SAFE_RELEASE(m_D3DSwapChain);
 
 	CurrentShader = nullptr;
 
@@ -1376,6 +1377,29 @@ UBOOL UICBINDx11RenderDevice::AutodetectWhiteBalance()
 	unguard;
 }
 
+void UICBINDx11RenderDevice::CheckTearingState()
+{
+	// Metallicafan212:	If to use the new Windows 10 modes. I only test if we're actually running on 10
+	//					!GIsEditor is here because using the tearing mode does something fucky in DWM, changing the window in such a way that normal non-DX11 renderers can't draw to it
+	//					I need to analyse and see what exactly it's modifying about the window and reverse that change
+#if DX11_UT_469 || DX11_HP2 || DX11_UNREAL_227
+		// Metallicafan212:	For UT (and now HP2), every time the renderer is changed, it recreates the window handle, so it's safe to provide this in the editor.
+	bAllowTearing = (1
+#else
+	bAllowTearing = (!GIsEditor
+#endif
+
+		// Metallicafan212:	2024, I added simple windows version checking to the driver for non-HP2 targets
+		//					TODO! Enable for UT469e!
+#if 1//DX11_HP2 || DX11_UT_469
+		&& GWin10
+#endif
+		&& !DisableFreeGSync
+		// Metallicafan212:	Not allowed in fullscreen
+		&& !bFullscreen
+		);
+}
+
 void UICBINDx11RenderDevice::SetupResources()
 {
 	guard(UICBINDx11RenderDevice::SetupResources);
@@ -1479,6 +1503,8 @@ void UICBINDx11RenderDevice::SetupResources()
 	}
 	*/
 
+	CheckTearingState();
+
 	if (m_D3DSwapChain == nullptr)
 	{
 	SetupSwap:
@@ -1551,25 +1577,7 @@ void UICBINDx11RenderDevice::SetupResources()
 			debugf(TEXT("D3D adapter vendor      : Unknown (%0x10)"), AdDesc.VendorId);
 		}
 
-		// Metallicafan212:	If to use the new Windows 10 modes. I only test if we're actually running on 10
-		//					!GIsEditor is here because using the tearing mode does something fucky in DWM, changing the window in such a way that normal non-DX11 renderers can't draw to it
-		//					I need to analyse and see what exactly it's modifying about the window and reverse that change
-#if DX11_UT_469 || DX11_HP2 || DX11_UNREAL_227
-		// Metallicafan212:	For UT (and now HP2), every time the renderer is changed, it recreates the window handle, so it's safe to provide this in the editor.
-		bAllowTearing = (1
-#else
-		bAllowTearing = (!GIsEditor
-#endif
-		
-		// Metallicafan212:	2024, I added simple windows version checking to the driver for non-HP2 targets
-		//					TODO! Enable for UT469e!
-#if 1//DX11_HP2 || DX11_UT_469
-			&& GWin10
-#endif
-			&& !DisableFreeGSync
-			// Metallicafan212:	Not allowed in fullscreen
-			&& !bFullscreen
-			);
+		CheckTearingState();
 
 		// Metallicafan212:	Flip discard is only limited by windows 10
 		bFlipDiscard = GWin10;
@@ -1730,7 +1738,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	If the buffer count doesn't match, resetup the device
 		if (LastAdditionalBuffers != NumAdditionalBuffers)
 		{
-			SetupDevice();
+			SAFE_RELEASE(m_D3DSwapChain);
 			goto SetupSwap;
 		}
 
@@ -1743,42 +1751,54 @@ void UICBINDx11RenderDevice::SetupResources()
 		}
 		*/
 
+		// Metallicafan212:	Exit fullscreen early?
+		if (bLastFullscreen != bFullscreen && !bFullscreen)
+		{
+			GLog->Logf(TEXT("DX11: Toggling fullscreen"));
+			hr = m_D3DSwapChain->SetFullscreenState(bFullscreen, nullptr);
+
+			CheckTearingState();
+
+			ThrowIfFailed(hr);
+		}
+
 		// Metallicafan212:	If we were fullscreen, we STILL have to call this after swapping to windowed otherwise ResizeBuffers still fails
-		if (bLastFullscreen || bFullscreen)
+		if (1)//bLastFullscreen || bFullscreen)
 		{
 			// Metallicafan212:	Disable tearing in fullscreen
-			bAllowTearing = 0;
+			CheckTearingState();
 
 			// Metallicafan212:	Resize the window!
 			DXGI_MODE_DESC ModeDesc{};
 
 			ModeDesc.Width						= SizeX;
 			ModeDesc.Height						= SizeY;
-			ModeDesc.Format						= DXGI_FORMAT_UNKNOWN;
+			ModeDesc.Format						= ScreenFormat;//DXGI_FORMAT_UNKNOWN;
 			//ModeDesc.Scaling					= DXGI_MODE_SCALING_CENTERED;
 
 			hr									= m_D3DSwapChain->ResizeTarget(&ModeDesc);
 
 			ThrowIfFailed(hr);
 		}
-		//else
-		//{
-			// Metallicafan212:	Resize it
-			hr = m_D3DSwapChain->ResizeBuffers(2 + NumAdditionalBuffers, SizeX, SizeY, ScreenFormat, (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0));
 
-			if (FAILED(hr))//hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
-			{
-				// Metallicafan212:	TODO! Recreate the device!!!
-				// RecreateDevice();
-				SetupDevice();
-				goto SetupSwap;
-			}
-		//}
+		// Metallicafan212:	Resize it
+		hr = m_D3DSwapChain->ResizeBuffers(2 + NumAdditionalBuffers, SizeX, SizeY, ScreenFormat, (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0));
+
+		if (FAILED(hr))//hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+		{
+			// Metallicafan212:	TODO! Recreate the device!!!
+			// RecreateDevice();
+			SetupDevice();
+			//SAFE_RELEASE(m_D3DSwapChain);
+			goto SetupSwap;
+		}
 
 		if (bLastFullscreen != bFullscreen)
 		{
 			GLog->Logf(TEXT("DX11: Toggling fullscreen"));
 			hr = m_D3DSwapChain->SetFullscreenState(bFullscreen, nullptr);
+
+			CheckTearingState();
 
 			ThrowIfFailed(hr);
 		}
@@ -2269,6 +2289,7 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 		TestY	= ClosestY;
 	}
 
+
 	if (Viewport != nullptr)
 	{
 		// Metallicafan212:	Force 32bit color at all times????
@@ -2278,14 +2299,18 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 		}
 	}
 
-	// Metallicafan212:	Save the values
-	//					We also have to clamp here since unreal could pass bad values (the editor opening, for example)
-	SizeX		= TestX;
-	SizeY		= TestY;
+	// Metallicafan212:	Don't resize multiple times. DX11 will send a WM_SIZE when resizing the target
+	if (m_D3DSwapChain == nullptr || TestX != SizeX || TestY != SizeY || bFullscreen != Fullscreen)
+	{
+		// Metallicafan212:	Save the values
+		//					We also have to clamp here since unreal could pass bad values (the editor opening, for example)
+		SizeX		= TestX;
+		SizeY		= TestY;
 
-	// Metallicafan212:	Resetup resources that need to be sized
-	bFullscreen = Fullscreen;
-	SetupResources();
+		// Metallicafan212:	Resetup resources that need to be sized
+		bFullscreen = Fullscreen;
+		SetupResources();
+	}
 
 	// Metallicafan212:	Set the viewport now
 	SetSceneNode(nullptr);

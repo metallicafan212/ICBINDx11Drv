@@ -2072,6 +2072,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	Generate the semi-permanent resources needed for the device
 	void SetupResources();
 
+	// Metallicafan212:	Check if we should be providing the tearing flag
+	void CheckTearingState();
+
 	// Metallicafan212:	Autodetect the nits white balance level for the screen
 	UBOOL AutodetectWhiteBalance();
 
