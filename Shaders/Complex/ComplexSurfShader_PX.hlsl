@@ -97,12 +97,12 @@ PSOutput PxShader(PSInput input)
 	{
 		float4 LColor 	= Light.SampleBias(LightState, input.lUV, 0.0f);
 		
-		float Mult		= 2.0f;
+		float Mult		= 4.0f;
 		
 		// Metallicafan212:	Check for oneX blending
 		if(bOneXLightmaps)
 		{
-			Mult 		= 1.0f;
+			Mult 		= 2.0f;
 		}
 		
 		/*
@@ -139,7 +139,8 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	Fog map
 	if(bTexturesBound & 0x8)//bTexturesBound[0].w != 0)
 	{
-		float4 FogColor = Fogmap.SampleBias(FogState, input.fUV, 0.0f);
+		// Metallicafan212: 2024-12, we're multiplying by 2 because RGB7 was changed to do the expansion in the shaders, not the texture upload stage
+		float4 FogColor = Fogmap.SampleBias(FogState, input.fUV, 0.0f) * 2.0f;
 		DiffColor.xyz 	= (DiffColor.xyz * (1.0f - FogColor.w)) + FogColor.xyz;//mad(DiffColor.xyz, (1.0f - FogColor.w), FogColor.xyz);
 	}
 	

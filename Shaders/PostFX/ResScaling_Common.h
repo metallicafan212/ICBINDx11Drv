@@ -38,3 +38,8 @@ float4 DX9Gamma(float3 In, float r, float g, float b)
 	
 	return float4(In, 1.0f);
 }
+
+float4 StraightGamma(float3 In)
+{
+	return float4(In, 1.0f);
+}

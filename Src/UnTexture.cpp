@@ -866,7 +866,7 @@ void UICBINDx11RenderDevice::RGBA7To8(const FTextureInfo& Info, FD3DTexture* Tex
 					{
 						// Metallicafan212:	Move it over
 						//					We multiply by 2 to expand 7 bits to 8
-						*pTex++ = (Base[Min<DWORD>(x & RUSize, UClamp)]) << 1;//* 2;
+						*pTex++ = (Base[Min<DWORD>(x & RUSize, UClamp)]); //<< 1;//* 2;
 
 						// Metallicafan212:	P8 is forcibly converted to ARGB, so we don't need to respect pitch if we already know 32bpp
 						//pTex++;
@@ -875,6 +875,7 @@ void UICBINDx11RenderDevice::RGBA7To8(const FTextureInfo& Info, FD3DTexture* Tex
 			}
 			else
 			{
+				/*
 				while (Read < Size)
 				{
 					DWORD* Addr			= (DWORD*)&Bytes[Read];
@@ -883,6 +884,10 @@ void UICBINDx11RenderDevice::RGBA7To8(const FTextureInfo& Info, FD3DTexture* Tex
 					Read	+= 4;
 					DBytes	+= 4;
 				}
+				*/
+
+				// Metallicafan212:	Don't mult by 2, do it in the shader
+				appMemcpy(DBytes, Bytes, Size);
 			}
 
 			// Metallicafan212:	Now update
