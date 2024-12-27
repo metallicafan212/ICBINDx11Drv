@@ -72,7 +72,10 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	MaxTextureSize		= D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION;
 
 	// Metallicafan212:	Default to off for now, since it's hella unfinished and broken
-	AddBoolProp(CPP_PROP(SupportsUpdateTextureRect), 0);//1);
+	//					Actually, remove the ini option entirely
+	//AddBoolProp(CPP_PROP(SupportsUpdateTextureRect), 0);//1);
+
+	SupportsUpdateTextureRect = 0;
 
 	// Metallicafan212:	New TileList 469e support
 	SupportsDrawTileList	= 1;
@@ -363,6 +366,9 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 	NumAdditionalBuffers	= Clamp(NumAdditionalBuffers, 0, 14);
 
 	ResolutionScale			= Max(ResolutionScale, 0.1f);
+
+	MaskedAlphaReject		= Clamp(MaskedAlphaReject, 0.001f, 0.99f);
+	SmoothMaskedAlphaReject = Clamp(SmoothMaskedAlphaReject, 0.001f, 0.99f);
 
 	// Metallicafan212:	Find the real MSAA levels supported
 	UINT SampleCount = 1;

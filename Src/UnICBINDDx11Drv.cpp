@@ -1627,8 +1627,9 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	Base this on the feature level
 		if (m_FeatureLevel < D3D_FEATURE_LEVEL_11_1)
 		{
-			bForceRGBA = 1;
-			ScreenFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+			bForceRGBA		= 1;
+			bLocalHDR		= 0;
+			ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
 		}
 
 		// Metallicafan212:	Describe the non-aa swap chain (MSAA is resolved in Unlock)
@@ -1643,7 +1644,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		//swapChainDesc.Scaling				= DXGI_SCALING_NONE;
 		// Metallicafan212:	If we're on windows 10 or above, use the better DXGI mode
 		swapChainDesc.SwapEffect			= (bFlipDiscard		? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD);
-		swapChainDesc.Flags					|= (bAllowTearing	? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0);
+		swapChainDesc.Flags					= (bAllowTearing	? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0);
 		swapChainDesc.Scaling				= (bFullscreen		? DXGI_SCALING_NONE : DXGI_SCALING_STRETCH);
 
 
@@ -1676,6 +1677,9 @@ void UICBINDx11RenderDevice::SetupResources()
 			{
 				UseHDRInEditor = 0;
 			}
+
+			bLocalHDR = (!GIsEditor ? UseHDR : UseHDRInEditor);
+
 			goto TESTHDR;
 		}
 
@@ -1732,16 +1736,6 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		GLog->Logf(TEXT("DX11: Resizing swap chain"));
 
-		// Metallicafan212:	Resize it
-		hr = m_D3DSwapChain->ResizeBuffers(2 + NumAdditionalBuffers, SizeX, SizeY, ScreenFormat, (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0));
-
-		if (FAILED(hr))//hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
-		{
-			// Metallicafan212:	TODO! Recreate the device!!!
-			// RecreateDevice();
-			SetupDevice();
-			goto SetupSwap;
-		}
 		/*
 		else if(FAILED(hr))
 		{
@@ -1752,18 +1746,34 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	If we were fullscreen, we STILL have to call this after swapping to windowed otherwise ResizeBuffers still fails
 		if (bLastFullscreen || bFullscreen)
 		{
+			// Metallicafan212:	Disable tearing in fullscreen
+			bAllowTearing = 0;
+
 			// Metallicafan212:	Resize the window!
 			DXGI_MODE_DESC ModeDesc{};
 
 			ModeDesc.Width						= SizeX;
 			ModeDesc.Height						= SizeY;
-			ModeDesc.Format						= ScreenFormat;//DXGI_FORMAT_UNKNOWN;
+			ModeDesc.Format						= DXGI_FORMAT_UNKNOWN;
 			//ModeDesc.Scaling					= DXGI_MODE_SCALING_CENTERED;
 
 			hr									= m_D3DSwapChain->ResizeTarget(&ModeDesc);
 
 			ThrowIfFailed(hr);
 		}
+		//else
+		//{
+			// Metallicafan212:	Resize it
+			hr = m_D3DSwapChain->ResizeBuffers(2 + NumAdditionalBuffers, SizeX, SizeY, ScreenFormat, (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0));
+
+			if (FAILED(hr))//hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+			{
+				// Metallicafan212:	TODO! Recreate the device!!!
+				// RecreateDevice();
+				SetupDevice();
+				goto SetupSwap;
+			}
+		//}
 
 		if (bLastFullscreen != bFullscreen)
 		{
