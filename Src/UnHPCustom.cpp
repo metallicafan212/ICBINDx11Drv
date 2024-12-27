@@ -158,6 +158,12 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 {
 	guard(UICBINDx11RenderDevice::DrawString);
 
+	// Metallicafan212:	Prevent an issue caused by DX11 also calling the Win32API
+	if (m_CurrentD2DRT == nullptr)
+	{
+		return 0;
+	}
+
 	FLOAT LocalClipW = ClipW + Scale;
 	FLOAT LocalClipH = ClipH;
 
