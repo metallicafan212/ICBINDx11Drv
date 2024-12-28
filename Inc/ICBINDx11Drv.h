@@ -175,6 +175,11 @@ typedef unsigned short INDEX;
 	{ \
 		PolyFlags &= ~(PF_Masked | PF_ColorMask); \
 	} \
+	/* Metallicafan212: Remove special poly!*/ \
+	if(PolyFlags & PF_SpecialPoly) \
+	{ \
+		PolyFlags &= ~(PF_SpecialPoly); \
+	} \
 	/* Metallicafan212:	Pixel based selection requires that we have alpha blending and nothing else */ \
 	if (GIsEditor && m_HitData != nullptr) \
 	{ \
@@ -190,6 +195,11 @@ typedef unsigned short INDEX;
 	else if (PolyFlags & PF_Translucent) \
 	{ \
 		PolyFlags &= ~(PF_Masked); \
+	} \
+	/* Metallicafan212: Remove special poly!*/ \
+	if(PolyFlags & PF_SpecialPoly) \
+	{ \
+		PolyFlags &= ~(PF_SpecialPoly); \
 	} \
 	/* Metallicafan212:	Pixel based selection requires that we have alpha blending and nothing else */ \
 	if (GIsEditor && m_HitData != nullptr) \
