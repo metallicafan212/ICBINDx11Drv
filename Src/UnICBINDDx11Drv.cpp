@@ -1636,7 +1636,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	See if we should use the HDR compatible mode
 	TESTHDR:
 		// Metallicafan212:	Allow HDR in the editor
-		ScreenFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;//(bLocalHDR ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R32G32B32A32_FLOAT);//: DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R16G16B16A16_SINT);//DXGI_FORMAT_B8G8R8A8_UNORM);
+		ScreenFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;//(bLocalHDR ? DXGI_FORMAT_R32G32B32A32_FLOAT : DXGI_FORMAT_R32G32B32A32_FLOAT);//DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R32G32B32A32_FLOAT);//: DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R16G16B16A16_SINT);//DXGI_FORMAT_B8G8R8A8_UNORM);
+
 
 		/*
 		// Metallicafan212:	Base this on the feature level
@@ -1647,8 +1648,9 @@ void UICBINDx11RenderDevice::SetupResources()
 			ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
 		}
 		*/
+	RETRY_FORMAT:
+		FrameShaderVars.FrameFlags |=  FSF_Linear;
 
-		FrameShaderVars.FrameFlags |= FSF_Linear;
 
 		if (bLocalHDR)
 		{
@@ -1687,27 +1689,42 @@ void UICBINDx11RenderDevice::SetupResources()
 			&m_D3DSwapChain
 		);
 
-		if (FAILED(hr) && bLocalHDR)
+		if (FAILED(hr) && !bForceRGBA)//&& bLocalHDR)
 		{
 			// Metallicafan212:	Swap
-			GLog->Logf(TEXT("DX11: Failed to use HDR screen format, swapping back to SDR"));
-			//UseHDR = 0;
-			if (!GIsEditor)
+			if (ScreenFormat != DXGI_FORMAT_R16G16B16A16_FLOAT)
 			{
-				UseHDR = 0;
+				GLog->Logf(TEXT("DX11: Failed to use 32bpc screen format, trying 16bpc format"));
+
+				ScreenFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 			}
 			else
 			{
-				UseHDRInEditor = 0;
+				GLog->Logf(TEXT("DX11: Failed to use 16bpc screen format, trying 8bpc format"));
+				//UseHDR = 0;
+				if (!GIsEditor)
+				{
+					UseHDR = 0;
+				}
+				else
+				{
+					UseHDRInEditor = 0;
+				}
+
+				// Metallicafan212:	Disable HDR if it's on, and force RGBA8 screen formats
+				bLocalHDR		= (!GIsEditor ? UseHDR : UseHDRInEditor);
+
+				ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
+
+				bForceRGBA		= 1;
+
+				FrameShaderVars.FrameFlags &= ~(FSF_HDR | FSF_Linear);
 			}
 
-			FrameShaderVars.FrameFlags &= ~FSF_HDR;
-
-			bLocalHDR = (!GIsEditor ? UseHDR : UseHDRInEditor);
-
-			goto TESTHDR;
+			goto RETRY_FORMAT;
 		}
 
+		/*
 		if (FAILED(hr) && !bForceRGBA)
 		{
 			GLog->Logf(TEXT("DX11: Failed to set default screen format, trying RGBA8"));
@@ -1720,7 +1737,9 @@ void UICBINDx11RenderDevice::SetupResources()
 
 			goto RETRY_SWAP;
 		}
-		else if(SUCCEEDED(hr) && !bForceRGBA && bLocalHDR)
+		else 
+		*/
+		if(SUCCEEDED(hr) && !bForceRGBA && bLocalHDR)
 		{
 			GLog->Logf(TEXT("DX11: HDR mode active"));
 
@@ -1730,11 +1749,6 @@ void UICBINDx11RenderDevice::SetupResources()
 		else if(FAILED(hr))
 		{
 			ThrowIfFailed(hr);
-		}
-
-		if (ScreenFormat == DXGI_FORMAT_R16G16_FLOAT)
-		{
-			FrameShaderVars.FrameFlags |= FSF_Linear;
 		}
 
 		// Metallicafan212:	Make it stop messing with the window itself
@@ -1766,13 +1780,6 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		GLog->Logf(TEXT("DX11: Resizing swap chain"));
 
-		/*
-		else if(FAILED(hr))
-		{
-			appErrorf(TEXT("Failed to resize buffers with %lu"), hr);
-		}
-		*/
-
 		// Metallicafan212:	Exit fullscreen early?
 		if (bLastFullscreen != bFullscreen && !bFullscreen)
 		{
@@ -1785,7 +1792,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		}
 
 		// Metallicafan212:	If we were fullscreen, we STILL have to call this after swapping to windowed otherwise ResizeBuffers still fails
-		if (1)//bLastFullscreen || bFullscreen)
+		if (bLastFullscreen || bFullscreen)
 		{
 			// Metallicafan212:	Disable tearing in fullscreen
 			CheckTearingState();
@@ -1883,6 +1890,19 @@ void UICBINDx11RenderDevice::SetupResources()
 		{
 			GLog->Logf(TEXT("DX11: Setting HDR colorspace"));
 			sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);//DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
+			sp3->Release();
+		}
+	}
+	else
+	{
+		IDXGISwapChain3* sp3 = nullptr;
+
+		m_D3DSwapChain->QueryInterface(IID_PPV_ARGS(&sp3));
+
+		if (sp3 != nullptr)
+		{
+			GLog->Logf(TEXT("DX11: Setting regular colorspace"));
+			sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);//DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
 			sp3->Release();
 		}
 	}

@@ -28,6 +28,16 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	float4 Out;
 	
+	float LocalGamma = Gamma;
+	
+	/*
+	// Metallicafan212:	Reduce gamma by half when using the 32bpc format...
+	if(!(FrameShaderFlags & 0x1) && FrameShaderFlags & 0x2)
+	{
+		LocalGamma *= 0.5;
+	}
+	*/
+	
 	// Metallicafan212:	Determine the gamma mode
 	//					Proton/wine doesn't like switches, so we're using if statements....
 	/*
@@ -40,21 +50,38 @@ float4 PxShader(PSInput input) : SV_TARGET
 	if(GammaMode == GM_XOpenGL)
 	{
 		// Metallicafan212:	Use the over gamma method
-		Out = XOpenGLGamma(TexColor);
+		Out = XOpenGLGamma(TexColor, LocalGamma);
 	}
 	else if(GammaMode == GM_DX9)
 	{
-		Out = DX9Gamma(TexColor, GammaOffsetRed, GammaOffsetBlue, GammaOffsetGreen);
+		Out = DX9Gamma(TexColor, LocalGamma, GammaOffsetRed, GammaOffsetBlue, GammaOffsetGreen);
 	}
 	else // Metallicafan212: TODO!
 	{
 		Out = float4(TexColor, 1.0f);
 	}
 	
+	// Metallicafan212:	Needs colorspace conversion
 	if(FrameShaderFlags & 0x2)
 	{
-		// Metallicafan212:	Convert to linear, since we're using a linear screen format
-		Out.xyz = pow(abs(Out.xyz), 2.2);
+		// Metallicafan212:	HDR? To linear
+		//if(FrameShaderFlags & 0x1)
+		{
+			// Metallicafan212:	Convert to linear, since we're using a linear screen format
+			Out.xyz = pow(abs(Out.xyz), 2.2);
+			Out.xyz *= WhiteLevel * HDRExpansion;	
+		}
+		/*
+		// Metallicafan212:	Linear back to sRGB
+		else
+		{
+			float3 S1 	= sqrt(Out.xyz);
+			float3 S2 	= sqrt(S1);
+			float3 S3 	= sqrt(S2);
+			Out.xyz		= 0.662002687 * S1 + 0.684122060 * S2 - 0.323583601 * S3 - 0.0225411470 * Out.xyz;
+			//Out.xyz		= 0.3310013435 * S1 + 0.34206103 * S2 - 0.1617918005 * S3 - 0.0112705735 * Out.xyz;
+		}
+		*/
 		
 		/*
 		// Metallicafan212:	TODO! Configurable linear expansion value....
@@ -63,10 +90,6 @@ float4 PxShader(PSInput input) : SV_TARGET
 			Out.xyz *= 4.0f;
 		}
 		*/
-		
-		// Metallicafan212:	Even OUTSIDE hdr mode, we have to balance it around the whitebalance level....
-		//					This might be windows auto HDR?
-		Out.xyz *= WhiteLevel * HDRExpansion;	
 	}
 	
 	/*
