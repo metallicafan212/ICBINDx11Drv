@@ -51,6 +51,12 @@ float4 PxShader(PSInput input) : SV_TARGET
 		Out = float4(TexColor, 1.0f);
 	}
 	
+	if(1)
+	{
+		// Metallicafan212:	Convert to linear, since we're using a linear screen format
+		Out.xyz = pow(abs(Out.xyz), 2.2);
+	}
+	
 	// Metallicafan212:	HDR correct!
 	//					TODO! Determine a better constant
 	if(bHDR)
@@ -58,9 +64,6 @@ float4 PxShader(PSInput input) : SV_TARGET
 		//Out.xyz = pow(Out.xyz, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
 		//TexColor = SRGBToRec202(TexColor);//pow(TexColor, float3(2.2f, 2.2f, 2.2f)) * HDRExpansion;
 		//Out.xyz = SRGBToRec2020(Out.xyz) * WhiteLevel; //* HDRExpansion;
-		
-		// Metallicafan212:	Convert to linear, since we're using a linear screen format
-		Out.xyz = pow(abs(Out.xyz), 2.2);
 		
 		Out.xyz *= WhiteLevel * HDRExpansion;	
 	}
