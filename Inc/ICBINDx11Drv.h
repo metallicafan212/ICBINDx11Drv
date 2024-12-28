@@ -874,6 +874,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	UBOOL						bIsIntel;
 
 	// Metallicafan212:	If we're using RGBA8 instead of BGRA8
+	//					2024-12, made it a config bool as well so that the format can be forced on
 	UBOOL						bForceRGBA;
 
 	DXGI_FORMAT					ScreenFormat;

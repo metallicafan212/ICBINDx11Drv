@@ -1631,12 +1631,10 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		ThrowIfFailed(hr);
 
-		bForceRGBA = 0;
-
 		// Metallicafan212:	See if we should use the HDR compatible mode
 	TESTHDR:
 		// Metallicafan212:	Allow HDR in the editor
-		ScreenFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;//(bLocalHDR ? DXGI_FORMAT_R32G32B32A32_FLOAT : DXGI_FORMAT_R32G32B32A32_FLOAT);//DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R32G32B32A32_FLOAT);//: DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R16G16B16A16_SINT);//DXGI_FORMAT_B8G8R8A8_UNORM);
+		ScreenFormat = (bForceRGBA ? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R16G16B16A16_FLOAT);//(bLocalHDR ? DXGI_FORMAT_R32G32B32A32_FLOAT : DXGI_FORMAT_R32G32B32A32_FLOAT);//DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R32G32B32A32_FLOAT);//: DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R16G16B16A16_SINT);//DXGI_FORMAT_B8G8R8A8_UNORM);
 
 
 		/*
@@ -1649,12 +1647,18 @@ void UICBINDx11RenderDevice::SetupResources()
 		}
 		*/
 	RETRY_FORMAT:
-		FrameShaderVars.FrameFlags |=  FSF_Linear;
-
-
-		if (bLocalHDR)
+		if (!bForceRGBA)
 		{
-			FrameShaderVars.FrameFlags |= FSF_HDR;
+			FrameShaderVars.FrameFlags |=  FSF_Linear;
+
+			if (bLocalHDR)
+			{
+				FrameShaderVars.FrameFlags |= FSF_HDR;
+			}
+		}
+		else
+		{
+			bLocalHDR = 0;
 		}
 
 		// Metallicafan212:	Describe the non-aa swap chain (MSAA is resolved in Unlock)
@@ -1836,11 +1840,17 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	SetupPresentFlags();
 
+	// Metallicafan212:	Detect if the whitebalance code hasn't ever ran
+	if (HDRWhiteBalanceNits <= 0)
+	{
+		HDRWhiteBalanceNits = 80;
+	}
+
 	// Metallicafan212:	Allow HDR in the editor
-	if (bLocalHDR)//&& !GIsEditor)
+	if (1)//bLocalHDR)//&& !GIsEditor)
 	{
 		// Metallicafan212:	Autodetect it
-		if (!AutodetectWhiteBalance() && !ForceHDR)
+		if (bLocalHDR && !AutodetectWhiteBalance() && !ForceHDR)
 		{
 			GLog->Logf(TEXT("DX11: Detected that the screen may not actually be in HDR mode, turning it off. To override this behavior, set ForceHDR in the options."));
 
@@ -1862,6 +1872,11 @@ void UICBINDx11RenderDevice::SetupResources()
 		if (HDRWhiteBalanceNits <= 0 || LastWhiteBalance == 0 || DetectedWhiteBalance != LastWhiteBalance)
 		{
 			GLog->Logf(TEXT("DX11: Invalid HDR option, or last detected HDR value doesn't match the screen's current white balance level. Resetting back to the detected value of %d nits."), DetectedWhiteBalance);
+
+			if (DetectedWhiteBalance <= 0)
+			{
+				DetectedWhiteBalance = 80;
+			}
 
 			HDRWhiteBalanceNits			= DetectedWhiteBalance;
 			LastHDRWhiteBalanceNits		= DetectedWhiteBalance;

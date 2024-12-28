@@ -221,6 +221,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	Allow the user to disable freesync support
 	AddBoolProp(CPP_PROP(DisableFreeGSync), 0);
 
+	AddBoolProp(CPP_PROP(bForceRGBA), 0);
+
 	unguard;
 }
 
