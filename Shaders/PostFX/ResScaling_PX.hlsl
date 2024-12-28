@@ -56,19 +56,27 @@ float4 PxShader(PSInput input) : SV_TARGET
 		// Metallicafan212:	Convert to linear, since we're using a linear screen format
 		Out.xyz = pow(abs(Out.xyz), 2.2);
 		
+		/*
 		// Metallicafan212:	TODO! Configurable linear expansion value....
 		if(!(FrameShaderFlags & 0x1))
 		{
 			Out.xyz *= 4.0f;
 		}
+		*/
+		
+		// Metallicafan212:	Even OUTSIDE hdr mode, we have to balance it around the whitebalance level....
+		//					This might be windows auto HDR?
+		Out.xyz *= WhiteLevel * HDRExpansion;	
 	}
 	
+	/*
 	// Metallicafan212:	HDR correct!
 	//					TODO! Determine a better constant
 	if(FrameShaderFlags & 0x1)
 	{
 		Out.xyz *= WhiteLevel * HDRExpansion;	
 	}
+	*/
 	
 	return Out;
 }
