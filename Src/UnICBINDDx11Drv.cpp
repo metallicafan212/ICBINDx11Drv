@@ -1400,6 +1400,12 @@ void UICBINDx11RenderDevice::CheckTearingState()
 		);
 }
 
+void UICBINDx11RenderDevice::SetupPresentFlags()
+{
+	// Metallicafan212:	Disable DXGI_PRESENT_ALLOW_TEARING if we were just windowed and went fullscreen
+	PresentFlags = (bAllowTearing && !bFullscreen ? DXGI_PRESENT_ALLOW_TEARING : 0);
+}
+
 void UICBINDx11RenderDevice::SetupResources()
 {
 	guard(UICBINDx11RenderDevice::SetupResources);
@@ -1630,7 +1636,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	See if we should use the HDR compatible mode
 	TESTHDR:
 		// Metallicafan212:	Allow HDR in the editor
-		ScreenFormat = (bLocalHDR ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R16G16B16A16_UNORM);//DXGI_FORMAT_B8G8R8A8_UNORM);
+		ScreenFormat = (bLocalHDR ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R16G16B16A16_SINT);//DXGI_FORMAT_B8G8R8A8_UNORM);
 
 		// Metallicafan212:	Base this on the feature level
 		if (m_FeatureLevel < D3D_FEATURE_LEVEL_11_1)
@@ -1714,9 +1720,6 @@ void UICBINDx11RenderDevice::SetupResources()
 			ThrowIfFailed(hr);
 		}
 
-		// Metallicafan212:	Disable DXGI_PRESENT_ALLOW_TEARING if we were just windowed and went fullscreen
-		PresentFlags = (bAllowTearing && !bFullscreen ? DXGI_PRESENT_ALLOW_TEARING : 0);
-
 		// Metallicafan212:	Make it stop messing with the window itself
 		dxgiFactory->MakeWindowAssociation((HWND)Viewport->GetWindow(), DXGI_MWA_NO_ALT_ENTER);
 
@@ -1734,6 +1737,8 @@ void UICBINDx11RenderDevice::SetupResources()
 	{
 		// Metallicafan212:	Clamp the user options!
 		ClampUserOptions();
+
+		CheckTearingState();
 
 		// Metallicafan212:	If the buffer count doesn't match, resetup the device
 		if (LastAdditionalBuffers != NumAdditionalBuffers)
@@ -1802,10 +1807,10 @@ void UICBINDx11RenderDevice::SetupResources()
 
 			ThrowIfFailed(hr);
 		}
-
-		// Metallicafan212:	Disable DXGI_PRESENT_ALLOW_TEARING if we were just windowed and went fullscreen
-		PresentFlags = (bAllowTearing && !bFullscreen ? DXGI_PRESENT_ALLOW_TEARING : 0);
 	}
+
+
+	SetupPresentFlags();
 
 	// Metallicafan212:	Allow HDR in the editor
 	if (bLocalHDR)//&& !GIsEditor)
