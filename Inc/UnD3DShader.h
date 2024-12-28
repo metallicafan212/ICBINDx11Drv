@@ -15,6 +15,13 @@
 #define SHADER_FOLDER TEXT("..\\Shaders\\")
 #endif
 
+enum EFrameShaderFlags
+{
+	FSF_None	= 0x0000000000,
+	FSF_HDR		= 0x0000000001,
+	FSF_Linear	= 0x0000000002,
+};
+
 // Metallicafan212:	Common draw vars that should only be uploaded once per frame (if we can get away with it, that is)
 //					These are GLOBAL to the render device, not per-shader
 //					The renderer will deal with updating them and writing them out
@@ -30,7 +37,9 @@ struct FFrameShaderVars
 	UBOOL				bOneXLightmaps;
 	UBOOL				bEnableCorrectFogging;
 
-	UBOOL				bHDR;
+	//UBOOL				bHDR;
+	// Metallicafan212:	Current flags. This defines if we're doing linear rendering and/or HDR rendering
+	DWORD				FrameFlags;
 
 	// Metallicafan212:	User-chosen gamma mode (corresponds to the EGammaMode enum)
 	INT					GammaMode;

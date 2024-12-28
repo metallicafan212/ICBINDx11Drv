@@ -1636,7 +1636,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	See if we should use the HDR compatible mode
 	TESTHDR:
 		// Metallicafan212:	Allow HDR in the editor
-		ScreenFormat = (bLocalHDR ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R16G16B16A16_SINT);//DXGI_FORMAT_B8G8R8A8_UNORM);
+		ScreenFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;//(bLocalHDR ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R32G32B32A32_FLOAT);//: DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R16G16B16A16_SINT);//DXGI_FORMAT_B8G8R8A8_UNORM);
 
 		/*
 		// Metallicafan212:	Base this on the feature level
@@ -1647,6 +1647,13 @@ void UICBINDx11RenderDevice::SetupResources()
 			ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
 		}
 		*/
+
+		FrameShaderVars.FrameFlags |= FSF_Linear;
+
+		if (bLocalHDR)
+		{
+			FrameShaderVars.FrameFlags |= FSF_HDR;
+		}
 
 		// Metallicafan212:	Describe the non-aa swap chain (MSAA is resolved in Unlock)
 		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
@@ -1694,6 +1701,8 @@ void UICBINDx11RenderDevice::SetupResources()
 				UseHDRInEditor = 0;
 			}
 
+			FrameShaderVars.FrameFlags &= ~FSF_HDR;
+
 			bLocalHDR = (!GIsEditor ? UseHDR : UseHDRInEditor);
 
 			goto TESTHDR;
@@ -1716,10 +1725,16 @@ void UICBINDx11RenderDevice::SetupResources()
 			GLog->Logf(TEXT("DX11: HDR mode active"));
 
 			ActiveHDR = 1;
+			FrameShaderVars.FrameFlags |= FSF_HDR;
 		}
 		else if(FAILED(hr))
 		{
 			ThrowIfFailed(hr);
+		}
+
+		if (ScreenFormat == DXGI_FORMAT_R16G16_FLOAT)
+		{
+			FrameShaderVars.FrameFlags |= FSF_Linear;
 		}
 
 		// Metallicafan212:	Make it stop messing with the window itself
@@ -2656,7 +2671,6 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 	FrameShaderVars.bEnableCorrectFogging	= bEnableCorrectFogging;
 	FrameShaderVars.bOneXLightmaps			= bOneXLightmaps;
-	FrameShaderVars.bHDR					= ActiveHDR;
 
 	// Metallicafan212:	Make sure the RT is set?
 	//if (RTStack.Num())
@@ -2883,11 +2897,13 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			// Metallicafan212:	Draw the selection view onto the back buffer
 			FLOAT OldGamma	= FrameShaderVars.Gamma;
 			FLOAT OldWB		= FrameShaderVars.WhiteLevel;
-			UBOOL bOldHDR	= FrameShaderVars.bHDR;
+			DWORD OldFlags	= FrameShaderVars.FrameFlags;//bOldHDR	= FrameShaderVars.bHDR;
 
 			FrameShaderVars.Gamma		= 1.0f;
 			FrameShaderVars.WhiteLevel	= 1.0f;
-			FrameShaderVars.bHDR		= 0;
+			FrameShaderVars.FrameFlags	= 0;
+
+			UpdateGlobalShaderVars();
 
 			// Metallicafan212:	Start buffering now
 			StartBuffering(BT_ScreenFlash);
@@ -2924,7 +2940,10 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			// Metallicafan212:	Now restore the variables
 			FrameShaderVars.Gamma		= OldGamma;
 			FrameShaderVars.WhiteLevel	= OldWB;
-			FrameShaderVars.bHDR		= bOldHDR;
+			//FrameShaderVars.bHDR		= bOldHDR;
+			FrameShaderVars.FrameFlags	= OldFlags;
+
+			UpdateGlobalShaderVars();
 
 			goto JUST_PRESENT;
 		}

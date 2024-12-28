@@ -138,7 +138,8 @@ cbuffer FrameVariables : register (b0)
 	int		bDoSelection		: packoffset(c4.w);
 	int		bOneXLightmaps		: packoffset(c5.x);
 	int		bCorrectFog			: packoffset(c5.y);
-	int		bHDR				: packoffset(c5.z);
+	//int		bHDR				: packoffset(c5.z);
+	dword	FrameShaderFlags	: packoffset(c5.z);
 	int 	GammaMode			: packoffset(c5.w);
 	float	HDRExpansion		: packoffset(c6.x);
 	float 	ResolutionScale 	: packoffset(c6.y);
@@ -308,7 +309,8 @@ float4 DoFinalColor(float4 ColorIn, float4 SelectionColor)
 #endif
 	
 	// Metallicafan212:	Clamp the color
-	if(!bHDR)
+	//if(!bHDR)
+	if(!(FrameShaderFlags & 0x1))
 	{
 		ColorIn.xyz = clamp(ColorIn.xyz, 0.0f, 1.0f);
 	}

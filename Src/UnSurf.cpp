@@ -157,6 +157,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_BSP);
 
+
+	REMOVE_BAD_PFLAGS(PolyFlags);
+
 	if(m_nearZRangeHackProjectionActive)
 		SetProjectionStateNoCheck(false);
 

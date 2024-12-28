@@ -10,6 +10,8 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Tiles);
 
+	REMOVE_BAD_PFLAGS(PolyFlags);
+
 	// Metallicafan212:	The check for memorized really only need to be done in HP2, since I use it to mark a tile as rotated
 #if DX11_HP2
 	// Metallicafan212:	Make sure wireframe doesn't get set on tiles!

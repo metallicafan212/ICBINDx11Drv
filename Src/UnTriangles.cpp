@@ -42,6 +42,8 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Triangles);
 
+	REMOVE_BAD_PFLAGS(PolyFlags);
+
 	// Metallicafan212:	TODO! Check if we were rendering something else and then flush it?
 	if (GIsEditor && (PolyFlags & PF_Selected) && m_HitData == nullptr)
 	{
@@ -139,6 +141,8 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Triangles);
 
+	REMOVE_BAD_PFLAGS(PolyFlags);
+
 	// Metallicafan212:	TODO! Check if we were rendering something else and then flush it?
 	if (GIsEditor && (PolyFlags & PF_Selected) && m_HitData == nullptr)
 	{
@@ -233,6 +237,8 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Triangles);
+
+	REMOVE_BAD_PFLAGS(PolyFlags);
 
 	// Metallicafan212:	If we're translucent, we need to render twice...
 
@@ -364,6 +370,8 @@ void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo
 
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Triangles);
+
+	REMOVE_BAD_PFLAGS(PolyFlags);
 
 	// Metallicafan212:	If we're translucent, we need to render twice...
 
