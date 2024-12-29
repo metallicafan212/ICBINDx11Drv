@@ -1632,7 +1632,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		ThrowIfFailed(hr);
 
 		// Metallicafan212:	See if we should use the HDR compatible mode
-	TESTHDR:
+	//TESTHDR:
 		// Metallicafan212:	Allow HDR in the editor
 		ScreenFormat = (bForceRGBA ? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R16G16B16A16_FLOAT);//(bLocalHDR ? DXGI_FORMAT_R32G32B32A32_FLOAT : DXGI_FORMAT_R32G32B32A32_FLOAT);//DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R32G32B32A32_FLOAT);//: DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R16G16B16A16_SINT);//DXGI_FORMAT_B8G8R8A8_UNORM);
 
@@ -1646,7 +1646,7 @@ void UICBINDx11RenderDevice::SetupResources()
 			ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
 		}
 		*/
-	RETRY_FORMAT:
+
 		if (!bForceRGBA)
 		{
 			FrameShaderVars.FrameFlags |=  FSF_Linear;
@@ -1660,6 +1660,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		{
 			bLocalHDR = 0;
 		}
+
+	RETRY_FORMAT:
 
 		// Metallicafan212:	Describe the non-aa swap chain (MSAA is resolved in Unlock)
 		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
@@ -1682,7 +1684,7 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		GLog->Logf(TEXT("DX11: Creating swap chain for the window"));
 
-	RETRY_SWAP:
+	//RETRY_SWAP:
 		// Metallicafan212:	Create the swap chain now
 		hr = dxgiFactory->CreateSwapChainForHwnd(
 			m_D3DDevice,
@@ -1840,22 +1842,21 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	SetupPresentFlags();
 
-	// Metallicafan212:	Detect if the whitebalance code hasn't ever ran
-	if (HDRWhiteBalanceNits <= 0)
-	{
-		HDRWhiteBalanceNits = 80;
-	}
-
 	// Metallicafan212:	Allow HDR in the editor
 	if (1)//bLocalHDR)//&& !GIsEditor)
 	{
 		// Metallicafan212:	Autodetect it
-		if (bLocalHDR && !AutodetectWhiteBalance() && !ForceHDR)
+		if (!AutodetectWhiteBalance() && !ForceHDR && bLocalHDR)
 		{
 			GLog->Logf(TEXT("DX11: Detected that the screen may not actually be in HDR mode, turning it off. To override this behavior, set ForceHDR in the options."));
 
 			ActiveHDR = 0;
 			bLocalHDR = 0;
+
+			if (DetectedWhiteBalance <= 0)
+			{
+				DetectedWhiteBalance = 80;
+			}
 
 			// Metallicafan212:	We have to destroy and recreate the swap chain...
 			//					The reason is that the output is contained to the swap chain, so we have to create it to find the screen that it's actually connected to....
