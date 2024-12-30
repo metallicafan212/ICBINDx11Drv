@@ -28,4 +28,4 @@ Property=(Config,Class=ICBINDx11Drv.ICBINDx11RenderDevice,Name=OrthoLineThicknes
 Property=(Config,Class=ICBINDx11Drv.ICBINDx11RenderDevice,Name=3DLineThickness,Title="3D Line Thickness",Description="How thick (in pixels) to make editor and debug lines, in 3D views.")
 Property=(Config,Class=ICBINDx11Drv.ICBINDx11RenderDevice,Name=ActorSelectionColor,Title="Actor Selection Color (Editor Only)",Description="The color used when selecting actors in the editor.")
 Property=(Config,Class=ICBINDx11Drv.ICBINDx11RenderDevice,Name=SurfaceSelectionColor,Title="Surface Selection Color (Editor Only)",Description="The color used when selecting surfaces in the editor.")
-Property=(Config,Class=ICBINDx11Drv.ICBINDx11RenderDevice,Name=bForceRGBA,Title="Force RGB Screen",Description="Force the driver to use a 8bpc screen format instead of the default 16bpc format.")
+Property=(Config,Class=ICBINDx11Drv.ICBINDx11RenderDevice,Name=UseRGBA8,Title="Force RGB 8bpc Screen",Description="Force the driver to use a 8bpc screen format instead of the default 16bpc format.")
