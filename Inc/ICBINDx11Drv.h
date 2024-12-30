@@ -785,6 +785,10 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	If the user wants to automatically override the HDR active detection
 	UBOOL						ForceHDR;
 
+	// Metallicafan212:	If the user wants to use an internal RGBA16 float render target format
+	//					The backbuffer format will be RGBA8 in this mode
+	UBOOL						UseRGBA16;
+
 	// Metallicafan212:	If the user wants to turn off freesync/gsync. This constructs the swap chain WITHOUT tearing support
 	UBOOL						DisableFreeGSync;
 
@@ -878,6 +882,8 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	UBOOL						bForceRGBA;
 
 	DXGI_FORMAT					ScreenFormat;
+
+	DXGI_FORMAT					RTFormat;
 
 	// Metallicafan212:	HACK for resolution scale! If this is set, it means that the scene node set isn't the same as the viewport size
 	UBOOL						bSmallerSceneNode;

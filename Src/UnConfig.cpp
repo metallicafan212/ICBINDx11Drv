@@ -223,6 +223,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	AddBoolProp(CPP_PROP(bForceRGBA), 0);
 
+	AddBoolProp(CPP_PROP(UseRGBA16), 1);
+
 	unguard;
 }
 
@@ -378,7 +380,7 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 
 	UINT NumQualityLevels = 0;
 
-	while (SUCCEEDED(hr = m_D3DDevice->CheckMultisampleQualityLevels(ScreenFormat, SampleCount, &NumQualityLevels)))
+	while (SUCCEEDED(hr = m_D3DDevice->CheckMultisampleQualityLevels(RTFormat, SampleCount, &NumQualityLevels)))//ScreenFormat, SampleCount, &NumQualityLevels)))
 	{
 		// Metallicafan212:	See if it's actually supported (the device can choose to send a sucess code but set quality levels to 0, like AMD)
 		if (NumQualityLevels <= 0)

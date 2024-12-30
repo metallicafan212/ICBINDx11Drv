@@ -167,7 +167,7 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 #endif
 	{
 		FrameShaderVars.GammaMode	= GM_None;
-		FrameShaderVars.FrameFlags	= (!bForceRGBA ? FSF_ReverseHDR : 0);
+		FrameShaderVars.FrameFlags	= (ActiveHDR ? FSF_ReverseHDR : 0);
 
 		UpdateGlobalShaderVars();
 	}

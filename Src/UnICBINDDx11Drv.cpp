@@ -1624,10 +1624,28 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		ThrowIfFailed(hr);
 
+		RTFormat		= DXGI_FORMAT_R8G8B8A8_UNORM;
+		ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
+
 		// Metallicafan212:	See if we should use the HDR compatible mode
 	//TESTHDR:
+
+		// Metallicafan212:	See what formats the backbuffer and screen should be
+		if (!bForceRGBA)
+		{
+			if (UseRGBA16 || bLocalHDR)
+			{
+				RTFormat		= DXGI_FORMAT_R16G16B16A16_FLOAT;
+			}
+
+			if (bLocalHDR)
+			{
+				ScreenFormat	= DXGI_FORMAT_R16G16B16A16_FLOAT;
+			}
+		}
+
 		// Metallicafan212:	Allow HDR in the editor
-		ScreenFormat = (bForceRGBA ? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R16G16B16A16_FLOAT);//(bLocalHDR ? DXGI_FORMAT_R32G32B32A32_FLOAT : DXGI_FORMAT_R32G32B32A32_FLOAT);//DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R32G32B32A32_FLOAT);//: DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R16G16B16A16_SINT);//DXGI_FORMAT_B8G8R8A8_UNORM);
+		//ScreenFormat = (bForceRGBA ? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R16G16B16A16_FLOAT);//(bLocalHDR ? DXGI_FORMAT_R32G32B32A32_FLOAT : DXGI_FORMAT_R32G32B32A32_FLOAT);//DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R32G32B32A32_FLOAT);//: DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R16G16B16A16_SINT);//DXGI_FORMAT_B8G8R8A8_UNORM);
 
 
 		/*
@@ -1640,6 +1658,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		}
 		*/
 
+		/*
 		if (!bForceRGBA)
 		{
 			FrameShaderVars.FrameFlags |=  FSF_Linear;
@@ -1652,6 +1671,13 @@ void UICBINDx11RenderDevice::SetupResources()
 		else
 		{
 			bLocalHDR = 0;
+		}
+		*/
+
+		// Metallicafan212:	Only convert from sRGB if we're using HDR
+		if (ScreenFormat == DXGI_FORMAT_R16G16B16A16_FLOAT)
+		{
+			FrameShaderVars.FrameFlags |= FSF_Linear | FSF_HDR;
 		}
 
 	RETRY_FORMAT:
@@ -1690,6 +1716,7 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		if (FAILED(hr) && !bForceRGBA)//&& bLocalHDR)
 		{
+			/*
 			// Metallicafan212:	Swap
 			if (ScreenFormat != DXGI_FORMAT_R16G16B16A16_FLOAT)
 			{
@@ -1698,6 +1725,7 @@ void UICBINDx11RenderDevice::SetupResources()
 				ScreenFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 			}
 			else
+			*/
 			{
 				GLog->Logf(TEXT("DX11: Failed to use 16bpc screen format, trying 8bpc format"));
 				//UseHDR = 0;
@@ -1996,7 +2024,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	RTMSAA.Width				= ScaledSizeX;
 	RTMSAA.Height				= ScaledSizeY;
 	RTMSAA.BindFlags			= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-	RTMSAA.Format				= ScreenFormat;
+	RTMSAA.Format				= RTFormat;//ScreenFormat;
 	RTMSAA.MipLevels			= 1;
 	RTMSAA.SampleDesc.Count		= NumAASamples;
 	RTMSAA.SampleDesc.Quality	= 0;//D3D11_STANDARD_MULTISAMPLE_PATTERN;//0;
@@ -2012,7 +2040,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	ThrowIfFailed(hr);
 
 	// Metallicafan212:	Create a shader resource view for MSAA resolving
-	srvDesc.Format						= ScreenFormat;
+	srvDesc.Format						= RTFormat;//ScreenFormat;
 	srvDesc.ViewDimension				= NumAASamples > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;//D3D11_SRV_DIMENSION_TEXTURE2DMS;
 	srvDesc.Texture2D.MostDetailedMip	= 0;
 	srvDesc.Texture2D.MipLevels			= 1;
@@ -2982,7 +3010,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 		// Metallicafan212:	Copy to the screen
 		if (NumAASamples > 1)
 		{
-			m_D3DDeviceContext->ResolveSubresource(m_MSAAResolveTex, 0, m_ScreenBuffTex, 0, ScreenFormat);
+			m_D3DDeviceContext->ResolveSubresource(m_MSAAResolveTex, 0, m_ScreenBuffTex, 0, RTFormat);//ScreenFormat);
 		}
 		// Metallicafan212:	Always use the resolution scaling shader, so we can do final effects on the screen
 		{
