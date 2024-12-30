@@ -283,6 +283,34 @@ float3 SRGBToRec2020(float3 In)
     return mul(ConvMat, In);
 }
 
+// Metallicafan212:	This is an approximation from http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html
+float3 SRGBToLinear(float3 sRGB)
+{
+	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
+}
+
+float3 LinearToSRGB(float3 Linear)
+{
+	float3 S1 	= sqrt(Linear);
+	float3 S2 	= sqrt(S1);
+	float3 S3 	= sqrt(S2);
+	return 0.662002687 * S1 + 0.684122060 * S2 - 0.323583601 * S3 - 0.0225411470 * Linear;
+}
+
+float4 ConvertColorspace(float4 In)
+{
+	// Metallicafan212:	While for many things this looks better, things like particles now don't blend right, so the final image needs to be corrected, not the objects
+	/*
+	// Metallicafan212:	Are we in linear color?
+	if(FrameShaderFlags & 0x2)
+	{
+		return float4(SRGBToLinear(In.xyz), In.w);
+	}
+	*/
+	
+	return In;
+}
+
 #if PIXEL_SHADER
 float4 DoFinalColor(float4 ColorIn, float4 SelectionColor)
 {

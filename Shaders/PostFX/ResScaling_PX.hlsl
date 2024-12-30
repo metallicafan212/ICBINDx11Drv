@@ -61,10 +61,10 @@ float4 PxShader(PSInput input) : SV_TARGET
 		//if(FrameShaderFlags & 0x1)
 		{
 			// Metallicafan212:	Convert to linear, since we're using a linear screen format
-			Out.xyz = pow(abs(Out.xyz), 2.2);
+			Out.xyz = SRGBToLinear(Out.xyz);
 			
 			// Metallicafan212:	Even in SDR we have to correct by the white balance!!!! Windows is auto-HDRing the SDR content, even though the colorspace is r709....
-			Out.xyz *= WhiteLevel * HDRExpansion;	
+			Out.xyz *= WhiteLevel * HDRExpansion;
 		}
 		/*
 		// Metallicafan212:	Linear back to sRGB

@@ -1123,11 +1123,7 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	GLog->Logf(TEXT("DX11: Registering supported texture formats"));
 
 	// Metallicafan212:	Assemble the supported texture types
-#if P8_COMPUTE_SHADER
-	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 0, 1, &FD3DTexType::RawPitch, nullptr, P8ToRGBA);
-#else
 	RegisterTextureFormat(TEXF_P8, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 0, 4, &FD3DTexType::RawPitch, &UICBINDx11RenderDevice::P8ToRGBA);
-#endif
 
 	RegisterTextureFormat(TEXF_RGBA7, DXGI_FORMAT_B8G8R8A8_UNORM, 1, 0, 4, &FD3DTexType::RawPitch, &UICBINDx11RenderDevice::RGBA7To8);
 	
@@ -1140,14 +1136,8 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	RegisterTextureFormat(TEXF_RGBA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 0, 4, &FD3DTexType::RawPitch);
 #endif
 
-	// Metallicafan212:	These are all supported by DX11.1
-	//					In the future, I will query for support (or use the DX feature level???)
-#if 0 // DX11_UT_469 // Turn off for fix issue with dark UT HD textures
-	RegisterTextureFormat(TEXF_DXT1, DXGI_FORMAT_BC1_UNORM_SRGB, 0, 1, 8, &FD3DTexType::BlockCompressionPitch);
-#else
 	// Metallicafan212:	HP2 uses non-SRGB DXT1, so we need to break that off, otherwise the color will be half'd
 	RegisterTextureFormat(TEXF_DXT1, DXGI_FORMAT_BC1_UNORM, 0, 1, 8, &FD3DTexType::BlockCompressionPitch);
-#endif
 
 #if DX11_HP2 || DX11_UT_469 || DX11_UNREAL_227
 	RegisterTextureFormat(TEXF_DXT3, DXGI_FORMAT_BC2_UNORM, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
@@ -1618,66 +1608,29 @@ void UICBINDx11RenderDevice::SetupResources()
 			}
 		}
 
-		// And obtain the factory object that created it.
-
 		hr = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
 
 		ThrowIfFailed(hr);
 
+		// Metallicafan212:	Default to SDR
 		RTFormat		= DXGI_FORMAT_R8G8B8A8_UNORM;
 		ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
 
-		// Metallicafan212:	See if we should use the HDR compatible mode
-	//TESTHDR:
-
 		// Metallicafan212:	See what formats the backbuffer and screen should be
-		if (!bForceRGBA)
+		//					Before Windows 10, windows didn't allow for floating point backbuffers, so handle it
+		if (!UseRGBA8 || !GWin10)
 		{
 			if (UseRGBA16 || bLocalHDR)
 			{
 				RTFormat		= DXGI_FORMAT_R16G16B16A16_FLOAT;
-			}
-
-			if (bLocalHDR || UseRGBA16)
-			{
 				ScreenFormat	= DXGI_FORMAT_R16G16B16A16_FLOAT;
 			}
 		}
 
-		// Metallicafan212:	Allow HDR in the editor
-		//ScreenFormat = (bForceRGBA ? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R16G16B16A16_FLOAT);//(bLocalHDR ? DXGI_FORMAT_R32G32B32A32_FLOAT : DXGI_FORMAT_R32G32B32A32_FLOAT);//DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R32G32B32A32_FLOAT);//: DXGI_FORMAT_R16G16B16A16_FLOAT);//DXGI_FORMAT_R16G16B16A16_SINT);//DXGI_FORMAT_B8G8R8A8_UNORM);
-
-
-		/*
-		// Metallicafan212:	Base this on the feature level
-		if (m_FeatureLevel < D3D_FEATURE_LEVEL_11_1)
-		{
-			bForceRGBA		= 1;
-			bLocalHDR		= 0;
-			ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
-		}
-		*/
-
-		/*
-		if (!bForceRGBA)
-		{
-			FrameShaderVars.FrameFlags |=  FSF_Linear;
-
-			if (bLocalHDR)
-			{
-				FrameShaderVars.FrameFlags |= FSF_HDR;
-			}
-		}
-		else
-		{
-			bLocalHDR = 0;
-		}
-		*/
-
 		// Metallicafan212:	Only convert from sRGB if we're using HDR
 		if (ScreenFormat == DXGI_FORMAT_R16G16B16A16_FLOAT)
 		{
-			FrameShaderVars.FrameFlags |= FSF_Linear;// FSF_HDR;
+			FrameShaderVars.FrameFlags |= FSF_Linear | FSF_HDR;
 		}
 
 	RETRY_FORMAT:
@@ -1714,59 +1667,36 @@ void UICBINDx11RenderDevice::SetupResources()
 			&m_D3DSwapChain
 		);
 
-		if (FAILED(hr) && !bForceRGBA)//&& bLocalHDR)
+		if (FAILED(hr) && !UseRGBA8)
 		{
-			/*
-			// Metallicafan212:	Swap
-			if (ScreenFormat != DXGI_FORMAT_R16G16B16A16_FLOAT)
+			GLog->Logf(TEXT("DX11: Failed to use 16bpc screen format, trying 8bpc format"));
+			//UseHDR = 0;
+			if (!GIsEditor)
 			{
-				GLog->Logf(TEXT("DX11: Failed to use 32bpc screen format, trying 16bpc format"));
-
-				ScreenFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+				UseHDR = 0;
 			}
 			else
-			*/
 			{
-				GLog->Logf(TEXT("DX11: Failed to use 16bpc screen format, trying 8bpc format"));
-				//UseHDR = 0;
-				if (!GIsEditor)
-				{
-					UseHDR = 0;
-				}
-				else
-				{
-					UseHDRInEditor = 0;
-				}
-
-				// Metallicafan212:	Disable HDR if it's on, and force RGBA8 screen formats
-				bLocalHDR		= (!GIsEditor ? UseHDR : UseHDRInEditor);
-
-				ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
-
-				bForceRGBA		= 1;
-
-				FrameShaderVars.FrameFlags &= ~(FSF_HDR | FSF_Linear);
+				UseHDRInEditor = 0;
 			}
+
+			UseRGBA16		= 0;
+
+			// Metallicafan212:	Disable HDR if it's on, and force RGBA8 screen formats
+			bLocalHDR		= (!GIsEditor ? UseHDR : UseHDRInEditor);
+
+			ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
+			RTFormat		= DXGI_FORMAT_R8G8B8A8_UNORM;
+
+			UseRGBA8		= 1;
+
+			FrameShaderVars.FrameFlags &= ~(FSF_HDR | FSF_Linear);
+			
 
 			goto RETRY_FORMAT;
 		}
 
-		/*
-		if (FAILED(hr) && !bForceRGBA)
-		{
-			GLog->Logf(TEXT("DX11: Failed to set default screen format, trying RGBA8"));
-			// Metallicafan212:	Test with RGBA8
-			ScreenFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-			swapChainDesc.Format = ScreenFormat;
-
-			bForceRGBA = 1;
-
-			goto RETRY_SWAP;
-		}
-		else 
-		*/
-		if(SUCCEEDED(hr) && !bForceRGBA && bLocalHDR)
+		if(SUCCEEDED(hr) && !UseRGBA8 && bLocalHDR)
 		{
 			GLog->Logf(TEXT("DX11: HDR mode active"));
 
@@ -1869,20 +1799,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	Autodetect it
 		if (!AutodetectWhiteBalance() && !ForceHDR && bLocalHDR)
 		{
-			GLog->Logf(TEXT("DX11: Detected that the screen may not actually be in HDR mode, turning it off. To override this behavior, set ForceHDR in the options."));
-
-			ActiveHDR = 0;
-			bLocalHDR = 0;
-
-			if (DetectedWhiteBalance <= 0)
-			{
-				DetectedWhiteBalance = 80;
-			}
-
-			// Metallicafan212:	We have to destroy and recreate the swap chain...
-			//					The reason is that the output is contained to the swap chain, so we have to create it to find the screen that it's actually connected to....
-			SAFE_RELEASE(m_D3DSwapChain);
-			goto SetupSwap;
+			// Metallicafan212:	We're rolling HDR mode into the normal rendering, so it should just _work_ here
+			GLog->Logf(TEXT("DX11: Detected that the system is not in HDR mode, but HDR rendering is enabled. This may or may not look correct, depending on your system setup."));
 		}
 
 		// Metallicafan212:	Save the last detected value
@@ -1939,7 +1857,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		if (sp3 != nullptr)
 		{
 			GLog->Logf(TEXT("DX11: Setting regular colorspace"));
-			sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);//DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
+			sp3->SetColorSpace1(UseRGBA8 ? DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 : DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
 			sp3->Release();
 		}
 	}

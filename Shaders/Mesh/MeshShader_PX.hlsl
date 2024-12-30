@@ -6,7 +6,8 @@ float4 PxShader(PSInput input) : SV_TARGET
 	CurrentAlphaReject	= AlphaReject;
 	
 	// Metallicafan212:	TODO! Add this as a bool property
-	float4 LightColor = input.color;
+	float4 LightColor = ConvertColorspace(input.color);
+	
 	if(bEnableCorrectFog)
 	{
 		FLOAT Scale 		= 1.0f - input.fog.w;
@@ -15,7 +16,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	// Metallicafan212:	If we're selected, go black and white....
 	//					This prevents issues with missing colors in a masked/alpha/translucent texture
-	float4 FinalColor 		= Diffuse.SampleBias(DiffState, input.uv, 0.0f);
+	float4 FinalColor 		= ConvertColorspace(Diffuse.Sample(DiffState, input.uv));
 	
 	if(bSelected)
 	{
@@ -27,7 +28,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	if(RendMap == REN_LightingOnly)
 	{
 		// Metallicafan212:	Lighting needs to be halfed to look more like it does in-game
-		FinalColor.xyz = input.color.xyz / 2.0f;
+		FinalColor.xyz = LightColor.xyz / 2.0f;
 		
 		CLIP_PIXEL(FinalColor);
 	}

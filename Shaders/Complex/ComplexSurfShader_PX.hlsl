@@ -8,7 +8,7 @@ PSOutput PxShader(PSInput input)
 	CurrentAlphaReject	= AlphaReject;
 	
 	// Metallicafan212:	TODO! Texturing
-	float4 DiffColor = input.color;
+	float4 DiffColor = ConvertColorspace(input.color);
 	
 	// Metallicafan212:	Test for selection, do software style selection
 	if(bSelected)
@@ -45,7 +45,7 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	Diffuse texture
 	else if(bTexturesBound & 0x1)//bTexturesBound[0].x != 0)
 	{
-		float4 Diff  	= Diffuse.SampleBias(DiffState, input.uv, 0.0f);
+		float4 Diff  	= ConvertColorspace(Diffuse.Sample(DiffState, input.uv));
 		DiffColor.xyz  *= Diff.xyz;
 		DiffColor.w	   *= Diff.w;
 	}
@@ -61,10 +61,8 @@ PSOutput PxShader(PSInput input)
 	if(bTexturesBound & 0x10 && input.dUV.z < 380.0f)//bTexturesBound[1].x != 0 && input.dUV.z < 380.0f)
 	{
 		// Metallicafan212:	Sample it
-		float3 Det = Detail.SampleBias(DetailState, input.dUV.xy, 0.0f).xyz;
-		
-		// Metallicafan212:	Multiply the input color by 2 to make it work like lightmaps
-		Det 	  *= 2.0f;
+		//					Multiply the input color by 2 to make it work like lightmaps
+		float3 Det = ConvertColorspace(Detail.Sample(DetailState, input.dUV.xy) * 2.0f).xyz;
 		
 		// Metallicafan212:	Now lerp it
 		float alpha = input.dUV.z / 380.0f;
@@ -86,7 +84,7 @@ PSOutput PxShader(PSInput input)
 	//if(bTexturesBound[0].z != 0)
 	if(bTexturesBound & 0x4)
 	{
-		DiffColor.xyz *= Macro.SampleBias(MacroState, input.mUV, 0.0f).xyz * 2.0f;
+		DiffColor.xyz *= ConvertColorspace(Macro.Sample(MacroState, input.mUV) * 2.0f).xyz;
 	}
 	
 	//float lAlpha = 1.0f;
@@ -95,8 +93,6 @@ PSOutput PxShader(PSInput input)
 	//					TODO! Allow the user to specify the lightmap multiplication (some people like one-x scaling)
 	if(bTexturesBound & 0x2)//bTexturesBound[0].y != 0)
 	{
-		float4 LColor 	= Light.SampleBias(LightState, input.lUV, 0.0f);
-		
 		float Mult		= 4.0f;
 		
 		// Metallicafan212:	Check for oneX blending
@@ -105,22 +101,15 @@ PSOutput PxShader(PSInput input)
 			Mult 		= 2.0f;
 		}
 		
-		/*
-#if DX11_UNREAL_227
-		// Metallicafan212:	Do a _further_ multiplication on it to get the right value
-		Mult *= 2.0f;
-#endif
-		*/
+		float4 LColor 	= ConvertColorspace(Light.Sample(LightState, input.lUV) * Mult);
 
-		DiffColor.xyz 	*= LColor.xyz * Mult;
-		
-		//lAlpha = LColor.w;
+		DiffColor.xyz 	*= LColor.xyz;
 		
 #if !NO_CUSTOM_RMODES
 		// Metallicafan212:	If we're doing lighting only, set it out now
 		if(RendMap == REN_LightingOnly)
 		{
-			Out.Color = float4(DoFinalColor(LColor, input.color).xyz, DiffColor.w);
+			Out.Color = float4(DoFinalColor(LColor / 2.0f, input.color).xyz, DiffColor.w);
 			
 			return Out;
 		}
@@ -140,7 +129,7 @@ PSOutput PxShader(PSInput input)
 	if(bTexturesBound & 0x8)//bTexturesBound[0].w != 0)
 	{
 		// Metallicafan212: 2024-12, we're multiplying by 2 because RGB7 was changed to do the expansion in the shaders, not the texture upload stage
-		float4 FogColor = Fogmap.SampleBias(FogState, input.fUV, 0.0f) * 2.0f;
+		float4 FogColor = ConvertColorspace(Fogmap.Sample(FogState, input.fUV) * 2.0f);
 		DiffColor.xyz 	= (DiffColor.xyz * (1.0f - FogColor.w)) + FogColor.xyz;//mad(DiffColor.xyz, (1.0f - FogColor.w), FogColor.xyz);
 	}
 	
