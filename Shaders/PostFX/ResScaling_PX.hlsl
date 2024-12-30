@@ -40,13 +40,6 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	// Metallicafan212:	Determine the gamma mode
 	//					Proton/wine doesn't like switches, so we're using if statements....
-	/*
-	if(GammaMode == GM_PerObject)
-	{
-		Out = float4(TexColor, 1.0f);
-	}
-	else
-	*/
 	if(GammaMode == GM_XOpenGL)
 	{
 		// Metallicafan212:	Use the over gamma method
@@ -69,6 +62,8 @@ float4 PxShader(PSInput input) : SV_TARGET
 		{
 			// Metallicafan212:	Convert to linear, since we're using a linear screen format
 			Out.xyz = pow(abs(Out.xyz), 2.2);
+			
+			// Metallicafan212:	Even in SDR we have to correct by the white balance!!!! Windows is auto-HDRing the SDR content, even though the colorspace is r709....
 			Out.xyz *= WhiteLevel * HDRExpansion;	
 		}
 		/*
@@ -82,14 +77,15 @@ float4 PxShader(PSInput input) : SV_TARGET
 			//Out.xyz		= 0.3310013435 * S1 + 0.34206103 * S2 - 0.1617918005 * S3 - 0.0112705735 * Out.xyz;
 		}
 		*/
+	}
+	// Metallicafan212:	Reverse the HDR stuff
+	//					This is for screenshots
+	else if(FrameShaderFlags & 0x4)
+	{
+		Out.xyz /= (WhiteLevel * HDRExpansion);
 		
-		/*
-		// Metallicafan212:	TODO! Configurable linear expansion value....
-		if(!(FrameShaderFlags & 0x1))
-		{
-			Out.xyz *= 4.0f;
-		}
-		*/
+		// Metallicafan212:	Since our intermediate format is RGBA8, a sRGB format, we have to convert BACK to sRGB
+		Out.xyz = pow(abs(Out.xyz), 1.0f / 2.2f);
 	}
 	
 	/*

@@ -1203,7 +1203,14 @@ UBOOL UICBINDx11RenderDevice::AutodetectWhiteBalance()
 	IDXGIOutput* Out			= nullptr;
 	HRESULT hr					= m_D3DSwapChain->GetContainingOutput(&Out);
 
-	ThrowIfFailed(hr);
+	// Metallicafan212:	There might NOT be a screen attached, if the window is hidden at first!
+	if (FAILED(hr))
+	{
+		// Metallicafan212:	We failed to get a screen, just reset
+		return 1;
+	}
+
+	//ThrowIfFailed(hr);
 
 	// Metallicafan212:	Get the description, so we can see where the output is going
 	DXGI_OUTPUT_DESC OutDesc;
@@ -1284,7 +1291,6 @@ UBOOL UICBINDx11RenderDevice::AutodetectWhiteBalance()
 	}
 	else
 	{
-
 		// Metallicafan212:	Now loop the paths
 		DISPLAYCONFIG_PATH_INFO* CurrentPath = nullptr;
 
@@ -1350,16 +1356,6 @@ UBOOL UICBINDx11RenderDevice::AutodetectWhiteBalance()
 		}
 	}
 
-	/*
-	// Metallicafan212:	Set it if we found a value
-	if (HDRWhiteBalanceNits > 0)
-	{
-		FrameShaderVars.WhiteLevel = HDRWhiteBalanceNits / 80.0f;
-	}
-	*/
-
-	//LastHDRWhiteBalanceNits = HDRWhiteBalanceNits;
-
 	if (HDRWhiteBalanceNits > 0)
 	{
 		FrameShaderVars.WhiteLevel = HDRWhiteBalanceNits / 80.0f;
@@ -1370,9 +1366,6 @@ UBOOL UICBINDx11RenderDevice::AutodetectWhiteBalance()
 	}
 	
 	return bReturn;
-
-	//GConfig->Flush(0);
-	//SaveConfig();
 
 	unguard;
 }
@@ -2976,7 +2969,6 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 			// Metallicafan212:	Now restore the variables
 			FrameShaderVars.Gamma		= OldGamma;
 			FrameShaderVars.WhiteLevel	= OldWB;
-			//FrameShaderVars.bHDR		= bOldHDR;
 			FrameShaderVars.FrameFlags	= OldFlags;
 
 			UpdateGlobalShaderVars();

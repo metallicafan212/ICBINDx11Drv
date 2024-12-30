@@ -17,9 +17,16 @@
 
 enum EFrameShaderFlags
 {
-	FSF_None	= 0x0000000000,
-	FSF_HDR		= 0x0000000001,
-	FSF_Linear	= 0x0000000002,
+	FSF_None		= 0x0000000000,
+
+	// Metallicafan212:	HDR mode is enabled
+	FSF_HDR			= 0x0000000001,
+
+	// Metallicafan212:	Screen must be converted from sRGB to linear for display
+	FSF_Linear		= 0x0000000002,
+
+	// Metallicafan212:	Reverse the HDR white balance
+	FSF_ReverseHDR	= 0x0000000004,
 };
 
 // Metallicafan212:	Common draw vars that should only be uploaded once per frame (if we can get away with it, that is)

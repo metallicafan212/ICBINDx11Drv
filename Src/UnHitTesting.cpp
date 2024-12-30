@@ -156,22 +156,18 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	// Metallicafan212:	Read the back buffer
 	guard(UICBINDx11RenderDevice::ReadPixels);
 
-	// Metallicafan212:	Save the gamma and white balance values
-	//FLOAT OldGamma	= FrameShaderVars.Gamma;
-	//FLOAT OldWB		= FrameShaderVars.WhiteLevel;
+	// Metallicafan212:	TODO! For HDR, reverse the white balance!
 
-	EGammaMode OldGamma = (EGammaMode)FrameShaderVars.GammaMode;
+	// Metallicafan212:	Save the gamma mode
+	EGammaMode	OldGamma	= (EGammaMode)FrameShaderVars.GammaMode;
+	DWORD		FrameFlgs	= FrameShaderVars.FrameFlags;
 
 #if DX11_UNREAL_227
 	if (!bGammaCorrectOutput)
 #endif
 	{
-		/*
-		FrameShaderVars.Gamma		= 1.0f;
-		FrameShaderVars.WhiteLevel	= 1.0f;//1.0f / FrameShaderVars.WhiteLevel;//1.0f;
-		*/
-
-		FrameShaderVars.GammaMode = GM_None;
+		FrameShaderVars.GammaMode	= GM_None;
+		FrameShaderVars.FrameFlags	= FSF_ReverseHDR;
 
 		UpdateGlobalShaderVars();
 	}
@@ -203,7 +199,7 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	StageDesc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;
 	StageDesc.Usage					= D3D11_USAGE_DEFAULT;
 	StageDesc.CPUAccessFlags		= 0;
-	StageDesc.BindFlags				= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;;
+	StageDesc.BindFlags				= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 
 	ID3D11Texture2D* RTStage = nullptr;
 
@@ -354,11 +350,8 @@ void UICBINDx11RenderDevice::ReadPixels(FColor* Pixels)
 	if (!bGammaCorrectOutput)
 #endif
 	{
-		/*
-		FrameShaderVars.Gamma		= OldGamma;
-		FrameShaderVars.WhiteLevel	= OldWB;
-		*/
 		FrameShaderVars.GammaMode	= OldGamma;
+		FrameShaderVars.FrameFlags	= FrameFlgs;
 
 		UpdateGlobalShaderVars();
 	}
