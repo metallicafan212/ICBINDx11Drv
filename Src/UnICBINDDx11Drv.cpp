@@ -82,6 +82,8 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_D2DRT);
 	SAFE_RELEASE(m_D2DFact);
 	SAFE_RELEASE(m_D2DWriteFact);
+	SAFE_RELEASE(m_D2DView);
+	SAFE_RELEASE(m_D2DTexture);
 	SAFE_RELEASE(m_DXGISurf);
 	SAFE_RELEASE(m_TextParams);
 	SAFE_RELEASE(m_D2DRasterState);
@@ -170,7 +172,8 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(m_D3DDeviceContext);
 
 	// Metallicafan212:	Always reset the render context, so we don't have a dangling nullptr
-	m_RenderContext = nullptr;
+	m_RenderContext		= nullptr;
+	SAFE_RELEASE(m_RenderContext1);
 
 	SAFE_RELEASE(m_D3DDevice1);
 	SAFE_RELEASE(m_D3DDevice);
@@ -431,6 +434,8 @@ MAKE_DEVICE:
 	}
 
 	m_RenderContext = m_D3DDeviceContext;
+
+	//m_RenderContext->QueryInterface(IID_PPV_ARGS(&m_RenderContext1));
 
 	if (bUseDeferredRendering && m_FeatureLevel >= D3D_FEATURE_LEVEL_11_0)
 	{
@@ -1016,6 +1021,8 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	// Metallicafan212:	HP2 specific on-screen string drawing
 	m_D2DRT				= nullptr;
 	m_D2DFact			= nullptr;
+	m_D2DTexture		= nullptr;
+	m_D2DView			= nullptr;
 	m_DXGISurf			= nullptr;
 	m_TextParams		= nullptr;
 	m_D2DRasterState	= nullptr;
@@ -1182,6 +1189,10 @@ UBOOL UICBINDx11RenderDevice::AutodetectWhiteBalance()
 
 	UBOOL bReturn = 0;
 
+	// Metallicafan212:	Create buffers to hold all the dumb information
+	TArray<DISPLAYCONFIG_PATH_INFO> Paths;
+	TArray<DISPLAYCONFIG_MODE_INFO> Modes;
+
 	GLog->Logf(TEXT("DX11: Autodetecting the display's white balance (in nits)"));
 
 	// Metallicafan212:	Default to a white balance level of 1.0
@@ -1248,7 +1259,7 @@ UBOOL UICBINDx11RenderDevice::AutodetectWhiteBalance()
 
 	// Metallicafan212:	Code adopted from https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-querydisplayconfig#examples
 	UINT32 pathCount, modeCount;
-	LONG result = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &pathCount, &modeCount);
+	LONG result = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS | QDC_VIRTUAL_MODE_AWARE, &pathCount, &modeCount);
 
 	if (result != ERROR_SUCCESS)
 	{
@@ -1261,19 +1272,21 @@ UBOOL UICBINDx11RenderDevice::AutodetectWhiteBalance()
 	if (pathCount == 0)
 	{
 		GLog->Logf(TEXT("DX11: Returned path count was 0."));
+
+		// Metallicafan212:	Check for the steam deck???? TODO!!!!!
+		//					This doesn't work in Proton... There might be an alternative way to get the white balance level
+
+		// Metallicafan212:	Handle it here?????
+		goto HDR_EXIT;
 	}
 
 	GLog->Logf(TEXT("DX11: Current monitor path is %s"), MInfo.szDevice);
-
-	// Metallicafan212:	Create buffers to hold all the dumb information
-	TArray<DISPLAYCONFIG_PATH_INFO> Paths;
-	TArray<DISPLAYCONFIG_MODE_INFO> Modes;
 
 	Paths.AddZeroed(pathCount);
 	Modes.AddZeroed(modeCount);
 
 	// Metallicafan212:	Now get it all, holy shit
-	result = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &pathCount, &Paths(0), &modeCount, &Modes(0), nullptr);
+	result = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS | QDC_VIRTUAL_MODE_AWARE, &pathCount, &Paths(0), &modeCount, &Modes(0), nullptr);
 
 	if (result != ERROR_SUCCESS)
 	{
@@ -1346,6 +1359,7 @@ UBOOL UICBINDx11RenderDevice::AutodetectWhiteBalance()
 		}
 	}
 
+HDR_EXIT:
 	if (HDRWhiteBalanceNits > 0)
 	{
 		FrameShaderVars.WhiteLevel = HDRWhiteBalanceNits / 80.0f;
@@ -1453,6 +1467,8 @@ void UICBINDx11RenderDevice::SetupResources()
 	// Metallicafan212:	TODO! HP2 specific
 	SAFE_RELEASE(m_D2DRT);
 	SAFE_RELEASE(m_DXGISurf);
+	SAFE_RELEASE(m_D2DView);
+	SAFE_RELEASE(m_D2DTexture);
 	SAFE_RELEASE(m_TextParams);
 	SAFE_RELEASE(m_D2DRasterState);
 #endif
@@ -1481,7 +1497,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	// Metallicafan212:	Create or resize the swap chain
 	HRESULT hr = S_OK;
 
-	UBOOL bLocalHDR = (!GIsEditor ? UseHDR : UseHDRInEditor);
+	UBOOL bLocalHDR = UserScreenFormat != DSF_SDR;//(!GIsEditor ? UseHDR : UseHDRInEditor);
 
 	/*
 	// Metallicafan212:	TODO!!!! If this is the texture browser, disallow HDR!!!!
@@ -1613,9 +1629,10 @@ void UICBINDx11RenderDevice::SetupResources()
 		ThrowIfFailed(hr);
 
 		// Metallicafan212:	Default to SDR
-		RTFormat		= DXGI_FORMAT_R8G8B8A8_UNORM;
-		ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
+		//RTFormat		= DXGI_FORMAT_R8G8B8A8_UNORM;
+		//ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
 
+		/*
 		// Metallicafan212:	See what formats the backbuffer and screen should be
 		//					Before Windows 10, windows didn't allow for floating point backbuffers, so handle it
 		if (!UseRGBA8 || !GWin10)
@@ -1626,14 +1643,44 @@ void UICBINDx11RenderDevice::SetupResources()
 				ScreenFormat	= DXGI_FORMAT_R16G16B16A16_FLOAT;
 			}
 		}
+		*/
 
+		INT InitTries = 0;
+
+	RETRY_FORMAT:
+		switch (UserScreenFormat)
+		{
+			case DSF_HDR10:
+			{
+				RTFormat					= DXGI_FORMAT_R10G10B10A2_UNORM;
+				ScreenFormat				= DXGI_FORMAT_R10G10B10A2_UNORM;
+				FrameShaderVars.FrameFlags |= FSF_HDR | FSF_R2020;//FSF_Linear | FSF_HDR;
+				break;
+			}
+
+			case DSF_HDR16:
+			{
+				RTFormat					= DXGI_FORMAT_R16G16B16A16_FLOAT;
+				ScreenFormat				= DXGI_FORMAT_R16G16B16A16_FLOAT;
+				FrameShaderVars.FrameFlags |= FSF_Linear | FSF_HDR;
+				break;
+			}
+
+			default:
+			{
+				RTFormat		= DXGI_FORMAT_R8G8B8A8_UNORM;
+				ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
+				FrameShaderVars.FrameFlags	= 0;
+			}
+		}
+
+		/*
 		// Metallicafan212:	Only convert from sRGB if we're using HDR
 		if (ScreenFormat == DXGI_FORMAT_R16G16B16A16_FLOAT)
 		{
 			FrameShaderVars.FrameFlags |= FSF_Linear | FSF_HDR;
 		}
-
-	RETRY_FORMAT:
+		*/
 
 		// Metallicafan212:	Describe the non-aa swap chain (MSAA is resolved in Unlock)
 		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
@@ -1667,10 +1714,28 @@ void UICBINDx11RenderDevice::SetupResources()
 			&m_D3DSwapChain
 		);
 
+		if (FAILED(hr) && UserScreenFormat != DSF_SDR)
+		{
+			GWarn->Logf(TEXT("DX11: Failed to use %s screen format, trying %s format"), (UserScreenFormat == DSF_HDR16 ? TEXT("16bpc") : TEXT("10bpc")), (UserScreenFormat == DSF_HDR16 ? TEXT("10bpc") : TEXT("8bpc")));
+
+			UserScreenFormat = (EDX11ScreenFormat)Clamp(((BYTE)UserScreenFormat - 1), 0, DSF_MAX);
+
+			// Metallicafan212:	Generic, remove HDR and linear from it so that it can reinit
+			FrameShaderVars.FrameFlags = 0;//&= ~(FSF_HDR | FSF_Linear);
+
+			bLocalHDR		= UserScreenFormat != DSF_SDR;
+
+			InitTries++;
+
+			goto RETRY_FORMAT;
+		}
+
+		/*
 		if (FAILED(hr) && !UseRGBA8)
 		{
 			GLog->Logf(TEXT("DX11: Failed to use 16bpc screen format, trying 8bpc format"));
 			//UseHDR = 0;
+
 			if (!GIsEditor)
 			{
 				UseHDR = 0;
@@ -1695,8 +1760,9 @@ void UICBINDx11RenderDevice::SetupResources()
 
 			goto RETRY_FORMAT;
 		}
+		*/
 
-		if(SUCCEEDED(hr) && !UseRGBA8 && bLocalHDR)
+		if(SUCCEEDED(hr) && bLocalHDR)
 		{
 			GLog->Logf(TEXT("DX11: HDR mode active"));
 
@@ -1797,10 +1863,10 @@ void UICBINDx11RenderDevice::SetupResources()
 	if (1)//bLocalHDR)//&& !GIsEditor)
 	{
 		// Metallicafan212:	Autodetect it
-		if (!AutodetectWhiteBalance() && !ForceHDR && bLocalHDR)
+		if (!AutodetectWhiteBalance() && bLocalHDR)
 		{
 			// Metallicafan212:	We're rolling HDR mode into the normal rendering, so it should just _work_ here
-			GLog->Logf(TEXT("DX11: Detected that the system is not in HDR mode, but HDR rendering is enabled. This may or may not look correct, depending on your system setup."));
+			GLog->Logf(TEXT("DX11: Detected that the system is not in HDR mode, but HDR rendering is enabled. This may or may not look correct, depending on your system setup. This is a HIGHLY exprimental mode that relies on Window's automatic HDR downsampling for SDR systems."));
 		}
 
 		// Metallicafan212:	Save the last detected value
@@ -1844,7 +1910,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		if (sp3 != nullptr)
 		{
 			GLog->Logf(TEXT("DX11: Setting HDR colorspace"));
-			sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);//DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
+			sp3->SetColorSpace1(UserScreenFormat == DSF_HDR16 ? DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709 : DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);//DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
 			sp3->Release();
 		}
 	}
@@ -1857,7 +1923,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		if (sp3 != nullptr)
 		{
 			GLog->Logf(TEXT("DX11: Setting regular colorspace"));
-			sp3->SetColorSpace1(UseRGBA8 ? DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 : DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
+			sp3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
 			sp3->Release();
 		}
 	}
@@ -2058,8 +2124,29 @@ void UICBINDx11RenderDevice::SetupResources()
 	ThrowIfFailed(hr);
 
 #if DX11_D2D
-	// Metallicafan212:	Get the D2D render target
-	hr = m_ScreenBuffTex->QueryInterface(IID_PPV_ARGS(&m_DXGISurf));//m_D3DSwapChain->GetBuffer(0, IID_PPV_ARGS(&m_DXGISurf));
+
+#if D2D_SEPARATE_TEX
+	if (UserScreenFormat == DSF_HDR10)
+	{
+		// Metallicafan212:	Create a texture for Direct2D
+		//					We don't need MSAA, so create it without it?
+		hr = m_D3DDevice->CreateTexture2D(&SelectionDesc, nullptr, &m_D2DTexture);
+
+		ThrowIfFailed(hr);
+
+		hr = m_D3DDevice->CreateShaderResourceView(m_D2DTexture, &SelectionRSV, &m_D2DView);
+
+		ThrowIfFailed(hr);
+
+		// Metallicafan212:	Get the D2D render target
+		//hr = m_ScreenBuffTex->QueryInterface(IID_PPV_ARGS(&m_DXGISurf));//m_D3DSwapChain->GetBuffer(0, IID_PPV_ARGS(&m_DXGISurf));
+		hr = m_D2DTexture->QueryInterface(IID_PPV_ARGS(&m_DXGISurf));
+	}
+	else
+#endif//else
+	{
+		hr = m_ScreenBuffTex->QueryInterface(IID_PPV_ARGS(&m_DXGISurf));//m_D3DSwapChain->GetBuffer(0, IID_PPV_ARGS(&m_DXGISurf));
+	}
 
 	ThrowIfFailed(hr);
 
@@ -2461,6 +2548,8 @@ void UICBINDx11RenderDevice::Exit()
 	SAFE_RELEASE(m_D2DWriteFact);
 	SAFE_RELEASE(m_D2DRT);
 	SAFE_RELEASE(m_DXGISurf);
+	SAFE_RELEASE(m_D2DView);
+	SAFE_RELEASE(m_D2DTexture);
 	SAFE_RELEASE(m_TextParams);
 	SAFE_RELEASE(m_D2DRasterState);
 #endif

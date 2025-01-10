@@ -8,3 +8,6 @@ struct PSInput
 	float4 fog		: COLOR1;
 	float  origZ	: COLOR2;
 };
+
+Texture2D Diffuse 			: register(t0);
+SamplerState DiffState 		: register(s0);

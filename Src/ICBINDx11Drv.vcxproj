@@ -286,6 +286,11 @@ python PreCompileShader.py</Command>
     <ClCompile Include="UnTriangles.cpp" />
     <ClCompile Include="WindowsHelper.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ICBINDx11Drv.int" />
+    <None Include="..\ICBINDx11Drv_Settings.int" />
+    <None Include="..\PrecompileShader.py" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

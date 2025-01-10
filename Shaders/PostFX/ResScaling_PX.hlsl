@@ -28,44 +28,36 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	float4 Out;
 	
-	float LocalGamma = Gamma;
+	Out.xyz = TexColor.xyz;
 	
-	/*
-	// Metallicafan212:	Reduce gamma by half when using the 32bpc format...
-	if(!(FrameShaderFlags & 0x1) && FrameShaderFlags & 0x2)
+	// Metallicafan212:	Rec 709 to Rec 2020
+	if(FrameShaderFlags & 0x10)
 	{
-		LocalGamma *= 0.5;
+		Out.xyz = SRGBToRec2020(RemoveSRGBCurve(Out.xyz));
 	}
-	*/
+	
+	float LocalGamma = Gamma;
 	
 	// Metallicafan212:	Determine the gamma mode
 	//					Proton/wine doesn't like switches, so we're using if statements....
 	if(GammaMode == GM_XOpenGL)
 	{
 		// Metallicafan212:	Use the over gamma method
-		Out = XOpenGLGamma(TexColor, LocalGamma);
+		Out = XOpenGLGamma(Out, LocalGamma);
 	}
 	else if(GammaMode == GM_DX9)
 	{
-		Out = DX9Gamma(TexColor, LocalGamma, GammaOffsetRed, GammaOffsetBlue, GammaOffsetGreen);
+		Out = DX9Gamma(Out, LocalGamma, GammaOffsetRed, GammaOffsetBlue, GammaOffsetGreen);
 	}
 	else // Metallicafan212: TODO!
 	{
-		Out = float4(TexColor, 1.0f);
+		Out.w = 1.f;
 	}
 	
-	// Metallicafan212:	Needs colorspace conversion
+	// Metallicafan212:	Rec 709 to linear color conversion
 	if(FrameShaderFlags & 0x2)
 	{
-		// Metallicafan212:	HDR? To linear
-		//if(FrameShaderFlags & 0x1)
-		{
-			// Metallicafan212:	Convert to linear, since we're using a linear screen format
-			Out.xyz = SRGBToLinear(Out.xyz);
-			
-			// Metallicafan212:	Even in SDR we have to correct by the white balance!!!! Windows is auto-HDRing the SDR content, even though the colorspace is r709....
-			Out.xyz *= WhiteLevel * HDRExpansion;
-		}
+		Out.xyz = SRGBToLinear(Out.xyz);
 		/*
 		// Metallicafan212:	Linear back to sRGB
 		else
@@ -78,9 +70,28 @@ float4 PxShader(PSInput input) : SV_TARGET
 		}
 		*/
 	}
+	
+	/*
+	// Metallicafan212:	HDR10, we need to reduce gamma!!!!
+	if(FrameShaderFlags & 0x10)
+	{
+		float3 S1 	= sqrt(Out.xyz);
+		float3 S2 	= sqrt(S1);
+		float3 S3 	= sqrt(S2);
+		Out.xyz		= 0.662002687 * S1 + 0.684122060 * S2 - 0.323583601 * S3 - 0.0225411470 * Out.xyz;
+	}
+	*/
+	
+	// Metallicafan212:	HDR? Apply white balance
+	if(FrameShaderFlags & 0x1)
+	{
+		// Metallicafan212:	Even in SDR we have to correct by the white balance!!!! Windows is auto-HDRing the SDR content, even though the colorspace is r709....
+		Out.xyz *= WhiteLevel * HDRExpansion;
+	}
+	
 	// Metallicafan212:	Reverse the HDR stuff
 	//					This is for screenshots
-	else if(FrameShaderFlags & 0x4)
+	if(FrameShaderFlags & 0x4)
 	{
 		Out.xyz /= (WhiteLevel * HDRExpansion);
 		

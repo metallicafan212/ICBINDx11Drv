@@ -46,6 +46,12 @@
     <Filter Include="Header Files\Robin-Map">
       <UniqueIdentifier>{8af3cc0f-ac9f-4cc6-962f-c43078767b1f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{57b23257-a144-425a-9775-e1b3558715d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ShaderCompiler">
+      <UniqueIdentifier>{33a07225-631f-40f8-8ad1-c9ccef4594d1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Inc\ICBINDx11Drv.h">
@@ -278,5 +284,16 @@
     <ClCompile Include="Un227.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ICBINDx11Drv.int">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="..\ICBINDx11Drv_Settings.int">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="..\PrecompileShader.py">
+      <Filter>ShaderCompiler</Filter>
+    </None>
   </ItemGroup>
 </Project>

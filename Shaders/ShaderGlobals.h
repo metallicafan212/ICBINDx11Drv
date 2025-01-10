@@ -270,6 +270,8 @@ float4 DoPixelFog(float DistFog, float4 Color)
 }
 #endif
 
+#define select(check, a, b) (check ? a : b)
+
 // Metallicafan212:	Moved from the ResScaling.hlsl shader
 // 					From https://github.com/Microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/ColorSpaceUtility.hlsli
 float3 SRGBToRec2020(float3 In)
@@ -281,6 +283,25 @@ float3 SRGBToRec2020(float3 In)
         0.016394, 0.088028, 0.895578
     };
     return mul(ConvMat, In);
+}
+
+float3 RemoveSRGBCurve( float3 x )
+{
+    // Approximately pow(x, 2.2)
+    return select(x < 0.04045, x / 12.92, pow( (x + 0.055) / 1.055, 2.4 ));
+}
+
+// This is the new HDR transfer function, also called "PQ" for perceptual quantizer.  Note that REC2084
+// does not also refer to a color space.  REC2084 is typically used with the REC2020 color space.
+float3 ApplyREC2084Curve(float3 L)
+{
+    float m1 = 2610.0 / 4096.0 / 4;
+    float m2 = 2523.0 / 4096.0 * 128;
+    float c1 = 3424.0 / 4096.0;
+    float c2 = 2413.0 / 4096.0 * 32;
+    float c3 = 2392.0 / 4096.0 * 32;
+    float3 Lp = pow(L, m1);
+    return pow((c1 + c2 * Lp) / (1 + c3 * Lp), m2);
 }
 
 // Metallicafan212:	This is an approximation from http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html

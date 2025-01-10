@@ -167,8 +167,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	AddBoolProp(CPP_PROP(bEnableCorrectFogging), 1);
 
 	// Metallicafan212:	Add an option to use a HDR compatible screen type (in-game only)
-	AddBoolProp(CPP_PROP(UseHDR), 0);
-	AddBoolProp(CPP_PROP(UseHDRInEditor), 0);
+	//AddBoolProp(CPP_PROP(UseHDR), 0);
+	//AddBoolProp(CPP_PROP(UseHDRInEditor), 0);
 
 	// Metallicafan212:	Add on user selectable gamma modes, so they can pick what fits best for them
 	UEnum* GEnum = new (GetClass(), TEXT("GammaModes"))UEnum(nullptr);
@@ -216,14 +216,24 @@ void UICBINDx11RenderDevice::StaticConstructor()
 
 	AddFloatProp(CPP_PROP(SmoothMaskedAlphaReject), 0.2f);
 
-	AddBoolProp(CPP_PROP(ForceHDR), 0);
+	//AddBoolProp(CPP_PROP(ForceHDR), 0);
 
 	// Metallicafan212:	Allow the user to disable freesync support
 	AddBoolProp(CPP_PROP(DisableFreeGSync), 0);
 
-	AddBoolProp(CPP_PROP(UseRGBA8), 0);
+	//AddBoolProp(CPP_PROP(UseRGBA8), 0);
 
-	AddBoolProp(CPP_PROP(UseRGBA16), 1);
+	//AddBoolProp(CPP_PROP(UseRGBA16), 1);
+
+	// Metallicafan212:	Screen format settings
+	UEnum* ScreenEnum = new(GetClass(), TEXT("ScreenFormat"))UEnum(nullptr);
+
+	ScreenEnum->Names.AddItem(FName(TEXT("SDR")));
+	ScreenEnum->Names.AddItem(FName(TEXT("HDR10")));
+	ScreenEnum->Names.AddItem(FName(TEXT("HDR16")));
+
+	// Metallicafan212:	Now init the config
+	AddByteProp(TEXT("ScreenFormat"), (BYTE&)UserScreenFormat, EC_CppProperty, offsetof(UICBINDx11RenderDevice, UserScreenFormat), DSF_HDR16, ScreenEnum);
 
 	unguard;
 }

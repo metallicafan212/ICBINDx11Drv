@@ -48,6 +48,8 @@
 
 #define P8_COMPUTE_SHADER 0 
 
+#define D2D_SEPARATE_TEX 1
+
 #if UNREAL_TOURNAMENT_OLDUNREAL
 # define DX11_UT_469 1
 # undef DX11_HP2
@@ -278,6 +280,15 @@ enum ERasterFlags
 class UICBINDx11RenderDevice;
 
 #include "UnShaderManager.h"
+
+// Metallicafan212:	Screen format definition
+enum EDX11ScreenFormat : BYTE
+{
+	DSF_SDR,
+	DSF_HDR10,
+	DSF_HDR16,
+	DSF_MAX
+};
 
 // Metallicafan212:	Just cutting down on the needed typing
 namespace MS = Microsoft::WRL;
@@ -774,20 +785,23 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	UBOOL						UseDX9FlatColor;
 
 	// Metallicafan212:	If to use HDR (note that it'll look wrong on non-HDR screens)
-	UBOOL						UseHDR;
+	//UBOOL						UseHDR;
 
 	// Metallicafan212:	If to use HDR in the editor (NOTE! This isn't finished, and windows isn't auto detecting the app for HDR, so it just makes the image extremely bright...)
-	UBOOL						UseHDRInEditor;
+	//UBOOL						UseHDRInEditor;
 
 	// Metallicafan212:	If HDR is active (and the screenformat is set)
 	UBOOL						ActiveHDR;
 
 	// Metallicafan212:	If the user wants to automatically override the HDR active detection
-	UBOOL						ForceHDR;
+	//UBOOL						ForceHDR;
 
 	// Metallicafan212:	If the user wants to use an internal RGBA16 float render target format
 	//					The backbuffer format will be RGBA8 in this mode
-	UBOOL						UseRGBA16;
+	//UBOOL						UseRGBA16;
+
+	// Metallicafan212:	Screen format to use. Note that HDR16 uses RGBA16 float, HDR10 uses RGBA10 int
+	EDX11ScreenFormat			UserScreenFormat;
 
 	// Metallicafan212:	If the user wants to turn off freesync/gsync. This constructs the swap chain WITHOUT tearing support
 	UBOOL						DisableFreeGSync;
@@ -880,7 +894,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	If we're using RGBA8 instead of BGRA8
 	//					2024-12, made it a config bool as well so that the format can be forced on
 	//UBOOL						bForceRGBA;
-	UBOOL						UseRGBA8;
+	//UBOOL						UseRGBA8;
 
 	DXGI_FORMAT					ScreenFormat;
 
@@ -905,6 +919,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	Pointer to use for rendering, so that we can swap in and out of the experimental mode
 	ID3D11DeviceContext*		m_RenderContext;
+	ID3D11DeviceContext1*		m_RenderContext1;
 
 	ID3D11Query*				m_D3DQuery;
 
@@ -1030,6 +1045,11 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	DWORD						ExtraRasterFlags;
 
 #if DX11_D2D
+	// Metallicafan212:	RGBA8 image for Direct2D rendering
+	ID3D11Texture2D*			m_D2DTexture;
+
+	ID3D11ShaderResourceView*	m_D2DView;
+
 	// Metallicafan212:	DXGI surface for D2D
 	IDXGISurface*				m_DXGISurf;
 
@@ -1333,12 +1353,12 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	Hard-coded array for the screen bounds
 	FD3DVert					ScreenVerts[6] =
 	{
-		{-1.f, -1.f, 0.f, 1.f, 0.f, 1.f, 0.f, 0.f},
-		{1.0f, -1.f, 0.f, 1.f, 1.f, 1.f, 0.f, 0.f},
-		{-1.f, 1.0f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f},
-		{-1.f, 1.0f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f},
-		{1.0f, -1.f, 0.f, 1.f, 1.f, 1.f, 0.f, 0.f},
-		{1.0f, 1.0f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f},
+		{-1.f, -1.f, 0.f, 1.f, 0.f, 1.f, 0.f, 0.f, FPlane(1.f, 1.f, 1.f, 1.f), FPlane(0.f, 0.f, 0.f, 0.f)},
+		{1.0f, -1.f, 0.f, 1.f, 1.f, 1.f, 0.f, 0.f, FPlane(1.f, 1.f, 1.f, 1.f), FPlane(0.f, 0.f, 0.f, 0.f)},
+		{-1.f, 1.0f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, FPlane(1.f, 1.f, 1.f, 1.f), FPlane(0.f, 0.f, 0.f, 0.f)},
+		{-1.f, 1.0f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, FPlane(1.f, 1.f, 1.f, 1.f), FPlane(0.f, 0.f, 0.f, 0.f)},
+		{1.0f, -1.f, 0.f, 1.f, 1.f, 1.f, 0.f, 0.f, FPlane(1.f, 1.f, 1.f, 1.f), FPlane(0.f, 0.f, 0.f, 0.f)},
+		{1.0f, 1.0f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, FPlane(1.f, 1.f, 1.f, 1.f), FPlane(0.f, 0.f, 0.f, 0.f)},
 
 	};
 
@@ -1620,8 +1640,26 @@ class UICBINDx11RenderDevice : public RD_CLASS
 #if DX11_D2D
 		if (m_CurrentBuff == BT_Strings && BufferedStrings.Num())
 		{
+			/*
+			if (m_RenderContext1 != nullptr)
+			{
+				constexpr FLOAT Nothing[4] = {1.0f, 1.0f, 1.0f, 0.0f};
+				m_RenderContext1->ClearView(m_D2DView, Nothing, nullptr, 0);
+			}
+			*/
+
 			// Metallicafan212:	Draw all the strings
 			m_CurrentD2DRT->BeginDraw();
+
+#if D2D_SEPARATE_TEX
+			// Metallicafan212:	Clear to 0 alpha!!!!
+			//if (m_RenderContext1 == nullptr)
+			if(m_D2DTexture != nullptr)
+			{
+				constexpr D2D1_COLOR_F Nothing = {0.0f, 0.0f, 0.0f, 0.0f};
+				m_CurrentD2DRT->Clear(&Nothing);
+			}
+#endif
 
 #if !RES_SCALE_IN_PROJ
 			if (BoundRT == nullptr && ResolutionScale != 1.0f)
@@ -1635,10 +1673,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 			{
 				m_CurrentD2DRT->SetTransform(D2D1::Matrix3x2F::Identity());
 			}
-#endif
-			// Metallicafan212:	Push global clipping
-#if 0//DX11_D2D_CLIP_LAYER
-			m_CurrentD2DRT->PushAxisAlignedClip(D2D1::Rect(StringClipX, StringClipY, StringClipX + StringClipW, StringClipY + StringClipH), D2D1_ANTIALIAS_MODE_ALIASED);//D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 #endif
 			for (INT i = 0; i < BufferedStrings.Num(); i++)
 			{
@@ -1685,9 +1719,6 @@ class UICBINDx11RenderDevice : public RD_CLASS
 				m_CurrentD2DRT->PopAxisAlignedClip();
 #endif
 			}
-#if 0//DX11_D2D_CLIP_LAYER
-			m_CurrentD2DRT->PopAxisAlignedClip();
-#endif
 
 #if DX11_D2D_LAYOUT_CACHING
 			// Metallicafan212:	Empty all buffered layouts
@@ -1711,10 +1742,63 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 			FontToLayoutMap.clear();
 #endif
-
 			BufferedStrings.Empty();
 
-			m_CurrentD2DRT->EndDraw();
+			m_CurrentD2DRT->EndDraw();		
+
+#if D2D_SEPARATE_TEX
+			if (m_D2DTexture != nullptr)
+			{
+				// Metallicafan212:	TODO! Render D2D to a separate texture and tile on!
+				//StartBuffering(BT_Tiles);
+				m_CurrentBuff = BT_ScreenFlash;//BT_Tiles;
+
+				FrameShaderVars.FrameFlags	|= FSF_NoTransform;
+
+				UpdateGlobalShaderVars();
+
+				// Metallicafan212:	Manually set the texture
+				SetTexture(0, nullptr, 0);
+				BoundTexturesInfo.CurrentBoundTextures |= 1;
+				bWriteTexturesBuffer = 1;
+				m_RenderContext->PSSetShaderResources(0, 1, &m_D2DView);
+				m_RenderContext->PSSetSamplers(0, 1, &ScreenSamp);
+
+				SetBlend(PF_AlphaBlend);//PF_Highlighted);
+
+				//FTileShader->Bind(m_RenderContext);
+				FGenShader->Bind(m_RenderContext);
+
+				// Metallicafan212:	Disable depth lmao
+				ID3D11DepthStencilState* CurState = nullptr;
+				UINT Sten = 0;
+
+				m_RenderContext->OMGetDepthStencilState(&CurState, &Sten);
+				BYTE OldZTest		= CurrentZTestMode;
+				DWORD OldDSFlags	= DepthStencilFlags;
+
+				DepthStencilFlags	= DS_NoZWrite;
+
+				SetZTestMode(ZTEST_LessEqual);
+
+				LockVertAndIndexBuffer(6);
+
+				appMemcpy(m_VertexBuff, ScreenVerts, sizeof(FD3DVert) * 6);
+
+				AdvanceVertPos();
+
+				// Metallicafan212:	Draw
+				EndBuffering();
+
+				FrameShaderVars.FrameFlags &= ~FSF_NoTransform;
+
+				UpdateGlobalShaderVars();
+
+				// Metallicafan212:	Reset Z state
+				DepthStencilFlags = OldDSFlags;
+				SetZTestMode(OldZTest);
+			}
+#endif
 		}
 		else
 #endif
@@ -1817,6 +1901,8 @@ class UICBINDx11RenderDevice : public RD_CLASS
 #if UPDATESUBRESOURCE_CONSTANTS
 		// Metallicafan212:	Update this using update subresource
 		m_RenderContext->UpdateSubresource(BoundTexturesBuffer, 0, nullptr, &BoundTexturesInfo, 0, 0);
+
+		bWriteTexturesBuffer = 0;
 #else
 		D3D11_MAPPED_SUBRESOURCE Map;
 

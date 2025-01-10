@@ -27,6 +27,12 @@ enum EFrameShaderFlags
 
 	// Metallicafan212:	Reverse the HDR white balance
 	FSF_ReverseHDR	= 0x0000000004,
+
+	// Metallicafan212:	TODO! HACK!!!
+	//					This makes the shader not transform verts (general shader only)
+	FSF_NoTransform	= 0x0000000008,
+
+	FSF_R2020		= 0x0000000010,
 };
 
 // Metallicafan212:	Common draw vars that should only be uploaded once per frame (if we can get away with it, that is)
