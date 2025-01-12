@@ -18,7 +18,25 @@ float4 PxShader(PSInput input) : SV_TARGET
 	//					This prevents issues with missing colors in a masked/alpha/translucent texture
 	float4 DiffColor 		= ConvertColorspace(Diffuse.Sample(DiffState, input.uv));
 	
-	if(bSelected)
+	if(ShaderFlags & SF_MSDFRendering)
+    {
+        // Metallicafan212:	HLSL version of the XOpenGL version
+        float sd 				= Median(DiffColor.xyz);
+        float screenPxDistance 	= ScreenPxRange() * (sd - 0.5f);
+        float opacity 			= clamp(screenPxDistance + 0.5f, 0.0f, 1.0f);
+		
+		// Metallicafan212:	TODO! This is NOT good for selection!!!!
+		if(!bDoSelection)
+		{
+			return lerp(float4(0.f, 0.f, 0.f, 0.f), input.color, opacity);
+		}
+		// Metallicafan212:	Selection is going to be fun, but let the alpha rejection take effect here
+		else
+		{
+			DiffColor = lerp(float4(0.f, 0.f, 0.f, 0.f), input.color, opacity);
+		}
+    }
+	else if(bSelected)
 	{
 		DiffColor.xyz 	= (DiffColor.x + DiffColor.y + DiffColor.z) / 3.0f;
 	}

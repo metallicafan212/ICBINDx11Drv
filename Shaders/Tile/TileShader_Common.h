@@ -37,3 +37,15 @@ struct PSInput
 	int   	bRejectBW				: COLOR3;
 #endif
 };
+
+// Metallicafan212:	Directly ported from XOpenGL
+float Median(float3 color)
+{
+    return max(min(color.x, color.y), min(max(color.x, color.y), color.z));
+}
+
+float ScreenPxRange()
+{
+    // Metallicafan212:	TODO! Scaling for perspective
+    return 2.0;
+}

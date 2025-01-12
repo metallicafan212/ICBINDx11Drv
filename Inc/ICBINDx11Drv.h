@@ -147,6 +147,8 @@ enum EDepthStencilFlags
 // Metallicafan212:	Distance fog settings
 #define DX11_DISTANCE_FOG DX11_HP2 || DX11_UNREAL_227
 
+#define DX11_MSDF_RENDERING DX11_HP2
+
 #define INT_INDEX_BUFF 1
 
 #if INT_INDEX_BUFF

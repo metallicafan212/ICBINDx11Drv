@@ -40,6 +40,7 @@
 #define SF_AlphaEnabled		0x00000001
 #define SF_Modulated		0x00000002
 #define SF_HudSmoothMasked	0x00000004
+#define SF_MSDFRendering	0x00000008
 
 #define RENMAPS				1
 #define NO_CUSTOM_RMODES	0

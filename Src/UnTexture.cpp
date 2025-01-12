@@ -66,6 +66,21 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 		PolyFlags |= PF_AlphaToCoverage;
 #endif
 
+	// Metallicafan212:	If this texture is a MSDF texture, we're using it as an opacity mask not a "real" image
+#if DX11_MSDF_RENDERING
+	DWORD CheckMSDF = (Info->Format == TEXF_MSDF) ? SF_MSDFRendering : 0;
+
+	if ((GlobalPolyflagVars.ShaderFlags & (SF_MSDFRendering)) != CheckMSDF)
+	{
+		// Metallicafan212:	Swap it and update the buffer
+		//					If it's set, this will remove it (as CheckMSDF will be 0)
+		//					If it's not set, this will add it (as CheckMSDF will be set)
+		GlobalPolyflagVars.ShaderFlags ^= SF_MSDFRendering;
+
+		UpdateGlobalShaderVars();
+	}
+#endif
+
 	// Metallicafan212:	Adjust the cache ID to fix masking issues (per the DX9 driver)
 	//					Like said before, this was disabled because it slots ALL textures into the first bucket
 	QWORD CacheID = Info->CacheID;

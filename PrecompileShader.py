@@ -21,6 +21,7 @@ global_macros = [
       Macro("SF_AlphaEnabled", "1"),
       Macro("SF_Modulated", "2"),
       Macro("SF_HudSmoothMasked", "4"),
+      Macro("SF_MSDFRendering", "8"),
 ]
 
 # Metallicafan212:  Defined language version
