@@ -1718,7 +1718,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		{
 			GWarn->Logf(TEXT("DX11: Failed to use %s screen format, trying %s format"), (UserScreenFormat == DSF_HDR16 ? TEXT("16bpc") : TEXT("10bpc")), (UserScreenFormat == DSF_HDR16 ? TEXT("10bpc") : TEXT("8bpc")));
 
-			UserScreenFormat = (EDX11ScreenFormat)Clamp(((BYTE)UserScreenFormat - 1), 0, DSF_MAX);
+			UserScreenFormat = (EDX11ScreenFormat)Clamp(((BYTE)UserScreenFormat - 1), 0, (INT)DSF_MAX);
 
 			// Metallicafan212:	Generic, remove HDR and linear from it so that it can reinit
 			FrameShaderVars.FrameFlags = 0;//&= ~(FSF_HDR | FSF_Linear);
