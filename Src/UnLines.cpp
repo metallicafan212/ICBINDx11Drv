@@ -274,6 +274,9 @@ void UICBINDx11RenderDevice::Draw2DPoint(FSceneNode* Frame, FPlane Color, DWORD 
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Points);
 
+	// Metallicafan212:	Remove the texture, as the generic shader supports texturing now
+	SetTexture(0, nullptr, 0);
+
 	// Metallicafan212:	Add on size to the input vars, just so that the pivot cross shows up (why didn't they use Draw2DLine????)
 	X1 -= 1.f;
 	Y1 -= 1.f;
