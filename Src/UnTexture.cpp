@@ -35,12 +35,13 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 		}
 		// Metallicafan212:	Check if the slot is still "sticky"
 		//					Somehow in my code, this is becoming a problem.....
-		else if (TX.m_SRV == nullptr && !(BoundTexturesInfo.CurrentBoundTextures & SlotFlag))//!= nullptr)
+		else if (TX.m_SRV == nullptr && TX.bIsNull)//&& !(BoundTexturesInfo.CurrentBoundTextures & SlotFlag))//!= nullptr)
 		{
 			// Metallicafan212:	It's already been null-d out
 			return;
 		}
 
+		TX.bIsNull		= 1;
 		TX.bIsRT		= 0;
 		TX.UMult		= 1.0f;
 		TX.VMult		= 1.0f;
@@ -49,8 +50,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 		TX.m_SRV		= nullptr;//BlankResourceView;
 		TX.Flags		= 0;
 
-		m_RenderContext->PSSetShaderResources(TexNum, 0, nullptr);//1, &BlankResourceView);
-		m_RenderContext->PSSetSamplers(TexNum, 0, nullptr);//1, &BlankSampler);
+		m_RenderContext->PSSetShaderResources(TexNum, 1, &BlankResourceView);
+		m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
 
 		bWriteTexturesBuffer = 1;
 
@@ -201,7 +202,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 	//					2024, check only the RELEVANT polyflags. We don't care (here) if blending changed
 	if (bSetTex || TX.m_SRV == nullptr || ((TX.Flags & (PF_NoSmooth | PF_ClampUVs)) != (PolyFlags & (PF_NoSmooth | PF_ClampUVs))))
 	{
-		TX.m_SRV = DaTex->m_View;
+		TX.m_SRV	= DaTex->m_View;
+		TX.bIsNull	= 0;
 
 		m_RenderContext->PSSetShaderResources(TexNum, 1, &DaTex->m_View);
 
