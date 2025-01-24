@@ -176,7 +176,7 @@ typedef unsigned short INDEX;
 #if DX11_HP2
 #define ADJUST_PFLAGS(PolyFlags) \
 	/* Metallicafan212:	Cut it down to only specific flags */ \
-	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected))) \
+	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_AlphaBlend))) \
 	{ \
 		PolyFlags |= PF_Occlude; \
 	} \
@@ -192,7 +192,7 @@ typedef unsigned short INDEX;
 #else
 #define ADJUST_PFLAGS(PolyFlags) \
 	/* Metallicafan212:	Cut it down to only specific flags */ \
-	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted ))) \
+	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_AlphaBlend))) \
 	{ \
 		PolyFlags |= PF_Occlude; \
 	} \
@@ -552,6 +552,7 @@ struct FD3DBoundTex
 	FD3DTexture*				BoundTex;
 
 	UBOOL						bIsRT;
+	UBOOL						bIsNull;
 
 	// Metallicafan212:	Currently bound shader resource view
 	ID3D11ShaderResourceView*	m_SRV;
@@ -1211,6 +1212,12 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	// Metallicafan212:	If we're using a Freesync/GSync mode
 	UBOOL								bAllowTearing;
+
+	UBOOL								bLastTearingState;
+
+	// Metallicafan212:	This is so we can delay a swap chain recreation due to some kind of race condition deep in dxgi....
+	UBOOL								bRecreateSwap;
+	INT									RecreateSwapFrame;
 
 	UINT								PresentFlags;
 

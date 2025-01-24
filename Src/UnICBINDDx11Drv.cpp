@@ -28,6 +28,9 @@ void UICBINDx11RenderDevice::SetupDevice()
 	m_SecVertexBuffSize	= 0;
 	m_SecVertexBuffPos	= 0;
 
+	bRecreateSwap		= 0;
+	RecreateSwapFrame	= 0;
+
 	// Metallicafan212: Detect windows version and wine on non-HP2 engines
 #if !DX11_HP2
 	// Metallicafan212:	TODO!!!!! This will NOT work with games that don't have a manifest, since windows will always report a lower OS number to apps with a older manifest....
@@ -1417,6 +1420,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		m_RenderContext->PSSetSamplers(i, 0, nullptr);
 	}
 
+	appMemzero(BoundTextures, sizeof(FD3DBoundTex) * ARRAY_COUNT(BoundTextures));
+
 	// Metallicafan212:	CATCH RT TEXTURES!!!!
 	RestoreRenderTarget();
 
@@ -1492,7 +1497,8 @@ void UICBINDx11RenderDevice::SetupResources()
 	FlushTextureSamplers();
 
 	// Metallicafan212:	Now flush
-	m_D3DDeviceContext->Flush();
+	//m_D3DDeviceContext->Flush();
+	//m_D3DDeviceContext->ClearState();
 
 	// Metallicafan212:	Create or resize the swap chain
 	HRESULT hr = S_OK;
@@ -1627,27 +1633,10 @@ void UICBINDx11RenderDevice::SetupResources()
 		hr = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
 
 		ThrowIfFailed(hr);
-
-		// Metallicafan212:	Default to SDR
-		//RTFormat		= DXGI_FORMAT_R8G8B8A8_UNORM;
-		//ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
-
-		/*
-		// Metallicafan212:	See what formats the backbuffer and screen should be
-		//					Before Windows 10, windows didn't allow for floating point backbuffers, so handle it
-		if (!UseRGBA8 || !GWin10)
-		{
-			if (UseRGBA16 || bLocalHDR)
-			{
-				RTFormat		= DXGI_FORMAT_R16G16B16A16_FLOAT;
-				ScreenFormat	= DXGI_FORMAT_R16G16B16A16_FLOAT;
-			}
-		}
-		*/
-
 		INT InitTries = 0;
 
 	RETRY_FORMAT:
+		// Metallicafan212:	Set the screen variables based on the user's format choice
 		switch (UserScreenFormat)
 		{
 			case DSF_HDR10:
@@ -1673,14 +1662,6 @@ void UICBINDx11RenderDevice::SetupResources()
 				FrameShaderVars.FrameFlags	= 0;
 			}
 		}
-
-		/*
-		// Metallicafan212:	Only convert from sRGB if we're using HDR
-		if (ScreenFormat == DXGI_FORMAT_R16G16B16A16_FLOAT)
-		{
-			FrameShaderVars.FrameFlags |= FSF_Linear | FSF_HDR;
-		}
-		*/
 
 		// Metallicafan212:	Describe the non-aa swap chain (MSAA is resolved in Unlock)
 		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
@@ -1730,37 +1711,7 @@ void UICBINDx11RenderDevice::SetupResources()
 			goto RETRY_FORMAT;
 		}
 
-		/*
-		if (FAILED(hr) && !UseRGBA8)
-		{
-			GLog->Logf(TEXT("DX11: Failed to use 16bpc screen format, trying 8bpc format"));
-			//UseHDR = 0;
-
-			if (!GIsEditor)
-			{
-				UseHDR = 0;
-			}
-			else
-			{
-				UseHDRInEditor = 0;
-			}
-
-			UseRGBA16		= 0;
-
-			// Metallicafan212:	Disable HDR if it's on, and force RGBA8 screen formats
-			bLocalHDR		= (!GIsEditor ? UseHDR : UseHDRInEditor);
-
-			ScreenFormat	= DXGI_FORMAT_R8G8B8A8_UNORM;
-			RTFormat		= DXGI_FORMAT_R8G8B8A8_UNORM;
-
-			UseRGBA8		= 1;
-
-			FrameShaderVars.FrameFlags &= ~(FSF_HDR | FSF_Linear);
-			
-
-			goto RETRY_FORMAT;
-		}
-		*/
+		bLastTearingState = bAllowTearing;
 
 		if(SUCCEEDED(hr) && bLocalHDR)
 		{
@@ -1789,6 +1740,8 @@ void UICBINDx11RenderDevice::SetupResources()
 	}
 	else
 	{
+		INT ResizeCount = 0;
+
 		// Metallicafan212:	Clamp the user options!
 		ClampUserOptions();
 
@@ -1825,7 +1778,7 @@ void UICBINDx11RenderDevice::SetupResources()
 
 			ModeDesc.Width						= SizeX;
 			ModeDesc.Height						= SizeY;
-			ModeDesc.Format						= ScreenFormat;//DXGI_FORMAT_UNKNOWN;
+			ModeDesc.Format						= ScreenFormat;//DXGI_FORMAT_UNKNOWN;	
 			//ModeDesc.Scaling					= DXGI_MODE_SCALING_CENTERED;
 
 			hr									= m_D3DSwapChain->ResizeTarget(&ModeDesc);
@@ -1834,16 +1787,19 @@ void UICBINDx11RenderDevice::SetupResources()
 		}
 
 		// Metallicafan212:	Resize it
-		hr = m_D3DSwapChain->ResizeBuffers(2 + NumAdditionalBuffers, SizeX, SizeY, ScreenFormat, (bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0));
+		hr = m_D3DSwapChain->ResizeBuffers(2 + NumAdditionalBuffers, SizeX, SizeY, ScreenFormat, (bLastTearingState ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0));
 
 		if (FAILED(hr))//hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
 		{
+			// Metallicafan212:	Fullscreen state should take care of it? TODO!
 			// Metallicafan212:	TODO! Recreate the device!!!
 			// RecreateDevice();
 			SetupDevice();
 			//SAFE_RELEASE(m_D3DSwapChain);
 			goto SetupSwap;
 		}
+
+		ResizeCount++;
 
 		if (bLastFullscreen != bFullscreen)
 		{
@@ -1854,7 +1810,32 @@ void UICBINDx11RenderDevice::SetupResources()
 
 			ThrowIfFailed(hr);
 		}
+
+		// Metallicafan212:	We need to recreate the swapchain if the tearing flag changes (fullscreen -> windowed or windowed -> fullscreen)
+		//					This is done here because we need to fully exit fullscreen before we recreate the swapchain
+		if (bLastTearingState != bAllowTearing)
+		{
+			bLastFullscreen		= bFullscreen;
+
+			bLastTearingState	= bAllowTearing;
+
+			// Metallicafan212:	Force windowed mode?
+			hr = m_D3DSwapChain->SetFullscreenState(0, nullptr);
+			SAFE_RELEASE(m_D3DSwapChain);
+
+			// Metallicafan212:	Make the clear actually take effect
+			m_D3DDeviceContext->ClearState();
+			m_D3DDeviceContext->Flush();
+
+			// Metallicafan212:	TODO!!!!!! Just recreating the swap chain results in a blank window.....
+			//					This'll have to work for now
+			SetupDevice();
+			goto SetupSwap;
+		}
 	}
+
+	bLastFullscreen		= bFullscreen;
+	bLastTearingState	= bAllowTearing;
 
 
 	SetupPresentFlags();
@@ -1927,8 +1908,6 @@ void UICBINDx11RenderDevice::SetupResources()
 			sp3->Release();
 		}
 	}
-
-	bLastFullscreen = bFullscreen;
 
 	// Metallicafan212:	Get the closer value to the DX11 resource limit!!!!
 	if (ResolutionScale == 1.0f)
@@ -2229,57 +2208,6 @@ void UICBINDx11RenderDevice::SetupResources()
 	{
 		SetTexture(i, nullptr, 0);
 	}
-
-	/*
-	// Metallicafan212:	Setup the depth stencil state
-	//					From a MSDN page https://learn.microsoft.com/en-us/windows/win32/direct3d11/d3d10-graphics-programming-guide-depth-stencil
-	D3D11_DEPTH_STENCIL_DESC dsDesc;
-
-	// Depth test parameters
-	dsDesc.DepthEnable					= TRUE;
-	dsDesc.DepthWriteMask				= D3D11_DEPTH_WRITE_MASK_ALL;
-	dsDesc.DepthFunc					= D3D11_COMPARISON_LESS_EQUAL;
-
-	// Stencil test parameters
-	dsDesc.StencilEnable				= FALSE;//TRUE;
-	dsDesc.StencilReadMask				= 0xFF;
-	dsDesc.StencilWriteMask				= 0xFF;
-
-	// Stencil operations if pixel is front-facing
-	dsDesc.FrontFace.StencilFailOp		= D3D11_STENCIL_OP_KEEP;
-	dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	dsDesc.FrontFace.StencilPassOp		= D3D11_STENCIL_OP_KEEP;
-	dsDesc.FrontFace.StencilFunc		= D3D11_COMPARISON_NEVER;
-
-	// Stencil operations if pixel is back-facing
-	dsDesc.BackFace.StencilFailOp		= D3D11_STENCIL_OP_KEEP;
-	dsDesc.BackFace.StencilDepthFailOp	= D3D11_STENCIL_OP_DECR;
-	dsDesc.BackFace.StencilPassOp		= D3D11_STENCIL_OP_KEEP;
-	dsDesc.BackFace.StencilFunc			= D3D11_COMPARISON_NEVER;
-
-	// Create depth stencil state
-	hr = m_D3DDevice->CreateDepthStencilState(&dsDesc, &m_DefaultZState);
-
-	ThrowIfFailed(hr);
-
-	// Metallicafan212:	Set it
-	m_RenderContext->OMSetDepthStencilState(m_DefaultZState, 1);
-
-	// Metallicafan212:	And now a version with no z writing
-	dsDesc.DepthWriteMask					= D3D11_DEPTH_WRITE_MASK_ZERO;
-	dsDesc.DepthFunc						= D3D11_COMPARISON_LESS_EQUAL;
-	hr = m_D3DDevice->CreateDepthStencilState(&dsDesc, &m_DefaultNoZState);
-	ThrowIfFailed(hr);
-
-	// Metallicafan212:	Create a z state for when we need NO depth or stencil writing
-	dsDesc.DepthWriteMask				= D3D11_DEPTH_WRITE_MASK_ZERO;//D3D11_DEPTH_WRITE_MASK_ALL;
-	dsDesc.DepthFunc					= D3D11_COMPARISON_LESS_EQUAL;
-	dsDesc.DepthEnable						= FALSE;
-	dsDesc.StencilEnable					= FALSE;
-
-	hr = m_D3DDevice->CreateDepthStencilState(&dsDesc, &m_DefaultNoZWriteState);
-	ThrowIfFailed(hr);
-	*/
 
 	// Metallicafan212:	Cache depth stencil states
 	CurrentZTestIndex = -1;
