@@ -51,7 +51,7 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	//Driver flags
 	SpanBased				= 0;
 	SupportsFogMaps			= 1;
-#if !DX11_UNREA_227
+#if !DX11_UNREAL_227
 	SupportsDistanceFog		= 0;
 #endif
 	VolumetricLighting		= 1;
@@ -63,7 +63,7 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	Mark it as certified
 	DescFlags |= RDDESCF_Certified;
 
-#if DX11_UT_469
+#if DX11_UT_469 || DX11_HP2
 	NeedsMaskedFonts = 0;
 
 	// Metallicafan212:	DX11 supports massive textures
@@ -76,6 +76,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	//AddBoolProp(CPP_PROP(SupportsUpdateTextureRect), 0);//1);
 
 	SupportsUpdateTextureRect = 0;
+
+	//UseAmbientlessLightmaps	= 1;
 
 	// Metallicafan212:	New TileList 469e support
 	SupportsDrawTileList	= 1;
