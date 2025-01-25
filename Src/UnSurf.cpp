@@ -187,7 +187,6 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	{
 		PolyFlags &= ~PF_VertexColored;
 	}
-
 #endif
 
 	//ADJUST_PFLAGS(PolyFlags);
@@ -242,7 +241,13 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	{
 		Fog = Surface.VertexColor;
 	}
-
+#elif DX11_UT_469
+	// Metallicafan212:	Read the zone light info
+	//					TODO!!!! Don't do this for non-realtime?
+	if (Surface.Zone != nullptr && Frame->Viewport->Actor->RendMap == REN_DynLight)
+	{
+		UVInfo.AddColor		= FGetHSV(Surface.Zone->AmbientHue, Surface.Zone->AmbientSaturation, Surface.Zone->AmbientBrightness);
+	}
 #endif
 
 	// Metallicafan212:	Selection testing!!!!
