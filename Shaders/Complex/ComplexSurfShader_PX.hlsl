@@ -103,7 +103,7 @@ PSOutput PxShader(PSInput input)
 		
 		float4 LColor 	= ConvertColorspace(Light.Sample(LightState, input.lUV) * Mult);
 
-		DiffColor.xyz 	*= LColor.xyz;
+		DiffColor.xyz 	*= LColor.xyz + input.addColor.xyz;
 		
 #if !NO_CUSTOM_RMODES
 		// Metallicafan212:	If we're doing lighting only, set it out now

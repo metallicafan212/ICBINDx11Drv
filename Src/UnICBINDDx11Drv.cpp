@@ -7,6 +7,20 @@ IMPLEMENT_PACKAGE(ICBINDx11Drv);
 UBOOL UICBINDx11RenderDevice::bSetupIValArray = 0;
 INT	  UICBINDx11RenderDevice::IndexValueArray[IBUFF_SIZE];
 
+
+// Metallicafan212:	This defines the common vertex buffer format
+//					TODO! Maybe optimize the vertex buffers per shader?????
+D3D11_INPUT_ELEMENT_DESC FBasicInLayout[] =
+{
+	"POSITION",		0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0, 0,								D3D11_INPUT_PER_VERTEX_DATA, 0,
+	"TEXCOORD",		0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0,
+	"COLOR",		0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0,
+	"COLOR",		1, DXGI_FORMAT_R32G32B32A32_FLOAT,	0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0,
+	"COLOR",		2, DXGI_FORMAT_R32G32B32A32_FLOAT,	0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0,
+	"TEXCOORD",		1, DXGI_FORMAT_R32G32B32A32_FLOAT,	1, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0,
+	"TEXCOORD",		2, DXGI_FORMAT_R32G32B32A32_FLOAT,	1, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0,
+};
+
 void UICBINDx11RenderDevice::SetupDevice()
 {
 	guard(UICBINDx11RenderDevice::SetupDevice);
@@ -559,7 +573,6 @@ MAKE_DEVICE:
 	m_BufferedIndices	= 0;
 	m_DrawnIndices		= 0;
 
-#if EXTRA_VERT_INFO
 	GLog->Logf(TEXT("DX11: Creating secondary vertex buffer"));
 
 	// Metallicafan212:	Secondary vertex buffer
@@ -569,7 +582,6 @@ MAKE_DEVICE:
 
 	m_SecVertexBuff			= nullptr;
 	m_SecVertexBuffPos		= 0;
-#endif
 
 #if DX11_D2D
 	GLog->Logf(TEXT("DX11: Creating D2D1 factory1"));
@@ -2230,17 +2242,13 @@ void UICBINDx11RenderDevice::SetupResources()
 	{
 		m_D3DDeferredContext->IASetIndexBuffer(IndexBuffer, INDEX_FORMAT, 0);
 		m_D3DDeferredContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
-#if EXTRA_VERT_INFO
 		m_D3DDeferredContext->IASetVertexBuffers(1, 1, &SecondaryVertexBuffer, &SecStride, &Offset);
-#endif
 	}
 	else
 	{
 		m_D3DDeviceContext->IASetIndexBuffer(IndexBuffer, INDEX_FORMAT, 0);
 		m_D3DDeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
-#if EXTRA_VERT_INFO
 		m_D3DDeviceContext->IASetVertexBuffers(1, 1, &SecondaryVertexBuffer, &SecStride, &Offset);
-#endif
 	}
 	
 

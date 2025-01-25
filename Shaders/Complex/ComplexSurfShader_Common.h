@@ -58,6 +58,7 @@ struct PSInput
 	float4 fog		: COLOR1;
 	float  origZ	: COLOR2;
 	float2 detVars	: COLOR3;
+	float4 addColor	: COLOR4;
 };
 
 struct PSOutput

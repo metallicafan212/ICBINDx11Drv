@@ -15,12 +15,10 @@ struct FUVInfo
 
 	FLOAT	UDot;
 	FLOAT	VDot;
+
+	FPlane	AddColor;
 };
 
-#if EXTRA_VERT_INFO && !COMPLEX_SURF_MANUAL_UVs
-// Metallicafan212:	TODO! Temp vertex to keep here to copy data over
-FD3DSecondaryVert TempVert;
-#endif
 
 #define DO_UV_CHANNEL_NO_ADD(chan, uLoc, vLoc) \
 /*Metallicafan212: Each one is checked if we need to even cal it */ \
@@ -53,11 +51,7 @@ if (UVInfo.bEnabledTex[chan]) \
 	/* Metallicafan212:	Detail */ \
 	DO_UV_CHANNEL_NO_ADD(4, m_SecVert[Vert].DU, m_SecVert[Vert].DV);
 
-#if EXTRA_VERT_INFO
 FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FPlane Fog, FD3DVert* m_VertexBuff, INDEX* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies, FD3DSecondaryVert* m_SecVert, FUVInfo& UVInfo)
-#else
-FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FPlane Fog, FD3DVert* m_VertexBuff, INDEX* m_IndexBuff, SIZE_T m_BufferedVerts, SIZE_T m_BufferedIndicies, FD3DSecondaryVert* m_SecVert)
-#endif
 {
 	SIZE_T vIndex	= 0;
 	SIZE_T Vert		= 0;
@@ -83,15 +77,11 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FPlane Fog, 
 		m_VertexBuff[Vert].Z		= Poly->Pts[0]->Point.Z;
 
 		// Metallicafan212:	Pan/Scale info
-#if EXTRA_VERT_INFO
-#if !COMPLEX_SURF_MANUAL_UVs
-		m_SecVert[Vert]			= TempVert;
-#else
 		// Metallicafan212:	Calculate the UVs of this vertex
 		CALC_UV(0);
-#endif
-#endif
+
 		m_VertexBuff[Vert].Fog		= Fog;
+		m_VertexBuff[Vert].AddColor	= UVInfo.AddColor;
 		m_VertexBuff[Vert++].Color	= Color;
 
 		m_VertexBuff[Vert].X		= Poly->Pts[1]->Point.X;
@@ -99,15 +89,10 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FPlane Fog, 
 		m_VertexBuff[Vert].Z		= Poly->Pts[1]->Point.Z;
 
 		// Metallicafan212:	Pan/Scale info
-#if EXTRA_VERT_INFO
-#if !COMPLEX_SURF_MANUAL_UVs
-		m_SecVert[Vert] = TempVert;
-#else
 		// Metallicafan212:	Calculate the UVs of this vertex
 		CALC_UV(1);
-#endif
-#endif
 		m_VertexBuff[Vert].Fog		= Fog;
+		m_VertexBuff[Vert].AddColor	= UVInfo.AddColor;
 		m_VertexBuff[Vert++].Color	= Color;
 
 
@@ -118,15 +103,10 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FPlane Fog, 
 			m_VertexBuff[Vert].Z		= Poly->Pts[i]->Point.Z;
 
 			// Metallicafan212:	Pan/Scale info
-#if EXTRA_VERT_INFO
-#if !COMPLEX_SURF_MANUAL_UVs
-			m_SecVert[Vert]			= TempVert;
-#else
 			// Metallicafan212:	Calculate the UVs of this vertex
 			CALC_UV(i);
-#endif
-#endif
 			m_VertexBuff[Vert].Fog		= Fog;
+			m_VertexBuff[Vert].AddColor	= UVInfo.AddColor;
 			m_VertexBuff[Vert++].Color	= Color;
 
 
@@ -149,6 +129,8 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	PFLAG PolyFlags = Surface.PolyFlags;
 #endif
 	guard(UICBINDx11RenderDevice::DrawComplexSurface);
+
+	FUVInfo UVInfo;
 
 	// Metallicafan212:	This breaks mirrors, we HAVE to render invisible surfaces....
 	//if (PolyFlags & PF_Invisible)
@@ -235,12 +217,6 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	// Metallicafan212:	Also bind the detail texture lmao
 	SetTexture(4, Surface.DetailTexture, 0);
 
-#if !EXTRA_VERT_INFO
-	// Metallicafan212:	TODO! Maybe embedd this instead of doing it in the shader?
-	//					It would allow us to buffer surfaces
-	SurfCoords = Facet.MapCoords;
-#endif
-
 	FSurfShader->Bind(m_RenderContext);
 
 	checkSlow(Surface.Texture);
@@ -250,6 +226,16 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	FPlane Fog			= FPlane(0.f, 0.f, 0.f, 0.f);
 
 #if DX11_HP2
+	// Metallicafan212:	Set the ambientless lightmap color
+	UVInfo.AddColor		= Surface.ZoneAmbientColor;
+
+	// Metallicafan212:	If one x blending is enabled, reduce the strength
+	if (bOneXLightmaps)
+	{
+		UVInfo.AddColor /= 2.0f;
+	}
+
+	// Metallicafan212:	Lumos alpha
 	TestColor.W *= AlphaMult;
 
 	if (PolyFlags & PF_VertexColored)
@@ -285,44 +271,11 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	LockVertAndIndexBuffer(VertRequest, IndexRequest);
 
 	// Metallicafan212:	Secondary color buffer
-#if EXTRA_VERT_INFO
 	LockSecondaryVertBuffer();
 
 	// Metallicafan212:	Calculate all the extra info
-	FUVInfo UVInfo;
 	UVInfo.UDot = Facet.MapCoords.XAxis | Facet.MapCoords.Origin;
 	UVInfo.VDot = Facet.MapCoords.YAxis | Facet.MapCoords.Origin;
-#if !COMPLEX_SURF_MANUAL_UVs
-	TempVert.XAxis		= FPlane(Facet.MapCoords.XAxis, UVInfo.UDot);
-	TempVert.YAxis		= FPlane(Facet.MapCoords.YAxis, UVInfo.VDot);
-	//SDef->SurfAlpha			= SurfAlpha;
-	//SDef->bDrawOpacity		= bSurfInvisible;
-
-
-	// Metallicafan212:	Now the pan info
-	for (INT i = 0; i < 5; i++)
-	{
-		// Metallicafan212:	Copy the pan and scale info
-		if (BoundTextures[i].TexInfoHash != 0)
-		{
-			TempVert.PanScale[i] = FPlane(BoundTextures[i].UPan, BoundTextures[i].VPan, BoundTextures[i].UMult, BoundTextures[i].VMult);
-		}
-	}
-
-	// Metallicafan212:	And lastly the original lightmap scale
-	if (BoundTextures[1].TexInfoHash != 0)
-	{
-		TempVert.LFScale.X = BoundTextures[1].UScale * 0.5f;
-		TempVert.LFScale.Y = BoundTextures[1].VScale * 0.5f;
-	}
-
-	// Metallicafan212:	And the fog scale
-	if (BoundTextures[3].TexInfoHash != 0)
-	{
-		TempVert.LFScale.Z = BoundTextures[3].UScale * 0.5f;
-		TempVert.LFScale.W = BoundTextures[3].VScale * 0.5f;
-	}
-#else
 	UVInfo.XAxis = Facet.MapCoords.XAxis;
 	UVInfo.YAxis = Facet.MapCoords.YAxis;
 
@@ -355,15 +308,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		UVInfo.LFScale.W = BoundTextures[3].VScale * 0.5f;
 	}
 
-#endif
-
-#endif
-
-#if EXTRA_VERT_INFO
 	BufferAndIndex(Facet, TestColor, Fog, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff, UVInfo);
-#else
-	BufferAndIndex(Facet, TestColor, Fog, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff);
-#endif
 
 	AdvanceVertPos();
 
@@ -385,9 +330,8 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 		LockVertAndIndexBuffer(VertRequest, IndexRequest);
 
-#if EXTRA_VERT_INFO
 		LockSecondaryVertBuffer();
-#endif
+
 		// Metallicafan212:	Keep the base texture???
 		//if (UseDX9FlatColor)
 		{
@@ -455,21 +399,9 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		FSurfShader->Bind(m_RenderContext);
 
 		// Metallicafan212:	Rebuffer the verts (again)
-#if EXTRA_VERT_INFO
 		BufferAndIndex(Facet, TestColor, Fog, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff, UVInfo);
-#else
-		BufferAndIndex(Facet, TestColor, Fog, m_VertexBuff, m_IndexBuff, m_BufferedVerts, m_BufferedIndices, m_SecVertexBuff);
-#endif
 
 		AdvanceVertPos();
-
-		// Metallicafan212:	Draw and reset!!!!
-		//					This will suck....
-
-		// Metallicafan212:	Draw immediately
-#if !EXTRA_VERT_INFO
-		EndBuffering();
-#endif
 	}
 
 	unguard;

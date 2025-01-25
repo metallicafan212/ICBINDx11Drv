@@ -24,12 +24,6 @@
 //					TODO! Try and see if we can make this a bit more automatic....
 #define MAX_SAMPLERS (4 * (MAX_MIP_BIAS + 1) * 2)
 
-// Metallicafan212:	If complex surface stuff is added to each vert
-#define EXTRA_VERT_INFO 1
-
-// Metallicafan212:	If we pack the UVs of each texture into each vert instead (when EXTRA_VERT_INFO is on)
-#define COMPLEX_SURF_MANUAL_UVs 1
-
 // Metallicafan212:	EXPLICIT HP2 new engine check
 //					Modify this to add in more game macros
 //					This is (currently) ONLY used to turn off specific code blocks, not to redefine the functions
@@ -375,18 +369,16 @@ struct FD3DVert
 
 	FPlane	Color;
 	FPlane	Fog;
+
+	// Metallicafan212:	Additional color that gets added to the output color
+	//					Only used right now for ambientless lightmaps for surfaces
+	FPlane	AddColor;
 };
 
 // Metallicafan212:	Extra info that's only used for complex surfaces
 //					This is stored in a separate buffer and is only locked/used when needed
 struct FD3DSecondaryVert
 {
-#if !COMPLEX_SURF_MANUAL_UVs
-	FPlane	XAxis;
-	FPlane	YAxis;
-	FPlane	PanScale[5];
-	FPlane	LFScale;
-#else
 	// Metallicafan212:	UV is used for the diffuse, UX and UY is used for the lightmaps
 	//					So, detail, macro, and fog need UVs
 	FLOAT	DU;
@@ -395,7 +387,6 @@ struct FD3DSecondaryVert
 	FLOAT	MV;
 	FLOAT	FU;
 	FLOAT	FV;
-#endif
 };
 // Metallicafan212:	Cache stuff
 typedef unsigned long long D3DCacheId;
@@ -698,15 +689,7 @@ struct FD3DTexType
 };
 
 // Metallicafan212:	Base layout declaration
-#if EXTRA_VERT_INFO
-#if !COMPLEX_SURF_MANUAL_UVs
-extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[12];
-#else
-extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[6];
-#endif
-#else
-extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[4];
-#endif
+extern D3D11_INPUT_ELEMENT_DESC FBasicInLayout[7];
 
 #define SAFE_RELEASE(ptr) if(ptr != nullptr){ptr->Release(); ptr = nullptr;}
 #define SAFE_DELETE(ptr) if(ptr != nullptr){delete ptr; ptr = nullptr;}
@@ -1554,9 +1537,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 			m_DrawnVerts	= 0;
 			m_DrawnIndices	= 0;
 
-#if EXTRA_VERT_INFO
 			bClearSec		= 1;
-#endif
 
 			if (m_VertexBuff != nullptr)
 				UnlockBuffers();
@@ -1615,14 +1596,12 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 		m_IndexBuff = nullptr;
 
-#if EXTRA_VERT_INFO
 		if (m_SecVertexBuff != nullptr)
 		{
 			m_D3DDeviceContext->Unmap(SecondaryVertexBuffer, 0);
 
 			m_SecVertexBuff = nullptr;
 		}
-#endif
 	}
 
 	FORCEINLINE void AdvanceVertPos()
@@ -2244,6 +2223,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	virtual void DrawRotatedTile(FSceneNode* Frame, FTextureInfo& Info, FLOAT X, FLOAT Y, FLOAT XL, FLOAT YL, FLOAT U, FLOAT V, FLOAT UL, FLOAT VL, FSpanBuffer* Span, FLOAT Z, FPlane Color, FPlane Fog, PFLAG PolyFlags, FCoords InCoords = GMath.UnitCoords);
 
 	virtual INT DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT& DrawY, FLOAT ClipX, FLOAT ClipY, FLOAT ClipW, FLOAT ClipH, const TCHAR* Text, const FPlane& Color, UBOOL bHandleApersand = 0, FLOAT Scale = 1.0f);
+
+	// Metallicafan212:	Support partial uploads
+	virtual void UpdateTextureRect(FTextureInfo& Info, INT U, INT V, INT UL, INT VL);
 #elif DX11_UT_469	
 	
 	virtual void DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo& Surface, FSurfaceFacet& Facet);

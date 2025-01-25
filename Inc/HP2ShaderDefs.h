@@ -18,9 +18,6 @@
 
 #endif
 
-#define EXTRA_VERT_INFO			1
-#define COMPLEX_SURF_MANUAL_UVs 1
-
 // Metallicafan212:	Add the gamma modes
 /*
 #define DECLARE_ENUM

@@ -13,24 +13,12 @@ struct VSInput
 	float4 uv			: TEXCOORD0;
 	float4 color		: COLOR0;
 	float4 fog			: COLOR1;
+	float4 addColor		: COLOR2;
 	
 	// Metallicafan212:	This is used for complex surfaces
-	#if EXTRA_VERT_INFO
-	#if !COMPLEX_SURF_MANUAL_UVs
-	float4 XAxis		: TEXCOORD1;
-	float4 YAxis		: TEXCOORD2;
-	float4 PanScale1	: TEXCOORD3;
-	float4 PanScale2	: TEXCOORD4;
-	float4 PanScale3	: TEXCOORD5;
-	float4 PanScale4	: TEXCOORD6;
-	float4 PanScale5	: TEXCOORD7;
-	float4 LFScale		: TEXCOORD8;
-	#else
 	// Metallicafan212:	Per channel UV info
 	float4  DM			: TEXCOORD1;
 	float4	FX			: TEXCOORD2;
-	#endif
-	#endif
 };
 #endif
 

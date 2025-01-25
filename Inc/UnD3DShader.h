@@ -261,17 +261,6 @@ public:
 
 		Macros.AddItem({ "FIRST_USER_CONSTBUFF", FIRST_USER_CONSTBUFF_STR});
 
-#if EXTRA_VERT_INFO
-		Macros.AddItem({"EXTRA_VERT_INFO", "1"});
-#if !COMPLEX_SURF_MANUAL_UVs
-		Macros.AddItem({"COMPLEX_SURF_MANUAL_UVs", "0"});
-#else
-		Macros.AddItem({"COMPLEX_SURF_MANUAL_UVs", "1"});
-#endif
-#else
-		Macros.AddItem({"EXTRA_VERT_INFO", "0"});
-#endif
-
 		// Metallicafan212:	Add the gamma modes
 #define DECLARE_ENUM
 #define DECLARE_GM(name, val)Macros.AddItem({#name, #val});
@@ -555,13 +544,6 @@ public:
 class FD3DSurfShader : public FD3DShader
 {
 public:
-
-	// Metallicafan212:	The alpha of the surface
-	//FLOAT				SurfAlpha;
-
-	// Metallicafan212:	If the surface we're rendering is invisible
-	//UBOOL				bSurfInvisible;
-
 	FD3DSurfShader() :
 		FD3DShader()
 	{
@@ -573,12 +555,6 @@ public:
 
 	// Metallicafan212:	Constructor that inits the device pointer
 	FD3DSurfShader(class UICBINDx11RenderDevice* InParent);
-
-#if !EXTRA_VERT_INFO
-	virtual void SetupConstantBuffer();
-
-	virtual void WriteConstantBuffer(void* InMem);
-#endif
 };
 
 // Metallicafan212:	Shader to scale up/down the final output (so we can have super resolution)

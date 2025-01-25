@@ -75,9 +75,18 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	//					Actually, remove the ini option entirely
 	//AddBoolProp(CPP_PROP(SupportsUpdateTextureRect), 0);//1);
 
+#if 0//DX11_HP2
+	SupportsUpdateTextureRect = 1;
+#else
 	SupportsUpdateTextureRect = 0;
+#endif
 
-	//UseAmbientlessLightmaps	= 1;
+	// Metallicafan212:	TODO! The UT approach requires doing a zone lookup on the surface.
+	//					I'm not above just grabbing it in the driver, but that's not a great thing...
+	//					For HP2, I just embed the color into the surface facet passed to DrawComplexSurface
+#if DX11_HP2
+	UseAmbientlessLightmaps	= 1;
+#endif
 
 	// Metallicafan212:	New TileList 469e support
 	SupportsDrawTileList	= 1;
