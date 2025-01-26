@@ -170,7 +170,7 @@ typedef unsigned short INDEX;
 #if DX11_HP2
 #define ADJUST_PFLAGS(PolyFlags) \
 	/* Metallicafan212:	Cut it down to only specific flags */ \
-	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_AlphaBlend))) \
+	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_AlphaBlend | PF_Opacity))) \
 	{ \
 		PolyFlags |= PF_Occlude; \
 	} \
