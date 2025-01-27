@@ -3182,11 +3182,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 		if (n > 0)
 		{
 			// Metallicafan212:	Get the current timestamp
-#if DX11_UNREAL_227
-			const TCHAR* tStamp = *appTimestamp();
-#else
-			const TCHAR* tStamp = appTimestamp();
-#endif
+			FString tStamp = appTimestamp();
 
 			GLog->Logf(TEXT("DX11: Warnings and errors during this frame:"));
 
@@ -3207,7 +3203,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 					m_D3DQueue->GetMessage(i, temp, &mSize);
 
 					// Metallicafan212:	Now log it
-					GWarn->Logf(TEXT("DX11 debug message (%s): %s at %s"), GetD3DDebugSeverity(temp->Severity), appFromAnsi(temp->pDescription), tStamp);
+					GWarn->Logf(TEXT("DX11 debug message (%s): %s at %s"), GetD3DDebugSeverity(temp->Severity), appFromAnsi(temp->pDescription), *tStamp);
 
 					appFree(temp);
 				}
