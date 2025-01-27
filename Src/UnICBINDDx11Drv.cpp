@@ -1865,7 +1865,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	Save the last detected value
 		INT LastWhiteBalance = 0;
 
-		GConfig->GetInt(GetClass()->GetPathName(), TEXT("AutodetectedWhiteBalance"), LastWhiteBalance);
+		GConfig->GetInt(*ClsName, TEXT("AutodetectedWhiteBalance"), LastWhiteBalance);
 
 		// Metallicafan212:	If the config value is invalid, or the last autodetected value isn't found, or if the detected white balance doesn't match, reset
 		if (HDRWhiteBalanceNits <= 0 || LastWhiteBalance == 0 || DetectedWhiteBalance != LastWhiteBalance)
@@ -1882,12 +1882,12 @@ void UICBINDx11RenderDevice::SetupResources()
 
 			FrameShaderVars.WhiteLevel	= HDRWhiteBalanceNits / 80.0f;
 
-			GConfig->SetInt(GetClass()->GetPathName(), TEXT("AutodetectedWhiteBalance"), DetectedWhiteBalance);
+			GConfig->SetInt(*ClsName, TEXT("AutodetectedWhiteBalance"), DetectedWhiteBalance);
 
 			SaveConfig();
 		}
 
-		GConfig->SetInt(GetClass()->GetPathName(), TEXT("AutodetectedWhiteBalance"), DetectedWhiteBalance);
+		GConfig->SetInt(*ClsName, TEXT("AutodetectedWhiteBalance"), DetectedWhiteBalance);
 	}
 
 	// Metallicafan212:	Initalize shaders, if needed

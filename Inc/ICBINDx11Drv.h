@@ -246,6 +246,9 @@ typedef unsigned short INDEX;
 #include "WindowsVersions.h"
 #endif
 
+// Metallicafan212:	TODO! This is a hack to keep the class name compatible between projects
+extern FString ClsName;
+
 // Metallicafan212:	Compile-time check for engine revision
 constexpr int c_strcmp(const TCHAR* lhs, const TCHAR* rhs)
 {
