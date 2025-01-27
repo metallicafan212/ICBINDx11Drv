@@ -78,7 +78,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 		//					If it's not set, this will add it (as CheckMSDF will be set)
 		GlobalPolyflagVars.ShaderFlags ^= SF_MSDFRendering;
 
-		UpdateGlobalShaderVars();
+		UpdatePolyflagsVars();
 	}
 #endif
 
