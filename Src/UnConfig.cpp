@@ -10,7 +10,7 @@
 //					If values aren't in the INI, it'll provide defaults
 
 // Metallicafan212:	TODO! HACK!!!
-const TCHAR* ClsName = nullptr;
+FString ClsName;
 
 #define CPP_PROP(PROP) TEXT(#PROP), PROP, CPP_PROPERTY(PROP)
 
@@ -98,29 +98,29 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	SupportsDistanceFog	= 1;
 #endif
 
-	if (!GConfig->GetBool(ClsName, TEXT("DetailTextures"), (UBOOL&)DetailTextures))
+	if (!GConfig->GetBool(*ClsName, TEXT("DetailTextures"), (UBOOL&)DetailTextures))
 	{
-		GConfig->SetBool(ClsName, TEXT("DetailTextures"), 1);
+		GConfig->SetBool(*ClsName, TEXT("DetailTextures"), 1);
 	}
 
-	if (!GConfig->GetBool(ClsName, TEXT("VolumetricLighting"), (UBOOL&)VolumetricLighting))
+	if (!GConfig->GetBool(*ClsName, TEXT("VolumetricLighting"), (UBOOL&)VolumetricLighting))
 	{
-		GConfig->SetBool(ClsName, TEXT("VolumetricLighting"), 1);
+		GConfig->SetBool(*ClsName, TEXT("VolumetricLighting"), 1);
 	}
 
-	if (!GConfig->GetBool(ClsName, TEXT("ShinySurfaces"), (UBOOL&)ShinySurfaces))
+	if (!GConfig->GetBool(*ClsName, TEXT("ShinySurfaces"), (UBOOL&)ShinySurfaces))
 	{
-		GConfig->SetBool(ClsName, TEXT("ShinySurfaces"), 1);
+		GConfig->SetBool(*ClsName, TEXT("ShinySurfaces"), 1);
 	}
 
-	if (!GConfig->GetBool(ClsName, TEXT("Coronas"), (UBOOL&)Coronas))
+	if (!GConfig->GetBool(*ClsName, TEXT("Coronas"), (UBOOL&)Coronas))
 	{
-		GConfig->SetBool(ClsName, TEXT("Coronas"), 1);
+		GConfig->SetBool(*ClsName, TEXT("Coronas"), 1);
 	}
 
-	if (!GConfig->GetBool(ClsName, TEXT("HighDetailActors"), (UBOOL&)HighDetailActors))
+	if (!GConfig->GetBool(*ClsName, TEXT("HighDetailActors"), (UBOOL&)HighDetailActors))
 	{
-		GConfig->SetBool(ClsName, TEXT("HighDetailActors"), 1);
+		GConfig->SetBool(*ClsName, TEXT("HighDetailActors"), 1);
 	}
 
 	// Metallicafan212:	Add on our stuff
@@ -263,18 +263,18 @@ void UICBINDx11RenderDevice::AddByteProp(const TCHAR* Name, BYTE& InParam, ECppP
 	// Metallicafan212:	See if the default is provided
 	FString Test;
 
-	if (!GConfig->GetString(ClsName, Name, Test))
+	if (!GConfig->GetString(*ClsName, Name, Test))
 	{
 		// Metallicafan212:	If we were provided a enum, use it for the value
 		//					This ASSUMES that the array size is correct
 		if (InEnum != nullptr)
 		{
-			GConfig->SetString(ClsName, Name, *InEnum->Names(bDefaultVal));
+			GConfig->SetString(*ClsName, Name, *InEnum->Names(bDefaultVal));
 		}
 		else
 		{
 			// Metallicafan212:	Use the default value
-			GConfig->SetInt(ClsName, Name, bDefaultVal);
+			GConfig->SetInt(*ClsName, Name, bDefaultVal);
 		}
 
 		InParam = bDefaultVal;
@@ -299,7 +299,7 @@ void UICBINDx11RenderDevice::AddByteProp(const TCHAR* Name, BYTE& InParam, ECppP
 	{
 		// Metallicafan212:	Read it as an int
 		INT val;
-		GConfig->GetInt(ClsName, Name, val);
+		GConfig->GetInt(*ClsName, Name, val);
 
 		InParam = Clamp(val, 0, 255);
 	}
@@ -333,10 +333,10 @@ void UICBINDx11RenderDevice::AddBoolProp(const TCHAR* Name, UBOOL& InParam, ECpp
 	new(GetClass(), Name, RF_Public)UBoolProperty(CPP, Offset, TEXT("Display"), CPF_Config);
 
 	// Metallicafan212:	Now set the default value
-	if (!GConfig->GetBool(ClsName, Name, InParam))
+	if (!GConfig->GetBool(*ClsName, Name, InParam))
 	{
 		// Metallicafan212:	Set it
-		GConfig->SetBool(ClsName, Name, bDefaultVal);
+		GConfig->SetBool(*ClsName, Name, bDefaultVal);
 		InParam = bDefaultVal;
 	}
 
@@ -350,10 +350,10 @@ void UICBINDx11RenderDevice::AddFloatProp(const TCHAR* Name, FLOAT& InParam, ECp
 	new(GetClass(), Name, RF_Public)UFloatProperty(CPP, Offset, TEXT("Display"), CPF_Config);
 
 	// Metallicafan212:	Now set the default value
-	if (!GConfig->GetFloat(ClsName, Name, InParam))
+	if (!GConfig->GetFloat(*ClsName, Name, InParam))
 	{
 		// Metallicafan212:	Set it
-		GConfig->SetFloat(ClsName, Name, fDefaultVal);
+		GConfig->SetFloat(*ClsName, Name, fDefaultVal);
 		InParam = fDefaultVal;
 	}
 
@@ -367,10 +367,10 @@ void UICBINDx11RenderDevice::AddIntProp(const TCHAR* Name, INT& InParam, ECppPro
 	new(GetClass(), Name, RF_Public)UIntProperty(CPP, Offset, TEXT("Display"), CPF_Config);
 
 	// Metallicafan212:	Now set the default value
-	if (!GConfig->GetInt(ClsName, Name, InParam))
+	if (!GConfig->GetInt(*ClsName, Name, InParam))
 	{
 		// Metallicafan212:	Set it
-		GConfig->SetInt(ClsName, Name, iDefaultVal);
+		GConfig->SetInt(*ClsName, Name, iDefaultVal);
 		InParam = iDefaultVal;
 	}
 
