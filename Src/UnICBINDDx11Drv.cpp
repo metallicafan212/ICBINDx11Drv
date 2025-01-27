@@ -1179,8 +1179,6 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	//					So, if the format needs to be changed, just change it and I'll make it match when I finally finish implementing it
 	//					AMD compressonator wasn't producing this correctly (which is why I disabled it)
 	RegisterTextureFormat(TEXF_BC6H, DXGI_FORMAT_BC6H_UF16, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
-//#else
-//	RegisterTextureFormat(TEXF_BC6H, DXGI_FORMAT_BC6H_UF16, 0, 16, &FD3DTexType::BlockCompressionPitch);
 #endif
 
 	RegisterTextureFormat(TEXF_BC7, DXGI_FORMAT_BC7_UNORM, 0, 1, 16, &FD3DTexType::BlockCompressionPitch);
@@ -1191,6 +1189,11 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	RegisterTextureFormat(TEXF_RGB10A2, DXGI_FORMAT_R10G10B10A2_UNORM, 0);
 	RegisterTextureFormat(TEXF_RGBA16, DXGI_FORMAT_R16G16B16A16_UNORM, 0, 0, 8);
 	RegisterTextureFormat(TEXF_RGB16_, DXGI_FORMAT_R16G16B16A16_UNORM, 0, 0, 8);
+#endif
+
+	// Metallicafan212:	MSDF font support
+#if DX11_MSDF_RENDERING
+	RegisterTextureFormat(TEXF_BGRA8, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 0, 4, &FD3DTexType::RawPitch);
 #endif
 
 	return 1;
