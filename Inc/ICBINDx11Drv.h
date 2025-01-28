@@ -246,6 +246,10 @@ typedef unsigned short INDEX;
 #include "WindowsVersions.h"
 #endif
 
+#define USE_COM_ERROR 1
+// Metallicafan212:	Format HRESULT codes as text
+extern FString GetHRESULTValue(HRESULT HR);
+
 // Metallicafan212:	TODO! This is a hack to keep the class name compatible between projects
 extern FString ClsName;
 
@@ -1483,7 +1487,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 				}
 			}
 
-			appErrorf(TEXT("DX11 encountered an error (%lu). If the debug layer is supported, the log file will likely contain useful debug info!"), hr);
+			appErrorf(TEXT("DX11 encountered an error (%s). If the debug layer is supported, the log file will likely contain useful debug info!"), *GetHRESULTValue(hr));
 		}
 	}
 

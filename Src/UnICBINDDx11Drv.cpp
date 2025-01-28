@@ -170,10 +170,6 @@ void UICBINDx11RenderDevice::SetupDevice()
 	SAFE_RELEASE(BlankSampler);
 
 	// Metallicafan212:	Depth states for PF_Occlude
-	//SAFE_RELEASE(m_DefaultZState);
-	//SAFE_RELEASE(m_DefaultNoZState);
-	//SAFE_RELEASE(m_DefaultNoZWriteState);
-
 	for (INT i = 0; i < ARRAY_COUNT(DepthStencilStates); i++)
 	{
 		SAFE_RELEASE(DepthStencilStates[i]);
@@ -210,7 +206,7 @@ void UICBINDx11RenderDevice::SetupDevice()
 
 	// Metallicafan212:	Init DX11
 	//					We want to use feature level 11_1 for compute shaders
-	D3D_FEATURE_LEVEL FLList[9] = 
+	D3D_FEATURE_LEVEL FLList[] = 
 	{ 
 		D3D_FEATURE_LEVEL_12_1,
 		D3D_FEATURE_LEVEL_12_0,

@@ -284,6 +284,9 @@
     <ClCompile Include="Un227.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="UnComError.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ICBINDx11Drv.int">
