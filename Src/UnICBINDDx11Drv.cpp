@@ -1685,9 +1685,10 @@ void UICBINDx11RenderDevice::SetupResources()
 		swapChainDesc.BufferCount			= 2; //+ NumAdditionalBuffers;
 		//swapChainDesc.Scaling				= DXGI_SCALING_NONE;
 		// Metallicafan212:	If we're on windows 10 or above, use the better DXGI mode
-		swapChainDesc.SwapEffect			= (bFlipDiscard		? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD);
-		swapChainDesc.Flags					= (bAllowTearing	? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0);
-		swapChainDesc.Scaling				= (bFullscreen		? DXGI_SCALING_NONE : DXGI_SCALING_STRETCH);
+		swapChainDesc.SwapEffect			= (bFlipDiscard					? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD);
+		swapChainDesc.Flags					= (bAllowTearing				? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0);
+		// Metallicafan212:	None is only supported in flip mode presentation....
+		swapChainDesc.Scaling				= (bFullscreen && bFlipDiscard	? DXGI_SCALING_NONE : DXGI_SCALING_STRETCH);
 
 
 		DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsSwapChainDesc = {};
