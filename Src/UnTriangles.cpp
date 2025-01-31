@@ -270,17 +270,20 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 			FTextureInfo Info;
 
 #if DX11_UNREAL_227
-			Info.Texture->DetailTexture->Lock(Info, -1, this);
+			SetTexture(1, Info.Texture->DetailTexture->GetTexture(-1, this), 0);
 #else
 			Info.Texture->DetailTexture->Lock(Info, Frame->Viewport->CurrentTime, -1, this);
-#endif
-
 			// Metallicafan212:	Now set it
 			SetTexture(1, &Info, 0);
+#endif
 
 			VertInfo.bEnabledTex[0] = 1;
 			VertInfo.PanScale[0].X	= BoundTextures[1].UMult;
 			VertInfo.PanScale[0].Y	= BoundTextures[1].VMult;
+		}
+		else
+		{
+			SetTexture(1, nullptr, 0);
 		}
 
 		// Metallicafan212:	Macro texture? Set it
@@ -289,18 +292,27 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 			FTextureInfo Info;
 
 #if DX11_UNREAL_227
-			Info.Texture->MacroTexture->Lock(Info, -1, this);
+			SetTexture(2, Info.Texture->MacroTexture->GetTexture(-1, this), 0);
 #else
 			Info.Texture->MacroTexture->Lock(Info, Frame->Viewport->CurrentTime, -1, this);
-#endif
 
 			// Metallicafan212:	Now set it
 			SetTexture(2, &Info, 0);
+#endif
 
 			VertInfo.bEnabledTex[1] = 1;
 			VertInfo.PanScale[1].X	= BoundTextures[2].UMult;
 			VertInfo.PanScale[1].Y	= BoundTextures[2].VMult;
 		}
+		else
+		{
+			SetTexture(2, nullptr, 0);
+		}
+	}
+	else
+	{
+		SetTexture(1, nullptr, 0);
+		SetTexture(2, nullptr, 0);
 	}
 
 
@@ -435,6 +447,10 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 			VertInfo.PanScale[0].X	= BoundTextures[1].UMult;
 			VertInfo.PanScale[0].Y	= BoundTextures[1].VMult;
 		}
+		else
+		{
+			SetTexture(1, nullptr, 0);
+		}
 
 		// Metallicafan212:	Macro texture? Set it
 		if (Info.Texture->MacroTexture != nullptr)
@@ -450,6 +466,15 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 			VertInfo.PanScale[1].X	= BoundTextures[2].UMult;
 			VertInfo.PanScale[1].Y	= BoundTextures[2].VMult;
 		}
+		else
+		{
+			SetTexture(2, nullptr, 0);
+		}
+	}
+	else
+	{
+		SetTexture(1, nullptr, 0);
+		SetTexture(2, nullptr, 0);
 	}
 
 	// Metallicafan212:	HP2 is HF_PostRender, UT 469 is HACKFLAGS_PostRender
@@ -588,14 +613,15 @@ void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo
 		{
 			FTextureInfo Info;
 
-			Info.Texture->DetailTexture->Lock(Info, -1, this);
-
-			// Metallicafan212:	Now set it
-			SetTexture(1, &Info, 0);
+			SetTexture(1, Info.Texture->DetailTexture->GetTexture(-1, this), 0);
 
 			VertInfo.bEnabledTex[0] = 1;
 			VertInfo.PanScale[0].X	= BoundTextures[1].UMult;
 			VertInfo.PanScale[0].Y	= BoundTextures[1].VMult;
+		}
+		else
+		{
+			SetTexture(1, nullptr, 0);
 		}
 
 		// Metallicafan212:	Macro texture? Set it
@@ -603,15 +629,21 @@ void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo
 		{
 			FTextureInfo Info;
 
-			Info.Texture->MacroTexture->Lock(Info, -1, this);
-
-			// Metallicafan212:	Now set it
-			SetTexture(2, &Info, 0);
+			SetTexture(2, Info.Texture->MacroTexture->GetTexture(-1, this), 0);
 
 			VertInfo.bEnabledTex[1] = 1;
 			VertInfo.PanScale[1].X	= BoundTextures[2].UMult;
 			VertInfo.PanScale[1].Y	= BoundTextures[2].VMult;
 		}
+		else
+		{
+			SetTexture(2, nullptr, 0);
+		}
+	}
+	else
+	{
+		SetTexture(1, nullptr, 0);
+		SetTexture(2, nullptr, 0);
 	}
 
 	if ((GUglyHackFlags & HACKFLAGS_NoNearZ))
@@ -624,11 +656,6 @@ void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo
 		if (m_nearZRangeHackProjectionActive)
 			SetProjectionStateNoCheck(false);
 	}
-
-	// Metallicafan212:	TODO!
-#if !DX11_UNREAL_227
-	FMeshShader->bNoMeshOpacity = 1;
-#endif
 
 	FMeshShader->Bind(m_RenderContext);
 
