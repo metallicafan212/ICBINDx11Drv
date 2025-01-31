@@ -267,14 +267,14 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 		// Metallicafan212:	Detail texturing on meshes
 		if (DetailTextures && Info.Texture->DetailTexture != nullptr)
 		{
-			FTextureInfo Info;
+			FTextureInfo DInfo;
 
 #if DX11_UNREAL_227
 			SetTexture(1, Info.Texture->DetailTexture->GetTexture(-1, this), 0);
 #else
-			Info.Texture->DetailTexture->Lock(Info, Frame->Viewport->CurrentTime, -1, this);
+			Info.Texture->DetailTexture->Lock(DInfo, Frame->Viewport->CurrentTime, -1, this);
 			// Metallicafan212:	Now set it
-			SetTexture(1, &Info, 0);
+			SetTexture(1, &DInfo, 0);
 #endif
 
 			VertInfo.bEnabledTex[0] = 1;
@@ -289,15 +289,15 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 		// Metallicafan212:	Macro texture? Set it
 		if (Info.Texture->MacroTexture != nullptr)
 		{
-			FTextureInfo Info;
+			FTextureInfo MInfo;
 
 #if DX11_UNREAL_227
 			SetTexture(2, Info.Texture->MacroTexture->GetTexture(-1, this), 0);
 #else
-			Info.Texture->MacroTexture->Lock(Info, Frame->Viewport->CurrentTime, -1, this);
+			Info.Texture->MacroTexture->Lock(MInfo, Frame->Viewport->CurrentTime, -1, this);
 
 			// Metallicafan212:	Now set it
-			SetTexture(2, &Info, 0);
+			SetTexture(2, &MInfo, 0);
 #endif
 
 			VertInfo.bEnabledTex[1] = 1;
@@ -436,12 +436,12 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 		// Metallicafan212:	Detail texturing on meshes
 		if (DetailTextures && Info.Texture->DetailTexture != nullptr)
 		{
-			FTextureInfo Info;
+			FTextureInfo DInfo;
 
-			Info.Texture->DetailTexture->Lock(Info, Frame->Viewport->CurrentTime, -1, this);
+			Info.Texture->DetailTexture->Lock(DInfo, Frame->Viewport->CurrentTime, -1, this);
 
 			// Metallicafan212:	Now set it
-			SetTexture(1, &Info, 0);
+			SetTexture(1, &DInfo, 0);
 
 			VertInfo.bEnabledTex[0] = 1;
 			VertInfo.PanScale[0].X	= BoundTextures[1].UMult;
@@ -455,12 +455,12 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 		// Metallicafan212:	Macro texture? Set it
 		if (Info.Texture->MacroTexture != nullptr)
 		{
-			FTextureInfo Info;
+			FTextureInfo MInfo;
 
-			Info.Texture->MacroTexture->Lock(Info, Frame->Viewport->CurrentTime, -1, this);
+			Info.Texture->MacroTexture->Lock(MInfo, Frame->Viewport->CurrentTime, -1, this);
 
 			// Metallicafan212:	Now set it
-			SetTexture(2, &Info, 0);
+			SetTexture(2, &MInfo, 0);
 
 			VertInfo.bEnabledTex[1] = 1;
 			VertInfo.PanScale[1].X	= BoundTextures[2].UMult;
@@ -611,8 +611,6 @@ void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo
 		// Metallicafan212:	Detail texturing on meshes
 		if (DetailTextures && Info.Texture->DetailTexture != nullptr)
 		{
-			FTextureInfo Info;
-
 			SetTexture(1, Info.Texture->DetailTexture->GetTexture(-1, this), 0);
 
 			VertInfo.bEnabledTex[0] = 1;
@@ -627,8 +625,6 @@ void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo
 		// Metallicafan212:	Macro texture? Set it
 		if (Info.Texture->MacroTexture != nullptr)
 		{
-			FTextureInfo Info;
-
 			SetTexture(2, Info.Texture->MacroTexture->GetTexture(-1, this), 0);
 
 			VertInfo.bEnabledTex[1] = 1;
