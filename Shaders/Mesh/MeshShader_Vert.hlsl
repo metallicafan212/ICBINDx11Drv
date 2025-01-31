@@ -56,5 +56,9 @@ PSInput VertShader(VSInput input)
 	// Metallicafan212:	Copy the vert info over
 	output.uv.xy	= input.uv.xy;
 	
+	// Metallicafan212:	Macro and detail info
+	output.dUV.xy	= input.uv.zw;
+	output.mUV.xy	= input.addColor.xy;
+	
 	return output;
 }

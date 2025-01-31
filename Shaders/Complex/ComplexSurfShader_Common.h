@@ -1,32 +1,4 @@
-#if !EXTRA_VERT_INFO
-#define DO_STANDARD_BUFFER 0
 #include "..\ShaderGlobals.h"
-
-// Metallicafan212:	Constant buffer, but with the added complex surface info
-cbuffer CommonBuffer : register (START_CONST_NUM)
-{
-	COMMON_VARS
-	// Metallicafan212:	The info we use for this specific shader
-	float4 	XAxis 		: packoffset(c0);
-	float4 	YAxis 		: packoffset(c1);
-	
-	float4 	PanScale[5]	: packoffset(c2);
-	
-	// Metallicafan212:	We need the original values passed in for the lightmap scale...
-	float2 	LightScale 	: packoffset(c7.x);
-	
-	// Metallicafan212:	And for the fogmap...
-	float2 	FogScale	: packoffset(c8.z);
-	
-};
-
-// Metallicafan212:	HACK!!!! This includes this twice to define the final color function, as HLSL cannot do out of order compiling
-//					The buffer variables have to be defined before they can be used
-#define DO_FINAL_COLOR
-#include "..\ShaderGlobals.h"
-#else
-#include "..\ShaderGlobals.h"
-#endif
 
 // Metallicafan212:	Possible texture inputs for this shader
 //					This has hard inputs, but it checks what's actually bound before using them
@@ -35,16 +7,23 @@ cbuffer CommonBuffer : register (START_CONST_NUM)
 //					The order here isn't the order executed below, it's just the order uploaded to the GPU
 Texture2D Diffuse 			: register(t0);
 Texture2D Light				: register(t1);
-Texture2D Macro				: register(t2);
-Texture2D Fogmap			: register(t3);
-Texture2D Detail			: register(t4);
+Texture2D Fogmap			: register(t2);//register(t3);
+Texture2D Detail			: register(t3);//register(t4);
+Texture2D Macro				: register(t4);//register(t2);
 
 // Metallicafan212:	Samplers for each texture
 SamplerState DiffState 		: register(s0);
 SamplerState LightState 	: register(s1);
-SamplerState MacroState 	: register(s2);
-SamplerState FogState 		: register(s3);
-SamplerState DetailState	: register(s4);
+SamplerState FogState 		: register(s2);//register(s3);
+SamplerState DetailState	: register(s3);//register(s4);
+SamplerState MacroState 	: register(s4);//register(s2);
+
+// Metallicafan212:	Define shader texture values
+#define DIFFUSE_BOUND 	0x1
+#define LIGHT_BOUND		0x2
+#define	FOG_BOUND		0x4
+#define DETAIL_BOUND	0x8
+#define MACRO_BOUND		0x10
 
 struct PSInput 
 {

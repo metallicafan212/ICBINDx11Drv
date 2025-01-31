@@ -209,12 +209,13 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 	SetTexture(1, Surface.LightMap, 0);
 
-	SetTexture(2, Surface.MacroTexture, 0);
-
-	SetTexture(3, Surface.FogMap, 0);
+	// Metallicafan212:	Textures were reordered
+	SetTexture(2, Surface.FogMap, 0);
 
 	// Metallicafan212:	Also bind the detail texture lmao
-	SetTexture(4, Surface.DetailTexture, 0);
+	SetTexture(3, Surface.DetailTexture, 0);
+
+	SetTexture(4, Surface.MacroTexture, 0);
 
 	FSurfShader->Bind(m_RenderContext);
 
@@ -247,6 +248,12 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	if (Surface.Zone != nullptr && Frame->Viewport->Actor->RendMap == REN_DynLight)
 	{
 		UVInfo.AddColor		= FGetHSV(Surface.Zone->AmbientHue, Surface.Zone->AmbientSaturation, Surface.Zone->AmbientBrightness);
+
+		// Metallicafan212:	If one x blending is enabled, reduce the strength
+		if (bOneXLightmaps)
+		{
+			UVInfo.AddColor /= 2.0f;
+		}
 	}
 #endif
 

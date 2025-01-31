@@ -35,6 +35,17 @@ float4 PxShader(PSInput input) : SV_TARGET
 	else
 #endif
 	{
+		// Metallicafan212:	Add the detail texture
+		if(bTexturesBound & DETAIL_BOUND)
+		{
+			FinalColor.xyz = DoDetailTexture(FinalColor.xyz, input.dUV.xy, input.origZ, Detail, DetailState);
+		}
+		
+		if(bTexturesBound & MACRO_BOUND)
+		{
+			FinalColor.xyz *= ConvertColorspace(Macro.Sample(MacroState, input.mUV) * 2.0f).xyz;
+		}
+		
 		FinalColor *= LightColor;
 		
 		CLIP_PIXEL(FinalColor);

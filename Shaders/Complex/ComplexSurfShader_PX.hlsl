@@ -43,7 +43,7 @@ PSOutput PxShader(PSInput input)
 		#endif
 	}
 	// Metallicafan212:	Diffuse texture
-	else if(bTexturesBound & 0x1)//bTexturesBound[0].x != 0)
+	else if(bTexturesBound & DIFFUSE_BOUND)//bTexturesBound[0].x != 0)
 	{
 		float4 Diff  	= ConvertColorspace(Diffuse.Sample(DiffState, input.uv));
 		DiffColor.xyz  *= Diff.xyz;
@@ -54,7 +54,14 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	TODO! This also sets the selection color for the editor! This should be re-evaluated
 	CLIP_PIXEL(DiffColor);
 	
+	// Metallicafan212:	This was replaced with a common function to allow meshes to use the same exact logic
+	// float3 DoDetailTexture(float3 DiffColor, float2 dUV, float z, Texture2D Detail, SamplerState DetailState)
+	if(bTexturesBound & DETAIL_BOUND)
+	{
+		DiffColor.xyz = DoDetailTexture(DiffColor.xyz, input.dUV.xy, input.origZ, Detail, DetailState);
+	}
 	
+	/*
 	// Metallicafan212:	Detail texture
 	//					We're applying this now so that when detail textures fade in, they don't reduce the lightmap as much
 	//					TODO! Using the vars from DX7. Allow the user to specify this!!!!
@@ -78,11 +85,13 @@ PSOutput PxShader(PSInput input)
 		DiffColor.xyz += DiffColor.xyz;
 		DiffColor.xyz /= 2.0f;
 	}
+	*/
+	
 	
 	// Metallicafan212:	Macro texture
 	//					This just modulates the color, like the lightmap
 	//if(bTexturesBound[0].z != 0)
-	if(bTexturesBound & 0x4)
+	if(bTexturesBound & MACRO_BOUND)
 	{
 		DiffColor.xyz *= ConvertColorspace(Macro.Sample(MacroState, input.mUV) * 2.0f).xyz;
 	}
@@ -91,7 +100,7 @@ PSOutput PxShader(PSInput input)
 	
 	// Metallicafan212:	Lightmap
 	//					TODO! Allow the user to specify the lightmap multiplication (some people like one-x scaling)
-	if(bTexturesBound & 0x2)//bTexturesBound[0].y != 0)
+	if(bTexturesBound & LIGHT_BOUND)//bTexturesBound[0].y != 0)
 	{
 		float Mult		= 4.0f;
 		
@@ -126,7 +135,7 @@ PSOutput PxShader(PSInput input)
 #endif
 	
 	// Metallicafan212:	Fog map
-	if(bTexturesBound & 0x8)//bTexturesBound[0].w != 0)
+	if(bTexturesBound & FOG_BOUND)//bTexturesBound[0].w != 0)
 	{
 		// Metallicafan212: 2024-12, we're multiplying by 2 because RGB7 was changed to do the expansion in the shaders, not the texture upload stage
 		float4 FogColor = ConvertColorspace(Fogmap.Sample(FogState, input.fUV) * 2.0f);

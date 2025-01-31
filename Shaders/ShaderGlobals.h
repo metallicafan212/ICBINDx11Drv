@@ -321,6 +321,36 @@ float4 ConvertColorspace(float4 In)
 }
 
 #if PIXEL_SHADER
+float3 DoDetailTexture(float3 DiffColor, float2 dUV, float z, Texture2D Detail, SamplerState DetailState)
+{
+	// Metallicafan212:	Detail texture
+	//					We're applying this now so that when detail textures fade in, they don't reduce the lightmap as much
+	//					TODO! Using the vars from DX7. Allow the user to specify this!!!!
+	//if(bTexturesBound & 0x10 && input.dUV.z < 380.0f)//bTexturesBound[1].x != 0 && input.dUV.z < 380.0f)
+	if( z < 1024.0f)
+	{
+		// Metallicafan212:	Sample it
+		//					Multiply the input color by 2 to make it work like lightmaps
+		float3 Det = ConvertColorspace(Detail.Sample(DetailState, dUV.xy) * 2.0f).xyz;
+		
+		// Metallicafan212:	Now lerp it
+		float alpha = z / 1024.0f;
+		Det = lerp(alpha, float3(1.0f, 1.0f, 1.0f), Det);
+		
+		// Metallicafan212:	Average the color
+		//					TODO! Should we actually be doing this???
+		Det.xyz = (Det.x + Det.y + Det.z) / 3.0f;
+		
+		// Metallicafan212:	Now add it to the image
+		//					When there's no detail texture, this operation effectively returns nothing
+		DiffColor.xyz = (DiffColor.xyz * Det);
+		DiffColor.xyz += DiffColor.xyz;
+		DiffColor.xyz /= 2.0f;
+	}
+	
+	return DiffColor;
+}
+
 float4 DoFinalColor(float4 ColorIn, float4 SelectionColor)
 {
 	// Metallicafan212:	If doing selection, move out the selection color

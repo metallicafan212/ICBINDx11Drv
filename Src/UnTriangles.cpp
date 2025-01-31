@@ -1,9 +1,40 @@
 #include "ICBINDx11Drv.h"
 
 // Metallicafan212:	TODO! Move these into the shader?
-static FPlane NoFog				= FPlane(0.f, 0.f, 0.f, 0.f);
+static FPlane NoFog(0.f, 0.f, 0.f, 0.f);
 
-FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, PFLAG& PolyFlags, UBOOL& bDoFog, FLOAT& UMult, FLOAT& VMult, UBOOL& bDoSelection, FPlane& SelectionColor)
+// Metallicafan212:	Temp info!
+//					TODO! Mess with this more...
+struct FUVInfo
+{
+	FPlane	PanScale[2];
+
+	UBOOL	bEnabledTex[2];
+
+	FUVInfo()
+	{
+		appMemzero(this, sizeof(FUVInfo));
+	}
+};
+
+
+#define DO_UV_CHANNEL_NO_ADD(chan, uLoc, vLoc) \
+/*Metallicafan212: Each one is checked if we need to even cal it */ \
+if (UVInfo.bEnabledTex[chan]) \
+{ \
+	uLoc = (U) * UVInfo.PanScale[chan].X; \
+	vLoc = (V) * UVInfo.PanScale[chan].Y; \
+} \
+
+#define DO_UV_CHANNEL(chan, uLoc, vLoc, extAddx, extAddy) \
+/*Metallicafan212: Each one is checked if we need to even cal it */ \
+if (UVInfo.bEnabledTex[chan]) \
+{ \
+	uLoc = (U + (extAddx)) * UVInfo.PanScale[chan].X; \
+	vLoc = (V + (extAddy)) * UVInfo.PanScale[chan].Y; \
+} \
+
+FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, PFLAG& PolyFlags, UBOOL& bDoFog, FLOAT& UMult, FLOAT& VMult, UBOOL& bDoSelection, FPlane& SelectionColor, FUVInfo& VertInfo)
 {
 	// Metallicafan212:	Speed this up by just copying it
 	appMemcpy(&m_Vert->X, &P->Point.X, sizeof(FLOAT) * 3);
@@ -12,19 +43,32 @@ FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, PFLAG& PolyFlags, UB
 	m_Vert->U	= P->U * UMult;
 	m_Vert->V	= P->V * VMult;
 
+	// Metallicafan212:	If we have detail texturing enabled, copy those values
+	if (VertInfo.bEnabledTex[0])
+	{
+		m_Vert->UX	= P->U * VertInfo.PanScale[0].X;
+		m_Vert->VX	= P->V * VertInfo.PanScale[0].Y;
+	}
+
+	// Metallicafan212:	TODO! Reuse the add color
+	if (VertInfo.bEnabledTex[1])
+	{
+		m_Vert->AddColor.X	= P->U * VertInfo.PanScale[1].X;
+		m_Vert->AddColor.Y	= P->V * VertInfo.PanScale[1].Y;
+	}
+
 	if (bDoSelection)
 	{
-		appMemcpy(&m_Vert->Color, &SelectionColor, sizeof(FLOAT) * 4);
+		appMemcpy(&m_Vert->Color.X, &SelectionColor.X, sizeof(FLOAT) * 4);
 	}
 	else if (bDoFog)
 	{
-		appMemcpy(&m_Vert->Color, &P->Light, sizeof(FLOAT) * 8);
+		appMemcpy(&m_Vert->Color.X, &P->Light.X, sizeof(FLOAT) * 8);
 	}
 	else
 	{
-		//m_Vert->Color	= P->Light;
-		appMemcpy(&m_Vert->Color, &P->Light, sizeof(FLOAT) * 4);
-		m_Vert->Fog		= NoFog;
+		appMemcpy(&m_Vert->Color.X, &P->Light.X, sizeof(FLOAT) * 4);
+		appMemcpy(&m_Vert->Fog.X, &NoFog.X, sizeof(FLOAT) * 4);
 	}
 }
 
@@ -63,6 +107,54 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 
 	// Metallicafan212:	Set the texture
 	SetTexture(0, &Info, PolyFlags);
+
+	FUVInfo VertInfo;
+
+	if (Info.Texture != nullptr)
+	{
+		// Metallicafan212:	Detail texturing on meshes
+		if (DetailTextures && Info.Texture->DetailTexture != nullptr)
+		{
+			FTextureInfo DInfo;
+
+			Info.Texture->DetailTexture->Lock(DInfo, Frame->Viewport->CurrentTime, -1, this);
+
+			// Metallicafan212:	Now set it
+			SetTexture(1, &DInfo, 0);
+
+			VertInfo.bEnabledTex[0] = 1;
+			VertInfo.PanScale[0].X	= BoundTextures[1].UMult;
+			VertInfo.PanScale[0].Y	= BoundTextures[1].VMult;
+		}
+		else
+		{
+			SetTexture(1, nullptr, 0);
+		}
+
+		// Metallicafan212:	Macro texture? Set it
+		if (Info.Texture->MacroTexture != nullptr)
+		{
+			FTextureInfo MInfo;
+
+			Info.Texture->MacroTexture->Lock(MInfo, Frame->Viewport->CurrentTime, -1, this);
+
+			// Metallicafan212:	Now set it
+			SetTexture(2, &MInfo, 0);
+
+			VertInfo.bEnabledTex[1] = 1;
+			VertInfo.PanScale[1].X	= BoundTextures[2].UMult;
+			VertInfo.PanScale[1].Y	= BoundTextures[2].VMult;
+		}
+		else
+		{
+			SetTexture(2, nullptr, 0);
+		}
+	}
+	else
+	{
+		SetTexture(1, nullptr, 0);
+		SetTexture(2, nullptr, 0);
+	}
 
 	// Metallicafan212:	In HP2, I got tired of seeing the random numbers everywhere, so I made a definition for the flags, and then updated them engine-wide
 	if ((GUglyHackFlags & HF_PostRender))
@@ -112,7 +204,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 
 	for (INT i = 0; i < NumPts; i++)
 	{
-		DoVert(Pts[i],  &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
+		DoVert(Pts[i],  &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
 	}
 
 #if !INT_INDEX_BUFF
@@ -168,6 +260,50 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	// Metallicafan212:	Set the texture
 	SetTexture(0, const_cast<FTextureInfo*>(&Info), PolyFlags);
 
+	FUVInfo VertInfo;
+
+	if (Info.Texture != nullptr)
+	{
+		// Metallicafan212:	Detail texturing on meshes
+		if (DetailTextures && Info.Texture->DetailTexture != nullptr)
+		{
+			FTextureInfo Info;
+
+#if DX11_UNREAL_227
+			Info.Texture->DetailTexture->Lock(Info, -1, this);
+#else
+			Info.Texture->DetailTexture->Lock(Info, Frame->Viewport->CurrentTime, -1, this);
+#endif
+
+			// Metallicafan212:	Now set it
+			SetTexture(1, &Info, 0);
+
+			VertInfo.bEnabledTex[0] = 1;
+			VertInfo.PanScale[0].X	= BoundTextures[1].UMult;
+			VertInfo.PanScale[0].Y	= BoundTextures[1].VMult;
+		}
+
+		// Metallicafan212:	Macro texture? Set it
+		if (Info.Texture->MacroTexture != nullptr)
+		{
+			FTextureInfo Info;
+
+#if DX11_UNREAL_227
+			Info.Texture->MacroTexture->Lock(Info, -1, this);
+#else
+			Info.Texture->MacroTexture->Lock(Info, Frame->Viewport->CurrentTime, -1, this);
+#endif
+
+			// Metallicafan212:	Now set it
+			SetTexture(2, &Info, 0);
+
+			VertInfo.bEnabledTex[1] = 1;
+			VertInfo.PanScale[1].X	= BoundTextures[2].UMult;
+			VertInfo.PanScale[1].Y	= BoundTextures[2].VMult;
+		}
+	}
+
+
 	// Metallicafan212:	HP2 is HF_PostRender, UT 469 is HACKFLAGS_NoNearZ
 #if DX11_UNREAL_227 || DX11_UT_469
 	if ((GUglyHackFlags & HACKFLAGS_NoNearZ))
@@ -210,13 +346,13 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 
 	UBOOL bDoSelection = (m_HitData != nullptr);
 
-	DoVert(Pts[0], &Mshy[0], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
-	DoVert(Pts[1], &Mshy[1], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
+	DoVert(Pts[0], &Mshy[0], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+	DoVert(Pts[1], &Mshy[1], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
 
 	// Metallicafan212:	First two verts, then we fan out
 	for (INT i = 2; i < NumPts; i++)
 	{
-		DoVert(Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
+		DoVert(Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
 
 		// Metallicafan212:	Now the indices
 		m_IndexBuff[vIndex++] = baseVIndex;
@@ -280,6 +416,41 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 
 	// Metallicafan212:	Set the texture
 	SetTexture(0, const_cast<FTextureInfo*>(&Info), PolyFlags);
+
+	FUVInfo VertInfo;
+
+	if (Info.Texture != nullptr)
+	{
+		// Metallicafan212:	Detail texturing on meshes
+		if (DetailTextures && Info.Texture->DetailTexture != nullptr)
+		{
+			FTextureInfo Info;
+
+			Info.Texture->DetailTexture->Lock(Info, Frame->Viewport->CurrentTime, -1, this);
+
+			// Metallicafan212:	Now set it
+			SetTexture(1, &Info, 0);
+
+			VertInfo.bEnabledTex[0] = 1;
+			VertInfo.PanScale[0].X	= BoundTextures[1].UMult;
+			VertInfo.PanScale[0].Y	= BoundTextures[1].VMult;
+		}
+
+		// Metallicafan212:	Macro texture? Set it
+		if (Info.Texture->MacroTexture != nullptr)
+		{
+			FTextureInfo Info;
+
+			Info.Texture->MacroTexture->Lock(Info, Frame->Viewport->CurrentTime, -1, this);
+
+			// Metallicafan212:	Now set it
+			SetTexture(2, &Info, 0);
+
+			VertInfo.bEnabledTex[1] = 1;
+			VertInfo.PanScale[1].X	= BoundTextures[2].UMult;
+			VertInfo.PanScale[1].Y	= BoundTextures[2].VMult;
+		}
+	}
 
 	// Metallicafan212:	HP2 is HF_PostRender, UT 469 is HACKFLAGS_PostRender
 	if ((GUglyHackFlags & HACKFLAGS_PostRender))
@@ -348,9 +519,9 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 			Exchange(Pts[i + 2], Pts[i]);
 		}
 
-		DoVert(&Pts[i],		&Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
-		DoVert(&Pts[i + 1], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
-		DoVert(&Pts[i + 2], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
+		DoVert(&Pts[i],		&Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+		DoVert(&Pts[i + 1], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+		DoVert(&Pts[i + 2], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
 	}
 
 	AdvanceVertPos();
@@ -408,6 +579,41 @@ void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo
 	// Metallicafan212:	Set the texture
 	SetTexture(0, const_cast<FTextureInfo*>(&Info), PolyFlags);
 
+	FUVInfo VertInfo;
+
+	if (Info.Texture != nullptr)
+	{
+		// Metallicafan212:	Detail texturing on meshes
+		if (DetailTextures && Info.Texture->DetailTexture != nullptr)
+		{
+			FTextureInfo Info;
+
+			Info.Texture->DetailTexture->Lock(Info, -1, this);
+
+			// Metallicafan212:	Now set it
+			SetTexture(1, &Info, 0);
+
+			VertInfo.bEnabledTex[0] = 1;
+			VertInfo.PanScale[0].X	= BoundTextures[1].UMult;
+			VertInfo.PanScale[0].Y	= BoundTextures[1].VMult;
+		}
+
+		// Metallicafan212:	Macro texture? Set it
+		if (Info.Texture->MacroTexture != nullptr)
+		{
+			FTextureInfo Info;
+
+			Info.Texture->MacroTexture->Lock(Info, -1, this);
+
+			// Metallicafan212:	Now set it
+			SetTexture(2, &Info, 0);
+
+			VertInfo.bEnabledTex[1] = 1;
+			VertInfo.PanScale[1].X	= BoundTextures[2].UMult;
+			VertInfo.PanScale[1].Y	= BoundTextures[2].VMult;
+		}
+	}
+
 	if ((GUglyHackFlags & HACKFLAGS_NoNearZ))
 	{
 		if (!m_nearZRangeHackProjectionActive)
@@ -440,9 +646,9 @@ void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo
 	INT M = 0;
 	for (INT i = 0; i < NumPts; i += 3)
 	{
-		DoVert(&Pts[i], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
-		DoVert(&Pts[i + 1], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
-		DoVert(&Pts[i + 2], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor);
+		DoVert(&Pts[i], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+		DoVert(&Pts[i + 1], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+		DoVert(&Pts[i + 2], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
 	}
 
 	AdvanceVertPos();
