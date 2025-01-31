@@ -2,8 +2,22 @@
 
 #include "ICBINDx11Drv.h"
 
-#if USE_COM_ERROR
+// Metallicafan212:	TODO! Figure out why the hell InterlockExchange is undefined in UT....
+#if USE_COM_ERROR && DX11_HP2
 
+#if !DX11_HP2
+// Metallicafan212:	Force at least windows 7 in the headers
+#include <winsdkver.h>
+//#ifndef NTDDI_VERSION
+#undef NTDDI_VERSION
+#undef _WIN32_WINNT
+//#define M212_WINVER
+#define NTDDI_VERSION NTDDI_WIN8//0x06010000//NTDDI_WIN7//NTDDI_WIN8//7
+#define _WIN32_WINNT _WIN32_WINNT_WIN8//0x0601//_WIN32_WINNT_WIN7//_WIN32_WINNT_WIN8//7
+#define _WIN7_PLATFORM_UPDATE
+
+#include <sdkddkver.h>
+#endif
 #include <comdef.h>
 
 // Metallicafan212:	TODO! This is stupid, but you can't really ifdef a linker import in the project file....
