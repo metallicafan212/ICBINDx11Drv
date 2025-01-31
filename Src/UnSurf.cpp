@@ -17,6 +17,11 @@ struct FUVInfo
 	FLOAT	VDot;
 
 	FPlane	AddColor;
+
+	FUVInfo()
+	{
+		appMemzero(this, sizeof(FUVInfo));
+	}
 };
 
 
