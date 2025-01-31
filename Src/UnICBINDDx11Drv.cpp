@@ -1189,7 +1189,7 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 
 	// Metallicafan212:	MSDF font support
 #if DX11_MSDF_RENDERING
-	RegisterTextureFormat(TEXF_BGRA8, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 0, 4, &FD3DTexType::RawPitch);
+	RegisterTextureFormat(TEXF_MSDF, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 0, 4, &FD3DTexType::RawPitch);
 #endif
 
 	return 1;
