@@ -20,7 +20,10 @@ struct FUVInfo
 
 	FUVInfo()
 	{
-		appMemzero(this, sizeof(FUVInfo));
+		// Metallicafan212:	This corrupts the stack....
+		//					Just zero AddColor
+		//appMemzero(this, sizeof(FUVInfo));
+		appMemzero(&AddColor.X, sizeof(FPlane));
 	}
 };
 
