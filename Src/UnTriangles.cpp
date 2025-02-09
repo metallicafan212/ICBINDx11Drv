@@ -5,15 +5,15 @@ static FPlane NoFog(0.f, 0.f, 0.f, 0.f);
 
 // Metallicafan212:	Temp info!
 //					TODO! Mess with this more...
-struct FUVInfo
+struct FUVInfoMesh
 {
 	FPlane	PanScale[2];
 
 	UBOOL	bEnabledTex[2];
 
-	FUVInfo()
+	FUVInfoMesh()
 	{
-		appMemzero(this, sizeof(FUVInfo));
+		appMemzero(this, sizeof(FUVInfoMesh));
 	}
 };
 
@@ -34,7 +34,7 @@ if (UVInfo.bEnabledTex[chan]) \
 	vLoc = (V + (extAddy)) * UVInfo.PanScale[chan].Y; \
 } \
 
-FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, PFLAG& PolyFlags, UBOOL& bDoFog, FLOAT& UMult, FLOAT& VMult, UBOOL& bDoSelection, FPlane& SelectionColor, FUVInfo& VertInfo)
+FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, PFLAG& PolyFlags, UBOOL& bDoFog, FLOAT& UMult, FLOAT& VMult, UBOOL& bDoSelection, FPlane& SelectionColor, FUVInfoMesh& VertInfo)
 {
 	// Metallicafan212:	Speed this up by just copying it
 	appMemcpy(&m_Vert->X, &P->Point.X, sizeof(FLOAT) * 3);
@@ -108,7 +108,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 	// Metallicafan212:	Set the texture
 	SetTexture(0, &Info, PolyFlags);
 
-	FUVInfo VertInfo;
+	FUVInfoMesh VertInfo;
 
 	if (Info.Texture != nullptr)
 	{
@@ -260,7 +260,7 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 	// Metallicafan212:	Set the texture
 	SetTexture(0, const_cast<FTextureInfo*>(&Info), PolyFlags);
 
-	FUVInfo VertInfo;
+	FUVInfoMesh VertInfo;
 
 	if (Info.Texture != nullptr)
 	{
@@ -429,7 +429,7 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 	// Metallicafan212:	Set the texture
 	SetTexture(0, const_cast<FTextureInfo*>(&Info), PolyFlags);
 
-	FUVInfo VertInfo;
+	FUVInfoMesh VertInfo;
 
 	if (Info.Texture != nullptr)
 	{
@@ -604,7 +604,7 @@ void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo
 	// Metallicafan212:	Set the texture
 	SetTexture(0, const_cast<FTextureInfo*>(&Info), PolyFlags);
 
-	FUVInfo VertInfo;
+	FUVInfoMesh VertInfo;
 
 	if (Info.Texture != nullptr)
 	{
