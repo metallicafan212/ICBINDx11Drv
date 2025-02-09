@@ -2554,7 +2554,7 @@ UBOOL UICBINDx11RenderDevice::Exec(const TCHAR* Cmd, FOutputDevice& Ar)
 			Str += FString::Printf(TEXT("%ix%i "), (INT)Relevant(i).X, (INT)Relevant(i).Y);
 		}
 #if DX11_UT_469
-		Ar.Log(*Str).LeftChop(1));
+		Ar.Log(*Str.LeftChop(1));
 #else
 		// Metallicafan212:	This causes the HP2 UC to not add on the user's desktop res
 		Ar.Log(*Str);//.LeftChop(1));
