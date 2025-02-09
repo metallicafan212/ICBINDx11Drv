@@ -2521,7 +2521,7 @@ UBOOL UICBINDx11RenderDevice::Exec(const TCHAR* Cmd, FOutputDevice& Ar)
 {
 	guard(UICBINDx11RenderDevice::Exec);
 
-	if (URenderDevice::Exec(Cmd, Ar))
+	if (RD_CLASS::Exec(Cmd, Ar))
 	{
 		return 1;
 	}
@@ -2553,8 +2553,12 @@ UBOOL UICBINDx11RenderDevice::Exec(const TCHAR* Cmd, FOutputDevice& Ar)
 		{
 			Str += FString::Printf(TEXT("%ix%i "), (INT)Relevant(i).X, (INT)Relevant(i).Y);
 		}
-		// Metallicafan212:	This causes the HP2 UC to not add on 1920x1080 (aka the desktop res)
+#if DX11_UT_469
+		Ar.Log(*Str).LeftChop(1));
+#else
+		// Metallicafan212:	This causes the HP2 UC to not add on the user's desktop res
 		Ar.Log(*Str);//.LeftChop(1));
+#endif
 		return 1;
 	}
 
