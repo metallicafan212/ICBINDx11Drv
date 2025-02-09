@@ -233,7 +233,8 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	FPlane TestColor	= FPlane(1.f, 1.f, 1.f, 1.f);
 	FPlane Fog			= FPlane(0.f, 0.f, 0.f, 0.f);
 
-#if DX11_HP2
+	// Metallicafan212:	This is disabled for now as it's conflicting with things like dark lights....
+#if 0//DX11_HP2
 	// Metallicafan212:	Set the ambientless lightmap color
 	UVInfo.AddColor		= Surface.ZoneAmbientColor;
 
@@ -250,7 +251,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	{
 		Fog = Surface.VertexColor;
 	}
-#elif DX11_UT_469
+#elif 0//DX11_UT_469
 	// Metallicafan212:	Read the zone light info
 	//					TODO!!!! Don't do this for non-realtime?
 	if (Surface.Zone != nullptr && Frame->Viewport->Actor->RendMap == REN_DynLight)

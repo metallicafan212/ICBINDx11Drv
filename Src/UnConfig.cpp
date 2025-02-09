@@ -84,7 +84,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	TODO! The UT approach requires doing a zone lookup on the surface.
 	//					I'm not above just grabbing it in the driver, but that's not a great thing...
 	//					For HP2, I just embed the color into the surface facet passed to DrawComplexSurface
-#if 1//DX11_HP2
+	// Metallicafan212:	Actually, this breaks dark lights.....
+#if 0// 1//DX11_HP2
 	UseAmbientlessLightmaps	= 1;
 #endif
 
