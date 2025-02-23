@@ -234,7 +234,8 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	FPlane Fog			= FPlane(0.f, 0.f, 0.f, 0.f);
 
 	// Metallicafan212:	This is disabled for now as it's conflicting with things like dark lights....
-#if 0//DX11_HP2
+#if DX11_HP2
+	/*
 	// Metallicafan212:	Set the ambientless lightmap color
 	UVInfo.AddColor		= Surface.ZoneAmbientColor;
 
@@ -243,6 +244,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	{
 		UVInfo.AddColor /= 2.0f;
 	}
+	*/
 
 	// Metallicafan212:	Lumos alpha
 	TestColor.W *= AlphaMult;
