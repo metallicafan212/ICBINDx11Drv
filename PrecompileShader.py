@@ -194,9 +194,9 @@ tabbedLine      = newline + "\t";
 includes        = "// Metallicafan212:\tThis file contains auto generated code to load hardcoded shaders (compiled from fxc.exe)" + newline + "#include \"ICBINDx11Drv.h\"" + newline + newline + "#ifdef DX11_HP2" + newline + "#include \"HP2Shaders.h\"" + newline + "#endif" + newline + newline;
 
 # Metallicafan212: This is a hack for HP2...
-includes        += "#ifndef SM4_0" + newline + "#define SM4_0 CompiledShaders\\\\" + newline + newline + "#endif" + newline + newline;
-includes        += "#ifndef SM4_1" + newline + "#define SM4_1 CompiledShaders\\\\" + newline + newline + "#endif" + newline + newline;
-includes        += "#ifndef SM5_0" + newline + "#define SM5_0 CompiledShaders\\\\" + newline + newline + "#endif" + newline + newline;
+includes        += "#ifndef SM4_0" + newline + "#define SM4_0 CompiledShaders/" + newline + newline + "#endif" + newline + newline;
+includes        += "#ifndef SM4_1" + newline + "#define SM4_1 CompiledShaders/" + newline + newline + "#endif" + newline + newline;
+includes        += "#ifndef SM5_0" + newline + "#define SM5_0 CompiledShaders/" + newline + newline + "#endif" + newline + newline;
 
 includes        += "#define CAT(x, y) x##y" + newline + newline;
 includes        += "#define SHADER_STR_INT(x) #x" + newline + newline;
