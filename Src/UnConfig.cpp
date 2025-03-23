@@ -85,7 +85,8 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	//					I'm not above just grabbing it in the driver, but that's not a great thing...
 	//					For HP2, I just embed the color into the surface facet passed to DrawComplexSurface
 	// Metallicafan212:	Actually, this breaks dark lights.....
-#if 0// 1//DX11_HP2
+	//					Instead, I've disabled lightmap atlas if a dark light is encountered
+#if DX11_HP2 || DX11_UT_469// 1//DX11_HP2
 	UseAmbientlessLightmaps	= 1;
 #endif
 
