@@ -110,7 +110,21 @@ PSOutput PxShader(PSInput input)
 			Mult 		= 2.0f;
 		}
 		
-		float4 LColor 	= ConvertColorspace(Light.Sample(LightState, input.lUV) * Mult);
+		// Metallicafan212:	Bicubic sampling
+		float4 LColor;
+		
+		if(ShaderFlags & SF_BicubicSampling)
+		{
+			LightmapSampleBicubic(LightState, Light, input.lUV, LColor);
+		}
+		else
+		{
+			LColor 		= Light.Sample(LightState, input.lUV);
+		}
+		
+		LColor 	= ConvertColorspace(LColor * Mult);
+		
+		//LColor 		= ConvertColorspace(Light.Sample(LightState, input.lUV) * Mult);
 
 		DiffColor.xyz 	*= LColor.xyz + input.addColor.xyz;
 		
@@ -138,8 +152,23 @@ PSOutput PxShader(PSInput input)
 	if(bTexturesBound & FOG_BOUND)//bTexturesBound[0].w != 0)
 	{
 		// Metallicafan212: 2024-12, we're multiplying by 2 because RGB7 was changed to do the expansion in the shaders, not the texture upload stage
-		float4 FogColor = ConvertColorspace(Fogmap.Sample(FogState, input.fUV) * 2.0f);
-		DiffColor.xyz 	= (DiffColor.xyz * (1.0f - FogColor.w)) + FogColor.xyz;//mad(DiffColor.xyz, (1.0f - FogColor.w), FogColor.xyz);
+		//float4 FogColor = ConvertColorspace(Fogmap.Sample(FogState, input.fUV) * 2.0f);
+		
+		// Metallicafan212:	Bicubic sampling
+		float4 FogColor;
+		
+		if(ShaderFlags & SF_BicubicSampling)
+		{
+			LightmapSampleBicubic(FogState, Fogmap,input.fUV, FogColor);
+		}
+		else
+		{
+			FogColor 		= Fogmap.Sample(FogState, input.fUV);
+		}
+		
+		ConvertColorspace(FogColor * 2.0f);
+		
+		DiffColor.xyz 	= (DiffColor.xyz * (1.0f - FogColor.w)) + FogColor.xyz;
 	}
 	
 	// Metallicafan212:	Set our alpha for lumos

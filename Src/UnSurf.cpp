@@ -16,6 +16,9 @@ struct FUVInfo
 	FLOAT	UDot;
 	FLOAT	VDot;
 
+	FLOAT	LClampU;
+	FLOAT	LClampV;
+
 	FPlane	AddColor;
 
 	FUVInfo()
@@ -83,6 +86,8 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FPlane Fog, 
 		m_VertexBuff[Vert].X		= Poly->Pts[0]->Point.X;
 		m_VertexBuff[Vert].Y		= Poly->Pts[0]->Point.Y;
 		m_VertexBuff[Vert].Z		= Poly->Pts[0]->Point.Z;
+		//m_SecVert[Vert].ExtraU		= UVInfo.LClampU;
+		//m_SecVert[Vert].ExtraV		= UVInfo.LClampV;
 
 		// Metallicafan212:	Pan/Scale info
 		// Metallicafan212:	Calculate the UVs of this vertex
@@ -95,6 +100,8 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FPlane Fog, 
 		m_VertexBuff[Vert].X		= Poly->Pts[1]->Point.X;
 		m_VertexBuff[Vert].Y		= Poly->Pts[1]->Point.Y;
 		m_VertexBuff[Vert].Z		= Poly->Pts[1]->Point.Z;
+		//m_SecVert[Vert].ExtraU		= UVInfo.LClampU;
+		//m_SecVert[Vert].ExtraV		= UVInfo.LClampV;
 
 		// Metallicafan212:	Pan/Scale info
 		// Metallicafan212:	Calculate the UVs of this vertex
@@ -109,6 +116,8 @@ FORCEINLINE void BufferAndIndex(FSurfaceFacet& Facet, FPlane Color, FPlane Fog, 
 			m_VertexBuff[Vert].X		= Poly->Pts[i]->Point.X;
 			m_VertexBuff[Vert].Y		= Poly->Pts[i]->Point.Y;
 			m_VertexBuff[Vert].Z		= Poly->Pts[i]->Point.Z;
+			//m_SecVert[Vert].ExtraU		= UVInfo.LClampU;
+			//m_SecVert[Vert].ExtraV		= UVInfo.LClampV;
 
 			// Metallicafan212:	Pan/Scale info
 			// Metallicafan212:	Calculate the UVs of this vertex
@@ -235,13 +244,16 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 	// Metallicafan212:	This is disabled for now as it's conflicting with things like dark lights....
 #if DX11_HP2
-	// Metallicafan212:	Set the ambientless lightmap color
-	UVInfo.AddColor		= Surface.ZoneAmbientColor;
-
-	// Metallicafan212:	If one x blending is enabled, reduce the strength
-	if (bOneXLightmaps)
+	if (UseLightmapAtlas)
 	{
-		UVInfo.AddColor /= 2.0f;
+		// Metallicafan212:	Set the ambientless lightmap color
+		UVInfo.AddColor		= Surface.ZoneAmbientColor;
+
+		// Metallicafan212:	If one x blending is enabled, reduce the strength
+		if (bOneXLightmaps)
+		{
+			UVInfo.AddColor /= 2.0f;
+		}
 	}
 
 	// Metallicafan212:	Lumos alpha
@@ -254,7 +266,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 #elif DX11_UT_469
 	// Metallicafan212:	Read the zone light info
 	//					TODO!!!! Don't do this for non-realtime?
-	if (Surface.Zone != nullptr && Frame->Viewport->Actor->RendMap == REN_DynLight)
+	if (UseLightmapAtlas && Surface.Zone != nullptr && Frame->Viewport->Actor->RendMap == REN_DynLight)
 	{
 		UVInfo.AddColor		= FGetHSV(Surface.Zone->AmbientHue, Surface.Zone->AmbientSaturation, Surface.Zone->AmbientBrightness);
 
@@ -318,8 +330,10 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	// Metallicafan212:	And lastly the original lightmap scale
 	if (BoundTextures[1].BoundTex != nullptr)
 	{
-		UVInfo.LFScale.X = BoundTextures[1].UScale * 0.5f;
-		UVInfo.LFScale.Y = BoundTextures[1].VScale * 0.5f;
+		UVInfo.LFScale.X	= BoundTextures[1].UScale * 0.5f;
+		UVInfo.LFScale.Y	= BoundTextures[1].VScale * 0.5f;
+		//UVInfo.LClampU		= Surface.LightMap->UClamp;// * BoundTextures[1].UMult;
+		//UVInfo.LClampV		= Surface.LightMap->VClamp;// * BoundTextures[1].VMult;
 	}
 
 	// Metallicafan212:	And the fog scale

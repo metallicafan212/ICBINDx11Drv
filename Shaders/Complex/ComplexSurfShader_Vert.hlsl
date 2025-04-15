@@ -28,7 +28,7 @@ PSInput VertShader(VSInput input)
 	output.uv		= input.uv.xy;
 	output.lUV		= input.uv.zw;
 	output.mUV		= input.DM.zw;
-	output.fUV		= input.FX.xy;
+	output.fUV		= input.FX;
 	output.dUV.xy	= input.DM.xy;
 	
 	// Metallicafan212:	Pass out the original Z

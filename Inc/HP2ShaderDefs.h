@@ -38,6 +38,7 @@
 #define SF_Modulated		0x00000002
 #define SF_HudSmoothMasked	0x00000004
 #define SF_MSDFRendering	0x00000008
+#define SF_BicubicSampling	0x00000010
 
 #define RENMAPS				1
 #define NO_CUSTOM_RMODES	0

@@ -27,17 +27,17 @@ SamplerState MacroState 	: register(s4);//register(s2);
 
 struct PSInput 
 {
-	float4 pos 		: SV_POSITION0; 
-	float2 uv		: TEXCOORD0;
-	float2 lUV		: TEXCOORD1;
-	float2 mUV		: TEXCOORD2;
-	float2 fUV		: TEXCOORD3;
-	float4 dUV		: TEXCOORD4;
-	float4 color	: COLOR0; 
-	float4 fog		: COLOR1;
-	float  origZ	: COLOR2;
-	float2 detVars	: COLOR3;
-	float4 addColor	: COLOR4;
+	float4 pos 				: SV_POSITION0; 
+	float2 uv				: TEXCOORD0;
+	float2 lUV				: TEXCOORD1;
+	float2 mUV				: TEXCOORD2;
+	float4 fUV				: TEXCOORD3;
+	float4 dUV				: TEXCOORD4;
+	float4 color			: COLOR0; 
+	float4 fog				: COLOR1;
+	float  origZ			: COLOR2;
+	float2 detVars			: COLOR3;
+	float4 addColor			: COLOR4;
 };
 
 struct PSOutput

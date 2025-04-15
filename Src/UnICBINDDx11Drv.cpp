@@ -2596,6 +2596,28 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	// Metallicafan212:	Require setting buffering on the first draw
 	m_CurrentBuff = BT_None;
 
+	if (bBicubicLightmaps)
+	{
+#if DX11_UT469 || DX11_HP2
+		// Metallicafan212:	Disable lightmap atlas....
+		UseAmbientlessLightmaps = 0;
+		UseLightmapAtlas		= 0;
+#endif
+
+		GlobalPolyflagVars.ShaderFlags |= SF_BicubicSampling;
+	}
+	else
+	{
+#if DX11_UT469 || DX11_HP2
+		// Metallicafan212:	Enable lightmap atlas
+		UseAmbientlessLightmaps = 1;
+		UseLightmapAtlas		= 1;
+#endif
+
+		GlobalPolyflagVars.ShaderFlags &= ~SF_BicubicSampling;
+	}
+
+
 	// Metallicafan212:	Check if our lock flags changed
 	if (LastAASamples != NumAASamples || LastAFSamples != NumAFSamples || LastResolutionScale != ResolutionScale || LastAdditionalBuffers != NumAdditionalBuffers)
 	{
@@ -2726,6 +2748,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 	// Metallicafan212:	Update the shader variables
 	UpdateGlobalShaderVars();
+	UpdatePolyflagsVars();
 
 	unguard;
 }

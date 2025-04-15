@@ -6,7 +6,7 @@
 #define DECLARE_SF(name, val) name = val,
 #endif
 
-// Metallicafan212:	Gamma modes
+// Metallicafan212:	Global shader flags
 DECLARE_SF_ENUM
 {
 	// Metallicafan212:	If alpha is currently enabled
@@ -20,6 +20,8 @@ DECLARE_SF_ENUM
 
 	// Metallicafan212:	MSDF font tile
 	DECLARE_SF(SF_MSDFRendering,	0x00000008)
+
+	DECLARE_SF(SF_BicubicSampling,	0x00000010)
 };
 
 #undef DECLARE_SF_ENUM

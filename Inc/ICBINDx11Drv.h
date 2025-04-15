@@ -170,7 +170,7 @@ typedef unsigned short INDEX;
 #if DX11_HP2
 #define ADJUST_PFLAGS(PolyFlags) \
 	/* Metallicafan212:	Cut it down to only specific flags */ \
-	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_AlphaBlend | PF_Opacity))) \
+	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_Highlighted | PF_LumosAffected | PF_Opacity))) \
 	{ \
 		PolyFlags |= PF_Occlude; \
 	} \
@@ -394,6 +394,8 @@ struct FD3DSecondaryVert
 	FLOAT	MV;
 	FLOAT	FU;
 	FLOAT	FV;
+	FLOAT	ExtraU;
+	FLOAT	ExtraV;
 };
 // Metallicafan212:	Cache stuff
 typedef unsigned long long D3DCacheId;
@@ -859,6 +861,10 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	Configured Z range for the depth RMode
 	//					Max depth is 65535.0f
 	FLOAT						DepthDrawZLimit;
+
+	// Metallicafan212:	If to use Bicubic sampling for lightmaps and fogmaps
+	//					NOTE: if this is on, lightmap atlas is forcibly disabled!
+	UBOOL						bBicubicLightmaps;
 
 	// Metallicafan212:	If to always use the precompiled shaders, rather than recompiling the source HLSL files
 	//					This is only for the base shaders, user shaders will have to be recompiled

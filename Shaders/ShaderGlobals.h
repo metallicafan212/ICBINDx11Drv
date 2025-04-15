@@ -279,6 +279,60 @@ float3 RemoveSRGBCurve( float3 x )
     return select(x < 0.04045, x / 12.92, pow( (x + 0.055) / 1.055, 2.4 ));
 }
 
+// Metallicafan212:	From https://gist.github.com/AlpyneDreams/17e5e8b8b686eca659917a61d4a0b0d3
+float4 cubic(float v)
+{
+	float4 n = float4(1.0, 2.0, 3.0, 4.0) - v;
+	float4 s = n * n * n;
+	float x = s.x;
+	float y = s.y - 4.0 * s.x;
+	float z = s.z - 4.0 * s.y + 6.0 * s.x;
+	float w = 6.0 - x - y - z;
+	return float4(x, y, z, w) * (1.0/6.0);
+}
+
+#define BICUBIC_OFFSET 0.5
+
+float4 tex2D_bicubic(sampler samp, Texture2D tex, float2 texCoords)
+{	
+	// Metallicafan212:	Automatically get the texture size
+	float2 texSize;
+	tex.GetDimensions(texSize.x, texSize.y);
+	float2 invTexSize 	= 1 / texSize;
+	
+	texCoords 		= texCoords * texSize - BICUBIC_OFFSET;
+	
+	float2 fxy 		= frac(texCoords);
+	texCoords -= fxy;
+
+	float4 xcubic 	= cubic(fxy.x);
+	float4 ycubic 	= cubic(fxy.y);
+
+	float4 c 		= texCoords.xxyy + float2(-BICUBIC_OFFSET, BICUBIC_OFFSET * 3.0).xyxy;
+	
+	float4 s 		= float4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
+	float4 offset 	= c + float4(xcubic.yw, ycubic.yw) / s;
+	
+	offset *= invTexSize.xxyy;
+
+
+	float4 sample0 = tex.Sample(samp, offset.xz);//SampleGrad(samp, offset.xz, dx, dy);
+	float4 sample1 = tex.Sample(samp, offset.yz);//SampleGrad(samp, offset.yz, dx, dy);
+	float4 sample2 = tex.Sample(samp, offset.xw);//SampleGrad(samp, offset.xw, dx, dy);
+	float4 sample3 = tex.Sample(samp, offset.yw);//SampleGrad(samp, offset.yw, dx, dy);
+
+	float sx = s.x / (s.x + s.y);
+	float sy = s.z / (s.z + s.w);
+	
+	return lerp( lerp(sample3, sample2, sx), lerp(sample1, sample0, sx), sy );
+}
+
+
+void LightmapSampleBicubic(in sampler Samp, in Texture2D Tex, in float2 UV, out float4 Output )
+{
+	Output = tex2D_bicubic( Samp, Tex, UV);
+}
+
 // This is the new HDR transfer function, also called "PQ" for perceptual quantizer.  Note that REC2084
 // does not also refer to a color space.  REC2084 is typically used with the REC2020 color space.
 float3 ApplyREC2084Curve(float3 L)
