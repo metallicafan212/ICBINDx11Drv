@@ -125,6 +125,8 @@ void UDX11RenderTargetTexture::Destroy()
 		D3DDev->RTTextures.RemoveItem(this);
 	}
 
+	D3DDev = nullptr;
+
 	Super::Destroy();
 
 	unguard;

@@ -1031,7 +1031,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 
 							if (bState == nullptr)
 							{
-								bState = CreateBlend(PF_Opacity, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
+								bState = CreateBlend(PF_Translucent | PF_Highlighted | PF_AlphaToCoverage, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, D3D11_COLOR_WRITE_ENABLE_ALL, 1, 1);
 							}
 						}
 						else
@@ -1040,7 +1040,7 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 
 							if (bState == nullptr)
 							{
-								bState = CreateBlend(PF_Opacity, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
+								bState = CreateBlend(PF_Translucent | PF_Highlighted, D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA);
 							}
 						}
 					}
