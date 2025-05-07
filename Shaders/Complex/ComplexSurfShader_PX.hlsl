@@ -166,7 +166,7 @@ PSOutput PxShader(PSInput input)
 			FogColor 		= Fogmap.Sample(FogState, input.fUV);
 		}
 		
-		ConvertColorspace(FogColor * 2.0f);
+		FogColor 		= ConvertColorspace(FogColor * 2.0f);
 		
 		DiffColor.xyz 	= (DiffColor.xyz * (1.0f - FogColor.w)) + FogColor.xyz;
 	}
