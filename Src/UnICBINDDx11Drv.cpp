@@ -266,6 +266,8 @@ void UICBINDx11RenderDevice::SetupDevice()
 	if(!bUseMultiThreadedDevice)
 		bUseDeferredRendering = 0;
 
+	// Metallicafan212:	TODO! Support D3D_DRIVER_TYPE_WARP
+	//					https://learn.microsoft.com/en-us/windows/win32/direct3darticles/directx-warp
 MAKE_DEVICE:
 	HRESULT hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, FLPtr, FLCount, D3D11_SDK_VERSION, &m_D3DDevice, &m_FeatureLevel, &m_D3DDeviceContext);
 
