@@ -24,8 +24,5 @@ VS_OUT VertShader(VSInput input)
 	// Metallicafan212:	I've embedded the line size into the fog.x
 	output.fog		= input.fog.x;
 	
-	// Metallicafan212:	Perform clipping
-	output.clipDistance	= dot(input.pos, ClippingPlane);
-	
 	return output;
 }
