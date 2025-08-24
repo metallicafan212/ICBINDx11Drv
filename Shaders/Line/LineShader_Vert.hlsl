@@ -14,6 +14,9 @@ VS_OUT VertShader(VSInput input)
 	// Metallicafan212:	Transform it out
 	output.pos 		= mul(input.pos, Proj);
 	
+	// Metallicafan212: Clip it
+	output.clipDistance	= dot(input.pos, (ClippingPlane * float4(0.0f, 0.0f, 0.0f, -1.0f)));
+	
 	// Metallicafan212:	Copy the vert info over
 	output.uv.xy	= input.uv.xy;
 	output.color	= input.color;

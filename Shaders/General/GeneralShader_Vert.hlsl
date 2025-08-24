@@ -16,6 +16,9 @@ PSInput VertShader(VSInput input)
 		output.pos		= input.pos;
 	}
 	
+	// Metallicafan212:	Perform clipping
+	output.clipDistance	= dot(input.pos, (ClippingPlane * float4(0.0f, 0.0f, 0.0f, -1.0f)));
+	
 	// Metallicafan212:	Save the original Z for distance fog
 	output.origZ	= input.pos.z;
 	

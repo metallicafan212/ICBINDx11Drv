@@ -143,6 +143,9 @@ cbuffer FrameVariables : register (b0)
 	float	GammaOffsetBlue		: packoffset(c7.z);
 	float	GammaOffsetGreen	: packoffset(c7.w);
 	
+	// Metallicafan212: FFrame clipping plane
+	float4	ClippingPlane		: packoffset(c8.x);
+	
 	//float3	Paddddddd		: packoffset(c7.y);
 };
 

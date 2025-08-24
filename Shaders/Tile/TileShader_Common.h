@@ -36,6 +36,8 @@ struct PSInput
 #if !NO_CUSTOM_RMODES
 	int   	bRejectBW				: COLOR3;
 #endif
+	
+	float   clipDistance			: SV_CLIPDISTANCE0;
 };
 
 // Metallicafan212:	Directly ported from XOpenGL

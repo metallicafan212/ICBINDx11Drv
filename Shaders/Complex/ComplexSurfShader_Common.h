@@ -38,6 +38,7 @@ struct PSInput
 	float  origZ			: COLOR2;
 	float2 detVars			: COLOR3;
 	float4 addColor			: COLOR4;
+	float  clipDistance		: SV_CLIPDISTANCE0;
 };
 
 struct PSOutput

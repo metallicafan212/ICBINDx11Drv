@@ -21,6 +21,9 @@ PSInput VertShader(VSInput input)
 	output.pos 			= mul(input.pos, Proj);
 	output.color		= input.color;
 	
+	// Metallicafan212:	Perform clipping
+	output.clipDistance	= dot(input.pos, (ClippingPlane * float4(0.0f, 0.0f, 0.0f, -1.0f)));
+	
 	// Metallicafan212:	Mix in the vertex color from the fog value
 	output.color.xyz   += (input.fog.xyz * input.fog.w);
 	

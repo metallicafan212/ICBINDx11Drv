@@ -79,9 +79,14 @@ struct FFrameShaderVars
 	FLOAT				GammaOffsetGreen;
 	FLOAT				GammaOffsetBlue;
 
+	// Metallicafan212:	Current clipping plane
+	FPlane				ClippingPlane;
+
 	FFrameShaderVars()
 	{
 		appMemzero(this, sizeof(FFrameShaderVars));
+
+		ClippingPlane.W = 1.0f;
 	}
 };
 

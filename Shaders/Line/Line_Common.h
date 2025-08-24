@@ -7,20 +7,22 @@
 
 struct GSInput
 {
-	float4 pos 		: SV_POSITION0; 
-	float2 uv		: TEXCOORD0;
-	float4 color	: COLOR0; 
-	float  fog		: COLOR1;
-	float  origZ	: COLOR2;
+	float4 pos 			: SV_POSITION0; 
+	float2 uv			: TEXCOORD0;
+	float4 color		: COLOR0; 
+	float  fog			: COLOR1;
+	float  origZ		: COLOR2;
+	float  clipDistance : SV_CLIPDISTANCE0;
 };
 
 struct PSInput 
 {
-	float4 pos 		: SV_POSITION0; 
-	float2 uv		: TEXCOORD0;
-	float4 color	: COLOR0; 
-	float4 fog		: COLOR1;
-	float  origZ	: COLOR2;
+	float4 pos 			: SV_POSITION0; 
+	float2 uv			: TEXCOORD0;
+	float4 color		: COLOR0; 
+	float4 fog			: COLOR1;
+	float  origZ		: COLOR2;
+	float  clipDistance	: SV_CLIPDISTANCE0;
 };			
 
 #if USE_GEO_SHADER

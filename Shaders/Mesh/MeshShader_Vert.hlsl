@@ -60,5 +60,8 @@ PSInput VertShader(VSInput input)
 	output.dUV.xy	= input.uv.zw;
 	output.mUV.xy	= input.addColor.xy;
 	
+	// Metallicafan212: Clip it
+	output.clipDistance	= dot(input.pos, (ClippingPlane * float4(0.0f, 0.0f, 0.0f, -1.0f)));
+	
 	return output;
 }

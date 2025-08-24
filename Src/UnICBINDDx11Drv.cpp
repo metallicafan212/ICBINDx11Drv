@@ -3459,6 +3459,8 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 
 		MaxZ			= 65536.0f;
 
+		FrameShaderVars.ClippingPlane = FPlane(0.0f, 0.0f, 0.0f, 1.0f);
+
 #if DX11_HP2
 		m_OrthoProjection	= 0;
 		OrthoZoom			= 1.0f;
@@ -3544,6 +3546,9 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 		// Metallicafan212:	Remember the scaled values!
 		ScaledSceneNodeX = NewX;
 		ScaledSceneNodeY = NewY;
+
+		// Metallicafan212:	Set the clipping plane
+		FrameShaderVars.ClippingPlane = Frame->NearClip;
 
 #if 0//DX11_HP2
 		MaxZ			= Frame->MaxZ;
