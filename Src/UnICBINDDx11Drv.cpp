@@ -3549,6 +3549,7 @@ void UICBINDx11RenderDevice::SetSceneNode(FSceneNode* Frame)
 
 		// Metallicafan212:	Set the clipping plane
 		FrameShaderVars.ClippingPlane = Frame->NearClip;
+		FrameShaderVars.ClippingPlane.W *= -1.f;
 
 #if 0//DX11_HP2
 		MaxZ			= Frame->MaxZ;

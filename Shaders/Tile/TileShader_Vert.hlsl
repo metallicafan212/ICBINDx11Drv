@@ -31,7 +31,7 @@ PSInput VertShader(VSInput input)
 	//output.distFog		= DoDistanceFog(output.pos.z);
 	
 	// Metallicafan212: Clip it
-	output.clipDistance	= dot(input.pos, (ClippingPlane * float4(0.0f, 0.0f, 0.0f, -1.0f)));
+	output.clipDistance	= dot(input.pos, ClippingPlane);
 	
 	return output;
 }

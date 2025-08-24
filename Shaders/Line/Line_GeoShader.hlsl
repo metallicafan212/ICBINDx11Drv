@@ -63,7 +63,7 @@ void GeoShader(line GSInput input[2], inout TriangleStream <PSInput> triStream)
 	output.origZ		= input[0].origZ;
 	
 	// Metallicafan212: Clip it
-	output.clipDistance	= dot(output.pos, (ClippingPlane * float4(0.0f, 0.0f, 0.0f, -1.0f)));
+	output.clipDistance	= dot(output.pos, ClippingPlane);
 	
 	triStream.Append(output);
 	
@@ -71,7 +71,7 @@ void GeoShader(line GSInput input[2], inout TriangleStream <PSInput> triStream)
 	output.origZ		= input[0].origZ;;
 	
 	// Metallicafan212: Clip it
-	output.clipDistance	= dot(output.pos, (ClippingPlane * float4(0.0f, 0.0f, 0.0f, -1.0f)));
+	output.clipDistance	= dot(output.pos, ClippingPlane);
 	
 	triStream.Append(output);
 	
@@ -79,7 +79,7 @@ void GeoShader(line GSInput input[2], inout TriangleStream <PSInput> triStream)
 	output.origZ		= input[1].origZ;;
 	
 	// Metallicafan212: Clip it
-	output.clipDistance	= dot(output.pos, (ClippingPlane * float4(0.0f, 0.0f, 0.0f, -1.0f)));
+	output.clipDistance	= dot(output.pos, ClippingPlane);
 	
 	triStream.Append(output);
 	
@@ -87,7 +87,7 @@ void GeoShader(line GSInput input[2], inout TriangleStream <PSInput> triStream)
 	output.origZ		= input[1].origZ;;
 	
 	// Metallicafan212: Clip it
-	output.clipDistance	= dot(output.pos, (ClippingPlane * float4(0.0f, 0.0f, 0.0f, -1.0f)));
+	output.clipDistance	= dot(output.pos, ClippingPlane);
 	
 	triStream.Append(output);
 	

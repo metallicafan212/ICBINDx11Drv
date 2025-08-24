@@ -15,7 +15,7 @@ VS_OUT VertShader(VSInput input)
 	output.pos 		= mul(input.pos, Proj);
 	
 	// Metallicafan212: Clip it
-	output.clipDistance	= dot(input.pos, (ClippingPlane * float4(0.0f, 0.0f, 0.0f, -1.0f)));
+	output.clipDistance	= dot(input.pos, ClippingPlane);
 	
 	// Metallicafan212:	Copy the vert info over
 	output.uv.xy	= input.uv.xy;
@@ -23,6 +23,9 @@ VS_OUT VertShader(VSInput input)
 	
 	// Metallicafan212:	I've embedded the line size into the fog.x
 	output.fog		= input.fog.x;
+	
+	// Metallicafan212:	Perform clipping
+	output.clipDistance	= dot(input.pos, ClippingPlane);
 	
 	return output;
 }
