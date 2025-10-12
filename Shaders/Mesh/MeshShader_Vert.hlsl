@@ -60,8 +60,11 @@ PSInput VertShader(VSInput input)
 	output.dUV.xy	= input.uv.zw;
 	output.mUV.xy	= input.addColor.xy;
 	
-	// Metallicafan212: Clip it
-	output.clipDistance	= dot(input.pos, ClippingPlane);
+	// Metallicafan212: Clip it, but only when we're not in the compressed z range hack
+	if((FrameShaderFlags & 0x20) == 0)
+	{
+		output.clipDistance	= dot(input.pos, ClippingPlane);
+	}
 	
 	return output;
 }

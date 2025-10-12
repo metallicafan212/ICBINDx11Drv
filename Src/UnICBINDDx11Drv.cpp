@@ -3586,14 +3586,21 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 	//Save new Z range hack projection state
 	m_nearZRangeHackProjectionActive = bRequestingNearRangeHack;
 
-
 	FLOAT zScaleVal = 1.0f;
 	if (bRequestingNearRangeHack)
 	{
+		// Metallicafan212:	Add on the flag so the mesh shader can ignore clipping
+		FrameShaderVars.FrameFlags |= FSF_CompressedZ;
+
 		zScaleVal = 0.125f;
 
 		// Metallicafan212:	Attempt to fix some near-z clipping issues
 		//zNear = 0.5f;
+	}
+	else
+	{
+		// Metallicafan212:	Remove the near Z hack
+		FrameShaderVars.FrameFlags &= ~FSF_CompressedZ;
 	}
 
 	left	= -m_RProjZ * zNear;

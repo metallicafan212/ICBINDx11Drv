@@ -33,6 +33,10 @@ enum EFrameShaderFlags
 	FSF_NoTransform	= 0x0000000008,
 
 	FSF_R2020		= 0x0000000010,
+
+	// Metallicafan212:	Another hack, if near z projection is enabled.
+	//					We DON'T want to do ANY near clipping calculations when the compressed z hack is enabled
+	FSF_CompressedZ	= 0x0000000020,
 };
 
 // Metallicafan212:	Common draw vars that should only be uploaded once per frame (if we can get away with it, that is)
