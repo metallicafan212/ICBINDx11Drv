@@ -3612,11 +3612,15 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 #if 0//DX11_HP2
 	// Metallicafan212:	We calculate the scene depth and use that
 	zFar = MaxZ;
+/*
 #elif DX11_HP2 || DX11_UNREAL_227 || DX11_UT_469
 	// Metallicafan212:	Increased to the next power of two
-	zFar = 65535.0f;
+	zFar = DX11_MAX_Z;
 #else
 	zFar = 32768.0f;
+*/
+#else
+	zFar = DX11_MAX_Z;
 #endif
 
 	if (bRequestingNearRangeHack)

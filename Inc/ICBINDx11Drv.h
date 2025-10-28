@@ -123,6 +123,13 @@ enum EDX11FogMode
 	DFM_Expoential2	= 0x3,
 };
 
+// Metallicafan212:	Max Z used for the viewport
+#if DX11_HP2 || DX11_UNREAL_227 || DX11_UT_469
+#define DX11_MAX_Z 65535.0f
+#else
+#define DX11_MAX_Z 32767.0f
+#endif
+
 // Metallicafan212:	TODO! Generic game support
 #if !DX11_HP2 && !DX11_UT_469 && !DX11_UNREAL_227
 // Metallicafan212:	HACK! So we render tiles right, we need to clamp UVs so it doesn't cause looping when using AF
@@ -442,6 +449,7 @@ struct FFogShaderVars
 	// Metallicafan212:	Current fog settings
 	FLOAT				CurrentFogStart;
 	FLOAT				CurrentFogEnd;
+	FLOAT				CurrentFogDensity;
 
 	// Metallicafan212:	Target values
 	FPlane				TargetFogColor;

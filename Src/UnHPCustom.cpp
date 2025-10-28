@@ -600,7 +600,7 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 	if (Enable)
 	{
 		// Metallicafan212:	Check if it's equal
-		if(FogShaderVars.bDoDistanceFog && FogShaderVars.TargetFogColor == Color && FogShaderVars.CurrentFogStart == FogStart && FogShaderVars.CurrentFogEnd == FogEnd)
+		if(FogShaderVars.bDoDistanceFog && FogShaderVars.TargetFogColor == Color && FogShaderVars.CurrentFogStart == FogStart && FogShaderVars.CurrentFogEnd == FogEnd && FogShaderVars.CurrentFogDensity == FogDensity && FogShaderVars.FogMode == FogMode)
 			return;
 
 		EndBuffering();
@@ -618,6 +618,7 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 
 		FogShaderVars.CurrentFogStart	= FogStart;
 		FogShaderVars.CurrentFogEnd		= FogEnd;
+		FogShaderVars.CurrentFogDensity	= FogDensity;
 
 		FogShaderVars.FogMode			= (EDX11FogMode)FogMode;
 	}
