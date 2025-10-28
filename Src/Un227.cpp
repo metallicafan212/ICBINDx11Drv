@@ -47,10 +47,10 @@ BYTE UICBINDx11RenderDevice::SetZTestMode(BYTE Mode)
 
 		// Depth test parameters
 		dsDesc.DepthEnable					= TRUE;
-		dsDesc.DepthWriteMask				= (Key & 0x1) ? D3D11_DEPTH_WRITE_MASK_ZERO : D3D11_DEPTH_WRITE_MASK_ALL;
+		dsDesc.DepthWriteMask				= (Key & DS_NoZWrite) ? D3D11_DEPTH_WRITE_MASK_ZERO : D3D11_DEPTH_WRITE_MASK_ALL;
 
-		dsDesc.DepthEnable					= (Key & 0x2) ? FALSE : TRUE;
-		dsDesc.StencilEnable				= (Key & 0x2) ? FALSE : TRUE;
+		dsDesc.DepthEnable					= (Key & DS_NoDepth) ? FALSE : TRUE;
+		dsDesc.StencilEnable				= (Key & DS_NoDepth) ? FALSE : TRUE;
 
 		dsDesc.DepthFunc					= CompModes[Mode];
 
