@@ -187,7 +187,8 @@ cbuffer DFogVariables : register (b1)
 	float4 	DistanceFogColor 	: packoffset(c0);
 	float4 	DistanceFogSettings	: packoffset(c1);
 	int 	bDoDistanceFog		: packoffset(c2.x);
-	float3	Paddy3				: packoffset(c2.y);
+	int		FogMode				: packoffset(c2.y);
+	float2	Paddy2				: packoffset(c2.z);
 };
 
 #if PIXEL_SHADER
@@ -199,12 +200,55 @@ float DoDistanceFog(float InZ)
 	if(!bDoDistanceFog)
 		return 0.0f;
 	
+	float fogStart 		= DistanceFogSettings.x;
+	float fogEnd		= DistanceFogSettings.y;
+	float fogDensity	= DistanceFogSettings.z;
+	float fogAlpha		= DistanceFogSettings.w;
+	
 	// Metallicafan212:	Calcuate the fog value for the pixel shader
-	if(InZ > DistanceFogSettings.y)
+	if(InZ >= fogStart)
 	{
-		float dFog = ((InZ * -DistanceFogSettings.x) + DistanceFogSettings.y) * DistanceFogSettings.z;
+		float fogScale 		= (fogEnd - fogStart);
+		float dFog		= 1.0 - ((-InZ + fogEnd) / fogScale);
+		switch(FogMode)
+		{
+			// Metallicafan212:	Linear fog
+			case 1:
+			{				
+				return saturate(dFog);
+				
+				//float dFog = ((InZ * -DistanceFogSettings.x) + DistanceFogSettings.y) * DistanceFogSettings.z;
 
-		return saturate(DistanceFogSettings.w - dFog);
+				//return saturate(DistanceFogSettings.w - dFog);
+			}
+			
+			// Metallicafan212: Expoential fog
+			case 2:
+			{
+				return saturate(1.0 - (1.0 / pow(2.71828, fogDensity * dFog)));
+				// Metallicafan212:	This shit don't work, just reimplement it as a expoential ramp-up
+				//float dFog = 
+				/*
+				// Metallicafan212: TODO! ZMax var
+				InZ 		=  InZ / 65536.0;
+				float dFog 	= 1.0 - exp(DistanceFogSettings.z * -InZ);
+				return dFog;
+				//return saturate(dFog);
+				*/
+			}
+			
+			case 3:
+			{
+				return saturate(pow(dFog, 2.0));
+				/*
+				// Metallicafan212: TODO! ZMax var
+				InZ 		=  InZ / 65536.0;
+				float dFog = 1.0 - exp(pow(DistanceFogSettings.z * -InZ, 2.0));
+				return dFog;
+				//return saturate(dFog);
+				*/
+			}
+		}
 	}
 	
 	return 0.0f;
@@ -252,12 +296,15 @@ float4 DoPixelFog(float DistFog, float4 Color)
 	
 	// Metallicafan212:	Now mix the colors
 	//					Again this is just a straight port of the asm I wrote a while ago
+	/*
 	float3 Temp = DistanceFogColor.xyz - Color.xyz;
 	Temp *= DistanceFogColor.w;
 	
 	Temp = (Temp * DistFog) + Color.xyz;
 	
 	return float4(Temp, Color.w);
+	*/
+	return float4(lerp(Color.xyz, DistanceFogColor.xyz, DistFog * DistanceFogColor.w), Color.w);
 }
 #endif
 

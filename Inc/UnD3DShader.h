@@ -102,7 +102,8 @@ struct FDistFogVars
 	FPlane	DistanceFogColor;
 	FPlane	DistanceFogSettings;
 	UBOOL	bDistanceFogEnabled;
-	FLOAT	Pad[3];
+	INT		FogMode;
+	FLOAT	Pad[2];
 };
 #endif
 

@@ -581,7 +581,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 
 #if DX11_DISTANCE_FOG
 // Metallicafan212:	Viewer-based zone fog
-void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FPlane Color, FLOAT FadeRate)
+void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FLOAT FogDensity, FPlane Color, FLOAT FadeRate, INT FogMode)
 {
 	guard(UICBINDx11RenderDevice::SetDistanceFog);
 
@@ -612,29 +612,30 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 		// Metallicafan212:	Set the fog values
 		FogShaderVars.TargetFogColor	= Color;
 
-		// Metallicafan212:	Start and end
-		FogShaderVars.TargetFogSettings	= FPlane(1.0f / (FogEnd - FogStart), (FogEnd / (FogEnd - FogStart)) - 1.0f, Color.W, 0.0f);
+		FogShaderVars.TargetFogSettings	= FPlane(FogStart, FogEnd, FogDensity, 0.0f);		
 
 		FogShaderVars.bFadeFogValues	= 1;
 
 		FogShaderVars.CurrentFogStart	= FogStart;
 		FogShaderVars.CurrentFogEnd		= FogEnd;
+
+		FogShaderVars.FogMode			= (EDX11FogMode)FogMode;
 	}
 	else
 	{
+		EndBuffering();
+
 		// Metallicafan212:	Save the fog settings
 		FogShaderVars.LastFogColor		= FogShaderVars.DistanceFogColor;
 		FogShaderVars.LastFogSettings	= FogShaderVars.DistanceFogSettings;
 
 		// Metallicafan212:	Fade out
 		FogShaderVars.TargetFogColor	= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
-		FogShaderVars.TargetFogSettings	= FPlane(1.0f / 32768.0f, 0.0f, 0.0f, 0.0f);
+		FogShaderVars.TargetFogSettings	= FPlane(DX11_MAX_Z, DX11_MAX_Z, 0.0f, 0.0f);
 
 		FogShaderVars.bFadeFogValues	= 1;
 
 		FogShaderVars.CurrentFogStart	= FogShaderVars.CurrentFogEnd = 0.0f;
-
-		EndBuffering();
 	}
 
 

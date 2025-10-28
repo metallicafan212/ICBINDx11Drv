@@ -144,13 +144,13 @@ void UICBINDx11RenderDevice::PreDrawGouraud(FSceneNode* Frame, FFogSurf& FogSurf
 
 	if (FogSurf.IsValid())
 	{
-		SetDistanceFog(1, FogSurf.FogDistanceStart, FogSurf.FogDistanceEnd, FogSurf.FogColor, 0.0f);
+		SetDistanceFog(1, FogSurf.FogDistanceStart, FogSurf.FogDistanceEnd, FogSurf.FogDensity, FogSurf.FogColor, 0.0f, (EDX11FogMode)(FogSurf.FogMode + 1));
 
 		// Metallicafan212:	TODO!!!! Enable modes here
 		
 	}
 	else if (FogShaderVars.bDoDistanceFog)
-		SetDistanceFog(0, 0.0f, 0.0f, FPlane(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
+		SetDistanceFog(0, 0.0f, 0.0f, 0.0f, FPlane(0.0f, 0.0f, 0.0f, 0.0f), 0.0f, 0);
 
 	unguard;
 }
@@ -162,7 +162,7 @@ void UICBINDx11RenderDevice::PostDrawGouraud(FSceneNode* Frame, FFogSurf& FogSur
 	// Metallicafan212:	Only disable if fogging is _actually_ set....
 	if (FogShaderVars.bDoDistanceFog)
 	{
-		SetDistanceFog(0, 0.0f, 0.0f, FPlane(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
+		SetDistanceFog(0, 0.0f, 0.0f, 0.0f, FPlane(0.0f, 0.0f, 0.0f, 0.0f), 0.0f, 0);
 	}
 
 	unguard;

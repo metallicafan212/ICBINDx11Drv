@@ -115,6 +115,14 @@ enum EDepthStencilFlags
 	DS_NoDepth	= 0x2,
 };
 
+enum EDX11FogMode
+{
+	DFM_None		= 0x0,
+	DFM_Linear		= 0x1,
+	DFM_Expoential	= 0x2,
+	DFM_Expoential2	= 0x3,
+};
+
 // Metallicafan212:	TODO! Generic game support
 #if !DX11_HP2 && !DX11_UT_469 && !DX11_UNREAL_227
 // Metallicafan212:	HACK! So we render tiles right, we need to clamp UVs so it doesn't cause looping when using AF
@@ -448,6 +456,8 @@ struct FFogShaderVars
 	UBOOL				bFadeFogValues;
 
 	FLOAT				FogSetTime;
+
+	EDX11FogMode		FogMode;
 
 	// Metallicafan212:	Constructor
 	FFogShaderVars() 
@@ -2304,7 +2314,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 #if DX11_DISTANCE_FOG
 
 	// Metallicafan212:	Viewer-based zone fog
-	virtual void SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FPlane Color, FLOAT FadeRate);
+	virtual void SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FLOAT FogDensity, FPlane Color, FLOAT FadeRate, INT FogMode = DFM_Linear);
 
 	// Metallicafan212:	Tick the current fog values
 	//					We use this to fade the values from one setting to another
@@ -2316,6 +2326,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 		GlobalDistFogSettings.DistanceFogColor		= FogShaderVars.DistanceFogColor;
 		GlobalDistFogSettings.DistanceFogSettings	= FogShaderVars.DistanceFogSettings;
 		GlobalDistFogSettings.bDistanceFogEnabled	= !FogShaderVars.bForceFogOff && (FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues);
+		GlobalDistFogSettings.FogMode				= FogShaderVars.FogMode;
 
 #if UPDATESUBRESOURCE_CONSTANTS
 		// Metallicafan212:	Update it using UpdateSubresource
