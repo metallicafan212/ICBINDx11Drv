@@ -111,9 +111,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 	// Metallicafan212:	Search for the bind
 	if (DaTex == nullptr)
 	{
-		DaTex = TextureMap.Find(Info->CacheID, PolyFlags);
+		DaTex = TextureMap.Find(Info->CacheID, PolyFlags, Info->Format);
 	}
-	//FD3DTexture* DaTex		= TextureMap.Find(Info->CacheID, PolyFlags);//TextureMap.Find(Info->CacheID);//CacheHash);
 
 	// Metallicafan212:	Using Info->NeedsRealtimeUpdate steals 50fps for some reason.... It's incredibly weird
 //#if DX11_UT_469 
@@ -381,7 +380,7 @@ void UICBINDx11RenderDevice::UpdateTextureRect(FTextureInfo& Info, INT U, INT V,
 	QWORD CacheID = Info.CacheID;
 
 	// Metallicafan212:	TODO! Create the texture
-	FD3DTexture* DaTex = TextureMap.Find(CacheID, 0);
+	FD3DTexture* DaTex = TextureMap.Find(CacheID, 0, Info.Format);
 
 	// Metallicafan212:	Haven't seen it before?
 	if (DaTex == nullptr)
@@ -463,14 +462,14 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, 
 	//FD3DTexture* DaTex	= TextureMap.Find(CacheID, PolyFlags);
 	if (DaTex == nullptr)
 	{
-		DaTex = TextureMap.Find(CacheID, PolyFlags);
+		DaTex = TextureMap.Find(CacheID, PolyFlags, Info.Format);
 	}
 
 	FD3DTexType* Type	= DaTex != nullptr ? DaTex->D3DTexType : nullptr;
 
 	if (DaTex == nullptr)
 	{
-		DaTex = TextureMap.Set(CacheID, PolyFlags);
+		DaTex = TextureMap.Set(CacheID, PolyFlags, Info.Format);
 
 		if (DaTex == nullptr)
 		{
@@ -873,20 +872,6 @@ void UICBINDx11RenderDevice::RGBA7To8(const FTextureInfo& Info, FD3DTexture* Tex
 			}
 			else
 			{
-				/*
-				while (Read < Size)
-				{
-					DWORD* Addr			= (DWORD*)&Bytes[Read];
-					(*(DWORD*)DBytes)	= (*Addr) << 1;//* 2;
-
-					Read	+= 4;
-					DBytes	+= 4;
-				}
-				*/
-
-				// Metallicafan212:	Don't mult by 2, do it in the shader
-				//appMemcpy(DBytes, Bytes, Size);
-
 				// Metallicafan212:	Eliminate an extra copy
 				m_RenderContext->UpdateSubresource(Tex->m_Tex, Mip + Tex->MipSkip, nullptr, Data, Pitch, 0);
 			}

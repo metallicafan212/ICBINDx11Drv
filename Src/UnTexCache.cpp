@@ -174,169 +174,112 @@ void FTextureCache::Flush()
 	unguardSlow;
 }
 
-FD3DTexture* FTextureCache::Find(D3DCacheId InID, PFLAG PolyFlags)
+FD3DTexture* FTextureCache::Find(D3DCacheId InID, PFLAG PolyFlags, ETextureFormat Format)
 {
 	guardSlow(FTextureCache::Find);
 
-	/*
-	// Metallicafan212:	Figure out what map this should be in
-	DWORD Truncated = (DWORD)InID;
-
-	if (Truncated == InID)
+	// Metallicafan212:	Only do the masked logic if it's P8
+	if (Format != TEXF_P8)
 	{
-		// Metallicafan212:	DWORD map
-
-		// Metallicafan212:	Use a switch to use jump tables
-		switch (PolyFlags & PF_Masked)
-		{
-			case PF_Masked:
-			{
-				// Metallicafan212:	See if it's in the map
-				auto	f = DWORDMaskedMap.find(Truncated);
-				return	f != DWORDMaskedMap.end() ? &f->second : nullptr;
-
-				break;
-			}
-
-			default:
-			{
-				// Metallicafan212:	See if it's in the map
-				auto	f  = DWORDMap.find(Truncated);
-				return	f != DWORDMap.end() ? &f->second : nullptr;
-
-				break;
-			}
-		}
+		goto NOT_MASKED;
 	}
-	else
-	*/
+
+	// Metallicafan212:	Use a switch to use jump tables
+	switch (PolyFlags & PF_Masked)
 	{
-		// Metallicafan212:	QWORD map
-
-		// Metallicafan212:	Use a switch to use jump tables
-		switch (PolyFlags & PF_Masked)
+		case PF_Masked:
 		{
-			case PF_Masked:
+			if (ChildMap->LastMasked != nullptr && ChildMap->LastMasked->CacheID == InID)
 			{
-				if (ChildMap->LastMasked != nullptr && ChildMap->LastMasked->CacheID == InID)
-				{
-					return ChildMap->LastMasked;
-				}
-				// Metallicafan212:	See if it's in the map
-				auto	f  = ChildMap->QWORDMaskedMap.find(InID);
+				return ChildMap->LastMasked;
+			}
+			// Metallicafan212:	See if it's in the map
+			auto	f  = ChildMap->QWORDMaskedMap.find(InID);
 #if USE_ROBIN_MAP
-				FD3DTexture* Lookup = f != ChildMap->QWORDMaskedMap.end() ? f.value() : nullptr;
+			FD3DTexture* Lookup = f != ChildMap->QWORDMaskedMap.end() ? f.value() : nullptr;
 
-				//return	f != ChildMap->QWORDMaskedMap.end() ? f.value() : nullptr;
+			//return	f != ChildMap->QWORDMaskedMap.end() ? f.value() : nullptr;
 #else
-				FD3DTexture* Lookup = f != ChildMap->QWORDMaskedMap.end() ? f->second : nullptr;
-				//return	f != ChildMap->QWORDMaskedMap.end() ? f->second : nullptr;
+			FD3DTexture* Lookup = f != ChildMap->QWORDMaskedMap.end() ? f->second : nullptr;
+			//return	f != ChildMap->QWORDMaskedMap.end() ? f->second : nullptr;
 #endif
-				if (Lookup != nullptr)
-				{
-					ChildMap->LastMasked = Lookup;
-				}
-
-				return Lookup;
-
-				break;
+			if (Lookup != nullptr)
+			{
+				ChildMap->LastMasked = Lookup;
 			}
 
-			default:
+			return Lookup;
+
+			break;
+		}
+
+		default:
+		{
+		NOT_MASKED:
+			if (ChildMap->LastNorm != nullptr && ChildMap->LastNorm->CacheID == InID)
 			{
-				if (ChildMap->LastNorm != nullptr && ChildMap->LastNorm->CacheID == InID)
-				{
-					return ChildMap->LastNorm;
-				}
-
-				// Metallicafan212:	See if it's in the map
-				auto	f  = ChildMap->QWORDMap.find(InID);
-#if USE_ROBIN_MAP
-				FD3DTexture* Lookup = f != ChildMap->QWORDMap.end() ? f.value() : nullptr;
-				//return	f != ChildMap->QWORDMap.end() ? f.value() : nullptr;
-#else
-				FD3DTexture* Lookup = f != ChildMap->QWORDMap.end() ? f->second : nullptr;
-				//return	f != ChildMap->QWORDMap.end() ? f->second : nullptr;
-#endif
-				if (Lookup != nullptr)
-				{
-					ChildMap->LastNorm = Lookup;
-				}
-
-				return Lookup;
-
-				break;
+				return ChildMap->LastNorm;
 			}
+
+			// Metallicafan212:	See if it's in the map
+			auto	f  = ChildMap->QWORDMap.find(InID);
+#if USE_ROBIN_MAP
+			FD3DTexture* Lookup = f != ChildMap->QWORDMap.end() ? f.value() : nullptr;
+			//return	f != ChildMap->QWORDMap.end() ? f.value() : nullptr;
+#else
+			FD3DTexture* Lookup = f != ChildMap->QWORDMap.end() ? f->second : nullptr;
+			//return	f != ChildMap->QWORDMap.end() ? f->second : nullptr;
+#endif
+			if (Lookup != nullptr)
+			{
+				ChildMap->LastNorm = Lookup;
+			}
+
+			return Lookup;
+
+			break;
 		}
 	}
 
 	unguardSlow;
 }
 
-FD3DTexture* FTextureCache::Set(D3DCacheId InID, PFLAG PolyFlags)
+FD3DTexture* FTextureCache::Set(D3DCacheId InID, PFLAG PolyFlags, ETextureFormat Format)
 {
 	guardSlow(FTextureCache::Set);
 
-	/*
-	// Metallicafan212:	Figure out what map this should be in
-	DWORD Truncated = (DWORD)InID;
-
-	if (Truncated == InID)
+	// Metallicafan212:	Only do the masked logic if it's P8
+	if (Format != TEXF_P8)
 	{
-		// Metallicafan212:	DWORD map
-
-		// Metallicafan212:	Use a switch to use jump tables
-		switch (PolyFlags & PF_Masked)
-		{
-			case PF_Masked:
-			{
-				// Metallicafan212:	See if it's in the map
-				//return &DWORDMaskedMap.Set(Truncated, FD3DTexture());
-				return &(DWORDMaskedMap[Truncated] = FD3DTexture());
-
-				break;
-			}
-
-			default:
-			{
-				// Metallicafan212:	See if it's in the map
-				return &(DWORDMap[Truncated] = FD3DTexture());
-
-				break;
-			}
-		}
+		goto NOT_MASKED;
 	}
-	else
-	*/
+
+	// Metallicafan212:	Use a switch to use jump tables
+	switch (PolyFlags & PF_Masked)
 	{
-		// Metallicafan212:	QWORD map
-
-		// Metallicafan212:	Use a switch to use jump tables
-		switch (PolyFlags & PF_Masked)
+		case PF_Masked:
 		{
-			case PF_Masked:
-			{
-				// Metallicafan212:	Add a new texture to the map
-				FD3DTexture* NewTex				= new FD3DTexture();
-				ChildMap->LastMasked			= NewTex;
-				ChildMap->QWORDMaskedMap[InID]	= NewTex;
+			// Metallicafan212:	Add a new texture to the map
+			FD3DTexture* NewTex				= new FD3DTexture();
+			ChildMap->LastMasked			= NewTex;
+			ChildMap->QWORDMaskedMap[InID]	= NewTex;
 				
-				return NewTex;
+			return NewTex;
 
-				break;
-			}
+			break;
+		}
 
-			default:
-			{
-				// Metallicafan212:	Add a new texture to the map
-				FD3DTexture* NewTex				= new FD3DTexture();
-				ChildMap->LastNorm				= NewTex;
-				ChildMap->QWORDMap[InID]		= NewTex;
+		default:
+		{
+		NOT_MASKED:
+			// Metallicafan212:	Add a new texture to the map
+			FD3DTexture* NewTex				= new FD3DTexture();
+			ChildMap->LastNorm				= NewTex;
+			ChildMap->QWORDMap[InID]		= NewTex;
 
-				return NewTex;
+			return NewTex;
 
-				break;
-			}
+			break;
 		}
 	}
 
