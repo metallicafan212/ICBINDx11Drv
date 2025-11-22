@@ -252,7 +252,13 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	ScreenEnum->Names.AddItem(FName(TEXT("HDR16")));
 
 	// Metallicafan212:	Now init the config
+	//					TODO! For HP2, for now default to SDR until a better HDR downmix can be written.
+	//					While the downmix works fine (for the most part) on AMD, on NVidia it can be wildly different depending on the generation.
+#if DX11_HP2
+	AddByteProp(TEXT("ScreenFormat"), (BYTE&)UserScreenFormat, EC_CppProperty, offsetof(UICBINDx11RenderDevice, UserScreenFormat), DSF_SDR, ScreenEnum);
+#else
 	AddByteProp(TEXT("ScreenFormat"), (BYTE&)UserScreenFormat, EC_CppProperty, offsetof(UICBINDx11RenderDevice, UserScreenFormat), DSF_HDR16, ScreenEnum);
+#endif
 
 	unguard;
 }
