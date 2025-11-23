@@ -1957,6 +1957,26 @@ void UICBINDx11RenderDevice::SetupResources()
 		GLog->Logf(TEXT("DX11: Using a resolution scaling factor of %f. Effective resolution is %dx%d"), ResolutionScale, (INT)ScaledSizeX, (INT)ScaledSizeY);
 	}
 
+	// Metallicafan212:	Get the current refresh rate and such
+	DEVMODE CurrentScreenMode;
+	CurrentScreenMode.dmSize = sizeof(DEVMODE);
+	if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &CurrentScreenMode))
+	{
+		CurrentRefreshRate		= CurrentScreenMode.dmDisplayFrequency;
+		CurAdativeVSyncFTCutoff	= (1.0f / (FLOAT)CurrentRefreshRate) * AdaptiveVSyncCutoff;
+
+		VSyncSamples.Empty();
+
+		// Metallicafan212:	Assume perfect frame time
+		//					TODO! Improve this approach overall....
+		for (INT i = 0; i < AdaptiveVSyncNumSamples; i++)
+		{
+			VSyncSamples.AddItem((1.0f / (FLOAT)CurrentRefreshRate));
+		}
+	}
+
+	GLog->Logf(TEXT("DX11: Current refresh rate is %d"), CurrentRefreshRate);
+
 	GLog->Logf(TEXT("DX11: Setting up Render targets, Depth/Stencil, and Depth states"));
 
 	// Metallicafan212:	Now obtain the back buffer
@@ -2333,17 +2353,6 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 		// Metallicafan212:	Resetup resources that need to be sized
 		bFullscreen = Fullscreen;
 		SetupResources();
-	}
-
-	// Metallicafan212:	Get the current refresh rate and such
-	DEVMODE CurrentScreenMode;
-	CurrentScreenMode.dmSize = sizeof(DEVMODE);
-	if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &CurrentScreenMode))
-	{
-		CurrentRefreshRate		= CurrentScreenMode.dmDisplayFrequency;
-		CurAdativeVSyncFTCutoff	= (1.0f / (FLOAT)CurrentRefreshRate) * AdaptiveVSyncCutoff;
-
-		VSyncSamples.Empty();
 	}
 
 	// Metallicafan212:	Set the viewport now
