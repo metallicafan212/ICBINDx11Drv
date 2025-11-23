@@ -260,6 +260,19 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	AddByteProp(TEXT("ScreenFormat"), (BYTE&)UserScreenFormat, EC_CppProperty, offsetof(UICBINDx11RenderDevice, UserScreenFormat), DSF_HDR16, ScreenEnum);
 #endif
 
+	// Metallicafan212:	VSync format settings
+	UEnum* VSyncEnum = new(GetClass(), TEXT("VSyncMode"))UEnum(nullptr);
+
+	VSyncEnum->Names.AddItem(FName(TEXT("Normal")));
+	VSyncEnum->Names.AddItem(FName(TEXT("Adative")));
+
+	AddByteProp(TEXT("VSyncMode"), (BYTE&)VSyncMode, EC_CppProperty, offsetof(UICBINDx11RenderDevice, VSyncMode), VSM_Adaptive, VSyncEnum);
+
+	// Metallicafan212:	Number of samples to collect
+	AddIntProp(CPP_PROP(AdaptiveVSyncNumSamples), 3);
+
+	AddFloatProp(CPP_PROP(AdaptiveVSyncCutoff), 0.85f);
+
 	unguard;
 }
 
@@ -408,6 +421,11 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 
 	MaskedAlphaReject		= Clamp(MaskedAlphaReject, 0.001f, 0.99f);
 	SmoothMaskedAlphaReject = Clamp(SmoothMaskedAlphaReject, 0.001f, 0.99f);
+
+	// Metallicafan212:	Arbitary max
+	AdaptiveVSyncNumSamples = Clamp(AdaptiveVSyncNumSamples, 1, 100);
+
+	AdaptiveVSyncCutoff		= Clamp(AdaptiveVSyncCutoff, 0.0f, 1.0f);
 
 	// Metallicafan212:	Find the real MSAA levels supported
 	UINT SampleCount = 1;

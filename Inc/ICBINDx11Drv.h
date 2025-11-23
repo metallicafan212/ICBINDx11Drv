@@ -308,6 +308,13 @@ enum EDX11ScreenFormat : BYTE
 	DSF_MAX
 };
 
+// Metallicafan212:	VSync modes
+enum EVSyncMode : BYTE
+{
+	VSM_Normal,
+	VSM_Adaptive
+};
+
 // Metallicafan212:	Just cutting down on the needed typing
 namespace MS = Microsoft::WRL;
 
@@ -797,21 +804,8 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	// Metallicafan212:	If to use the DX9 style flat colors instead (a lot brighter and hides the original textures)
 	UBOOL						UseDX9FlatColor;
 
-	// Metallicafan212:	If to use HDR (note that it'll look wrong on non-HDR screens)
-	//UBOOL						UseHDR;
-
-	// Metallicafan212:	If to use HDR in the editor (NOTE! This isn't finished, and windows isn't auto detecting the app for HDR, so it just makes the image extremely bright...)
-	//UBOOL						UseHDRInEditor;
-
 	// Metallicafan212:	If HDR is active (and the screenformat is set)
 	UBOOL						ActiveHDR;
-
-	// Metallicafan212:	If the user wants to automatically override the HDR active detection
-	//UBOOL						ForceHDR;
-
-	// Metallicafan212:	If the user wants to use an internal RGBA16 float render target format
-	//					The backbuffer format will be RGBA8 in this mode
-	//UBOOL						UseRGBA16;
 
 	// Metallicafan212:	Screen format to use. Note that HDR16 uses RGBA16 float, HDR10 uses RGBA10 int
 	EDX11ScreenFormat			UserScreenFormat;
@@ -888,6 +882,27 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	//					This is only for the base shaders, user shaders will have to be recompiled
 	//					This basically just re-inits the shader cache using the hard-coded shader bytes
 	UBOOL						bUsePrecompiledShaders;
+
+	// Metallicafan212:	VSync mode
+	//					Adaptive will time the frame lengths between the last X frames (configurable) and then if the frame times are above a % of the refresh rate (also configurable), it will turn off vsync
+	EVSyncMode					VSyncMode;
+
+	// Metallicafan212:	0-1, percentage of 1/refresh rate we have to reach above to turn off vsync.
+	FLOAT						AdaptiveVSyncCutoff;
+
+	// Metallicafan212:	How many frame time samples to average to make a vsync judgement.
+	INT							AdaptiveVSyncNumSamples;
+
+	// Metallicafan212:	Current screen refresh rate
+	INT							CurrentRefreshRate;
+
+	// Metallicafan212:	Calculated frame time cutoff for adative vsync
+	FLOAT						CurAdativeVSyncFTCutoff;
+
+	// Metallicafan212:	Frame time samples for adative vsync
+	TArray<FLOAT>				VSyncSamples;
+
+	QWORD						CurrentFrameStart;
 
 	INT							LastAdditionalBuffers;
 

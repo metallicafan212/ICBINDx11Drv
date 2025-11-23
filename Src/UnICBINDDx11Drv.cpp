@@ -1134,6 +1134,7 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 		{
 			break;
 		}
+
 		Modes.AddUniqueItem(FPlane(Tmp.dmPelsWidth, Tmp.dmPelsHeight, Tmp.dmBitsPerPel, Tmp.dmDisplayFrequency));
 	}
 
@@ -2334,6 +2335,17 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 		SetupResources();
 	}
 
+	// Metallicafan212:	Get the current refresh rate and such
+	DEVMODE CurrentScreenMode;
+	CurrentScreenMode.dmSize = sizeof(DEVMODE);
+	if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &CurrentScreenMode))
+	{
+		CurrentRefreshRate		= CurrentScreenMode.dmDisplayFrequency;
+		CurAdativeVSyncFTCutoff	= (1.0f / (FLOAT)CurrentRefreshRate) * AdaptiveVSyncCutoff;
+
+		VSyncSamples.Empty();
+	}
+
 	// Metallicafan212:	Set the viewport now
 	SetSceneNode(nullptr);
 
@@ -2752,6 +2764,12 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	UpdateGlobalShaderVars();
 	UpdatePolyflagsVars();
 
+	if (UseVSync && VSyncMode == VSM_Adaptive)
+	{
+		CurrentFrameStart = 0;
+		clock(CurrentFrameStart);
+	}
+
 	unguard;
 }
 
@@ -2890,6 +2908,8 @@ void UICBINDx11RenderDevice::ExecuteBufferedDraws()
 void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 {
 	guard(UICBINDx11RenderDevice::Unlock);
+
+	UBOOL bLocalVSync = UseVSync;
 
 	// Metallicafan212:	Reset the buffered state
 	EndBuffering();
@@ -3109,12 +3129,40 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 #endif
 		}
 
+		// Metallicafan212:	If we're using adative vsync, collect frame times
+		if (UseVSync && VSyncMode == VSM_Adaptive)
+		{
+			unclock(CurrentFrameStart);
+
+			VSyncSamples.AddItem(CurrentFrameStart * GSecondsPerCycle);
+
+			if (VSyncSamples.Num() > AdaptiveVSyncNumSamples)
+			{
+				VSyncSamples.Remove(0, VSyncSamples.Num() - AdaptiveVSyncNumSamples);
+			}
+
+			FLOAT FrameTimeAverage = 0.0f;
+
+			for (INT i = 0; i < VSyncSamples.Num(); i++)
+			{
+				FrameTimeAverage += VSyncSamples(i);
+			}
+
+			FrameTimeAverage /= VSyncSamples.Num();
+
+			// Metallicafan212:	Is the FPS bad enough over a long enough period of time to turn off vsync?
+			if (FrameTimeAverage >= CurAdativeVSyncFTCutoff)
+			{
+				bLocalVSync = 0;
+			}
+		}
+
 	JUST_PRESENT:
 		// Metallicafan212:	TODO! Speed this up as there's a dumb amount of checks here....
 		static constexpr DXGI_PRESENT_PARAMETERS Parm{ 0, nullptr, nullptr, nullptr };
 
 		HRESULT hr = S_OK;
-		if (UseVSync)
+		if (bLocalVSync)
 		{
 			hr = m_D3DSwapChain->Present1(1, 0, &Parm);
 		}
