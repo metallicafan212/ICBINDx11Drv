@@ -1963,7 +1963,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &CurrentScreenMode))
 	{
 		CurrentRefreshRate		= CurrentScreenMode.dmDisplayFrequency;
-		CurAdativeVSyncFTCutoff	= (1.0f / (FLOAT)CurrentRefreshRate) * AdaptiveVSyncCutoff;
+		CurAdativeVSyncFTCutoff	= (1.0f / (FLOAT)(CurrentRefreshRate * AdaptiveVSyncCutoff));
 
 		VSyncSamples.Empty();
 
