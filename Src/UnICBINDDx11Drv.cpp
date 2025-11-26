@@ -2776,7 +2776,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	if (UseVSync && VSyncMode == VSM_Adaptive)
 	{
 		CurrentFrameStart = 0;
-		clock(CurrentFrameStart);
+		clockFast(CurrentFrameStart);
 	}
 
 	unguard;
@@ -3141,7 +3141,7 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 		// Metallicafan212:	If we're using adative vsync, collect frame times
 		if (UseVSync && VSyncMode == VSM_Adaptive)
 		{
-			unclock(CurrentFrameStart);
+			unclockFast(CurrentFrameStart);
 
 			VSyncSamples.AddItem(CurrentFrameStart * GSecondsPerCycle);
 

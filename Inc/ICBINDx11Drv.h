@@ -151,6 +151,9 @@ enum EDX11FogMode
 // Metallicafan212:	Other UE1's don't have alpha blend, define it now
 #define PF_AlphaBlend PF_CloudWavy
 
+// Metallicafan212: HP2/469/227 redefine the clock macro to be sensible and not override a standard function
+#define clockFast clock
+
 #endif
 
 // Metallicafan212:	Distance fog settings
