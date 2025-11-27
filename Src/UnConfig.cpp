@@ -142,9 +142,10 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	AddBoolProp(CPP_PROP(bDisableDebugInterface), 1);
 	AddBoolProp(CPP_PROP(bDisableSDKLayers), 1);
 
-	AddBoolProp(CPP_PROP(UseVSync), 0);
+	// Metallicafan212:	2025, default to vsync on for new players, since I have a simple adative vsync system now.
+	AddBoolProp(CPP_PROP(UseVSync), 1);
 
-	// Metallicafan212:	TODO! Should this be 1.2f by default? I'll leave it all alone in case there's some user out there that will complain lol
+	// Metallicafan212: Only really meant to go above 1.0f.
 	AddFloatProp(CPP_PROP(ResolutionScale), 1.0f);
 
 	// Metallicafan212:	Gamma/brightness is done here because a HP2 speedrunning trick involves messing with the brightness bar
