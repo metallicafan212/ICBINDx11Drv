@@ -379,9 +379,18 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 #endif
 
 #if DX11_UT_469
-void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const FTextureInfo& Info, FTransTexture* const Pts, INT NumPts, DWORD PolyFlags, DWORD DataFlags, FSpanBuffer* Span)
+void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const FTextureInfo& Info, FTransTexture* const InPts, INT NumPts, DWORD PolyFlags, DWORD DataFlags, FSpanBuffer* Span)
 {
 	guard(UICBINDx11RenderDevice::DrawGouraudTriangles);
+
+	FTransTexture* Pts = InPts;
+	constexpr INT PtsLimit = (VBUFF_SIZE/3)*3; // Ensure we not split triangle by partial draw!
+	while (NumPts > PtsLimit)
+	{
+		DrawGouraudTriangles(Frame, Info, Pts, PtsLimit, PolyFlags, DataFlags, Span);
+		NumPts -= PtsLimit;
+		Pts += PtsLimit;
+	}
 
 	// Metallicafan212:	Start buffering now
 	StartBuffering(BT_Triangles);
