@@ -115,17 +115,22 @@ PSOutput PxShader(PSInput input)
 		
 		if(ShaderFlags & SF_BicubicSampling)
 		{
-			LightmapSampleBicubic(LightState, Light, input.lUV, LColor);
+			//LightmapSampleBicubic(LightState, Light, input.lUV, LColor);
+			// Metallicafan212:	Automatically get the texture size
+			float2 texSize;
+			Light.GetDimensions(texSize.x, texSize.y);
+			LColor = SampleTextureCatmullRom(Light, LightState, input.lUV, texSize);
 		}
 		else
 		{
 			LColor 		= Light.Sample(LightState, input.lUV);
 		}
 		
-		LColor 	= ConvertColorspace(LColor * Mult);
+		LColor *= Mult;
 		
-		//LColor 		= ConvertColorspace(Light.Sample(LightState, input.lUV) * Mult);
+		LColor 	= ConvertColorspace(LColor);
 
+		// Metallicafan212:	In HP2, adding in ZoneAmbientLight fucks up dark lights, so we can't do that there
 		DiffColor.xyz 	*= LColor.xyz + input.addColor.xyz;
 		
 #if !NO_CUSTOM_RMODES
