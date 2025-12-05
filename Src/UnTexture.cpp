@@ -111,7 +111,7 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 	// Metallicafan212:	Search for the bind
 	if (DaTex == nullptr)
 	{
-		DaTex = TextureMap.Find(Info->CacheID, PolyFlags, Info->Format);
+		DaTex = TextureMap.Find(Info->CacheID, PolyFlags, (ETextureFormat)Info->Format);
 	}
 
 	// Metallicafan212:	Using Info->NeedsRealtimeUpdate steals 50fps for some reason.... It's incredibly weird
@@ -462,14 +462,14 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, 
 	//FD3DTexture* DaTex	= TextureMap.Find(CacheID, PolyFlags);
 	if (DaTex == nullptr)
 	{
-		DaTex = TextureMap.Find(CacheID, PolyFlags, Info.Format);
+		DaTex = TextureMap.Find(CacheID, PolyFlags, (ETextureFormat)Info.Format);
 	}
 
 	FD3DTexType* Type	= DaTex != nullptr ? DaTex->D3DTexType : nullptr;
 
 	if (DaTex == nullptr)
 	{
-		DaTex = TextureMap.Set(CacheID, PolyFlags, Info.Format);
+		DaTex = TextureMap.Set(CacheID, PolyFlags, (ETextureFormat)Info.Format);
 
 		if (DaTex == nullptr)
 		{
@@ -1222,7 +1222,6 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 						//PushDistanceFogState();
 
 						//FogHackPopCount++;
-
 						FogShaderVars.DistanceFogColor	= FogShaderVars.ModFogColor;
 						//UpdateFogSettings();
 						bUpdateFogBuff					= 1;

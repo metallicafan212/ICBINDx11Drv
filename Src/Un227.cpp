@@ -146,7 +146,23 @@ void UICBINDx11RenderDevice::PreDrawGouraud(FSceneNode* Frame, FFogSurf& FogSurf
 	{
 		SetDistanceFog(1, FogSurf.FogDistanceStart, FogSurf.FogDistanceEnd, FogSurf.FogDensity, FogSurf.FogColor, 0.0f, (EDX11FogMode)(FogSurf.FogMode + 1));
 
-		// Metallicafan212:	TODO!!!! Enable modes here
+		// Metallicafan212:	If hack fog rendering is enabled, then reset the color back
+		switch (CurrentPolyFlags & (PF_Translucent | PF_Modulated))
+		{
+			case PF_Translucent:
+			{
+				FogShaderVars.DistanceFogColor = FogShaderVars.TransFogColor;
+				UpdateFogSettings();
+				break;
+			}
+
+			case PF_Modulated:
+			{
+				FogShaderVars.DistanceFogColor = FogShaderVars.ModFogColor;
+				UpdateFogSettings();
+				break;
+			}
+		}
 		
 	}
 	else if (FogShaderVars.bDoDistanceFog)
