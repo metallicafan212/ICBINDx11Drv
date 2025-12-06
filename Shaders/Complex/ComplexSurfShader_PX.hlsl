@@ -7,8 +7,7 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	Set the alpha reject
 	CurrentAlphaReject	= AlphaReject;
 	
-	// Metallicafan212:	TODO! Texturing
-	float4 DiffColor = ConvertColorspace(input.color);
+	float4 DiffColor = input.color;
 	
 	// Metallicafan212:	Test for selection, do software style selection
 	if(bSelected)
@@ -43,13 +42,13 @@ PSOutput PxShader(PSInput input)
 		#endif
 	}
 	// Metallicafan212:	Diffuse texture
-	else if(bTexturesBound & DIFFUSE_BOUND)//bTexturesBound[0].x != 0)
+	else if(bTexturesBound & DIFFUSE_BOUND)
 	{
-		float4 Diff  	= ConvertColorspace(Diffuse.Sample(DiffState, input.uv));
+		float4 Diff  	= SampleTexture(Diffuse, DiffState, input.uv, DIFFUSE_BOUND);
+		
 		DiffColor.xyz  *= Diff.xyz;
 		DiffColor.w	   *= Diff.w;
 	}
-
 	
 	// Metallicafan212:	TODO! This also sets the selection color for the editor! This should be re-evaluated
 	CLIP_PIXEL(DiffColor);
@@ -61,46 +60,36 @@ PSOutput PxShader(PSInput input)
 		DiffColor.xyz = DoDetailTexture(DiffColor.xyz, input.dUV.xy, input.origZ, Detail, DetailState);
 	}
 	
-	/*
-	// Metallicafan212:	Detail texture
-	//					We're applying this now so that when detail textures fade in, they don't reduce the lightmap as much
-	//					TODO! Using the vars from DX7. Allow the user to specify this!!!!
-	if(bTexturesBound & 0x10 && input.dUV.z < 380.0f)//bTexturesBound[1].x != 0 && input.dUV.z < 380.0f)
-	{
-		// Metallicafan212:	Sample it
-		//					Multiply the input color by 2 to make it work like lightmaps
-		float3 Det = ConvertColorspace(Detail.Sample(DetailState, input.dUV.xy) * 2.0f).xyz;
-		
-		// Metallicafan212:	Now lerp it
-		float alpha = input.dUV.z / 380.0f;
-		Det = lerp(alpha, float3(1.0f, 1.0f, 1.0f), Det);
-		
-		// Metallicafan212:	Average the color
-		//					TODO! Should we actually be doing this???
-		Det.xyz = (Det.x + Det.y + Det.z) / 3.0f;
-		
-		// Metallicafan212:	Now add it to the image
-		//					When there's no detail texture, this operation effectively returns nothing
-		DiffColor.xyz = (DiffColor.xyz * Det);
-		DiffColor.xyz += DiffColor.xyz;
-		DiffColor.xyz /= 2.0f;
-	}
-	*/
-	
-	
 	// Metallicafan212:	Macro texture
 	//					This just modulates the color, like the lightmap
-	//if(bTexturesBound[0].z != 0)
 	if(bTexturesBound & MACRO_BOUND)
 	{
-		DiffColor.xyz *= ConvertColorspace(Macro.Sample(MacroState, input.mUV) * 2.0f).xyz;
+		DiffColor.xyz *= SampleTexture(Macro, MacroState, input.mUV, MACRO_BOUND).xyz * 2.0f;
+		
+		/*
+		// Metallicafan212:	Bicubic sampling
+		float4 MacroColor;
+		
+		if(ShaderFlags & SF_BicubicSampling)
+		{
+			// Metallicafan212:	Automatically get the texture size
+			float2 texSize;
+			Macro.GetDimensions(texSize.x, texSize.y);
+			MacroColor = SampleTextureCatmullRom(Macro, MacroState, input.mUV, texSize);
+		}
+		else
+		{
+			MacroColor = Macro.Sample(MacroState, input.mUV);
+		}
+		
+		//DiffColor.xyz *= ConvertColorspace(Macro.Sample(MacroState, input.mUV) * 2.0f).xyz;
+		DiffColor.xyz *= (MacroColor * 2.0f);
+		*/
 	}
 	
-	//float lAlpha = 1.0f;
 	
 	// Metallicafan212:	Lightmap
-	//					TODO! Allow the user to specify the lightmap multiplication (some people like one-x scaling)
-	if(bTexturesBound & LIGHT_BOUND)//bTexturesBound[0].y != 0)
+	if(bTexturesBound & LIGHT_BOUND)
 	{
 		float Mult		= 4.0f;
 		
@@ -110,6 +99,7 @@ PSOutput PxShader(PSInput input)
 			Mult 		= 2.0f;
 		}
 		
+		/*
 		// Metallicafan212:	Bicubic sampling
 		float4 LColor;
 		
@@ -125,10 +115,11 @@ PSOutput PxShader(PSInput input)
 		{
 			LColor 		= Light.Sample(LightState, input.lUV);
 		}
+		*/
 		
-		LColor *= Mult;
+		float4 LColor = SampleTexture(Light, LightState, input.lUV, LIGHT_BOUND) * Mult;
 		
-		LColor 	= ConvertColorspace(LColor);
+		//LColor *= Mult;
 
 		// Metallicafan212:	In HP2, adding in ZoneAmbientLight fucks up dark lights, so we can't do that there
 		DiffColor.xyz 	*= LColor.xyz + input.addColor.xyz;
@@ -154,24 +145,29 @@ PSOutput PxShader(PSInput input)
 #endif
 	
 	// Metallicafan212:	Fog map
-	if(bTexturesBound & FOG_BOUND)//bTexturesBound[0].w != 0)
+	if(bTexturesBound & FOG_BOUND)
 	{
-		// Metallicafan212: 2024-12, we're multiplying by 2 because RGB7 was changed to do the expansion in the shaders, not the texture upload stage
-		//float4 FogColor = ConvertColorspace(Fogmap.Sample(FogState, input.fUV) * 2.0f);
-		
+		/*
 		// Metallicafan212:	Bicubic sampling
 		float4 FogColor;
 		
 		if(ShaderFlags & SF_BicubicSampling)
 		{
-			LightmapSampleBicubic(FogState, Fogmap,input.fUV, FogColor);
+			//LightmapSampleBicubic(FogState, Fogmap,input.fUV, FogColor);
+			// Metallicafan212:	Automatically get the texture size
+			float2 texSize;
+			Fogmap.GetDimensions(texSize.x, texSize.y);
+			FogColor = SampleTextureCatmullRom(Fogmap, FogState, input.fUV, texSize);
 		}
 		else
 		{
 			FogColor 		= Fogmap.Sample(FogState, input.fUV);
 		}
 		
-		FogColor 		= ConvertColorspace(FogColor * 2.0f);
+		FogColor 		*= 2.0f;
+		*/
+		
+		float4 FogColor = SampleTexture(Fogmap, FogState, input.fUV, FOG_BOUND) * 2.0f;
 		
 		DiffColor.xyz 	= (DiffColor.xyz * (1.0f - FogColor.w)) + FogColor.xyz;
 	}

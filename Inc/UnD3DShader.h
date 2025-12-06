@@ -165,12 +165,12 @@ struct FShaderVarCommon
 // Metallicafan212:	This is now a single flag
 struct FBoundTextures
 {
-	/*
 	// Metallicafan212:	What textures are currently bound
-	UBOOL	BoundTextures[MAX_TEXTURES];
-	*/
-	DWORD	CurrentBoundTextures;//BoundTextures;
-	DWORD	Pad[3];
+	DWORD	CurrentBoundTextures;
+
+	// Metallicafan212:	If the bound texture should be sampled using the bicubic algorithm
+	DWORD	UseBicubicSampling;
+	DWORD	Pad[2];
 };
 
 #define D3D_CMP_STD_INC ((ID3DInclude*)(UINT_PTR)1)

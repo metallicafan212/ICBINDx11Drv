@@ -6,7 +6,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	CurrentAlphaReject	= AlphaReject;
 	
 	// Metallicafan212:	TODO! Add this as a bool property
-	float4 LightColor = ConvertColorspace(input.color);
+	float4 LightColor = input.color;
 	
 	if(bEnableCorrectFog)
 	{
@@ -14,9 +14,27 @@ float4 PxShader(PSInput input) : SV_TARGET
 		LightColor.xyz    *= Scale; 
 	}
 	
+	/*
+	float4 FinalColor;
+	
+	// Metallicafan212:	Sample using bicubic as a test
+	if(ShaderFlags & SF_BicubicSampling)
+	{
+		float2 texSize;
+		Diffuse.GetDimensions(texSize.x, texSize.y);
+		FinalColor = SampleTextureCatmullRom(Diffuse, DiffState, input.uv, texSize);
+	}
+	else
+	{
+		FinalColor  	= Diffuse.Sample(DiffState, input.uv);
+	}
+	*/
+	
+	float4 FinalColor = SampleTexture(Diffuse, DiffState, input.uv, DIFFUSE_BOUND);
+	
 	// Metallicafan212:	If we're selected, go black and white....
 	//					This prevents issues with missing colors in a masked/alpha/translucent texture
-	float4 FinalColor 		= ConvertColorspace(Diffuse.Sample(DiffState, input.uv));
+	//float4 FinalColor 		= Diffuse.Sample(DiffState, input.uv);
 	
 	if(bSelected)
 	{
@@ -43,7 +61,8 @@ float4 PxShader(PSInput input) : SV_TARGET
 		
 		if(bTexturesBound & MACRO_BOUND)
 		{
-			FinalColor.xyz *= ConvertColorspace(Macro.Sample(MacroState, input.mUV) * 2.0f).xyz;
+			FinalColor.xyz *= SampleTexture(Macro, MacroState, input.mUV, MACRO_BOUND);
+			//FinalColor.xyz *= Macro.Sample(MacroState, input.mUV) * 2.0f;
 		}
 		
 		FinalColor *= LightColor;

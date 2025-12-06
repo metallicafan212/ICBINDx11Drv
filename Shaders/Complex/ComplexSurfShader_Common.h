@@ -1,3 +1,11 @@
+// Metallicafan212:	Define shader texture values
+//					These must be defined before the include.
+#define DIFFUSE_BOUND 	0x1
+#define LIGHT_BOUND		0x2
+#define	FOG_BOUND		0x4
+#define DETAIL_BOUND	0x8
+#define MACRO_BOUND		0x10
+
 #include "..\ShaderGlobals.h"
 
 // Metallicafan212:	Possible texture inputs for this shader
@@ -17,13 +25,6 @@ SamplerState LightState 	: register(s1);
 SamplerState FogState 		: register(s2);//register(s3);
 SamplerState DetailState	: register(s3);//register(s4);
 SamplerState MacroState 	: register(s4);//register(s2);
-
-// Metallicafan212:	Define shader texture values
-#define DIFFUSE_BOUND 	0x1
-#define LIGHT_BOUND		0x2
-#define	FOG_BOUND		0x4
-#define DETAIL_BOUND	0x8
-#define MACRO_BOUND		0x10
 
 struct PSInput 
 {

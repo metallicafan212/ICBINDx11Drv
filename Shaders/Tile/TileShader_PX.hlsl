@@ -16,7 +16,8 @@ float4 PxShader(PSInput input) : SV_TARGET
 	
 	// Metallicafan212:	If we're selected, go black and white....
 	//					This prevents issues with missing colors in a masked/alpha/translucent texture
-	float4 DiffColor 		= ConvertColorspace(Diffuse.Sample(DiffState, input.uv));
+	//float4 DiffColor 		= Diffuse.Sample(DiffState, input.uv);
+	float4 DiffColor  = SampleTexture(Diffuse, DiffState, input.uv, DIFFUSE_BOUND);
 	
 	if(ShaderFlags & SF_MSDFRendering)
     {
@@ -55,7 +56,7 @@ float4 PxShader(PSInput input) : SV_TARGET
 	else
 	{
 	*/
-	DiffColor *= ConvertColorspace(input.color);
+	DiffColor *= input.color;
 	
 	// Metallicafan212:	Do alpha rejecting
 	//					TODO! This also sets the global selection color for the editor!

@@ -145,8 +145,6 @@ cbuffer FrameVariables : register (b0)
 	
 	// Metallicafan212: FFrame clipping plane
 	float4	ClippingPlane		: packoffset(c8.x);
-	
-	//float3	Paddddddd		: packoffset(c7.y);
 };
 
 cbuffer PolyflagVars : register (b2)
@@ -175,10 +173,14 @@ cbuffer PolyflagVars : register (b2)
 
 cbuffer TextureVariables : register (b3)
 {
-	//int4	bTexturesBound[TEX_ARRAY_SIZE]			: packoffset(c0);
 	// Metallicafan212:	Single flag for each slot
-	dword 	bTexturesBound 	: packoffset(c0);
-	float3 	TexturePad		: packoffset(c1);
+	dword 	bTexturesBound 	: packoffset(c0.x);
+	
+	// Metallicafan212:	If to use Catmull-Rom Bicubic sampling on each texture
+	dword 	bSampTexBicubic	: packoffset(c0.y);
+	
+	float2 TexturePad		: packoffset(c0.z);
+	//float3 	TexturePad		: packoffset(c1);
 };
 
 #if DO_DISTANCE_FOG
@@ -225,7 +227,7 @@ float DoDistanceFog(float InZ)
 			// Metallicafan212: Expoential fog
 			case 2:
 			{
-				return saturate(1.0 - (1.0 / pow(2.71828, fogDensity * dFog)));
+				return saturate(1.0 - (1.0 / log(fogDensity * dFog)));
 				// Metallicafan212:	This shit don't work, just reimplement it as a expoential ramp-up
 				//float dFog = 
 				/*
@@ -296,14 +298,6 @@ float4 DoPixelFog(float DistFog, float4 Color)
 	
 	// Metallicafan212:	Now mix the colors
 	//					Again this is just a straight port of the asm I wrote a while ago
-	/*
-	float3 Temp = DistanceFogColor.xyz - Color.xyz;
-	Temp *= DistanceFogColor.w;
-	
-	Temp = (Temp * DistFog) + Color.xyz;
-	
-	return float4(Temp, Color.w);
-	*/
 	return float4(lerp(Color.xyz, DistanceFogColor.xyz, DistFog * DistanceFogColor.w), Color.w);
 }
 #endif
@@ -327,18 +321,6 @@ float3 RemoveSRGBCurve( float3 x )
 {
     // Approximately pow(x, 2.2)
     return select(x < 0.04045, x / 12.92, pow( (x + 0.055) / 1.055, 2.4 ));
-}
-
-// Metallicafan212:	From https://gist.github.com/AlpyneDreams/17e5e8b8b686eca659917a61d4a0b0d3
-float4 cubic(float v)
-{
-	float4 n = float4(1.0, 2.0, 3.0, 4.0) - v;
-	float4 s = n * n * n;
-	float x = s.x;
-	float y = s.y - 4.0 * s.x;
-	float z = s.z - 4.0 * s.y + 6.0 * s.x;
-	float w = 6.0 - x - y - z;
-	return float4(x, y, z, w) * (1.0/6.0);
 }
 
 // Metallicafan212:	From https://gist.github.com/TheRealMJP/c83b8c0f46b63f3a88a5986f4fa982b1
@@ -380,61 +362,36 @@ float4 SampleTextureCatmullRom(in Texture2D<float4> tex, in SamplerState linearS
     texPos12 /= texSize;
 
     float4 result = 0.0f;
-    result += tex.SampleLevel(linearSampler, float2(texPos0.x, texPos0.y), 0.0f) * w0.x * w0.y;
-    result += tex.SampleLevel(linearSampler, float2(texPos12.x, texPos0.y), 0.0f) * w12.x * w0.y;
-    result += tex.SampleLevel(linearSampler, float2(texPos3.x, texPos0.y), 0.0f) * w3.x * w0.y;
-
-    result += tex.SampleLevel(linearSampler, float2(texPos0.x, texPos12.y), 0.0f) * w0.x * w12.y;
-    result += tex.SampleLevel(linearSampler, float2(texPos12.x, texPos12.y), 0.0f) * w12.x * w12.y;
-    result += tex.SampleLevel(linearSampler, float2(texPos3.x, texPos12.y), 0.0f) * w3.x * w12.y;
-
-    result += tex.SampleLevel(linearSampler, float2(texPos0.x, texPos3.y), 0.0f) * w0.x * w3.y;
-    result += tex.SampleLevel(linearSampler, float2(texPos12.x, texPos3.y), 0.0f) * w12.x * w3.y;
-    result += tex.SampleLevel(linearSampler, float2(texPos3.x, texPos3.y), 0.0f) * w3.x * w3.y;
+	
+	result += tex.Sample(linearSampler, float2(texPos0.x, texPos0.y), 0.0f) * w0.x * w0.y;
+    result += tex.Sample(linearSampler, float2(texPos12.x, texPos0.y), 0.0f) * w12.x * w0.y;
+    result += tex.Sample(linearSampler, float2(texPos3.x, texPos0.y), 0.0f) * w3.x * w0.y;
+	
+    result += tex.Sample(linearSampler, float2(texPos0.x, texPos12.y), 0.0f) * w0.x * w12.y;
+    result += tex.Sample(linearSampler, float2(texPos12.x, texPos12.y), 0.0f) * w12.x * w12.y;
+    result += tex.Sample(linearSampler, float2(texPos3.x, texPos12.y), 0.0f) * w3.x * w12.y;
+	
+    result += tex.Sample(linearSampler, float2(texPos0.x, texPos3.y), 0.0f) * w0.x * w3.y;
+    result += tex.Sample(linearSampler, float2(texPos12.x, texPos3.y), 0.0f) * w12.x * w3.y;
+    result += tex.Sample(linearSampler, float2(texPos3.x, texPos3.y), 0.0f) * w3.x * w3.y;
 
     return result;
 }
 
-#define BICUBIC_OFFSET 0.5
-
-float4 tex2D_bicubic(sampler samp, Texture2D tex, float2 texCoords)
-{	
-	// Metallicafan212:	Automatically get the texture size
-	float2 texSize;
-	tex.GetDimensions(texSize.x, texSize.y);
-	float2 invTexSize 	= 1 / texSize;
-	
-	texCoords 		= texCoords * texSize - BICUBIC_OFFSET;
-	
-	float2 fxy 		= frac(texCoords);
-	texCoords -= fxy;
-
-	float4 xcubic 	= cubic(fxy.x);
-	float4 ycubic 	= cubic(fxy.y);
-
-	float4 c 		= texCoords.xxyy + float2(-BICUBIC_OFFSET, BICUBIC_OFFSET * 3.0).xyxy;
-	
-	float4 s 		= float4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
-	float4 offset 	= c + float4(xcubic.yw, ycubic.yw) / s;
-	
-	offset *= invTexSize.xxyy;
-
-
-	float4 sample0 = tex.Sample(samp, offset.xz);//SampleGrad(samp, offset.xz, dx, dy);
-	float4 sample1 = tex.Sample(samp, offset.yz);//SampleGrad(samp, offset.yz, dx, dy);
-	float4 sample2 = tex.Sample(samp, offset.xw);//SampleGrad(samp, offset.xw, dx, dy);
-	float4 sample3 = tex.Sample(samp, offset.yw);//SampleGrad(samp, offset.yw, dx, dy);
-
-	float sx = s.x / (s.x + s.y);
-	float sy = s.z / (s.z + s.w);
-	
-	return lerp( lerp(sample3, sample2, sx), lerp(sample1, sample0, sx), sy );
-}
-
-
-void LightmapSampleBicubic(in sampler Samp, in Texture2D Tex, in float2 UV, out float4 Output )
+float4 SampleTexture(in Texture2D Texture, in SamplerState Sampler, in float2 UV, in dword TextureFlag)
 {
-	Output = tex2D_bicubic( Samp, Tex, UV);
+	// Metallicafan212:	Should we use bicubic sampling?
+	if(bSampTexBicubic & TextureFlag)
+	{
+		float2 texSize;
+		Texture.GetDimensions(texSize.x, texSize.y);
+		return SampleTextureCatmullRom(Texture, Sampler, UV, texSize);
+	}
+	else
+	{
+		// Metallicafan212:	Sample normally
+		return Texture.Sample(Sampler, UV);
+	}
 }
 
 // This is the new HDR transfer function, also called "PQ" for perceptual quantizer.  Note that REC2084
@@ -464,21 +421,17 @@ float3 LinearToSRGB(float3 Linear)
 	return 0.662002687 * S1 + 0.684122060 * S2 - 0.323583601 * S3 - 0.0225411470 * Linear;
 }
 
-float4 ConvertColorspace(float4 In)
-{
-	// Metallicafan212:	While for many things this looks better, things like particles now don't blend right, so the final image needs to be corrected, not the objects
-	/*
-	// Metallicafan212:	Are we in linear color?
-	if(FrameShaderFlags & 0x2)
-	{
-		return float4(SRGBToLinear(In.xyz), In.w);
-	}
-	*/
-	
-	return In;
-}
-
 #if PIXEL_SHADER
+
+// Metallicafan212:	Define default slots for the diffuse and detail.
+//					TODO!!! This file needs a HUGE cleanup
+#ifndef DIFFUSE_BOUND
+#define DIFFUSE_BOUND 0x1
+#endif
+
+#ifndef DETAIL_BOUND
+#define DETAIL_BOUND 0x2
+#endif
 float3 DoDetailTexture(float3 DiffColor, float2 dUV, float z, Texture2D Detail, SamplerState DetailState)
 {
 	// Metallicafan212:	Detail texture
@@ -487,9 +440,30 @@ float3 DoDetailTexture(float3 DiffColor, float2 dUV, float z, Texture2D Detail, 
 	//if(bTexturesBound & 0x10 && input.dUV.z < 380.0f)//bTexturesBound[1].x != 0 && input.dUV.z < 380.0f)
 	if( z < 1024.0f)
 	{
+		/*
+		// Metallicafan212:	Sample it using bicubic, as a test.
+		// 					TODO! We need to define a lookup for if textures are no smooth and then NOT sample using this algorithm....
+		//					Or maybe define the mode per texture?
+		float3 Det;
+		if(ShaderFlags & SF_BicubicSampling)
+		{
+			float2 texSize;
+			Detail.GetDimensions(texSize.x, texSize.y);
+			Det = SampleTextureCatmullRom(Detail, DetailState, dUV.xy, texSize);
+		}
+		else
+		{
+			Det = Detail.Sample(DetailState, dUV.xy);
+		}
+		
+		Det *= 2.0f;
+		*/
+		
+		float3 Det = SampleTexture(Detail, DetailState, dUV, DETAIL_BOUND) * 2.0f;
+		
 		// Metallicafan212:	Sample it
 		//					Multiply the input color by 2 to make it work like lightmaps
-		float3 Det = ConvertColorspace(Detail.Sample(DetailState, dUV.xy) * 2.0f).xyz;
+		//float3 Det = ConvertColorspace(Detail.Sample(DetailState, dUV.xy) * 2.0f).xyz;
 		
 		// Metallicafan212:	Now lerp it
 		float alpha = z / 1024.0f;

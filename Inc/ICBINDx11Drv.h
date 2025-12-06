@@ -877,9 +877,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	//					Max depth is 65535.0f
 	FLOAT						DepthDrawZLimit;
 
-	// Metallicafan212:	If to use Bicubic sampling for lightmaps and fogmaps
+	// Metallicafan212:	If to use Bicubic sampling on top of anistrophic filtering.
 	//					NOTE: if this is on, lightmap atlas is forcibly disabled!
-	UBOOL						bBicubicLightmaps;
+	UBOOL						bBicubicTextureSampling;
 
 	// Metallicafan212:	If to always use the precompiled shaders, rather than recompiling the source HLSL files
 	//					This is only for the base shaders, user shaders will have to be recompiled

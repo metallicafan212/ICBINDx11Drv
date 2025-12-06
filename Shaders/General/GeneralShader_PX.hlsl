@@ -8,9 +8,10 @@ float4 PxShader(PSInput input) : SV_TARGET
 	// Metallicafan212:	Diffuse texture
 	float4 DiffColor = input.color;
 	
-	if(bTexturesBound & 0x1)
+	if(bTexturesBound & DIFFUSE_BOUND)
 	{
-		DiffColor = ConvertColorspace(Diffuse.Sample(DiffState, input.uv));
+		//DiffColor = Diffuse.Sample(DiffState, input.uv);
+		DiffColor = SampleTexture(Diffuse, DiffState, input.uv, DIFFUSE_BOUND);
 	}
 	
 	// Metallicafan212:	See if this needs alpha rejection		
@@ -25,5 +26,5 @@ float4 PxShader(PSInput input) : SV_TARGET
 	}
 #endif
 	
-	return DoFinalColor(DiffColor, ConvertColorspace(input.color));
+	return DoFinalColor(DiffColor, input.color);
 }

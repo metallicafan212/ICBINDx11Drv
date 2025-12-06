@@ -1,4 +1,10 @@
 #define DO_STANDARD_BUFFER 0
+
+// Metallicafan212:	Define the flags ahead of time
+#define DIFFUSE_BOUND 	0x1
+#define DETAIL_BOUND 	0x2
+#define MACRO_BOUND		0x4
+
 #include "..\ShaderGlobals.h"
 
 // Metallicafan212:	Constant buffer, but with different mesh options
@@ -28,9 +34,6 @@ Texture2D 		Detail		: register(t1);
 SamplerState	DetailState	: register(s1);
 Texture2D		Macro		: register(t2);
 SamplerState	MacroState	: register(s2);
-
-#define DETAIL_BOUND 	0x2
-#define MACRO_BOUND		0x4
 
 struct PSInput 
 {

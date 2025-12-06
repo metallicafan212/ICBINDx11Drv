@@ -194,6 +194,20 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 		// Metallicafan212:	So we can find whatever is still bound as the RT when we call OMSetRenderTargets
 		TX.m_SRV = TexTemp->RTSRView.Get();
 
+		// Metallicafan212:	Tell the shader that the texture is bound
+		BoundTexturesInfo.CurrentBoundTextures |= SlotFlag;
+
+		// Metallicafan212:	Set the slot to use bicubic
+		//					TODO! Rename the bool
+		if (bBicubicTextureSampling && !(PolyFlags & PF_NoSmooth))
+		{
+			BoundTexturesInfo.UseBicubicSampling |= SlotFlag;
+		}
+		else
+		{
+			BoundTexturesInfo.UseBicubicSampling &= ~SlotFlag;
+		}
+
 		bWriteTexturesBuffer = 1;
 
 		return;
@@ -215,6 +229,17 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 
 		// Metallicafan212:	Tell the shader that the texture is bound
 		BoundTexturesInfo.CurrentBoundTextures |= SlotFlag;
+
+		// Metallicafan212:	Set the slot to use bicubic
+		//					TODO! Rename the bool
+		if (bBicubicTextureSampling && !(PolyFlags & PF_NoSmooth))
+		{
+			BoundTexturesInfo.UseBicubicSampling |= SlotFlag;
+		}
+		else
+		{
+			BoundTexturesInfo.UseBicubicSampling &= ~SlotFlag;
+		}
 
 		TX.Flags = PolyFlags;
 
