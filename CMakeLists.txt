@@ -64,7 +64,7 @@ if (WIN32)
         FOLDER ICBINDx11Drv
     )
 
-    target_link_libraries(ICBINDx11Drv CoreLib EngineLib EditorLib RenderLib MWindowLib)
+    target_link_libraries(ICBINDx11Drv CoreLib EngineLib EditorLib Render MWindow)
     target_link_libraries(ICBINDx11Drv advapi32.lib D3D11.lib D3DCompiler.lib Dwrite.lib D2d1.lib)
     unreal_package_configure(ICBINDx11Drv ICBINDx11Drv)
 endif()

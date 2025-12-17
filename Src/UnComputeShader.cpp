@@ -1,5 +1,6 @@
 #include "ICBINDx11Drv.h"
 
+#if 0
 #include "Render.h"
 
 struct FLightingData
@@ -65,6 +66,7 @@ struct FActorLightCommon
 	DWORD			ActorLightEffect;
 	INT				Pad[2];
 };
+#endif
 
 FTransTexture* UICBINDx11RenderDevice::InitMeshComputeShader(INT VertCount)
 {
