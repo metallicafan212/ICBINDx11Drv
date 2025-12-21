@@ -2,6 +2,17 @@
 #include "HP2ShaderDefs.h"
 #endif
 
+#if HARD_CODE_SHADERS
+#define GM_XOpenGL 				0
+#define GM_DX9 					1
+#define FIRST_USER_CONSTBUFF"	b4
+#define SF_AlphaEnabled			1
+#define SF_Modulated			2
+#define SF_HudSmoothMasked		4
+#define SF_MSDFRendering		8
+#define SF_BicubicSampling		16
+#endif
+
 // Metallicafan212:	TODO! More shader globals
 
 // Metallicafan212:	Global vertex definition
