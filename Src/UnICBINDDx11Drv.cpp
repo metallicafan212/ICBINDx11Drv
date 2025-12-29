@@ -3761,7 +3761,7 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 		FrameShaderVars.Proj.m[3][2] = 1.0f;
 		*/
 
-		FrameShaderVars.Proj = DirectX::XMMatrixOrthographicLH(ScaledSceneNodeX * OrthoZoom, -ScaledSceneNodeY * OrthoZoom, zNear, zFar);
+		FrameShaderVars.Proj = DirectX::XMMatrixOrthographicLH(m_sceneNodeX * OrthoZoom, -m_sceneNodeY * OrthoZoom, zNear, zFar);
 	}
 	else
 	{

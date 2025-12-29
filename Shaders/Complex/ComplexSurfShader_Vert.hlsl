@@ -29,7 +29,7 @@ PSInput VertShader(VSInput input)
 	
 	// Metallicafan212:	Pass UVs through
 	output.uv		= input.uv.xy;
-	output.lUV		= input.uv.zw;
+	output.lUV		= frac(input.uv.zw) * sign(input.uv.zw);
 	output.mUV		= input.DM.zw;
 	output.fUV		= input.FX;
 	output.dUV.xy	= input.DM.xy;

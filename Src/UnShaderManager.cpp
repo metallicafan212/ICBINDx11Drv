@@ -139,6 +139,16 @@ void FShaderManager::Init()
 			// Metallicafan212: Now the cache should be loaded or in a valid (empty) state
 			delete Ar;
 
+			// Metallicafan212:	2025, check if the global shader header is modified....
+			//					In the future, I should just add in better dependancy checking
+			SQWORD GlobalHeaderTime = GFileManager->GetGlobalTime(SHADER_FOLDER TEXT("ShaderGlobals.h"));
+
+			if (GlobalHeaderTime > CacheFileTime)
+			{
+				GLog->Logf(TEXT("DX11: Global shader header is newer than the cache, invalidating the cache."));
+				bCacheInvalid = 1;
+			}
+
 			if (!bCacheInvalid)
 			{
 				CacheTime		= CacheFileTime;

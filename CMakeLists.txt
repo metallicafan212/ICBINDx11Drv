@@ -240,7 +240,6 @@ if (WIN32)
 		# Metallicafan212: Create the directory now as FXC won't do it for us
 		file(MAKE_DIRECTORY ${Shader_Base_Dir})
 		
-		#message(STATUS "Making dir ${Shader_Dir}")
 		file(MAKE_DIRECTORY ${Shader_Dir})
 		
 		SET(Shader_Path ${Shader_Dir}/${FILE_WE}.h)
@@ -266,19 +265,36 @@ if (WIN32)
 		endforeach()
 		
 		# Metallicafan212: Rest of the command
-		LIST(APPEND ShaderCommand /Fh ${Shader_Path} /Fd ${CMAKE_BINARY_DIR}/${FILE_WE}.pdb ${ShaderFile})
+		LIST(APPEND ShaderCommand /Fh ${Shader_Path} /Fd ${CMAKE_BINARY_DIR}/${FILE_WE}_${ShaderModel}.pdb ${ShaderFile})
 		
 		add_custom_command(
-			TARGET ICBINDx11Drv PRE_BUILD
+			OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${Shader_Path}
 			COMMAND ${ShaderCommand}
 			COMMENT "HLSL Shader Model ${ShaderModel} ${ShaderFile}"
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+			# Metallicafan212: TODO! Add in the hlsl's header file.....
+			#				   Need to find a good way to represent that
+			DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${ShaderFile} ${CMAKE_CURRENT_SOURCE_DIR}/Shaders/ShaderGlobals.h
 			VERBATIM
-			# Metallicafan212: TODO! Add in a definition for the local header too....
-			DEPENDS ${ShaderFile} "Shaders/ShaderGlobals.h"
 		)
 		
 		SET(GENERATED_NAMESPACE "${FILE_WE}_${EntryPoint}_${ShaderModel}")
+		
+		# Metallicafan212: Add it as a dependancy
+		add_custom_target(
+			${GENERATED_NAMESPACE}
+			DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${Shader_Path}
+		)
+		
+		# Metallicafan212: Don't clutter up the view
+		set_target_properties(${GENERATED_NAMESPACE} PROPERTIES FOLDER ICBINDx11Drv/Shaders/${ShaderModel})
+		
+		# Metallicafan212: Make the renderer depend on the pre-compiled shader
+		# 				   TODO! We need to make something where it will know to recompile it if needed....
+		add_dependencies(ICBINDx11Drv ${GENERATED_NAMESPACE})
+		
+		add_dependencies(ICBINDx11Drv_Shaders ${GENERATED_NAMESPACE})
+		
 		
 		#STRING(REPLACE "Inc/" "" Shader_Path_CPP Shader_Path)
 		STRING(SUBSTRING ${Shader_Path} 4 -1 Shader_Path_CPP)
@@ -299,7 +315,7 @@ if (WIN32)
 		STRING(REPLACE "Shaders/" "" GENERATED_FPATH ${ShaderFile})
 		STRING(REPLACE "/" "\\\\" GENERATED_FPATH ${GENERATED_FPATH})
 		
-		message(STATUS "Generated path is ${GENERATED_FPATH}")
+		#message(STATUS "Generated path is ${GENERATED_FPATH}")
 		
 		SET(GENERATED_KEY
 			"${SHADERFOLDER} TEXT(\"${GENERATED_FPATH}:${EntryPoint}:${ShaderModel}\");"
@@ -323,6 +339,14 @@ if (WIN32)
 	# Metallicafan212: Make the directory tree
 	#message(STATUS "Making dir Inc/CompiledShaders")
 	file(MAKE_DIRECTORY "Inc/CompiledShaders")
+	
+	# Metallicafan212: Add a custom target that will build all the shaders
+	add_custom_target(
+		ICBINDx11Drv_Shaders
+		ALL
+	)
+	
+	set_target_properties(ICBINDx11Drv_Shaders PROPERTIES FOLDER ICBINDx11Drv/Shaders)
 
 	# Metallicafan212: First, vertex shaders.
 	# 				   We want to compile to specific shader models per file
@@ -345,7 +369,7 @@ if (WIN32)
 			Pixel_Shader_Macros
 			"PIXEL_SHADER=1"
 		)
-		message(STATUS "${Pixel_Shader_Macros}")
+		#message(STATUS "${Pixel_Shader_Macros}")
 		CompileShader(${FILE} "ps_5_0" "PxShader" "g_PxShader" Pixel_Shader_Macros)
 		CompileShader(${FILE} "ps_4_1" "PxShader" "g_PxShader" Pixel_Shader_Macros)
 		CompileShader(${FILE} "ps_4_0" "PxShader" "g_PxShader" Pixel_Shader_Macros)
