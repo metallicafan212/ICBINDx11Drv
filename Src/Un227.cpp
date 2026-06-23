@@ -173,7 +173,7 @@ void UICBINDx11RenderDevice::PreDrawGouraud(FSceneNode* Frame, FFogSurf& FogSurf
 
 void UICBINDx11RenderDevice::PostDrawGouraud(FSceneNode* Frame, FFogSurf& FogSurf)
 {
-	guard(UOpenGLRenderDevice::PostDrawGouraud);
+	guard(UICBINDx11RenderDevice::PostDrawGouraud);
 
 	// Metallicafan212:	Only disable if fogging is _actually_ set....
 	if (FogShaderVars.bDoDistanceFog)
