@@ -71,7 +71,12 @@ void UICBINDx11RenderDevice::DrawTile(FSceneNode* Frame, FTextureInfo& Info, FLO
 #elif DX11_HP2
 	Color.W = 1.0f - Color.W;
 #elif DX11_UT_469 //|| DX11_UNREAL_227
-	if(Color.W == 0.0f)
+	// Buggie: The engine leaves the tile Color alpha uninitialized for opaque/masked tiles
+	// (it "sends 0 for 100% visible", but in practice a stale garbage byte). Tile
+	// alpha is only meaningful when blending was actually requested - like stock UE1
+	// renderers, force opaque otherwise so text can't randomly fade out.
+	// (PF_AlphaBlend is set above when Texture->Alpha is used.)
+	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_AlphaBlend)) || Color.W == 0.0f)
 		Color.W = 1.0f;
 #else
 	Color.W = 1.0f;
@@ -421,7 +426,9 @@ void UICBINDx11RenderDevice::DrawTileList(const FSceneNode* Frame, const FTextur
 #if DX11_HP2
 	Color.W = 1.0f - Color.W;
 #elif DX11_UT_469
-	if (Color.W == 0.0f)
+	// Buggie: See DrawTile - ignore the engine's uninitialized tile alpha for opaque/masked
+	// tiles, only honor it when blending was actually requested.
+	if (!(PolyFlags & (PF_Translucent | PF_Modulated | PF_AlphaBlend)) || Color.W == 0.0f)
 		Color.W = 1.0f;
 #else
 	Color.W = 1.0f;
