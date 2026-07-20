@@ -1659,6 +1659,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	Set the screen variables based on the user's format choice
 		switch (UserScreenFormat)
 		{
+			/*
 			case DSF_HDR10:
 			{
 				RTFormat					= DXGI_FORMAT_R10G10B10A2_UNORM;
@@ -1666,6 +1667,7 @@ void UICBINDx11RenderDevice::SetupResources()
 				FrameShaderVars.FrameFlags |= FSF_HDR | FSF_R2020;//FSF_Linear | FSF_HDR;
 				break;
 			}
+			*/
 
 			case DSF_HDR16:
 			{
@@ -2146,6 +2148,7 @@ void UICBINDx11RenderDevice::SetupResources()
 #if DX11_D2D
 
 #if D2D_SEPARATE_TEX
+	/*
 	if (UserScreenFormat == DSF_HDR10)
 	{
 		// Metallicafan212:	Create a texture for Direct2D
@@ -2163,6 +2166,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		hr = m_D2DTexture->QueryInterface(IID_PPV_ARGS(&m_DXGISurf));
 	}
 	else
+	*/
 #endif//else
 	{
 		hr = m_ScreenBuffTex->QueryInterface(IID_PPV_ARGS(&m_DXGISurf));//m_D3DSwapChain->GetBuffer(0, IID_PPV_ARGS(&m_DXGISurf));

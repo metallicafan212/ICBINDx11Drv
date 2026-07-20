@@ -250,7 +250,7 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	UEnum* ScreenEnum = new(GetClass(), TEXT("ScreenFormat"))UEnum(nullptr);
 
 	ScreenEnum->Names.AddItem(FName(TEXT("SDR")));
-	ScreenEnum->Names.AddItem(FName(TEXT("HDR10")));
+	//ScreenEnum->Names.AddItem(FName(TEXT("HDR10")));
 	ScreenEnum->Names.AddItem(FName(TEXT("HDR16")));
 
 	// Metallicafan212:	Now init the config

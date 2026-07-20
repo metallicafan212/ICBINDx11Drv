@@ -306,7 +306,7 @@ class UICBINDx11RenderDevice;
 enum EDX11ScreenFormat : BYTE
 {
 	DSF_SDR,
-	DSF_HDR10,
+//	DSF_HDR10,
 	DSF_HDR16,
 	DSF_MAX
 };
