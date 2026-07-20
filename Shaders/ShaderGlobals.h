@@ -1,4 +1,4 @@
-#if HP2_HARDCODE
+#if HP2_HARDCODE || DX11_UNREAL_227
 #include "HP2ShaderDefs.h"
 #endif
 

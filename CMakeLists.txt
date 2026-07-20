@@ -1,12 +1,18 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.21)
-# Metallicafan212: TODO! This should support multiple projects....
-PROJECT(HP2)
 
-include("../configure.cmake")
 
 # Metallicafan212: Compile options
 option(ICBIND_HARDCODED_SHADERS "Hardcode and limit shaders to pre-compiled UT99 definitions. This should be used for any base UE1 game as well." OFF)
-option(ICBIND_227_SHADERS 		"Use Unreal 227 definitions in the shader files." OFF)
+option(ICBIND_227 		"Use Unreal 227 definitions" OFF)
+
+if(ICBIND_227)
+	PROJECT(Unreal)
+else()
+	include("../configure.cmake")
+
+	# Metallicafan212: TODO! This should support multiple projects....
+	PROJECT(HP2)
+endif()
 
 # Metallicafan212: Vertex shaders
 # 				   These all use the same entrypoint of VertShader
@@ -69,6 +75,7 @@ SET(
 #SET(SEMICOLON "FUCK_CMAKE")
 
 # Metallicafan212: Lists for includes and function code, so we load the hard-coded shaders
+# 				   TODO! Better 227 defs....
 SET(
 	HARDCODED_BEGINNING
 	"// Metallicafan212:\tThis file contains auto generated code to load hardcoded shaders (compiled from fxc.exe)"
@@ -76,7 +83,7 @@ SET(
 	"#include \"ICBINDx11Drv.h\"" 
 	"\n" 
 	"\n"  
-	"#ifdef DX11_HP2" 
+	"#if DX11_HP2 || DX11_UNREAL_227" 
 	"\n" 
 	"#include \"HP2Shaders.h\"" 
 	"\n" 
@@ -196,14 +203,28 @@ SET(
 )
 
 if (WIN32)
-    add_library(ICBINDx11Drv ${ICBINDDRV_Inc} ${ICBINDDRV_Robin_Map} ${ICBINDDRV_Src})#${ICBINDDRV_VERTEX_SHADERS} ${ICBINDDRV_PIXEL_SHADERS} ${ICBINDDRV_SHADER_HEADERS})
+	# Metallicafan212: 227 specific....
+	if(ICBIND_227)
+		add_library(ICBINDx11Drv ${OLDUNREAL_PACKAGE_LINKAGE} ${ICBINDDRV_Robin_Map} ${ICBINDDRV_Src})
+	else()
+		add_library(ICBINDx11Drv ${ICBINDDRV_Inc} ${ICBINDDRV_Robin_Map} ${ICBINDDRV_Src})
+	endif()
     set_target_properties(ICBINDx11Drv PROPERTIES
         FOLDER ICBINDx11Drv
     )
-
-    target_link_libraries(ICBINDx11Drv CoreLib EngineLib EditorLib Render MWindow)
-    target_link_libraries(ICBINDx11Drv advapi32.lib D3D11.lib D3DCompiler.lib Dwrite.lib D2d1.lib)
-    unreal_package_configure(ICBINDx11Drv ICBINDx11Drv)
+	if(NOT ICBIND_227)
+		target_link_libraries(ICBINDx11Drv PUBLIC CoreLib EngineLib EditorLib Render MWindow)
+	endif()
+    target_link_libraries(ICBINDx11Drv PUBLIC advapi32.lib D3D11.lib D3DCompiler.lib Dwrite.lib D2d1.lib ntdll.lib)
+	if(NOT ICBIND_227)
+		unreal_package_configure(ICBINDx11Drv ICBINDx11Drv)
+	else()
+		target_compile_definitions(ICBINDx11Drv PRIVATE SHADER_FOLDER="./${ICBINDX11DRV_NAME}/" DX11_UNREAL_227=1)
+		set_target_properties(ICBINDx11Drv PROPERTIES CXX_STANDARD 17)
+		target_include_directories(ICBINDx11Drv PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
+		# Metallicafan212: TODO! 227 specific
+		oldunreal_set_package_properties(ICBINDx11Drv)
+	endif()
 	
 	function(WriteShaderLine Line)
 		# Metallicafan212: Replace ~ with ; as CMake doesn't allow semicolons in lists.....
@@ -248,9 +269,9 @@ if (WIN32)
 		list(APPEND HEADER_SHADER_FILES ${Shader_Path})
 		
 		# Metallicafan212: Game-specific logic
-		if(${ICBIND_HARDCODED_SHADERS})
+		if(ICBIND_HARDCODED_SHADERS)
 			LIST(APPEND ShaderCommand /DHARD_CODED_SHADERS=1 /DUSE_GEO_SHADER=1)
-		elseif(${ICBIND_227_SHADERS})
+		elseif(ICBIND_227)
 			LIST(APPEND ShaderCommand /DDX11_UNREAL_227=1 /DUSE_GEO_SHADER=1)
 		else()
 			# Metallicafan212: Assume HP2
