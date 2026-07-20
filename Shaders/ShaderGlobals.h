@@ -1,5 +1,14 @@
-#if HP2_HARDCODE || DX11_UNREAL_227
+#if HP2_HARDCODE
 #include "HP2ShaderDefs.h"
+#endif
+
+// Metallicafan212:	TODO! Redo this so it's not hardcoded here.....
+#if DX11_UNREAL_227
+#define SF_AlphaEnabled			1
+#define SF_Modulated			2
+#define SF_HudSmoothMasked		4
+#define SF_MSDFRendering		8
+#define SF_BicubicSampling		16
 #endif
 
 #if HARD_CODE_SHADERS
