@@ -201,7 +201,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 	// Metallicafan212:	Hold the scale here
 	FLOAT fontScale = Font->FontHeight;
 
-	if (Scale > 1.0f)
+	if (Scale > 0.0f)
 		fontScale = Font->FontHeight * Scale;
 
 	FString FontKey = FString::Printf(TEXT("%s %d %d %d %g"), *Font->FontName, Font->Bold, Font->Italic, Font->DropShadow, fontScale);
@@ -939,7 +939,7 @@ void UICBINDx11RenderDevice::SetRenderTargetTexture(UTexture* Tex)
 	unguard;
 }
 
-void UICBINDx11RenderDevice::ClearRenderTargetTexture(UTexture* Tex, FPlane ClearColor)
+void UICBINDx11RenderDevice::ClearRenderTargetTexture(UTexture* Tex, FPlane ClearColor, FLOAT BlurPercent)
 {
 	guard(UICBINDx11RenderDevice::ClearRenderTargetTexture);
 
@@ -969,6 +969,45 @@ void UICBINDx11RenderDevice::RestoreRenderTarget()
 		RT = RTStack(RTStack.Num() - 1);
 
 		RTStack.Remove(RTStack.Num() - 1);
+	}
+
+	// Metallicafan212:	Run a shader pass on it
+	if (RT != nullptr && RT->BlurPercent != 0.0f)
+	{
+		// Metallicafan212:	TODO! We need 1 more RT to blur....
+		//					One to do the X axis.
+		//					Then render back to do the Y axis....
+#if 0
+		// Metallicafan212:	Start buffering now
+		StartBuffering(BT_ScreenFlash);
+
+		// Metallicafan212:	Order of operations, make sure the alpha rejection is set
+		SetBlend(PF_Occlude);
+
+		SetTexture(0, nullptr, 0);
+
+		m_RenderContext->PSSetSamplers(0, 1, &ScreenSamp);
+		// Metallicafan212:	Manually setup the vars...
+		m_RenderContext->OMSetRenderTargets(1, &m_BackBuffRT, nullptr);
+		m_RenderContext->PSSetShaderResources(0, 1, NumAASamples > 1 ? &m_MSAAResolveSRV : &m_ScreenRTSRV);
+
+		SetSceneNode(nullptr);
+
+		FResScaleShader->Bind(m_RenderContext);
+
+		LockVertAndIndexBuffer(6);
+
+		appMemcpy(m_VertexBuff, ScreenVerts, sizeof(FD3DVert) * 6);
+
+		AdvanceVertPos();
+
+		// Metallicafan212:	Draw
+		EndBuffering();
+
+		//SetTexture(0, nullptr, 0);
+		// Metallicafan212:	Fix the shader holding onto the RT texture
+		m_RenderContext->PSSetShaderResources(0, 1, &BlankResourceView);
+#endif
 	}
 
 	// Metallicafan212:	Reset

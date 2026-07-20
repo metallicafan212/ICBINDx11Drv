@@ -826,6 +826,87 @@ void UICBINDx11RenderDevice::DirectCP(const FTextureInfo& Info, FD3DTexture* Tex
 	unguardSlow;
 }
 
+void UICBINDx11RenderDevice::FloatLMUpload(const FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
+{
+	guardSlow(UICBINDx11RenderDevice::RGBA7To8);
+
+	BYTE* Data	= nullptr;
+	INT Size	= 0;
+	INT Pitch	= 0;
+	INT W		= 0;
+	INT	H		= 0;
+
+	// Metallicafan212:	TODO! Do this more optimized!
+	if (GetMipInfo(Info, Tex, ConversionMemory, Mip, Data, Size, Pitch, W, H))
+	{
+		// Metallicafan212:	TODO! Partial uploads
+		if (bPartial)
+		{
+			// Metallicafan212:	Consider the entire mip, damnit
+			D3D11_BOX Upd = CD3D11_BOX();
+
+			// Metallicafan212:	Start at the right position? TODO!
+			//Data += (UpdateX * Pitch);
+
+			Upd.left		= UpdateX;
+			Upd.right		= UpdateX + UpdateW;
+			Upd.top			= UpdateY;
+			Upd.bottom		= UpdateY + UpdateH;
+			Upd.back		= 1;
+
+			m_RenderContext->UpdateSubresource(Tex->m_Tex, Mip + Tex->MipSkip, &Upd, Data, Pitch, 0);
+		}
+		else
+		{
+			FPlane* pTex = (FPlane*)ConversionMemory;
+
+			// Metallicafan212:	Get each color
+			INT	  Read		= 0;
+			BYTE* Bytes		= Data;
+			BYTE* DBytes	= ConversionMemory;
+
+			// Metallicafan212:	Sigh.. We have to clamp!
+			//					Took my recoded RGBA7 upload from the DX9 driver
+			if (Tex->UClamp != Tex->USize || Tex->VClamp != Tex->VSize)
+			{
+				INT		RUSize = W - 1;
+				INT		RVSize = H - 1;
+				INT		UClamp = (Tex->UClamp >> Mip) - 1;
+				INT		VClamp = (Tex->VClamp >> Mip) - 1;
+
+				// Metallicafan212:	Loop and get the color
+				for (INT y = 0; y < H; y++)
+				{
+					// Metallicafan212:	Current pointer
+					FPlane* Base = ((FPlane*)Data) + Min<DWORD>(y & RVSize, VClamp) * W;
+
+					// Metallicafan212:	Now the X direction
+					for (INT x = 0; x < W; x++)
+					{
+						// Metallicafan212:	Move it over
+						//					We multiply by 2 to expand 7 bits to 8
+						*pTex++ = (Base[Min<DWORD>(x & RUSize, UClamp)]); //<< 1;//* 2;
+
+						// Metallicafan212:	P8 is forcibly converted to ARGB, so we don't need to respect pitch if we already know 32bpp
+						//pTex++;
+					}
+				}
+
+				// Metallicafan212:	Now update
+				m_RenderContext->UpdateSubresource(Tex->m_Tex, Mip + Tex->MipSkip, nullptr, ConversionMemory, Pitch, 0);
+			}
+			else
+			{
+				// Metallicafan212:	Eliminate an extra copy
+				m_RenderContext->UpdateSubresource(Tex->m_Tex, Mip + Tex->MipSkip, nullptr, Data, Pitch, 0);
+			}
+
+		}
+	}
+
+	unguardSlow;
+}
+
 void UICBINDx11RenderDevice::RGBA7To8(const FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH)
 {
 	guardSlow(UICBINDx11RenderDevice::RGBA7To8);
@@ -945,7 +1026,7 @@ void UICBINDx11RenderDevice::P8ToRGBA(const FTextureInfo& Info, FD3DTexture* Tex
 }
 
 // Metallicafan212:	Based on the DX9 version, but HEAVILY modified
-void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
+void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags, UBOOL bForceFlush)
 {
 	guardSlow(UICBINDx11RenderDevice::SetBlend);
 
@@ -958,8 +1039,8 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags)
 	PFLAG blendFlags = PolyFlags & (PF_Translucent | PF_Modulated | PF_Invisible | PF_Occlude | PF_Masked | PF_Highlighted | PF_AlphaBlend | PF_Selected | PF_Memorized);
 #endif
 
-	UBOOL bUpdatePFlagBuff	= 0;
-	UBOOL bUpdateFogBuff	= 0;
+	UBOOL bUpdatePFlagBuff	= bForceFlush;
+	UBOOL bUpdateFogBuff	= bForceFlush;
 
 	if (blendFlags != CurrentPolyFlags)
 	{

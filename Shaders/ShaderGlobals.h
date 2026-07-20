@@ -135,16 +135,17 @@ cbuffer FrameVariables : register (b0)
 	float	Gamma				: packoffset(c4.x);
 	float2	ViewSize			: packoffset(c4.y);
 	int		bDoSelection		: packoffset(c4.w);
+	
+	// Metallicafan212:	Not used anymore, left because I don't want to repad this right now
 	int		bOneXLightmaps		: packoffset(c5.x);
+	
 	int		bCorrectFog			: packoffset(c5.y);
-	//int		bHDR				: packoffset(c5.z);
 	dword	FrameShaderFlags	: packoffset(c5.z);
 	int 	GammaMode			: packoffset(c5.w);
 	float	HDRExpansion		: packoffset(c6.x);
 	float 	ResolutionScale 	: packoffset(c6.y);
 	float	WhiteLevel			: packoffset(c6.z);
-	//float 	PadHDR2			: packoffset(c6.w);
-	//int		bDepthDraw			: packoffset(c6.w);
+	
 	// Metallicafan212:	Replaced this with rmodes
 	int		RendMap				: packoffset(c6.w);
 	float	DepthDrawLimit		: packoffset(c7.x);
@@ -178,8 +179,14 @@ cbuffer PolyflagVars : register (b2)
 	// Metallicafan212:	Generalized shader flags, so we're more optimially using memory
 	dword	ShaderFlags			: packoffset(c2.x);
 	
+	// Metallicafan212:	How much to expand the lightmap color.
+	float	LightMapExpansion	: packoffset(c2.y);
+	
+	// Metallicafan212:	How much to expand the fogmap color.
+	float	FogMapExpansion		: packoffset(c2.z);
+	
 	// Metallicafan212:	Pad out the rest of the structure
-	float3 	PadFlags			: packoffset(c2.y);
+	float 	PadFlags			: packoffset(c2.w);
 };
 
 cbuffer TextureVariables : register (b3)
@@ -221,7 +228,7 @@ float DoDistanceFog(float InZ)
 	// Metallicafan212:	Calcuate the fog value for the pixel shader
 	if(InZ >= fogStart)
 	{
-		float fogScale 		= (fogEnd - fogStart);
+		float fogScale 	= (fogEnd - fogStart);
 		float dFog		= 1.0 - ((-InZ + fogEnd) / fogScale);
 		switch(FogMode)
 		{

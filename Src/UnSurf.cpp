@@ -149,6 +149,11 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 	FUVInfo UVInfo;
 
+	// Metallicafan212:	Force a flush if we update the lightmap expansion
+	UBOOL bForcePFlagFlush	= 0;
+	FLOAT NewExpandedLM		= GlobalPolyflagVars.LightMapExpansion;
+	FLOAT NewExpandedFM		= GlobalPolyflagVars.FogMapExpansion;
+
 	// Metallicafan212:	This breaks mirrors, we HAVE to render invisible surfaces....
 	//if (PolyFlags & PF_Invisible)
 	//	return;
@@ -159,7 +164,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 
 	REMOVE_BAD_PFLAGS(PolyFlags);
 
-	if(m_nearZRangeHackProjectionActive)
+	if (m_nearZRangeHackProjectionActive)
 		SetProjectionStateNoCheck(false);
 
 	// Metallicafan212:	TODO! Do indexed buffering
@@ -176,6 +181,7 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 		PolyFlags &= ~PF_LumosAffected;
 		PolyFlags |= PF_Occlude | PF_Translucent;
 	}
+
 #endif
 
 #if DX11_HP2
@@ -204,11 +210,83 @@ void UICBINDx11RenderDevice::DrawComplexSurface(FSceneNode* Frame, FSurfaceInfo&
 	{
 		PolyFlags &= ~PF_VertexColored;
 	}
+
+	// Metallicafan212:	Test if there's a HD lightmap/fogmap
+	if (Surface.LightMap != nullptr)
+	{
+		switch (Surface.LightMap->Format)
+		{
+			case TEXF_RGBA7:
+			{
+				// Metallicafan212:	Check if the value is correct
+				if (bOneXLightmaps && GlobalPolyflagVars.LightMapExpansion != 2.0f)
+				{
+					NewExpandedLM		= 2.0f;
+					bForcePFlagFlush	= 1;
+				}
+				else if (!bOneXLightmaps && GlobalPolyflagVars.LightMapExpansion != 4.0f)
+				{
+					NewExpandedLM		= 4.0f;
+					bForcePFlagFlush	= 1;
+				}
+				break;
+			}
+
+			case TEXF_RGBA32_F_LM:
+			{
+				// Metallicafan212:	Check if the value is correct
+				if (bOneXLightmaps && GlobalPolyflagVars.LightMapExpansion != 1.0f)
+				{
+					NewExpandedLM		= 1.0f;
+					bForcePFlagFlush	= 1;
+				}
+				else if (!bOneXLightmaps && GlobalPolyflagVars.LightMapExpansion != 2.0f)
+				{
+					NewExpandedLM		= 2.0f;
+					bForcePFlagFlush	= 1;
+				}
+				break;
+			}
+		}
+	}
+
+	if (Surface.FogMap != nullptr)
+	{
+		switch (Surface.FogMap->Format)
+		{
+			case TEXF_RGBA7:
+			{
+				if (GlobalPolyflagVars.FogMapExpansion != 2.f)
+				{
+					NewExpandedFM		= 2.f;
+					bForcePFlagFlush	= 1;
+				}
+
+				break;
+			}
+
+			case TEXF_RGBA32_F_LM:
+			{
+				if (GlobalPolyflagVars.FogMapExpansion != 1.f)
+				{
+					NewExpandedFM		= 1.f;
+					bForcePFlagFlush	= 1;
+				}
+				break;
+			}
+		}
+	}
 #endif
 
-	//ADJUST_PFLAGS(PolyFlags);
+	if (bForcePFlagFlush)
+	{
+		EndBuffering();
+		GlobalPolyflagVars.LightMapExpansion	= NewExpandedLM;
+		GlobalPolyflagVars.FogMapExpansion		= NewExpandedFM;
+		UpdatePolyflagsVars();
+	}
 
-	SetBlend(PolyFlags & ~PF_Selected);
+	SetBlend(PolyFlags & ~PF_Selected, bForcePFlagFlush);
 
 	// Metallicafan212:	Raster state
 	SetRasterState(DXRS_Normal);

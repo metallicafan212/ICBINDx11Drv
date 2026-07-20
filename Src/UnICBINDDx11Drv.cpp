@@ -1190,6 +1190,12 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 	RegisterTextureFormat(TEXF_RGB16_, DXGI_FORMAT_R16G16B16A16_UNORM, 0, 0, 8);
 #endif
 
+	// Metallicafan212:	Floating point lightmapping support
+#if DX11_HP2
+	RegisterTextureFormat(TEXF_RGBA32_F, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, sizeof(FPlane));
+	RegisterTextureFormat(TEXF_RGBA32_F_LM, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, sizeof(FPlane), &FD3DTexType::RawPitch, &UICBINDx11RenderDevice::FloatLMUpload);
+#endif
+
 	// Metallicafan212:	MSDF font support
 #if DX11_MSDF_RENDERING
 	RegisterTextureFormat(TEXF_MSDF, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 0, 4, &FD3DTexType::RawPitch);
@@ -2719,7 +2725,11 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	FrameShaderVars.bDoSelection			= HitData != nullptr;
 
 	FrameShaderVars.bEnableCorrectFogging	= bEnableCorrectFogging;
-	FrameShaderVars.bOneXLightmaps			= bOneXLightmaps;
+	//FrameShaderVars.bOneXLightmaps			= bOneXLightmaps;
+
+	// Metallicafan212:	Set the expansion value. This lets us optionally reset it in the complex shader rendering path
+	GlobalPolyflagVars.LightMapExpansion	= bOneXLightmaps ? 2.f : 4.f;
+	GlobalPolyflagVars.FogMapExpansion		= 2.f;
 
 	// Metallicafan212:	Make sure the RT is set?
 	//if (RTStack.Num())

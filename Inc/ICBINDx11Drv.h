@@ -354,6 +354,8 @@ class UDX11RenderTargetTexture : public UTexture
 	FRenderToTexture*						EngineRTTex;
 #endif
 
+	FLOAT									BlurPercent;
+
 	// Metallicafan212:	Variable to hold the texture object (for ->SetTexture)
 	UDX11RenderTargetTexture()
 		: UTexture(),
@@ -367,7 +369,8 @@ class UDX11RenderTargetTexture : public UTexture
 		RTD2D(nullptr),
 		RTDXGI(nullptr),
 		RTTexCopy(nullptr),
-		D3DDev(nullptr)
+		D3DDev(nullptr),
+		BlurPercent(0.0f)
 #if DX11_UNREAL_227
 		,EngineRTTex(nullptr)
 #endif
@@ -1964,8 +1967,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	void DirectCP(const FTextureInfo& Info, FD3DTexture* Tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
 	void P8ToRGBA(const FTextureInfo& Info, FD3DTexture* tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
 	void RGBA7To8(const FTextureInfo& Info, FD3DTexture* tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
+	void FloatLMUpload(const FTextureInfo& Info, FD3DTexture* tex, INT Mip, UBOOL bPartial, INT UpdateX, INT UpdateY, INT UpdateW, INT UpdateH);
 
-	void RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, UBOOL bIsCompressed = 0, INT ByteOrBlockSize = 4, FD3DTexType::GetTypePitch PitchFunc = &FD3DTexType::RawPitch, UploadFunc UFunc = &DirectCP);//, FD3DTexType::ConversionFunc UConv = nullptr);
+	void RegisterTextureFormat(ETextureFormat Format, DXGI_FORMAT DXFormat, UBOOL bRequiresConversion, UBOOL bIsCompressed = 0, INT ByteOrBlockSize = 4, FD3DTexType::GetTypePitch PitchFunc = &FD3DTexType::RawPitch, UploadFunc UFunc = &UICBINDx11RenderDevice::DirectCP);//, FD3DTexType::ConversionFunc UConv = nullptr);
 
 	// Metallicafan212:	Texture setting code
 	void SetTexture(INT TexNum, const FTextureInfo* Info, PFLAG PolyFlags, UBOOL bNoAF = 0);
@@ -2197,7 +2201,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	}
 
 	// Metallicafan212:	Blend state
-	void SetBlend(PFLAG PolyFlags);
+	void SetBlend(PFLAG PolyFlags, UBOOL bForceFlush = 0);
 
 	// Metallicafan212:	For detecting the hit after the scene is rendered
 	void DetectPixelHit();
@@ -2425,7 +2429,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 	virtual void SetRenderTargetTexture(UTexture* Tex);
 
-	virtual void ClearRenderTargetTexture(UTexture* Tex, FPlane ClearColor);
+	virtual void ClearRenderTargetTexture(UTexture* Tex, FPlane ClearColor, FLOAT BlurPercent);
 
 	virtual void RestoreRenderTarget();
 

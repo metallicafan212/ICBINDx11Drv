@@ -50,8 +50,10 @@ struct FFrameShaderVars
 	FLOAT				ViewY;
 	UBOOL				bDoSelection;
 
-	// Metallicafan212:	TODO! More settings!!!
-	UBOOL				bOneXLightmaps;
+	// Metallicafan212:	Was bOneXLightmaps before, now done in the PolyFlags struct
+	DWORD				Removed;
+
+	// Metallicafan212:	If to remove color from mesh lighting as fog gets stronger, to match surface fog rendering.
 	UBOOL				bEnableCorrectFogging;
 
 	//UBOOL				bHDR;
@@ -130,26 +132,30 @@ struct FPolyflagVars
 	// Metallicafan212:	Current set flags
 	DWORD	ShaderFlags;
 
+	// Metallicafan212:	How much to increase the value of the lightmap.
+	//					UE1 uploads lightmaps in a RGBA7 format (packed into RGBA8), requiring a * 2 to get it back in a normal color range.
+	//					On top of that, light map rendering requires that the input color be * 2 to make it so a half brightness lightmap (50%) produces the texture color.
+	//					Without this * 2, it takes a full (100%) lightmap to produce just the texture color, "One X" shading (the original, bugged DX6/7 coloring).
+	//					This also allows us to optionally reduce this back to 2 for full-range floating point lightmap textures (HP2 exclusive).
+	FLOAT				LightMapExpansion;
+
+	// Metallicafan212:	Same but for fogmaps
+	FLOAT				FogMapExpansion;
+
 	// Metallicafan212:	If ShaderFlags starts on the next register, we need to pad here to match the shaders....
 	//					TODO! Maybe add some more shader logic to make this pad not needed?
-	DWORD Pad[3];
-
-	// Metallicafan212:	If alpha is currently enabled
-	//UBOOL	bAlphaEnabled;
-
-	// Metallicafan212:	Temp hack for modulation until I recode gamma again....
-	//UBOOL	bModulated;
+	DWORD Pad[1];
 
 	FPolyflagVars()
 		:
 		bSelected(0),
-		AlphaReject(0.0f),//1e-6f),
+		AlphaReject(0.0f),
 		AltAlphaReject(0.0f),
 		BWPercent(0.0f),
-		//bAlphaEnabled(0),
-		//bModulated(0),
 		ShaderFlags(0),
-		SelectionColor(0.f, 0.f, 0.f)
+		SelectionColor(0.f, 0.f, 0.f),
+		LightMapExpansion(4.f),
+		FogMapExpansion(2.f)
 	{
 
 	}
@@ -596,6 +602,32 @@ public:
 
 	// Metallicafan212:	Constructor that inits the device pointer
 	FD3DResScalingShader(class UICBINDx11RenderDevice* InParent);
+};
+
+// Metallicafan212:	Simple RT shader so we can selectively blur it for RT shadows
+class FD3DRTPostShader
+	: public FD3DShader
+{
+public:
+	FD3DRTPostShader() : FD3DShader()
+	{
+		VertexFile	= SHADER_FOLDER TEXT("PostFX\\RTPost_Vert.hlsl");
+		PixelFile	= SHADER_FOLDER TEXT("PostFX\\RTPost_PX.hlsl");
+		VertexFunc	= TEXT("VertShader");
+		PixelFunc	= TEXT("PxShader");
+	}
+
+	// Metallicafan212:	Constructor that inits the device pointer
+	FD3DRTPostShader(class UICBINDx11RenderDevice* InParent)
+		: FD3DShader(InParent)
+	{
+		VertexFile	= SHADER_FOLDER TEXT("PostFX\\RTPost_Vert.hlsl");
+		PixelFile	= SHADER_FOLDER TEXT("PostFX\\RTPost_PX.hlsl");
+		VertexFunc	= TEXT("VertShader");
+		PixelFunc	= TEXT("PxShader");
+
+		Init();
+	}
 };
 
 // Metallicafan212:	This is unusued and might be removed in the future (as it wasn't as good as just drawing a damn rectangle)

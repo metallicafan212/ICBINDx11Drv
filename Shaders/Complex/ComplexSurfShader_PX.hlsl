@@ -91,13 +91,7 @@ PSOutput PxShader(PSInput input)
 	// Metallicafan212:	Lightmap
 	if(bTexturesBound & LIGHT_BOUND)
 	{
-		float Mult		= 4.0f;
-		
-		// Metallicafan212:	Check for oneX blending
-		if(bOneXLightmaps)
-		{
-			Mult 		= 2.0f;
-		}
+		float Mult		= LightMapExpansion;
 		
 		/*
 		// Metallicafan212:	Bicubic sampling
@@ -146,30 +140,11 @@ PSOutput PxShader(PSInput input)
 	
 	// Metallicafan212:	Fog map
 	if(bTexturesBound & FOG_BOUND)
-	{
-		/*
-		// Metallicafan212:	Bicubic sampling
-		float4 FogColor;
+	{		
+		float4 FogColor = SampleTexture(Fogmap, FogState, input.fUV, FOG_BOUND) * FogMapExpansion;
 		
-		if(ShaderFlags & SF_BicubicSampling)
-		{
-			//LightmapSampleBicubic(FogState, Fogmap,input.fUV, FogColor);
-			// Metallicafan212:	Automatically get the texture size
-			float2 texSize;
-			Fogmap.GetDimensions(texSize.x, texSize.y);
-			FogColor = SampleTextureCatmullRom(Fogmap, FogState, input.fUV, texSize);
-		}
-		else
-		{
-			FogColor 		= Fogmap.Sample(FogState, input.fUV);
-		}
 		
-		FogColor 		*= 2.0f;
-		*/
-		
-		float4 FogColor = SampleTexture(Fogmap, FogState, input.fUV, FOG_BOUND) * 2.0f;
-		
-		DiffColor.xyz 	= (DiffColor.xyz * (1.0f - FogColor.w)) + FogColor.xyz;
+		DiffColor.xyz 	= (DiffColor.xyz * saturate(1.f - FogColor.w)) + FogColor.xyz;
 	}
 	
 	// Metallicafan212:	Set our alpha for lumos
