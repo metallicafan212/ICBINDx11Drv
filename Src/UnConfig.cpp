@@ -40,6 +40,9 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	HP2 native wireframe
 	bSupportsNativeWireframe = 1;
 
+	// Metallicafan212:	HP2 floating point surface lighting support
+	bSupportsFloatingPointLighting = 1;
+
 #endif
 
 	// Metallicafan212:	Tell the engine that we support the lighting shader
@@ -151,7 +154,7 @@ void UICBINDx11RenderDevice::StaticConstructor()
 	// Metallicafan212:	Gamma/brightness is done here because a HP2 speedrunning trick involves messing with the brightness bar
 #if DX11_HP2
 	AddFloatProp(CPP_PROP(Gamma), 1.0f);
-	AddBoolProp(CPP_PROP(bSupportsFloatingPointLighting), 1);
+	//AddBoolProp(CPP_PROP(bSupportsFloatingPointLighting), 1);
 #endif
 
 	// Metallicafan212:	Surface selection color
