@@ -631,7 +631,9 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, 
 
 	// Metallicafan212:	Create the conversion mem
 	//					TODO! Hardcoded size!!!!
-	SIZE_T MemRequest = DaTex->USize * DaTex->VSize * 4;
+	//					2026... This bit us in the ass
+	//					Calculate it correctly
+	SIZE_T MemRequest = DaTex->USize * DaTex->VSize * Type->BytesPerPixel;
 
 	// Metallicafan212:	Resize as needed
 	if (MemRequest > ConversionMemSize)
