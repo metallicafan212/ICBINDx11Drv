@@ -1156,6 +1156,9 @@ UBOOL UICBINDx11RenderDevice::Init(UViewport* InViewport, INT NewX, INT NewY, IN
 #else
 	RegisterTextureFormat(TEXF_RGBA8, DXGI_FORMAT_B8G8R8A8_UNORM, 0, 0, 4, &FD3DTexType::RawPitch);
 #endif
+#if DX11_UT_469
+	RegisterTextureFormat(TEXF_RGBA8_, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 0, 4, &FD3DTexType::RawPitch);
+#endif
 
 	// Metallicafan212:	HP2 uses non-SRGB DXT1, so we need to break that off, otherwise the color will be half'd
 	RegisterTextureFormat(TEXF_DXT1, DXGI_FORMAT_BC1_UNORM, 0, 1, 8, &FD3DTexType::BlockCompressionPitch);

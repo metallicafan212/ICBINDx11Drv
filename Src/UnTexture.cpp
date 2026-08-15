@@ -524,7 +524,10 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, 
 			if (bNeedsConversion)
 			{
 				// Metallicafan212:	New destination will be RGBA8
-#if DX11_HP2 || DX11_UT_469 || DX11_UNREAL_227
+#if DX11_UT_469
+				// DecompressMip outputs RGBA8 byte order, so the destination type has to match it
+				Type = &SupportedTextures.find(TEXF_RGBA8_)->second;
+#elif DX11_HP2 || DX11_UNREAL_227
 				Type = &SupportedTextures.find(TEXF_BGRA8)->second;
 #else
 				Type = &SupportedTextures.find(TEXF_RGBA8)->second;
@@ -1467,6 +1470,7 @@ UBOOL UICBINDx11RenderDevice::SupportsTextureFormat(ETextureFormat Format)
 		case TEXF_RGBA7:
 		case TEXF_RGB8:
 		case TEXF_BGRA8:
+		case TEXF_RGBA8_:
 			return true;
 		case TEXF_BC1:
 		case TEXF_BC2:
