@@ -1292,9 +1292,9 @@ void UICBINDx11RenderDevice::SetBlend(PFLAG PolyFlags, UBOOL bForceFlush)
 		// Metallicafan212:	Set the correct fake fog values
 		//					Reset fog if the XOR was Translucent or Modulated
 #if DX11_HP2
-		if ((FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues) && (Xor & (PF_Translucent | PF_Modulated | PF_AlphaBlend | PF_Highlighted | PF_NoFog)))
+		if ((FogShaderVars.bDoDistanceFog) && (Xor & (PF_Translucent | PF_Modulated | PF_AlphaBlend | PF_Highlighted | PF_NoFog)))
 #elif DX11_UNREAL_227
-		if ((FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues) && (Xor & (PF_Translucent | PF_Modulated | PF_AlphaBlend | PF_Highlighted)))
+		if ((FogShaderVars.bDoDistanceFog) && (Xor & (PF_Translucent | PF_Modulated | PF_AlphaBlend | PF_Highlighted)))
 #endif
 		{
 			// Metallicafan212:	Don't allow for this to work if we're in a stack...

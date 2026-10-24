@@ -581,7 +581,7 @@ INT UICBINDx11RenderDevice::DrawString(PFLAG Flags, UFont* Font, INT& DrawX, INT
 
 #if DX11_DISTANCE_FOG
 // Metallicafan212:	Viewer-based zone fog
-void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FLOAT FogDensity, FPlane Color, FLOAT FadeRate, INT FogMode)
+void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FLOAT FogDensity, FPlane Color, INT FogMode)
 {
 	guard(UICBINDx11RenderDevice::SetDistanceFog);
 
@@ -594,112 +594,56 @@ void UICBINDx11RenderDevice::SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT 
 	Color.W = 1.0f;
 #endif
 
-	// Metallicafan212:	Update the values if it's enabled
-	FogShaderVars.FogFadeRate = FadeRate;
-
 	if (Enable)
 	{
 		// Metallicafan212:	Check if it's equal
-		if(FogShaderVars.bDoDistanceFog && FogShaderVars.TargetFogColor == Color && FogShaderVars.CurrentFogStart == FogStart && FogShaderVars.CurrentFogEnd == FogEnd && FogShaderVars.CurrentFogDensity == FogDensity && FogShaderVars.FogMode == FogMode)
+		if(FogShaderVars.bDoDistanceFog && FogShaderVars.DistanceFogColor == Color && FogShaderVars.CurrentFogStart == FogStart && FogShaderVars.CurrentFogEnd == FogEnd && FogShaderVars.CurrentFogDensity == FogDensity && FogShaderVars.FogMode == FogMode)
 			return;
 
 		EndBuffering();
 
 		// Metallicafan212:	Save the fog settings
-		FogShaderVars.LastFogColor		= FogShaderVars.DistanceFogColor;
-		FogShaderVars.LastFogSettings	= FogShaderVars.DistanceFogSettings;
+		FogShaderVars.LastFogColor			= FogShaderVars.DistanceFogColor;
+		FogShaderVars.LastFogSettings		= FogShaderVars.DistanceFogSettings;
 
 		// Metallicafan212:	Set the fog values
-		FogShaderVars.TargetFogColor	= Color;
+		FogShaderVars.DistanceFogColor		= Color;
 
-		FogShaderVars.TargetFogSettings	= FPlane(FogStart, FogEnd, FogDensity, 0.0f);		
+		FogShaderVars.DistanceFogSettings	= FPlane(FogStart, FogEnd, FogDensity, 0.0f);
 
-		FogShaderVars.bFadeFogValues	= 1;
+		FogShaderVars.CurrentFogStart		= FogStart;
+		FogShaderVars.CurrentFogEnd			= FogEnd;
+		FogShaderVars.CurrentFogDensity		= FogDensity;
 
-		FogShaderVars.CurrentFogStart	= FogStart;
-		FogShaderVars.CurrentFogEnd		= FogEnd;
-		FogShaderVars.CurrentFogDensity	= FogDensity;
-
-		FogShaderVars.FogMode			= (EDX11FogMode)FogMode;
+		FogShaderVars.FogMode				= (EDX11FogMode)FogMode;
 	}
 	else
 	{
 		EndBuffering();
 
 		// Metallicafan212:	Save the fog settings
-		FogShaderVars.LastFogColor		= FogShaderVars.DistanceFogColor;
-		FogShaderVars.LastFogSettings	= FogShaderVars.DistanceFogSettings;
+		FogShaderVars.LastFogColor			= FogShaderVars.DistanceFogColor;
+		FogShaderVars.LastFogSettings		= FogShaderVars.DistanceFogSettings;
 
 		// Metallicafan212:	Fade out
-		FogShaderVars.TargetFogColor	= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
-		FogShaderVars.TargetFogSettings	= FPlane(DX11_MAX_Z, DX11_MAX_Z, 0.0f, 0.0f);
+		FogShaderVars.DistanceFogColor		= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
+		FogShaderVars.DistanceFogSettings	= FPlane(DX11_MAX_Z, DX11_MAX_Z, 0.0f, 0.0f);
 
-		FogShaderVars.bFadeFogValues	= 1;
-
-		FogShaderVars.CurrentFogStart	= FogShaderVars.CurrentFogEnd = 0.0f;
+		FogShaderVars.CurrentFogStart		= FogShaderVars.CurrentFogEnd = 0.0f;
 	}
 
+	// Metallicafan212:	Keep a copy for the modulated/translucent modes to set back
+	FogShaderVars.DistanceFogFinal			= FogShaderVars.DistanceFogColor;
 
-	// Metallicafan212:	Grab the current time
-#if DX11_HP2
-	FogShaderVars.FogSetTime			= Viewport->CurrentTime;
-#else
-	FogShaderVars.FogSetTime			= Viewport->CurrentTime.GetFloat();
-#endif
+	// Metallicafan212:	Set the alpha on the other arrays
+	FogShaderVars.ModFogColor.W			= FogShaderVars.DistanceFogColor.W;
+	FogShaderVars.TransFogColor.W		= FogShaderVars.DistanceFogColor.W;
 
 	// Metallicafan212:	Keep the val around, so we can selectively set blending
 	FogShaderVars.bDoDistanceFog		= Enable;
 
-	TickDistanceFog();
 	UpdateFogSettings();
 
-
-	unguard;
-}
-
-void UICBINDx11RenderDevice::TickDistanceFog()
-{
-	guard(UICBINDx11RenderDevice::TickDistanceFog);
-
-	// Metallicafan212:	If fog is disabled but we don't have 0 alpha, fade out
-	if (FogShaderVars.bFadeFogValues)
-	{
-		// Metallicafan212:	fade the current fog setting
-#if DX11_HP2
-		FLOAT CurrPos = FogShaderVars.FogFadeRate <= 0.0f ? 1.0f : ((Viewport->CurrentTime - FogShaderVars.FogSetTime) / FogShaderVars.FogFadeRate);
-#else
-		FLOAT CurrPos = FogShaderVars.FogFadeRate <= 0.0f ? 1.0f : ((Viewport->CurrentTime.GetFloat() - FogShaderVars.FogSetTime) / FogShaderVars.FogFadeRate);
-#endif
-
-		if (CurrPos >= 1.0f)
-		{
-			FogShaderVars.DistanceFogColor		= FogShaderVars.TargetFogColor;
-			FogShaderVars.DistanceFogSettings	= FogShaderVars.TargetFogSettings;
-
-			FogShaderVars.bFadeFogValues = 0;
-		}
-		else
-		{
-			// Metallicafan212:	Lerp all the values
-#define LERP_FPLANE(F, A, B) \
-			F.X = Lerp(A.X, B.X, CurrPos); \
-			F.Y = Lerp(A.Y, B.Y, CurrPos); \
-			F.Z = Lerp(A.Z, B.Z, CurrPos); \
-			F.W = Lerp(A.W, B.W, CurrPos);
-
-			LERP_FPLANE(FogShaderVars.DistanceFogColor,		FogShaderVars.LastFogColor,		FogShaderVars.TargetFogColor);
-			LERP_FPLANE(FogShaderVars.DistanceFogSettings,	FogShaderVars.LastFogSettings,	FogShaderVars.TargetFogSettings);
-		}
-	}
-
-	// Metallicafan212:	Set the alpha on the other arrays
-	FogShaderVars.ModFogColor.W		= FogShaderVars.DistanceFogColor.W;
-	FogShaderVars.TransFogColor.W	= FogShaderVars.DistanceFogColor.W;
-
-	// Metallicafan212:	Keep a copy so we can swap it for the modulated and translucent hacks
-	FogShaderVars.DistanceFogFinal	= FogShaderVars.DistanceFogColor;
-
-	UpdateFogSettings();
 
 	unguard;
 }

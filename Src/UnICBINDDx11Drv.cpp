@@ -2778,11 +2778,11 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	FlashFog		= InFlashFog;
 
 #if DX11_DISTANCE_FOG
-	if (FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues)
+	if (FogShaderVars.bDoDistanceFog)
 	{
 		// Metallicafan212:	Fix a random bug... Restore the fog color
 		FogShaderVars.DistanceFogColor = FogShaderVars.DistanceFogFinal;
-		TickDistanceFog();
+		UpdateFogSettings();
 	}
 #endif
 

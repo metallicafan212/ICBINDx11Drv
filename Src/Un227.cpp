@@ -144,7 +144,7 @@ void UICBINDx11RenderDevice::PreDrawGouraud(FSceneNode* Frame, FFogSurf& FogSurf
 
 	if (FogSurf.IsValid())
 	{
-		SetDistanceFog(1, FogSurf.FogDistanceStart, FogSurf.FogDistanceEnd, FogSurf.FogDensity, FogSurf.FogColor, 0.0f, (EDX11FogMode)(FogSurf.FogMode + 1));
+		SetDistanceFog(1, FogSurf.FogDistanceStart, FogSurf.FogDistanceEnd, FogSurf.FogDensity, FogSurf.FogColor, (EDX11FogMode)(FogSurf.FogMode + 1));
 
 		// Metallicafan212:	If hack fog rendering is enabled, then reset the color back
 		switch (CurrentPolyFlags & (PF_Translucent | PF_Modulated))
@@ -166,7 +166,7 @@ void UICBINDx11RenderDevice::PreDrawGouraud(FSceneNode* Frame, FFogSurf& FogSurf
 		
 	}
 	else if (FogShaderVars.bDoDistanceFog)
-		SetDistanceFog(0, 0.0f, 0.0f, 0.0f, FPlane(0.0f, 0.0f, 0.0f, 0.0f), 0.0f, 0);
+		SetDistanceFog(0, 0.0f, 0.0f, 0.0f, FPlane(0.0f, 0.0f, 0.0f, 0.0f), 0);
 
 	unguard;
 }
@@ -178,7 +178,7 @@ void UICBINDx11RenderDevice::PostDrawGouraud(FSceneNode* Frame, FFogSurf& FogSur
 	// Metallicafan212:	Only disable if fogging is _actually_ set....
 	if (FogShaderVars.bDoDistanceFog)
 	{
-		SetDistanceFog(0, 0.0f, 0.0f, 0.0f, FPlane(0.0f, 0.0f, 0.0f, 0.0f), 0.0f, 0);
+		SetDistanceFog(0, 0.0f, 0.0f, 0.0f, FPlane(0.0f, 0.0f, 0.0f, 0.0f), 0);
 	}
 
 	unguard;

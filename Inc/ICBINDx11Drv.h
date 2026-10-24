@@ -464,19 +464,9 @@ struct FFogShaderVars
 	FLOAT				CurrentFogEnd;
 	FLOAT				CurrentFogDensity;
 
-	// Metallicafan212:	Target values
-	FPlane				TargetFogColor;
+	// Metallicafan212:	Previous call's settings
 	FPlane				LastFogColor;
-	FPlane				TargetFogSettings;
 	FPlane				LastFogSettings;
-
-	// Metallicafan212:	Fog fade time
-	FLOAT				FogFadeRate;
-
-	// Metallicafan212:	If to fade the current fog values
-	UBOOL				bFadeFogValues;
-
-	FLOAT				FogSetTime;
 
 	EDX11FogMode		FogMode;
 
@@ -487,7 +477,7 @@ struct FFogShaderVars
 		appMemzero(this, sizeof(FFogShaderVars));
 
 		// Metallicafan212:	Setup the hacked colors
-		TransFogColor	= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
+		//TransFogColor	= FPlane(0.0f, 0.0f, 0.0f, 0.0f);
 		ModFogColor		= FPlane(0.5f, 0.5f, 0.5f, 0.0f);
 	}
 };
@@ -710,7 +700,7 @@ struct FD3DTexType
 	FORCEINLINE SIZE_T GetPitch(INT USize)
 	{
 #if DX11_UT_469 || DX11_UNREAL_227
-		return FTextureBlockBytes(Format)* FTextureBlockAlignedWidth(Format, USize) / FTextureBlockWidth(Format);
+		return FTextureBlockBytes(Format) * FTextureBlockAlignedWidth(Format, USize) / FTextureBlockWidth(Format);
 #else
 		return (this->*GetTexturePitch)(USize);
 #endif
@@ -2344,18 +2334,14 @@ class UICBINDx11RenderDevice : public RD_CLASS
 #if DX11_DISTANCE_FOG
 
 	// Metallicafan212:	Viewer-based zone fog
-	virtual void SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FLOAT FogDensity, FPlane Color, FLOAT FadeRate, INT FogMode = DFM_Linear);
-
-	// Metallicafan212:	Tick the current fog values
-	//					We use this to fade the values from one setting to another
-	void TickDistanceFog();
+	virtual void SetDistanceFog(UBOOL Enable, FLOAT FogStart, FLOAT FogEnd, FLOAT FogDensity, FPlane Color, INT FogMode = DFM_Linear);
 
 	FORCEINLINE void UpdateFogSettings()
 	{
 		// Metallicafan212:	Now set the vars
 		GlobalDistFogSettings.DistanceFogColor		= FogShaderVars.DistanceFogColor;
 		GlobalDistFogSettings.DistanceFogSettings	= FogShaderVars.DistanceFogSettings;
-		GlobalDistFogSettings.bDistanceFogEnabled	= !FogShaderVars.bForceFogOff && (FogShaderVars.bDoDistanceFog || FogShaderVars.bFadeFogValues);
+		GlobalDistFogSettings.bDistanceFogEnabled	= !FogShaderVars.bForceFogOff && FogShaderVars.bDoDistanceFog;
 		GlobalDistFogSettings.FogMode				= FogShaderVars.FogMode;
 
 #if UPDATESUBRESOURCE_CONSTANTS
@@ -2378,6 +2364,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 	{
 		guard(UICBINDx11RenderDevice::PushDistanceFogState);
 
+		// Metallicafan212:	Render anything currently in the queue
+		EndBuffering();
+
 		DistanceFogStack.AddItem(FogShaderVars);
 
 		//FogShaderVars = FFogShaderVars();
@@ -2395,16 +2384,19 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 		if (DistanceFogStack.Num())
 		{
+			// Metallicafan212:	Render anything still in the queue
+			EndBuffering();
+
 			// Metallicafan212:	Grab the end and set it as the current value
 			FFogShaderVars* Temp = &DistanceFogStack(DistanceFogStack.Num() - 1);
 			appMemcpy(&FogShaderVars, Temp, sizeof(FFogShaderVars));
 
 			// Metallicafan212:	Now remove
 			DistanceFogStack.Remove(DistanceFogStack.Num() - 1);
-		}
 
-		// Metallicafan212:	Update
-		UpdateFogSettings();
+			// Metallicafan212:	Update the current fog settings
+			UpdateFogSettings();
+		}
 
 		unguard;
 	}
