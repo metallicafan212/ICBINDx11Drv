@@ -213,9 +213,9 @@ if (WIN32)
         FOLDER ICBINDx11Drv
     )
 	if(NOT ICBIND_227)
-		target_link_libraries(ICBINDx11Drv PUBLIC CoreLib EngineLib EditorLib Render MWindow)
+		target_link_libraries(ICBINDx11Drv CoreLib EngineLib EditorLib Render MWindow)
 	endif()
-    target_link_libraries(ICBINDx11Drv PUBLIC advapi32.lib D3D11.lib D3DCompiler.lib Dwrite.lib D2d1.lib ntdll.lib)
+    target_link_libraries(ICBINDx11Drv advapi32.lib D3D11.lib D3DCompiler.lib Dwrite.lib D2d1.lib ntdll.lib)
 	if(NOT ICBIND_227)
 		unreal_package_configure(ICBINDx11Drv ICBINDx11Drv)
 	elseif(ICBIND_227)
@@ -352,6 +352,7 @@ if (WIN32)
 		SET(HARDCODED_FUNCTION ${HARDCODED_FUNCTION}
 			"// Metallicafan212: Load ${GENERATED_NAMESPACE}\n\t"
 			"Shad = &Bytecode.Set(${GENERATED_KEY}, TArray<BYTE>())~\n\t"
+			"Shad->Add(ARRAY_COUNT(${GENERATED_BYTES}));~\n\t"
 			"appMemcpy(Shad->GetData(), ${GENERATED_BYTES}, ARRAY_COUNT(${GENERATED_BYTES}))~\n\t\n\t"
 			PARENT_SCOPE
 		)

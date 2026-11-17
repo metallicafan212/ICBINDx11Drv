@@ -438,7 +438,7 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 
 	UINT NumQualityLevels = 0;
 
-	while (SUCCEEDED(hr = m_D3DDevice->CheckMultisampleQualityLevels(RTFormat, SampleCount, &NumQualityLevels)))//ScreenFormat, SampleCount, &NumQualityLevels)))
+	while (SUCCEEDED(hr = m_D3DDevice->CheckMultisampleQualityLevels(RTFormat, SampleCount, &NumQualityLevels)))
 	{
 		// Metallicafan212:	See if it's actually supported (the device can choose to send a sucess code but set quality levels to 0, like AMD)
 		if (NumQualityLevels <= 0)
@@ -450,6 +450,13 @@ void UICBINDx11RenderDevice::ClampUserOptions()
 		// Metallicafan212:	Account for the first MSAA sample being 1, not 0
 		SampleCount *= 2;
 	}
+
+	// Metallicafan212:	If the last sample count failed, reduce back to the last successful count
+	if (FAILED(hr))
+	{
+		SampleCount /= 2;
+	}
+
 
 	ResolutionScale = Clamp(ResolutionScale, 0.1f, 10.0f);
 

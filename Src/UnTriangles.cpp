@@ -34,7 +34,7 @@ if (UVInfo.bEnabledTex[chan]) \
 	vLoc = (V + (extAddy)) * UVInfo.PanScale[chan].Y; \
 } \
 
-FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, PFLAG& PolyFlags, UBOOL& bDoFog, FLOAT& UMult, FLOAT& VMult, UBOOL& bDoSelection, FPlane& SelectionColor, FUVInfoMesh& VertInfo)
+FORCEINLINE void DoVert(FTransTexture* P, FD3DVert* m_Vert, UBOOL bDoFog, FLOAT UMult, FLOAT VMult, UBOOL bDoSelection, FPlane& SelectionColor, const FUVInfoMesh& VertInfo)
 {
 	// Metallicafan212:	Speed this up by just copying it
 	appMemcpy(&m_Vert->X, &P->Point.X, sizeof(FLOAT) * 3);
@@ -204,7 +204,7 @@ void UICBINDx11RenderDevice::DrawTriangles(FSceneNode* Frame, FTextureInfo& Info
 
 	for (INT i = 0; i < NumPts; i++)
 	{
-		DoVert(Pts[i],  &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+		DoVert(Pts[i],  &Mshy[i], drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
 	}
 
 #if !INT_INDEX_BUFF
@@ -358,13 +358,13 @@ void UICBINDx11RenderDevice::DrawGouraudPolygon(FSceneNode* Frame, FTextureInfo&
 
 	UBOOL bDoSelection = (m_HitData != nullptr);
 
-	DoVert(Pts[0], &Mshy[0], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
-	DoVert(Pts[1], &Mshy[1], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+	DoVert(Pts[0], &Mshy[0], drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+	DoVert(Pts[1], &Mshy[1], drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
 
 	// Metallicafan212:	First two verts, then we fan out
 	for (INT i = 2; i < NumPts; i++)
 	{
-		DoVert(Pts[i], &Mshy[i], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+		DoVert(Pts[i], &Mshy[i], drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
 
 		// Metallicafan212:	Now the indices
 		m_IndexBuff[vIndex++] = baseVIndex;
@@ -553,9 +553,9 @@ void UICBINDx11RenderDevice::DrawGouraudTriangles(const FSceneNode* Frame, const
 			Exchange(Pts[i + 2], Pts[i]);
 		}
 
-		DoVert(&Pts[i],		&Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
-		DoVert(&Pts[i + 1], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
-		DoVert(&Pts[i + 2], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+		DoVert(&Pts[i],		&Mshy[M++], drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+		DoVert(&Pts[i + 1], &Mshy[M++], drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+		DoVert(&Pts[i + 2], &Mshy[M++], drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
 	}
 
 	AdvanceVertPos();
@@ -678,9 +678,9 @@ void UICBINDx11RenderDevice::DrawGouraudPolyList(FSceneNode* Frame, FTextureInfo
 	INT M = 0;
 	for (INT i = 0; i < NumPts; i += 3)
 	{
-		DoVert(&Pts[i], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
-		DoVert(&Pts[i + 1], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
-		DoVert(&Pts[i + 2], &Mshy[M++], PolyFlags, drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+		DoVert(&Pts[i],		&Mshy[M++], drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+		DoVert(&Pts[i + 1], &Mshy[M++], drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
+		DoVert(&Pts[i + 2], &Mshy[M++], drawFog, BoundTextures[0].UMult, BoundTextures[0].VMult, bDoSelection, CurrentHitColor, VertInfo);
 	}
 
 	AdvanceVertPos();

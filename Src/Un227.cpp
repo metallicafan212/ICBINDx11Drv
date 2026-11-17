@@ -21,7 +21,7 @@ BYTE UICBINDx11RenderDevice::SetZTestMode(BYTE Mode)
 	//if (Mode == CurrentZTestMode)
 	if(Key == CurrentZTestIndex || Mode >= ZTEST_MAX)
 	{
-		return Mode;
+		return CurrentZTestMode;
 	}
 
 	// Metallicafan212:	Flush any rendering 

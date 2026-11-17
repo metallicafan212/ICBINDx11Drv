@@ -179,7 +179,7 @@ FD3DTexture* FTextureCache::Find(D3DCacheId InID, PFLAG PolyFlags, ETextureForma
 	guardSlow(FTextureCache::Find);
 
 	// Metallicafan212:	Only do the masked logic if it's P8
-	if (Format != TEXF_P8)
+	if (!ShouldUseMaskedHack(PolyFlags, Format))
 	{
 		goto NOT_MASKED;
 	}
@@ -197,11 +197,8 @@ FD3DTexture* FTextureCache::Find(D3DCacheId InID, PFLAG PolyFlags, ETextureForma
 			auto	f  = ChildMap->QWORDMaskedMap.find(InID);
 #if USE_ROBIN_MAP
 			FD3DTexture* Lookup = f != ChildMap->QWORDMaskedMap.end() ? f.value() : nullptr;
-
-			//return	f != ChildMap->QWORDMaskedMap.end() ? f.value() : nullptr;
 #else
 			FD3DTexture* Lookup = f != ChildMap->QWORDMaskedMap.end() ? f->second : nullptr;
-			//return	f != ChildMap->QWORDMaskedMap.end() ? f->second : nullptr;
 #endif
 			if (Lookup != nullptr)
 			{
@@ -225,10 +222,8 @@ FD3DTexture* FTextureCache::Find(D3DCacheId InID, PFLAG PolyFlags, ETextureForma
 			auto	f  = ChildMap->QWORDMap.find(InID);
 #if USE_ROBIN_MAP
 			FD3DTexture* Lookup = f != ChildMap->QWORDMap.end() ? f.value() : nullptr;
-			//return	f != ChildMap->QWORDMap.end() ? f.value() : nullptr;
 #else
 			FD3DTexture* Lookup = f != ChildMap->QWORDMap.end() ? f->second : nullptr;
-			//return	f != ChildMap->QWORDMap.end() ? f->second : nullptr;
 #endif
 			if (Lookup != nullptr)
 			{
@@ -249,7 +244,7 @@ FD3DTexture* FTextureCache::Set(D3DCacheId InID, PFLAG PolyFlags, ETextureFormat
 	guardSlow(FTextureCache::Set);
 
 	// Metallicafan212:	Only do the masked logic if it's P8
-	if (Format != TEXF_P8)
+	if (!ShouldUseMaskedHack(PolyFlags, Format))
 	{
 		goto NOT_MASKED;
 	}

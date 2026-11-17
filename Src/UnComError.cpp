@@ -42,7 +42,7 @@ FString GetHRESULTValue(HRESULT HR)
 {
 	guard(GetHRESULTValue);
 
-	FString Value = FString::Printf(TEXT("0x%08lx"));
+	FString Value = FString::Printf(TEXT("0x%08lx"), HR);
 
 	return Value;
 

@@ -652,10 +652,13 @@ void UICBINDx11RenderDevice::ForceSetFogColor(FPlane FogColor)
 {
 	guardSlow(UICBINDx11RenderDevice::ForceSetFogColor);
 
+	EndBuffering();
+
 	// Metallicafan212:	TODO!
 	FogShaderVars.DistanceFogColor = FogColor;
 
-	UpdateGlobalShaderVars();
+	EndBuffering();
+	UpdateFogSettings();
 
 	unguardSlow;
 }

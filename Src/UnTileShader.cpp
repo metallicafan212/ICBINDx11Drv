@@ -61,23 +61,31 @@ UBOOL FD3DTileShader::WriteConstantBuffer(void* InMem)
 	// Metallicafan212:	Only care about tile rotation?
 	UBOOL bDoUpdate = 0;
 
-	if (bDoTileRotation != Def->bDoRot)
+	// Metallicafan212:	Only copy if needed
+	if (bDoTileRotation || Def->bDoRot)
 	{
-		bDoUpdate = 1;
+		// Metallicafan212:	Directly copy over if we're already updating
+		if (bDoUpdate || (Def->XAxis != TileCoords.XAxis || Def->YAxis != TileCoords.YAxis || Def->ZAxis != TileCoords.ZAxis))
+		{
+			// Metallicafan212:	Update the coords
+			bDoUpdate	= 1;
+			Def->XAxis	= TileCoords.XAxis;
+			Def->YAxis	= TileCoords.YAxis;
+			Def->ZAxis	= TileCoords.ZAxis;
+		}
+
+		// Metallicafan212:	Check if we're toggling on or off
+		if (bDoTileRotation != Def->bDoRot)
+		{
+			Def->bDoRot	= bDoTileRotation;
+			bDoUpdate	= 1;
+		}
 	}
 
-	Def->bDoRot				= bDoTileRotation;
-	Def->bIsMSAAFontTile	= 0;//bDoMSAAFontHack;
-
-	// Metallicafan212:	Only copy if needed
-	if (bDoTileRotation)
+	// Metallicafan212:	Finish this draw if we have to update
+	if (bDoUpdate)
 	{
-		Def->XAxis			= TileCoords.XAxis;
-		Def->YAxis			= TileCoords.YAxis;
-		Def->ZAxis			= TileCoords.ZAxis;
-
-		// Metallicafan212:	Always update when rotating
-		bDoUpdate			= 1;
+		ParentDevice->EndBuffering();
 	}
 
 	return bDoUpdate;

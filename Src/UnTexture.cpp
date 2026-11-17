@@ -87,15 +87,15 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 	QWORD CacheID = Info->CacheID;
 
 	// Metallicafan212:	End buffering if the input texture doesn't match!!!
-	UBOOL bSetTex = 0;
+	UBOOL bBindChanged	= 0;
 
 	// Metallicafan212:	We have to be able to draw without a texture, so we do have to not ignore hash 0
 	//if ((TX.TexInfoHash != Info->CacheID))
-	FD3DTexture* DaTex		= nullptr;
+	FD3DTexture* DaTex	= nullptr;
 	if (TX.BoundTex != nullptr)
 	{
 		// Metallicafan212:	See if this is the same texture _AND_ it was the same masked texture
-		if (TX.BoundTex->CacheID == Info->CacheID && (TX.BoundTex->PolyFlags & PF_Masked) == (PolyFlags & PF_Masked))
+		if (TX.BoundTex->CacheID == Info->CacheID && FTextureCache::ShouldUseMaskedHack(PolyFlags, Info->Format) == FTextureCache::ShouldUseMaskedHack(TX.BoundTex->PolyFlags, TX.BoundTex->Format))
 		{
 			// Metallicafan212:	Use the saved pointer
 			DaTex = TX.BoundTex;
@@ -103,9 +103,13 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 		// Metallicafan212:	If the cache is the same but the flags are different, we do need to render...
 		else //if (TX.BoundTex->CacheID != Info->CacheID)
 		{
-			bSetTex = 1;
+			bBindChanged	= 1;
 			EndBuffering();
 		}
+	}
+	else
+	{
+		bBindChanged	= 1;
 	}
 
 	// Metallicafan212:	Search for the bind
@@ -145,15 +149,18 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 	FLOAT NewUMult = 1.0f / (Info->UScale * Info->USize);
 	FLOAT NewVMult = 1.0f / (Info->VScale * Info->VSize);
 
-	// Metallicafan212:	Fix some lightmap related issues, check UV mult and UV pan
-	if (bSetTex || NewUMult != TX.UMult || NewVMult != TX.VMult || TX.UPan != Info->Pan.X || TX.VPan != Info->Pan.Y)
+	// Metallicafan212:	Only end buffering if the bind actually changes.
+	//					UV is calculated on the CPU
+	if (bBindChanged)
 	{
-		bSetTex = 1;
-
 		EndBuffering();
 
-		//TX.TexInfoHash	= Info->CacheID;
 		TX.BoundTex		= DaTex;
+	}
+
+	// Metallicafan212:	Fix some lightmap related issues, check UV mult and UV pan
+	if (bBindChanged || NewUMult != TX.UMult || NewVMult != TX.VMult || TX.UPan != Info->Pan.X || TX.VPan != Info->Pan.Y)
+	{
 		TX.UPan			= Info->Pan.X;
 		TX.VPan			= Info->Pan.Y;
 		TX.bIsRT		= DaTex->bIsRT;
@@ -161,54 +168,42 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 		TX.VScale		= Info->VScale;
 		TX.UMult		= NewUMult;
 		TX.VMult		= NewVMult;
-
-		// Metallicafan212:	Get the size from the base mip!!!!
-		FMipmap* M		= GetBaseMip(*Info);
-
-		// Metallicafan212:	Only try to UV clamp if the base mip is accessable
-		if (M != nullptr && (((DaTex->UClamp ^ M->USize) | (DaTex->VClamp ^ M->VSize)) != 0))
-		{
-			DaTex->bShouldUVClamp = 1;
-		}
-		else
-		{
-			DaTex->bShouldUVClamp = 0;
-		}
 	}
 
 
 #if DX11_HP2
 	// Metallicafan212:	Check if it's a RT texture!!
-	//					Really should use IsA, but this is quicker
-	if (Info->Texture != nullptr && Info->Texture->GetClass() == UDX11RenderTargetTexture::StaticClass())
+	if ((bBindChanged || ((TX.Flags & (PF_NoSmooth | PF_ClampUVs)) != (PolyFlags & (PF_NoSmooth | PF_ClampUVs)))) && DaTex != nullptr && DaTex->bIsRT)
 	{
 		UDX11RenderTargetTexture* TexTemp = (UDX11RenderTargetTexture*)Info->Texture;
 
 		m_RenderContext->PSSetShaderResources(TexNum, 1, TexTemp->RTSRView.GetAddressOf());
 
-		ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->MipSkip, bNoAF);//DaTex->bSkipMipZero ? 1 : 0, 0);
+		ID3D11SamplerState* Temp = GetSamplerState((PolyFlags) | (DaTex->bShouldUVClamp ? PF_ClampUVs : 0), DaTex->MipSkip, bNoAF);
 
 		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
-		//m_RenderContext->PSSetSamplers(TexNum, 1, &BlankSampler);
 
 		// Metallicafan212:	So we can find whatever is still bound as the RT when we call OMSetRenderTargets
 		TX.m_SRV = TexTemp->RTSRView.Get();
+		TX.Flags = PolyFlags;
 
 		// Metallicafan212:	Tell the shader that the texture is bound
-		BoundTexturesInfo.CurrentBoundTextures |= SlotFlag;
+		if (!(BoundTexturesInfo.CurrentBoundTextures & SlotFlag))
+		{
+			BoundTexturesInfo.CurrentBoundTextures |= SlotFlag;
+			bWriteTexturesBuffer					= 1;
+		}
 
 		// Metallicafan212:	Set the slot to use bicubic
-		//					TODO! Rename the bool
-		if (bBicubicTextureSampling && !(PolyFlags & PF_NoSmooth))
-		{
-			BoundTexturesInfo.UseBicubicSampling |= SlotFlag;
-		}
-		else
-		{
-			BoundTexturesInfo.UseBicubicSampling &= ~SlotFlag;
-		}
+		DWORD RequestBicubic = (bBicubicTextureSampling && !(PolyFlags & PF_NoSmooth) ? SlotFlag : 0);
 
-		bWriteTexturesBuffer = 1;
+		if ((BoundTexturesInfo.UseBicubicSampling & SlotFlag) != RequestBicubic)
+		{
+			bWriteTexturesBuffer = 1;
+
+			// Metallicafan212:	Toggle it
+			BoundTexturesInfo.UseBicubicSampling ^= SlotFlag;
+		}
 
 		return;
 	}
@@ -216,10 +211,11 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 
 	// Metallicafan212:	Only actually set the slot if we need to
 	//					2024, check only the RELEVANT polyflags. We don't care (here) if blending changed
-	if (bSetTex || TX.m_SRV == nullptr || ((TX.Flags & (PF_NoSmooth | PF_ClampUVs)) != (PolyFlags & (PF_NoSmooth | PF_ClampUVs))))
+	if (bBindChanged || TX.m_SRV == nullptr || ((TX.Flags & (PF_NoSmooth | PF_ClampUVs)) != (PolyFlags & (PF_NoSmooth | PF_ClampUVs))))
 	{
 		TX.m_SRV	= DaTex->m_View;
 		TX.bIsNull	= 0;
+		TX.Flags	= PolyFlags;
 
 		m_RenderContext->PSSetShaderResources(TexNum, 1, &DaTex->m_View);
 
@@ -228,20 +224,22 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 		m_RenderContext->PSSetSamplers(TexNum, 1, &Temp);
 
 		// Metallicafan212:	Tell the shader that the texture is bound
-		BoundTexturesInfo.CurrentBoundTextures |= SlotFlag;
+		if (!(BoundTexturesInfo.CurrentBoundTextures & SlotFlag))
+		{
+			BoundTexturesInfo.CurrentBoundTextures |= SlotFlag;
+			bWriteTexturesBuffer					= 1;
+		}
 
 		// Metallicafan212:	Set the slot to use bicubic
-		//					TODO! Rename the bool
-		if (bBicubicTextureSampling && !(PolyFlags & PF_NoSmooth))
-		{
-			BoundTexturesInfo.UseBicubicSampling |= SlotFlag;
-		}
-		else
-		{
-			BoundTexturesInfo.UseBicubicSampling &= ~SlotFlag;
-		}
+		DWORD RequestBicubic = (bBicubicTextureSampling && !(PolyFlags & PF_NoSmooth) ? SlotFlag : 0);
 
-		TX.Flags = PolyFlags;
+		if ((BoundTexturesInfo.UseBicubicSampling & SlotFlag) != RequestBicubic)
+		{
+			bWriteTexturesBuffer = 1;
+
+			// Metallicafan212:	Toggle it
+			BoundTexturesInfo.UseBicubicSampling ^= SlotFlag;
+		}
 
 		bWriteTexturesBuffer = 1;
 	}
@@ -564,6 +562,16 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, 
 		DaTex->VSize	= Info.VSize;
 	}
 
+	// Metallicafan212:	Only try to UV clamp if the base mip is accessable
+	if (M != nullptr && (((DaTex->UClamp ^ M->USize) | (DaTex->VClamp ^ M->VSize)) != 0))
+	{
+		DaTex->bShouldUVClamp = 1;
+	}
+	else
+	{
+		DaTex->bShouldUVClamp = 0;
+	}
+
 	DaTex->MipSkip = 0;
 
 	// Metallicafan212:	Implement checking against the new UT469 realtime changed count
@@ -632,24 +640,28 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, 
 	INT MipSize = 0, MipPitch = 0;
 	INT MipW	= 0, MipH = 0;
 
-	// Metallicafan212:	Create the conversion mem
-	//					TODO! Hardcoded size!!!!
-	//					2026... This bit us in the ass
-	//					Calculate it correctly
-	SIZE_T MemRequest = DaTex->USize * DaTex->VSize * Type->BytesPerPixel;
-
-	// Metallicafan212:	Resize as needed
-	if (MemRequest > ConversionMemSize)
+	// Metallicafan212:	TODO! Better check, we want to grow this only for textures that require any sort of conversion....
+	if (!Type->bSupported || Type->TexUploadFunc != &UICBINDx11RenderDevice::DirectCP || DaTex->bDecompress)
 	{
-		if (ConversionMemory == nullptr)
+		// Metallicafan212:	Create the conversion mem
+		//					TODO! Hardcoded size!!!!
+		//					2026... This bit us in the ass
+		//					Calculate it correctly
+		SIZE_T MemRequest = DaTex->USize * DaTex->VSize * (SIZE_T)Type->BytesPerPixel;
+
+		// Metallicafan212:	Resize as needed
+		if (MemRequest > ConversionMemSize)
 		{
-			ConversionMemory = (BYTE*)appMalloc(MemRequest, TEXT("DX11ConversionMem"));
+			if (ConversionMemory == nullptr)
+			{
+				ConversionMemory = (BYTE*)appMalloc(MemRequest, TEXT("DX11ConversionMem"));
+			}
+			else
+			{
+				ConversionMemory = (BYTE*)appRealloc(ConversionMemory, MemRequest, TEXT("DX11ConversionMem"));
+			}
+			ConversionMemSize = MemRequest;
 		}
-		else
-		{
-			ConversionMemory = (BYTE*)appRealloc(ConversionMemory, MemRequest, TEXT("DX11ConversionMem"));
-		}
-		ConversionMemSize = MemRequest;
 	}
 
 	// Metallicafan212:	Check if we need to make it
@@ -734,7 +746,7 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, 
 			guardSlow(ConvertTexture);
 
 			// Metallicafan212:	Convert the mip (could be P8 or RGBA7)
-			UBOOL bMaskedHack	= (Type->Format == TEXF_P8 && PolyFlags & PF_Masked);
+			UBOOL bMaskedHack	= FTextureCache::ShouldUseMaskedHack(PolyFlags, Type->Format);
 
 			// Metallicafan212:	TODO! Mask hack it!!
 			FColor OldMasked	= (Info.Palette != nullptr ? Info.Palette[0] : FColor(0, 0, 0, 0));

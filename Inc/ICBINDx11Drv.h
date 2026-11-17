@@ -730,12 +730,16 @@ struct std::hash<FString>
 {
 	std::size_t operator()(const FString& k) const
 	{
+		/*
 		// Metallicafan212:	Use the default string hashing
 #if UNICODE
 		return hash<std::wstring>()(*k);
 #else
 		return hash<std::string>()(*k);
 #endif
+		*/
+		// Metallicafan212: Stable hash, I'm an idiot....
+		return appStrihash(*k);
 	}
 };
 #endif
@@ -1520,6 +1524,8 @@ class UICBINDx11RenderDevice : public RD_CLASS
 						appFree(temp);
 					}
 				}
+
+				m_D3DQueue->ClearStoredMessages();
 			}
 
 			appErrorf(TEXT("DX11 encountered an error (%s). If the debug layer is supported, the log file will likely contain useful debug info!"), *GetHRESULTValue(hr));
@@ -1995,6 +2001,9 @@ class UICBINDx11RenderDevice : public RD_CLASS
 #endif
 
 		SAFE_RELEASE(ScreenSamp);
+
+		// Metallicafan212:	Set here, as changing AF settings also cause a flush
+		LastAFSamples = NumAFSamples;
 	}
 
 	FORCEINLINE void FlushRasterStates()
@@ -2369,8 +2378,7 @@ class UICBINDx11RenderDevice : public RD_CLASS
 
 		DistanceFogStack.AddItem(FogShaderVars);
 
-		//FogShaderVars = FFogShaderVars();
-		appMemzero(&FogShaderVars, sizeof(FFogShaderVars));
+		FogShaderVars = FFogShaderVars();
 
 		// Metallicafan212:	Now update
 		UpdateFogSettings();

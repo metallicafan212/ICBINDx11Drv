@@ -71,7 +71,7 @@ void UICBINDx11RenderDevice::Draw3DLine(FSceneNode* Frame, FPlane Color, DWORD L
 
 		ExtraRasterFlags = OldFlags;
 
-		FPlane LineThick(GExtraLineSize * ThreeDeeLineThickness * ExtraScale, 0.0f, 0.0f, 0.0f);
+		FPlane LineThick(GExtraLineSize * Thick * ExtraScale, 0.0f, 0.0f, 0.0f);
 #else
 		Color.W = 1.0f;
 

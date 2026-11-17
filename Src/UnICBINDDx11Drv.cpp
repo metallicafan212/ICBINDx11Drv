@@ -903,7 +903,7 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 					Desc.MultisampleEnable		= TRUE;
 				}
 
-				HRESULT hr = m_D3DDevice1->CreateRasterizerState(&Desc, &m_s);
+				HRESULT hr = m_D3DDevice->CreateRasterizerState(&Desc, &m_s);
 
 				ThrowIfFailed(hr);
 #if USE_RASTER_ARRAY
@@ -1436,12 +1436,14 @@ void UICBINDx11RenderDevice::SetupResources()
 	GLog->Logf(TEXT("DX11: Setting up resources"));
 
 	// Metallicafan212:	Reset our bound textures
-	for (INT i = 0; i < MAX_TEXTURES; i++)
-	{
-		//SetTexture(0, nullptr, 0);
-		m_RenderContext->PSSetShaderResources(i, 0, nullptr);
-		m_RenderContext->PSSetSamplers(i, 0, nullptr);
-	}
+	ID3D11ShaderResourceView* Views[MAX_TEXTURES];
+	ID3D11SamplerState* Samps[MAX_TEXTURES];
+
+	appMemzero(Views, sizeof(Views));
+	appMemzero(Samps, sizeof(Samps));
+
+	m_RenderContext->PSSetShaderResources(0, MAX_TEXTURES, Views);
+	m_RenderContext->PSSetSamplers(0, MAX_TEXTURES, Samps);
 
 	appMemzero(BoundTextures, sizeof(FD3DBoundTex) * ARRAY_COUNT(BoundTextures));
 
@@ -1608,7 +1610,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		}
 		else
 		{
-			debugf(TEXT("D3D adapter vendor      : Unknown (%0x10)"), AdDesc.VendorId);
+			debugf(TEXT("D3D adapter vendor      : Unknown (0x%04X)"), AdDesc.VendorId);
 		}
 
 		CheckTearingState();
@@ -1695,8 +1697,8 @@ void UICBINDx11RenderDevice::SetupResources()
 		swapChainDesc.Format				= ScreenFormat;
 		swapChainDesc.SampleDesc.Count		= 1;
 		swapChainDesc.SampleDesc.Quality	= 0;
-		swapChainDesc.BufferUsage			= DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_UNORDERED_ACCESS;
-		swapChainDesc.BufferCount			= 2; //+ NumAdditionalBuffers;
+		swapChainDesc.BufferUsage			= DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT; //| DXGI_USAGE_UNORDERED_ACCESS;
+		swapChainDesc.BufferCount			= 2;// + NumAdditionalBuffers;
 		//swapChainDesc.Scaling				= DXGI_SCALING_NONE;
 		// Metallicafan212:	If we're on windows 10 or above, use the better DXGI mode
 		swapChainDesc.SwapEffect			= (bFlipDiscard					? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD);
@@ -1762,7 +1764,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		// Metallicafan212:	Clamp the user options!
 		ClampUserOptions();
 
-		LastAdditionalBuffers = NumAdditionalBuffers;
+		//LastAdditionalBuffers = NumAdditionalBuffers;
 	}
 	else
 	{
@@ -1773,12 +1775,14 @@ void UICBINDx11RenderDevice::SetupResources()
 
 		CheckTearingState();
 
+		/*
 		// Metallicafan212:	If the buffer count doesn't match, resetup the device
 		if (LastAdditionalBuffers != NumAdditionalBuffers)
 		{
 			SAFE_RELEASE(m_D3DSwapChain);
 			goto SetupSwap;
 		}
+		*/
 
 		GLog->Logf(TEXT("DX11: Resizing swap chain"));
 
@@ -1813,7 +1817,7 @@ void UICBINDx11RenderDevice::SetupResources()
 		}
 
 		// Metallicafan212:	Resize it
-		hr = m_D3DSwapChain->ResizeBuffers(2 + NumAdditionalBuffers, SizeX, SizeY, ScreenFormat, (bLastTearingState ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0));
+		hr = m_D3DSwapChain->ResizeBuffers(2 /*+ NumAdditionalBuffers*/, SizeX, SizeY, ScreenFormat, (bLastTearingState ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | (bFullscreen ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0));
 
 		if (FAILED(hr))//hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
 		{
@@ -2009,12 +2013,14 @@ void UICBINDx11RenderDevice::SetupResources()
 
 	ThrowIfFailed(hr);
 
+	/*
 	// Metallicafan212:	Now a UAV for a compute shader!!!
 	CD3D11_UNORDERED_ACCESS_VIEW_DESC bUAV = CD3D11_UNORDERED_ACCESS_VIEW_DESC(m_BackBuffTex, D3D11_UAV_DIMENSION_TEXTURE2D, ScreenFormat);
 
 	hr = m_D3DDevice->CreateUnorderedAccessView(m_BackBuffTex, &bUAV, &m_BackBuffUAV);
 
 	ThrowIfFailed(hr);
+	*/
 
 	// Metallicafan212:	Back buffer shader view
 	CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = CD3D11_SHADER_RESOURCE_VIEW_DESC();
@@ -2209,7 +2215,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	Desc.Height				= 2;
 	Desc.MipLevels			= 1;
 	Desc.Usage				= D3D11_USAGE_DEFAULT;
-	Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	Desc.BindFlags			= D3D11_BIND_SHADER_RESOURCE; //| D3D11_BIND_UNORDERED_ACCESS;
 	Desc.ArraySize			= 1;
 	// Metallicafan212:	Not needed
 	Desc.CPUAccessFlags		= 0;//D3D11_CPU_ACCESS_WRITE;
@@ -2291,6 +2297,7 @@ void UICBINDx11RenderDevice::SetupResources()
 	// Metallicafan212:	Keep the lock version updated
 	LastAASamples		= NumAASamples;
 	LastResolutionScale = ResolutionScale;
+	LastAFSamples		= NumAFSamples;
 
 	// Metallicafan212:	Make all the samplers that should be needed
 	for (INT i = 0; i < 2; i++)
@@ -2388,6 +2395,10 @@ void UICBINDx11RenderDevice::Exit()
 		appFree(ConversionMemory);
 		ConversionMemory = nullptr;
 	}
+
+	// Metallicafan212:	Release debug stuff if it's enabled
+	SAFE_RELEASE(m_D3DQueue);
+	SAFE_RELEASE(m_D3DDebug);
 
 	SAFE_RELEASE(VertexBuffer);
 	SAFE_RELEASE(IndexBuffer);
@@ -2634,7 +2645,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 	if (bBicubicTextureSampling)
 	{
-#if DX11_UT469 || DX11_HP2
+#if DX11_UT_469 || DX11_HP2
 		// Metallicafan212:	Disable lightmap atlas....
 		UseAmbientlessLightmaps = 0;
 		UseLightmapAtlas		= 0;
@@ -2644,7 +2655,7 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 	}
 	else
 	{
-#if DX11_UT469 || DX11_HP2
+#if DX11_UT_469 || DX11_HP2
 		// Metallicafan212:	Enable lightmap atlas
 		UseAmbientlessLightmaps = 1;
 		UseLightmapAtlas		= 1;
@@ -2655,9 +2666,9 @@ void UICBINDx11RenderDevice::Lock(FPlane InFlashScale, FPlane InFlashFog, FPlane
 
 
 	// Metallicafan212:	Check if our lock flags changed
-	if (LastAASamples != NumAASamples || LastAFSamples != NumAFSamples || LastResolutionScale != ResolutionScale || LastAdditionalBuffers != NumAdditionalBuffers)
+	if (LastAASamples != NumAASamples || LastAFSamples != NumAFSamples || LastResolutionScale != ResolutionScale)//|| LastAdditionalBuffers != NumAdditionalBuffers)
 	{
-		if (LastAASamples != NumAASamples || LastResolutionScale != ResolutionScale || LastAdditionalBuffers != NumAdditionalBuffers)
+		if (LastAASamples != NumAASamples || LastResolutionScale != ResolutionScale)//|| LastAdditionalBuffers != NumAdditionalBuffers)
 		{
 			// Metallicafan212:	Doing this will also flush the sampler state
 			SetupResources();
@@ -3311,6 +3322,8 @@ void UICBINDx11RenderDevice::Unlock(UBOOL Blit)
 					appFree(temp);
 				}
 			}
+
+			m_D3DQueue->ClearStoredMessages();
 		}
 	}
 
@@ -3410,13 +3423,6 @@ void UICBINDx11RenderDevice::EndFlash()
 		RPY1 *= Z;
 		RPY2 *= Z;
 
-
-		// Metallicafan212:	Disable depth lmao
-		ID3D11DepthStencilState* CurState = nullptr;
-		UINT Sten = 0;
-
-		m_RenderContext->OMGetDepthStencilState(&CurState, &Sten);
-		//m_RenderContext->OMSetDepthStencilState(m_DefaultNoZState, 0);
 		BYTE OldZTest		= CurrentZTestMode;
 		DWORD OldDSFlags	= DepthStencilFlags;
 
@@ -3808,9 +3814,33 @@ void UICBINDx11RenderDevice::SetProjectionStateNoCheck(UBOOL bRequestingNearRang
 void UICBINDx11RenderDevice::PrecacheTexture(FTextureInfo& Info, PFLAG PolyFlags)
 {
 	guard(UICBINDx11RenderDevice::PrecacheTexture);
+	
+	// Metallicafan212:	Check if it's already cached
+	FD3DTexture* DaTex		= TextureMap.Find(Info.CacheID, PolyFlags, (ETextureFormat)Info.Format);
 
-	// Metallicafan212:	Upload it now
-	CacheTextureInfo(Info, PolyFlags);
+	// Metallicafan212:	Using Info->NeedsRealtimeUpdate steals 50fps for some reason.... It's incredibly weird
+//#if DX11_UT_469 
+//	UBOOL bTexChanged = DaTex == nullptr || Info->NeedsRealtimeUpdate(DaTex->RealtimeChangeCount);
+//#elif|| DX11_HP2
+#if DX11_UT_469 || DX11_HP2
+	UBOOL bTexChanged = (Info.Texture != nullptr && DaTex != nullptr ? Info.Texture->RealtimeChangeCount != DaTex->RealtimeChangeCount : Info.bRealtimeChanged);
+#elif DX11_UNREAL_227
+	UBOOL bTexChanged = (Info.Texture != nullptr && DaTex != nullptr ? Info.RenderTag != DaTex->RealtimeChangeCount : Info.bRealtimeChanged);
+#else
+	// Metallicafan212:	Generic UE1 support
+	UBOOL bTexChanged = Info.bRealtimeChanged;
+#endif
+
+	// Metallicafan212:	Check if we need to upload it to the GPU
+	//					Masked textures get placed in a separate map, so they can be toggled on and off without a refresh
+	//					This uses more memory, but results in more consistent FPS and behavior
+	UBOOL bUpload			= DaTex == nullptr || bTexChanged;
+
+	if(bUpload)
+	{
+		// Metallicafan212:	Provide the existing bind to the upload code to save a map lookup
+		DaTex = CacheTextureInfo(Info, PolyFlags, DaTex);
+	}
 
 	unguard;
 }

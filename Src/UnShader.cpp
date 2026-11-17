@@ -82,6 +82,16 @@ void FD3DShader::SetShaders(ID3D11DeviceContext* UseContext)
 	UseContext->PSSetShader(PixelShader, nullptr, 0);
 
 	UseContext->IASetInputLayout(InputLayout);
+
+	// Metallicafan212:	Now finally set it as a resource
+	if (VertexShader != nullptr)
+		UseContext->VSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
+
+	if (GeoShader != nullptr)
+		UseContext->GSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
+
+	if (PixelShader != nullptr)
+		UseContext->PSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
 }
 
 // Metallicafan212:	TODO! This should be re-evalled and the bound textures moved to another constant buffer
@@ -132,16 +142,6 @@ void FD3DShader::Bind(ID3D11DeviceContext* UseContext)
 		// Metallicafan212:	Now unmap it
 		UseContext->Unmap(ShaderConstantsBuffer, 0);
 #endif
-
-		// Metallicafan212:	Now finally set it as a resource
-		if (VertexShader != nullptr)
-			UseContext->VSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
-
-		if (GeoShader != nullptr)
-			UseContext->GSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
-
-		if (PixelShader != nullptr)
-			UseContext->PSSetConstantBuffers(FIRST_USER_CONSTBUFF, 1, &ShaderConstantsBuffer);
 	}
 
 	unguardSlow;

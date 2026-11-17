@@ -21,6 +21,17 @@ public:
 	// Metallicafan212:	Get a new bind
 	FD3DTexture* Set(D3DCacheId InID, PFLAG PolyFlags, ETextureFormat Format);
 
+	// Metallicafan212:	Localize the check here
+	static UBOOL ShouldUseMaskedHack(PFLAG PolyFlags, ETextureFormat Format)
+	{
+		if (PolyFlags & PF_Masked && Format == TEXF_P8)
+		{
+			return 1;
+		}
+
+		return 0;
+	}
+
 	// Metallicafan212:	TODO! More interfaces
 
 protected:
