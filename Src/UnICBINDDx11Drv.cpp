@@ -790,7 +790,7 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 	if(m_D3DDevice1 == nullptr || !bUseForcedSampleCount || NumAASamples <= 1)
 		State &= ~(DXRS_NoAA);
 
-	if (State != CurrentRasterState || ( (State & DXRS_NoAA) && CurrentPolyFlags & PF_Occlude))
+	if (State != CurrentRasterState)//|| ( (State & DXRS_NoAA) && CurrentPolyFlags & PF_Occlude))
 	{
 		// Metallicafan212:	End whatever rendering we're doing right now!
 		EndBuffering();
@@ -798,30 +798,6 @@ void UICBINDx11RenderDevice::SetRasterState(DWORD State)
 #if USE_RASTER_ARRAY
 		// Metallicafan212:	Since I control all the flags, and I want to consider all the flags, I can just index by the state
 		INT RasterIndex = State;
-
-		/*
-		switch (State)
-		{
-			case DXRS_Wireframe:
-			{
-				RasterIndex = RASTER_ARRAY_SIZE / 4;
-				break;
-			}
-
-			case DXRS_NoAA:
-			{
-				RasterIndex = 2 * (RASTER_ARRAY_SIZE / 4);
-				break;
-			}
-
-			case (DXRS_Wireframe | DXRS_NoAA):
-			{
-				RasterIndex = 3 * (RASTER_ARRAY_SIZE / 4);
-				break;
-			}
-		}
-		*/
-
 		ID3D11RasterizerState* m_s = RasterArray[RasterIndex];
 #else
 		// Metallicafan212:	Find what needs to be added on to make it, if it doesn't exist yet

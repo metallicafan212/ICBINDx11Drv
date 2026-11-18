@@ -104,7 +104,6 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 		else //if (TX.BoundTex->CacheID != Info->CacheID)
 		{
 			bBindChanged	= 1;
-			EndBuffering();
 		}
 	}
 	else
@@ -138,6 +137,9 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 
 	if(bUpload)
 	{
+		// Metallicafan212:	Execute the draw call with the previous version of the texture
+		EndBuffering();
+
 		// Metallicafan212:	Provide the existing bind to the upload code to save a map lookup
 		DaTex = CacheTextureInfo(*Info, PolyFlags, DaTex);
 	}
@@ -153,8 +155,6 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 	//					UV is calculated on the CPU
 	if (bBindChanged)
 	{
-		EndBuffering();
-
 		TX.BoundTex		= DaTex;
 	}
 
@@ -175,6 +175,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 	// Metallicafan212:	Check if it's a RT texture!!
 	if ((bBindChanged || ((TX.Flags & (PF_NoSmooth | PF_ClampUVs)) != (PolyFlags & (PF_NoSmooth | PF_ClampUVs)))) && DaTex != nullptr && DaTex->bIsRT)
 	{
+		EndBuffering();
+
 		UDX11RenderTargetTexture* TexTemp = (UDX11RenderTargetTexture*)Info->Texture;
 
 		m_RenderContext->PSSetShaderResources(TexNum, 1, TexTemp->RTSRView.GetAddressOf());
@@ -213,6 +215,8 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 	//					2024, check only the RELEVANT polyflags. We don't care (here) if blending changed
 	if (bBindChanged || TX.m_SRV == nullptr || ((TX.Flags & (PF_NoSmooth | PF_ClampUVs)) != (PolyFlags & (PF_NoSmooth | PF_ClampUVs))))
 	{
+		EndBuffering();
+
 		TX.m_SRV	= DaTex->m_View;
 		TX.bIsNull	= 0;
 		TX.Flags	= PolyFlags;
@@ -240,8 +244,6 @@ void UICBINDx11RenderDevice::SetTexture(INT TexNum, const FTextureInfo* Info, PF
 			// Metallicafan212:	Toggle it
 			BoundTexturesInfo.UseBicubicSampling ^= SlotFlag;
 		}
-
-		bWriteTexturesBuffer = 1;
 	}
 
 	unguardSlow;
@@ -604,6 +606,10 @@ FD3DTexture* UICBINDx11RenderDevice::CacheTextureInfo(const FTextureInfo& Info, 
 		DaTex->TexFormat	= DXGI_FORMAT_B8G8R8A8_UNORM;
 
 		return DaTex;
+	}
+	else
+	{
+		DaTex->bIsRT		= 0;
 	}
 #endif
 

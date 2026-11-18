@@ -270,7 +270,7 @@ if (WIN32)
 		
 		# Metallicafan212: Game-specific logic
 		if(ICBIND_HARDCODED_SHADERS)
-			LIST(APPEND ShaderCommand /DHARD_CODED_SHADERS=1 /DUSE_GEO_SHADER=1)
+			LIST(APPEND ShaderCommand /DHARD_CODE_SHADERS=1 /DUSE_GEO_SHADER=1)
 		elseif(ICBIND_227)
 			LIST(APPEND ShaderCommand /DDX11_UNREAL_227=1 /DUSE_GEO_SHADER=1)
 		else()
