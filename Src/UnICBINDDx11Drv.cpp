@@ -1770,6 +1770,8 @@ void UICBINDx11RenderDevice::SetupResources()
 
 			CheckTearingState();
 
+			bLastFullscreen = bFullscreen;
+
 			ThrowIfFailed(hr);
 		}
 
@@ -2328,17 +2330,8 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 		TestY	= ClosestY;
 	}
 
-
-	if (Viewport != nullptr)
-	{
-		// Metallicafan212:	Force 32bit color at all times????
-		if (!Viewport->ResizeViewport(BLIT_Direct3D | (Fullscreen ? BLIT_Fullscreen : BLIT_HardwarePaint), TestX, TestY, 4))
-		{
-			return 0;
-		}
-	}
-
 	// Metallicafan212:	Don't resize multiple times. DX11 will send a WM_SIZE when resizing the target
+	//					2026, do this BEFORE resizing the viewport
 	if (m_D3DSwapChain == nullptr || TestX != SizeX || TestY != SizeY || bFullscreen != Fullscreen)
 	{
 		// Metallicafan212:	Save the values
@@ -2349,6 +2342,15 @@ UBOOL UICBINDx11RenderDevice::SetRes(INT NewX, INT NewY, INT NewColorBytes, UBOO
 		// Metallicafan212:	Resetup resources that need to be sized
 		bFullscreen = Fullscreen;
 		SetupResources();
+	}
+
+	if (Viewport != nullptr)
+	{
+		// Metallicafan212:	Force 32bit color at all times????
+		if (!Viewport->ResizeViewport(BLIT_Direct3D | (Fullscreen ? BLIT_Fullscreen : BLIT_HardwarePaint), TestX, TestY, 4))
+		{
+			return 0;
+		}
 	}
 
 	// Metallicafan212:	Set the viewport now

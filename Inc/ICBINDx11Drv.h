@@ -230,7 +230,8 @@ typedef unsigned short INDEX;
 
 #define D3D_DRIVER_VERSION TEXT("0.94 Alfalfa-Alpha")
 
-#define MAC_TO_STR(Mac) TEXT(#Mac)
+#define WIDEN_STR(x) L##x
+#define MAC_TO_STR(Mac) WIDEN_STR(Mac)
 
 // Metallicafan212:	Compile time
 #define COMPILED_AT			*FString::Printf(TEXT("%ls @ %ls"), MAC_TO_STR(__DATE__), MAC_TO_STR(__TIME__))
